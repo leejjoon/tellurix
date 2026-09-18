@@ -21,8 +21,14 @@ stop the run, and a resumed run must not repeat completed work.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
+
+try:
+    from importlib.metadata import version
+except ImportError:  # pragma: no cover - Python < 3.8 is not supported anyway
+    version = None
 import time
 import traceback
 
@@ -30,6 +36,27 @@ import numpy as np
 
 MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
 STAGES = ("continuum", "velocity", "columns", "stellar")
+
+# Everything about the physics that is the same for every page. Named here, and
+# read from here below, so the summary records exactly what ran rather than a
+# second description of it that can drift away from the code.
+PHYSICS = {
+    "accuracy_mode": "mt_ckd",
+    "continuum_model": "native MT_CKD 4.3",
+    "line_source": "AER Line File 3.9",
+    "mt_ckd_file": "absco-ref_wv-mt-ckd.nc",
+    "pressure_shift": True,
+    "mixed_precision": True,
+    "vectorize_layers": True,
+    "pixel_integration": "point",
+    "instrument": "boxcar FTS sinc",
+    "max_lsf_sigma_kms": 4.0,
+    "instrument_residual_sigma_kms": 4.0,
+    "zenith_angle_deg": 0.0,
+    "vsini_kms": 2.0,
+    "macroturbulence_kms": 2.15,
+    "stages": list(STAGES),
+}
 
 
 def page_windows(ils_report: Path, epoch: str) -> list[dict]:
@@ -70,12 +97,29 @@ def enable_compilation_cache(directory: Path) -> None:
     jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
 
+def physics_record(root: Path) -> dict:
+    """What produced these numbers: the fixed physics and the code that ran it.
+
+    The driver's own hash is the only thing that pins the parts of the
+    configuration this block does not name, and it is worth more than a commit
+    id here because the pipeline is usually run from a working tree.
+    """
+
+    driver = Path(__file__).resolve()
+    return {
+        **PHYSICS,
+        "driver": driver.name,
+        "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
+        "jax_telluric": version("jax-telluric") if version else None,
+    }
+
+
 def run_one(window, epoch, args, root):
     """Fit one page-epoch and export its corrected spectrum."""
     import jax.numpy as jnp
     from jax_telluric import (
         AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
-        select_significant_lines, trim_wavenumber_grid,
+        chebyshev_continuum, select_significant_lines, trim_wavenumber_grid,
         ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum, TelluricModel,
         OrderObjective, TelluricParameters, arcturus_spectral_order, epoch_velocity_kms,
         fit_order,
@@ -142,20 +186,24 @@ def run_one(window, epoch, args, root):
         databases, grid, methods="direct_sparse",
         temperature_range_k=(float(np.min(profile.temperature_k)), float(np.max(profile.temperature_k))),
         maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
-        vectorize_layers=True, mixed_precision=True, pressure_shift=True,
+        vectorize_layers=PHYSICS["vectorize_layers"],
+        mixed_precision=PHYSICS["mixed_precision"], pressure_shift=PHYSICS["pressure_shift"],
         layer_chunk_size=chunk)
     mark("opacity_prepare")
     continuum = MTCKDWaterContinuum.from_netcdf(
         root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc", grid)
     instrument = BoxcarFTSInstrumentProfile(
         mopd_cm=window["mopd_cm"], wavenumber_center_cm1=float(0.5 * (v1 + v2)),
-        max_residual_sigma_kms=4.0)
-    model = TelluricModel(profile, grid, opacity, continuum=continuum, accuracy_mode="mt_ckd",
-                          max_lsf_sigma_kms=4.0, pixel_integration="point", instrument=instrument)
+        max_residual_sigma_kms=PHYSICS["instrument_residual_sigma_kms"])
+    model = TelluricModel(profile, grid, opacity, continuum=continuum,
+                          accuracy_mode=PHYSICS["accuracy_mode"],
+                          max_lsf_sigma_kms=PHYSICS["max_lsf_sigma_kms"],
+                          pixel_integration=PHYSICS["pixel_integration"], instrument=instrument)
 
     mark("continuum")
     source = prepare_stellar_source(StellarSpectrum.from_npz(args.stellar), model,
-                                    vsini_kms=2.0, macroturbulence_kms=2.15)
+                                    vsini_kms=PHYSICS["vsini_kms"],
+                                    macroturbulence_kms=PHYSICS["macroturbulence_kms"])
     mark("stellar_source")
     order = arcturus_spectral_order(page, source_flux_model_grid=source)
 
@@ -234,8 +282,8 @@ def run_one(window, epoch, args, root):
     star_only = TelluricModel(
         profile, grid,
         ArrayOpacityBackend({s: np.zeros((len(profile.temperature_k), grid.size)) for s in model.species}),
-        accuracy_mode="fast", max_lsf_sigma_kms=4.0,
-        pixel_integration="point", instrument=instrument)
+        accuracy_mode="fast", max_lsf_sigma_kms=PHYSICS["max_lsf_sigma_kms"],
+        pixel_integration=PHYSICS["pixel_integration"], instrument=instrument)
     stellar_only_pixels = np.asarray(star_only.predict(order, result.parameters))
 
     mark("star_only")
@@ -251,11 +299,29 @@ def run_one(window, epoch, args, root):
     exact_model = model.precompute_opacity(parameters)
     exact_flux = np.asarray(exact_model.predict(order, parameters))
     exact_transmission = np.asarray(exact_model.transmission(parameters, order.zenith_angle_deg))
+    # The same continuum predict() applies, on predict's own axis: x runs over
+    # [-1, 1] with the order's ascending wavelength, which is descending
+    # wavenumber, so it is reversed below along with everything else.
+    continuum_pixels = np.asarray(chebyshev_continuum(
+        parameters.continuum_coeffs, np.linspace(-1.0, 1.0, len(order.wavelength_vacuum_nm))))
     model_flux = exact_flux[order_idx]
     star = stellar_only_pixels[order_idx]
     transmission = np.interp(nu, np.asarray(model.wavenumber_cm1), exact_transmission)
-    corrected = (obs / np.maximum(model_flux, 1e-6)) * star
+    continuum = continuum_pixels[order_idx]
     reliable = mask & (transmission >= args.min_transmission)
+    corrected = (obs / np.maximum(model_flux, 1e-6)) * star
+    corrected_normalized = corrected / np.maximum(continuum, 1e-12)
+
+    # Where the correction's level ends up. The fitted continuum cancels out of
+    # the ratio above, so the corrected level is set by the transmission alone,
+    # and on a page with no telluric-free pixel the continuum and the column are
+    # degenerate: the product they form still fits the data, so the residual
+    # looks fine, while the ratio used for the correction is off by the whole
+    # degenerate factor. Comparing the two where the star itself is unabsorbed
+    # turns that into a number instead of leaving it implicit.
+    star_flat = star / np.maximum(continuum, 1e-12)
+    clean = reliable & np.isfinite(corrected) & (star_flat > 0.98) & (star > 1e-6)
+    level = float(np.median(corrected[clean] / star[clean])) if clean.sum() >= 20 else float("nan")
     residual = (np.asarray(order.flux) - exact_flux)[order_idx]
     sigma = float(order.uncertainty[0])
 
@@ -264,6 +330,7 @@ def run_one(window, epoch, args, root):
         args.output_dir / f"{window['page']}_{epoch}.npz",
         wavenumber_cm1=nu, observed=np.where(mask, obs, np.nan), model_flux=model_flux,
         transmission=transmission, corrected=corrected, stellar_only=star,
+        continuum=continuum, corrected_normalized=corrected_normalized,
         residual=residual, mask=mask, reliable=reliable,
         atlas_telluric=page.telluric[::-1], atlas_ratioed=page.ratioed[::-1])
 
@@ -279,11 +346,14 @@ def run_one(window, epoch, args, root):
         "free_species": free_species,
         "negligible_telluric": negligible_telluric,
         "median_transmission": float(np.median(transmission[mask])),
+        "continuum_level": None if level != level else round(level, 4),
+        "continuum_level_pixels": int(clean.sum()),
         "parameters": {**{s: float(parameters.log_column_scales[s]) for s in model.species},
                        "velocity_kms": float(parameters.velocity_kms),
                        "stellar_velocity_kms": float(parameters.stellar_velocity_kms),
                        "lsf_sigma_kms": float(parameters.lsf_sigma_kms),
-                       "log_jitter": float(parameters.log_jitter)},
+                       "log_jitter": float(parameters.log_jitter),
+                       "continuum_coeffs": [float(v) for v in np.asarray(parameters.continuum_coeffs)]},
         "pixel_sigma": sigma,
         "residual_rms": float(np.sqrt(np.mean(residual[mask] ** 2))),
         "residual_rms_over_noise": float(np.sqrt(np.mean(residual[mask] ** 2)) / sigma),
@@ -373,6 +443,7 @@ def main() -> None:
             {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
              "atlas_root": str(args.atlas_root), "stellar": str(args.stellar),
              "profile": str(args.profile),
+             "physics": physics_record(root),
              "settings": {"resolving_power": args.resolving_power,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,

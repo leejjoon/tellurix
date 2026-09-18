@@ -39,6 +39,12 @@ Both fit drivers default to `--precompute-opacity` (see *What a fit costs*);
 `--no-precompute-opacity` restores the exact-kernel-per-iteration path and is
 the control to reach for when a fitted value looks wrong.
 
+The batch driver's saved `transmission` is the **unconvolved** transmission at
+pixel wavenumbers, not the operator the correction applied. That is
+`model_flux / stellar_only`, the convolved effective transmission; the two
+differ by up to 0.126 against 0.0059 of noise. `docs/arcturus_fit.md` lists
+every saved array and the summary's `physics` block.
+
 `scripts/generate_payne_zero_arcturus.py` makes the stellar source and does **not**
 run in this environment: Payne Zero needs Python >= 3.11 while this package is pinned
 to 3.10 by `exojax==2.5.0`. It runs in Payne Zero's own venv and writes an npz that

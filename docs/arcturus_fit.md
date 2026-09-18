@@ -283,6 +283,48 @@ same forward model with the atmosphere removed, and
 `scripts/export_corrected_spectrum.py` uses the model ratio by default, keeping
 the naive division alongside as `corrected_naive` for comparison.
 
+## What the atlas run saves, and which transmission to use
+
+`scripts/fit_arcturus_batch.py` writes one `.npz` per page-epoch under
+`data/corrected/atlas/` and one record per page-epoch in
+`docs/arcturus_atlas_summary.json`.
+
+Each `.npz` holds thirteen arrays on the page's own pixel grid:
+`wavenumber_cm1`, `observed`, `model_flux`, `transmission`, `corrected`,
+`corrected_normalized`, `stellar_only`, `continuum`, `residual`, `mask`,
+`reliable`, and the atlas authors' own `atlas_telluric` and `atlas_ratioed`.
+
+**`transmission` is not the operator that was applied.** It is the
+high-resolution transmission sampled at the pixel wavenumbers -- the atmosphere
+*before* the instrument. What the correction divides by is the convolved
+effective transmission, because the instrument acts on the product of star and
+atmosphere and not on either alone:
+
+```
+effective = model_flux / stellar_only = Conv(T * star) / Conv(star)
+corrected = observed / effective                      (holds to 2.2e-16)
+```
+
+On `ab5000_` summer the two differ by a median of 0.0032 and a maximum of
+0.126, against 0.0059 of pixel noise, and they differ most exactly where the
+lines are sharpest. Dividing by `transmission` instead reintroduces the
+derivative-shaped artefact beside every strong line that the model-ratio
+correction exists to avoid.
+
+The summary carries, per page-epoch: the log column scale of every species in
+the model (a pinned species is recorded at 0.0), `velocity_kms`,
+`stellar_velocity_kms`, `lsf_sigma_kms`, `log_jitter` and `continuum_coeffs`;
+the measured `mopd_cm`; the window, grid size and both margins; per-species line
+counts and peak optical depths and which species were freed; and the quality
+block -- `pixel_sigma`, `residual_rms_over_noise`, `reduced_chi2`,
+`median_transmission`, `continuum_level`, the reliable fraction, convergence and
+a per-stage log. A `physics` block records what is held fixed for every page
+(accuracy mode, pressure shifts, mixed precision, instrument and pixel sampling,
+rotation and macroturbulence, line and continuum sources) together with the
+driver's own SHA-256, which is what pins the rest for a run made from a working
+tree. The first atlas-wide run predates that block and carries a backfilled copy
+marked `"recorded": "backfilled"`.
+
 ## L5 — two epochs
 
 Summer and winter fitted independently, same stellar spectrum, each with its

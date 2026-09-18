@@ -30,6 +30,7 @@ from jax_telluric import (
     arcturus_spectral_order,
     epoch_velocity_kms,
     OrderObjective,
+    chebyshev_continuum,
     trim_wavenumber_grid,
     fit_order,
     igrins_wavenumber_grid,
@@ -346,6 +347,9 @@ def main() -> None:
     exact_flux = np.asarray(exact_model.predict(order, result.parameters))
     exact_transmission = np.asarray(
         exact_model.transmission(result.parameters, order.zenith_angle_deg))
+    continuum_pixels = np.asarray(chebyshev_continuum(
+        result.parameters.continuum_coeffs,
+        np.linspace(-1.0, 1.0, len(order.wavelength_vacuum_nm))))
     residual = np.asarray(order.flux) - exact_flux
     mask = np.asarray(order.mask)
     scaled = residual[mask] / np.asarray(order.uncertainty)[mask]
@@ -445,7 +449,7 @@ def main() -> None:
         # sits in the core of every saturated line and will look like a feature
         # if it is plotted, so keep the untouched column alongside it.
         observed_raw=getattr(page, args.column)[::-1],
-        model_flux=exact_flux, residual=residual,
+        model_flux=exact_flux, residual=residual, continuum=continuum_pixels,
         transmission_pixels=transmission_pixels,
         atlas_telluric=atlas_telluric, atlas_ratioed=page.ratioed[::-1],
         grid_wavenumber_cm1=np.asarray(model.wavenumber_cm1),
