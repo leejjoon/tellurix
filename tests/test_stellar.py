@@ -93,3 +93,32 @@ def test_prepare_normalizes_and_matches_the_model_grid():
 def test_flat_source_is_a_unit_spectrum():
     nu = np.geomspace(4300.0, 4310.0, 64)
     np.testing.assert_allclose(StellarSpectrum.flat(nu).flux, 1.0)
+
+
+def test_a_finer_source_is_accepted_across_the_whole_range():
+    """The spacing test must compare velocities, not raw wavenumbers.
+
+    A log-uniform source's wavenumber spacing varies across it in proportion to
+    wavenumber. Comparing its *global median* spacing against the model grid's
+    *local* spacing made the test depend on where in the file the median fell:
+    a source spanning 900-5400 nm has its median near 4536 cm-1, six times its
+    spacing at the red end, and every window below 2016 cm-1 was rejected
+    although the source resolves 1.5x finer than the model everywhere.
+    """
+    source_power, target_power = 600_000.0, 400_000.0
+    source = np.geomspace(1850.0, 11200.0, int(np.log(11200.0 / 1850.0) * source_power) + 1)
+    spectrum = StellarSpectrum(source, 1.0 - 0.3 * np.sin(source))
+    for lower, upper in ((1860.0, 1890.0), (2021.0, 2026.0), (5005.0, 5025.0), (10800.0, 10850.0)):
+        target = np.geomspace(lower, upper, int(np.log(upper / lower) * target_power) + 1)
+        resampled = resample_stellar_source(spectrum, target)
+        assert resampled.shape == target.shape
+        assert np.all(np.isfinite(resampled))
+
+
+def test_resampling_still_refuses_a_genuinely_coarser_source():
+    """The guard must survive the fix: a real under-sampling is still an error."""
+    target = np.geomspace(2000.0, 2010.0, int(np.log(2010.0 / 2000.0) * 400_000.0) + 1)
+    coarse = np.geomspace(1990.0, 2020.0, int(np.log(2020.0 / 1990.0) * 100_000.0) + 1)
+    spectrum = StellarSpectrum(coarse, np.ones_like(coarse))
+    with pytest.raises(ValueError, match="coarser than the model grid"):
+        resample_stellar_source(spectrum, target)

@@ -95,12 +95,21 @@ def resample_stellar_source(spectrum: StellarSpectrum, wavenumber_cm1: np.ndarra
             f"the stellar model covers {source[0]:.3f}-{source[-1]:.3f} cm-1 but the model grid "
             f"needs {target[0]:.3f}-{target[-1]:.3f} cm-1"
         )
-    source_step = float(np.median(np.diff(source)))
-    target_step = float(np.median(np.diff(target)))
+    # Compare in velocity, over the target's own range. Both grids are uniform
+    # in log wavenumber, where a constant step is a constant velocity, and a
+    # raw wavenumber spacing is not comparable between them: this source spans
+    # 900-5400 nm, so its median spacing is the value near 4536 cm-1, six times
+    # its spacing at the red end. Tested against the model's local spacing that
+    # rejected every page below 2016 cm-1 even though the source is finer than
+    # the model everywhere -- R = 600,000 against 400,000.
+    lower, upper = np.searchsorted(source, [target[0], target[-1]])
+    window = source[max(int(lower) - 1, 0) : int(upper) + 1]
+    source_step = float(np.median(np.diff(np.log(window))) * _C_KMS)
+    target_step = float(np.median(np.diff(np.log(target))) * _C_KMS)
     if source_step > 1.5 * target_step:
         raise ValueError(
-            f"the stellar model is sampled at {source_step:.5f} cm-1, coarser than the model "
-            f"grid's {target_step:.5f} cm-1; synthesize it at higher resolution"
+            f"the stellar model is sampled at {source_step:.4f} km/s over this window, coarser "
+            f"than the model grid's {target_step:.4f} km/s; synthesize it at higher resolution"
         )
     return np.interp(target, source, spectrum.flux)
 
