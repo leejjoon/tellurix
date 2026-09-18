@@ -24,22 +24,7 @@ from pathlib import Path
 
 import numpy as np
 
-
-def chebyshev_continuum(coefficients: np.ndarray, count: int) -> np.ndarray:
-    """Reproduce TelluricModel.predict's exp(Chebyshev) continuum."""
-    x = np.linspace(-1.0, 1.0, count)
-    total = np.zeros(count)
-    t0, t1 = np.ones(count), x
-    for index, value in enumerate(np.asarray(coefficients)):
-        if index == 0:
-            total = total + value * t0
-        elif index == 1:
-            total = total + value * t1
-        else:
-            t2 = 2.0 * x * t1 - t0
-            total = total + value * t2
-            t0, t1 = t1, t2
-    return np.exp(total)
+from jax_telluric import chebyshev_continuum
 
 
 def main() -> None:
@@ -63,9 +48,9 @@ def main() -> None:
     wavenumber = take("wavenumber_cm1")
     flux, mask = take("flux"), take("mask")
     transmission = take("transmission_pixels")
-    continuum = chebyshev_continuum(
-        np.asarray(meta["parameters"]["continuum_coeffs"]), flux.size
-    )[order]
+    continuum = np.asarray(chebyshev_continuum(
+        np.asarray(meta["parameters"]["continuum_coeffs"]), np.linspace(-1.0, 1.0, flux.size)
+    ))[order]
 
     safe = np.maximum(transmission, 1.0e-6)
     # The naive correction, kept for comparison. It divides by a *convolved*

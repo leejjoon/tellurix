@@ -75,6 +75,28 @@ def trim_wavenumber_grid(
     return trimmed
 
 
+def chebyshev_continuum(coefficients, x) -> jnp.ndarray:
+    """Multiplicative continuum: the exponential of a Chebyshev series on x.
+
+    ``x`` runs over [-1, 1] across the order. Taking the exponential keeps the
+    continuum positive for any coefficients, so the fitter never has to be
+    stopped from walking through zero.
+    """
+
+    coefficients = jnp.asarray(coefficients)
+    x = jnp.asarray(x)
+    t0 = jnp.ones_like(x)
+    total = coefficients[0] * t0
+    if coefficients.size > 1:
+        t1 = x
+        total = total + coefficients[1] * t1
+        for index in range(2, coefficients.size):
+            t2 = 2.0 * x * t1 - t0
+            total = total + coefficients[index] * t2
+            t0, t1 = t1, t2
+    return jnp.exp(total)
+
+
 class OpacityBackend(Protocol):
     """Internal seam for prepared opacity implementations."""
 
@@ -577,15 +599,4 @@ class TelluricModel:
             left = jnp.interp(pixel_edges[:-1], wavelength_hi[::-1], convolved_hi[::-1])
             right = jnp.interp(pixel_edges[1:], wavelength_hi[::-1], convolved_hi[::-1])
             pixel_average = (left + 4.0 * center + right) / 6.0
-        coefficients = jnp.asarray(parameters.continuum_coeffs)
-        t0 = jnp.ones_like(x)
-        continuum_log = coefficients[0] * t0
-        if coefficients.size > 1:
-            t1 = x
-            continuum_log = continuum_log + coefficients[1] * t1
-            for index in range(2, coefficients.size):
-                t2 = 2.0 * x * t1 - t0
-                continuum_log = continuum_log + coefficients[index] * t2
-                t0, t1 = t1, t2
-        continuum = jnp.exp(continuum_log)
-        return continuum * pixel_average
+        return chebyshev_continuum(parameters.continuum_coeffs, x) * pixel_average

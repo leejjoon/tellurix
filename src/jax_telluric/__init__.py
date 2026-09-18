@@ -32,6 +32,7 @@ from .reference import (
 )
 from .model import (
     ArrayOpacityBackend,
+    chebyshev_continuum,
     LinearizedOpacityBackend,
     BoxcarFTSInstrumentProfile,
     ReferenceWaterContinuum,
@@ -49,6 +50,7 @@ from .types import AtmosphereProfile, SpectralOrder, TelluricParameters
 
 __all__ = [
     "ArrayOpacityBackend",
+    "chebyshev_continuum",
     "LinearizedOpacityBackend",
     "AERLineDatabase",
     "ArcturusPage",
