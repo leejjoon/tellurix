@@ -286,8 +286,12 @@ the naive division alongside as `corrected_naive` for comparison.
 ## What the atlas run saves, and which transmission to use
 
 `scripts/fit_arcturus_batch.py` writes one `.npz` per page-epoch under
-`data/corrected/atlas/` and one record per page-epoch in
-`docs/arcturus_atlas_summary.json`.
+`data/corrected/atlas/`, and its own summary beside them in
+`data/corrected/atlas/summary.json`. That file is not kept in git: at atlas
+scale it is 1.6 MB, most of it per-page phase timings and a per-stage optimizer
+log. `scripts/trim_atlas_summary.py` reduces it to the committed record in
+`docs/arcturus_atlas_summary.json`, which keeps the window, the fitted
+parameters and the quality numbers, one page-epoch per line.
 
 Each `.npz` holds thirteen arrays on the page's own pixel grid:
 `wavenumber_cm1`, `observed`, `model_flux`, `transmission`, `corrected`,

@@ -385,7 +385,11 @@ def main() -> None:
                         help="free a species only if its peak vertical optical depth reaches this")
     parser.add_argument("--min-transmission", type=float, default=0.15)
     parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/atlas")
-    parser.add_argument("--summary", type=Path, default=root / "docs/arcturus_atlas_summary.json")
+    # Not under docs/: the full summary carries per-page timings and a per-stage
+    # optimizer log, 1.6 MB at atlas scale. scripts/trim_atlas_summary.py cuts it
+    # down to the record that belongs in git.
+    parser.add_argument("--summary", type=Path,
+                        default=root / "data/corrected/atlas/summary.json")
     parser.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--precompute-opacity", action=argparse.BooleanOptionalAction, default=True,
                         help="evaluate the line-by-line kernel once per page instead of per iteration")

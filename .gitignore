@@ -16,6 +16,9 @@ data/stellar/*.npz
 # The .json summaries beside them stay in git.
 data/corrected/**/*.npz
 data/corrected/review/panels/
+# The batch driver's own summary; scripts/trim_atlas_summary.py writes the
+# committed record to docs/arcturus_atlas_summary.json.
+data/corrected/atlas/*.json
 build/
 dist/
 benchmarks/results/*.json

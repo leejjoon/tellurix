@@ -33,7 +33,14 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/make_site_profile.py          # sit
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_arcturus_fit.py      # synthetic checks L0-L2
 UV_CACHE_DIR=.uv-cache uv run python scripts/fit_arcturus_page.py --stellar <npz>
 UV_CACHE_DIR=.uv-cache uv run python scripts/fit_arcturus_batch.py         # resumable, whole atlas
+UV_CACHE_DIR=.uv-cache uv run python scripts/trim_atlas_summary.py         # -> docs/arcturus_atlas_summary.json
 ```
+
+The batch driver writes its full summary to `data/corrected/atlas/summary.json`
+(gitignored — 1.6 MB at atlas scale, mostly per-page timings and a per-stage
+optimizer log). `trim_atlas_summary.py` reduces it to the 0.39 MB record under
+`docs/`, keeping the window, the fitted parameters and the quality numbers, and
+lifting per-page fields that never vary into `settings`.
 
 Both fit drivers default to `--precompute-opacity` (see *What a fit costs*);
 `--no-precompute-opacity` restores the exact-kernel-per-iteration path and is
