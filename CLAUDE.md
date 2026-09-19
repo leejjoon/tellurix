@@ -103,11 +103,22 @@ correlate at r~0.7 unshifted). `leave_one_out_patterns` (`igrins.py`) measures
 it per order from a night's frames and the driver runs **two passes**: fit,
 build each frame's pattern from the *others*, divide flux and uncertainty by
 1 + pattern, refit. Dividing the data equals multiplying the model, so the
-forward model is untouched. Worth 1.9 to 0.80 sigma on the H ladder, 1.8x in
+forward model is untouched. Worth 1.9 to 1.30 sigma on the H ladder, 1.8x in
 runtime, and it needs at least five frames.
 
-**Never build a frame's pattern from that frame.** It would absorb genuine
-residual and flatter the telluric model; every reported number is leave-one-out.
+**Two guards, and the second is the one that is easy to miss.** Never build a
+frame's pattern from that frame -- it would fit that frame's noise. And always
+smooth the pattern (`--pattern-smooth-pixels`, default 51): leave-one-out does
+nothing about a systematic *every* frame shares, and our own telluric model
+error is exactly that, since every frame looks through the same sky with the
+same line list. Measured: the unsmoothed pattern's high-frequency component
+correlates with absorption depth at r = +0.44 and scales with how much
+absorption an order has, while the smooth component correlates at +0.05.
+Splitting orders by whether they have lines shows what each half is worth --
+line-free orders go 2.16 -> 1.34 sigma smoothed and 0.80 unsmoothed, absorbing
+orders 2.28 -> 1.94 -> 1.02. The extra in absorbing orders is the line list.
+Running with `--pattern-smooth-pixels 0` reports 0.80 sigma instead of 1.30 and
+makes the residual meaningless as a test of the telluric model.
 
 Two things that looked like the cause and are not: the continuum coefficient
 bound was binding on 218 of 248 order-frames yet loosening it changes the

@@ -215,9 +215,9 @@ target above airmass 1.82.
 
 | species | orders/frame | per airmass | per hour | joint d/dAM | frame scatter |
 |---|---:|---:|---:|---:|---:|
-| H2O | 39 | +0.1321 ± 0.0645 (2.0σ) | **-0.0368 ± 0.0068 (5.4σ)** | -0.0260 | 0.1181 |
-| CO2 | 18 | -0.0006 ± 0.0052 (0.1σ) | +0.0004 ± 0.0008 (0.6σ) | +0.0036 | 0.0101 |
-| CH4 | 19 | +0.0030 ± 0.0071 (0.4σ) | -0.0004 ± 0.0011 (0.3σ) | +0.0000 | 0.0042 |
+| H2O | 39 | +0.1280 ± 0.0534 (2.4σ) | **-0.0342 ± 0.0058 (5.9σ)** | -0.0254 | 0.1164 |
+| CO2 | 18 | -0.0014 ± 0.0059 (0.2σ) | +0.0013 ± 0.0009 (1.5σ) | +0.0078 | 0.0110 |
+| CH4 | 19 | +0.0153 ± 0.0080 (1.9σ) | -0.0018 ± 0.0015 (1.2σ) | +0.0165 | 0.0111 |
 
 ### One target carries every slope
 
@@ -225,15 +225,13 @@ Refitting with each object dropped in turn:
 
 | species | slope, all 10 frames | without chi Cap | shift |
 |---|---:|---:|---:|
-| H2O | +0.1321 | +0.3968 | 4.1σ |
-| CO2 | -0.0006 | -0.0102 | 1.8σ |
-| CH4 | +0.0030 | -0.0026 | 0.8σ |
+| H2O | +0.1280 | +0.3088 | 3.4σ |
+| CO2 | -0.0014 | -0.0218 | 3.5σ |
+| CH4 | +0.0153 | +0.0045 | 1.3σ |
 
-Dropping chi Cap still moves the water slope by 4.1 sigma — but water genuinely
+Dropping chi Cap still moves the water slope by 3.4 sigma — but water genuinely
 varies, so that is weather. For the well-mixed species the correction above
-largely cured it: CH4's leave-one-out shift fell from 2.5σ to **0.8σ** and CO2's
-from 2.6σ to 1.8σ, because part of what made chi Cap look different was the
-frame-varying component of the instrument response.
+largely cured it: CH4's leave-one-out shift is 1.3σ and CO2's 3.5σ.
 
 **The defensible statement is still narrower than the table alone suggests.**
 chi Cap is the only target above airmass 1.82, so star identity and airmass stay
@@ -438,43 +436,66 @@ It is the same pattern in every frame:
 
 That is the instrument, and it can be measured and divided out.
 
-### The correction
+### The correction, and the guard that matters more than it
 
 `leave_one_out_patterns` (in `igrins.py`) takes the fractional model error of
 every frame of a night at one order and returns, for each frame, the median of
-the **others**. The driver runs two passes: fit, build the patterns, divide the
-flux and its uncertainty by `1 + pattern`, refit. Dividing the data is
-algebraically identical to multiplying the model, so the forward model is
-untouched.
+the **others**, smoothed on a 51-pixel boxcar. The driver runs two passes: fit,
+build the patterns, divide the flux and its uncertainty by `1 + pattern`, refit.
+Dividing the data is algebraically identical to multiplying the model, so the
+forward model is untouched.
 
-Deriving a frame's correction from the other frames only is what makes this a
-calibration rather than a way of fitting the noise. A pattern taken from the
-frame it corrects would absorb genuine residual and flatter the telluric model —
-the self-validation trap — so every number below is leave-one-out.
+Two independent things have to be guarded, and only the first is obvious.
 
-| | before | after | gain |
+**Leave-one-out** stops the pattern absorbing the noise of the frame it
+corrects. A pattern taken from that frame would fit its noise and flatter
+everything downstream.
+
+**Smoothing** stops it absorbing a systematic that *every* frame shares — and
+our own telluric model error is exactly that, since every frame looks through
+the same sky with the same line list. Leave-one-out does nothing about it. The
+unsmoothed pattern's high-frequency component correlates with the absorption
+depth at **r = +0.44** and with the transmission gradient at +0.39, and its
+amplitude tracks how much absorption an order has: 0.013 of the continuum where
+the median transmission is 0.67, 0.003 where it is 0.999 — the noise floor. The
+smooth component, by contrast, correlates with depth at **+0.05**. The split is
+clean, and the fine-scale half is the line list, not the instrument.
+
+Splitting the orders by whether they contain lines at all settles what each half
+is worth (leave-one-out throughout):
+
+| | no correction | smoothed (51 px) | unsmoothed |
 |---|---:|---:|---:|
-| pooled over seven orders | 1.48σ | **0.86σ** | 1.72 |
-| H02, high x only | 2.65σ | 1.07σ | 2.5 |
-| H24, high x only | 1.73σ | 0.87σ | 2.0 |
-| whole ladder, H band | ~1.9σ | **0.80σ** | |
-| whole ladder, K band | ~1.9σ | **0.83σ** | |
+| line-free orders, median T > 0.99 | 2.16σ | **1.34σ** | 0.80σ |
+| absorbing orders | 2.28σ | **1.94σ** | 1.02σ |
 
-The median pattern amplitude is 2.1% of the continuum.
+In a line-free order there is nothing telluric to absorb, so the whole gain is
+instrumental. In an absorbing order the unsmoothed correction buys far more —
+and that extra is the model error we are trying to measure. A 51-pixel boxcar,
+about fifteen resolution elements, keeps the broad response error (which runs
+over hundreds of pixels at the red edge) and leaves telluric-scale structure in
+the residual. On a synthetic test it recovers a broad injected component to
+0.0012 while leaking 8.4% of a line-scale one, against 100% unsmoothed.
 
-With the pattern in place the throughput floor goes back to **0.25** — its job
-is now only to drop genuinely dead pixels. At 0.25 the correction takes one
-order from 2.59σ to 0.89σ, and 0.25 and 0.45 then land within 0.08σ of each
-other, so the 16% of pixels and the one order per band that a 0.45 floor cost
-are worth keeping. The second pass costs about 1.8× in runtime (5.4 to 9.6 s per
-order-frame).
+Over the whole ladder the median residual goes from about 1.9σ to **1.30σ** in H
+and **1.29σ** in K. Running unsmoothed would report 0.80σ and 0.83σ, and that
+number would be meaningless as a test of the telluric model.
+`--pattern-smooth-pixels 0` disables the guard and is documented as such.
 
-A residual of 0.80σ is *below* the quoted photon noise, which says the PLP's
-variance is conservative by roughly 15%. That is worth understanding rather
-than banking, and is on the list below.
+The median pattern amplitude is 2.1% of the continuum. With the pattern in place
+the throughput floor goes back to **0.25** — its job is now only to drop dead
+pixels — recovering the 16% of pixels and the one order per band that a 0.45
+floor cost. The second pass costs about 1.8× in runtime.
 
-**It needs at least five frames of a night** (`--fixed-pattern-min-frames`),
-and it is per night — night-to-night stability is untested.
+**It needs at least five frames of a night** (`--fixed-pattern-min-frames`), and
+it is per night; night-to-night stability is untested.
+
+### What the high-frequency half is good for
+
+It is a measurement, not a nuisance: the part of the residual that repeats
+across every frame of a night and scales with absorption depth is an empirical
+map of the telluric line list's errors at this resolution. Nothing here exploits
+that yet, but it is the natural thing to compare against a different line list.
 
 ## The run record
 
