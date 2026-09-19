@@ -63,6 +63,11 @@ class Site:
     temperature_unit: str  # "C" or "F"
     pressure_unit: str  # "hPa" or "inHg"
     pressure_reference: str  # "station" or "sea_level"
+    # Matched case-insensitively as substrings of TELESCOP and then OBSERVAT.
+    # Neither card is stable: one McDonald frame says TELESCOP='Harlen J.
+    # Smith' and OBSERVAT='McDonald Observatory', an older one says
+    # '2.7-m Harlen J. Smith' and plain 'McDonald'.
+    aliases: tuple[str, ...] = ()
 
 
 # Keyed on the TELESCOP card. The conventions are measured, not documented:
@@ -71,9 +76,16 @@ class Site:
 # which is impossible at 2360 m and is therefore reduced to sea level; Gemini
 # South reports 730 hPa, which is the true station pressure at Cerro Pachon.
 SITES: Mapping[str, Site] = {
-    "McDonald": Site("McDonald Observatory", 2.077, "F", "inHg", "station"),
-    "Discovery Channel": Site("Lowell Discovery Telescope", 2.360, "C", "hPa", "sea_level"),
-    "Gemini South": Site("Gemini South", 2.722, "C", "hPa", "station"),
+    "McDonald": Site("McDonald Observatory", 2.077, "F", "inHg", "station",
+                     ("mcdonald", "harlen j. smith", "otto struve")),
+    "DCT": Site("Lowell Discovery Telescope", 2.360, "C", "hPa", "sea_level",
+                ("discovery channel", "lowell", "dct")),
+    # Deliberately not aliased to a bare "gemini observatory": that card cannot
+    # tell South from North, and IGRINS-2 is at Gemini North on a different
+    # mountain. An unrecognised Gemini frame should raise, not be placed on
+    # Cerro Pachon by default.
+    "Gemini South": Site("Gemini South", 2.722, "C", "hPa", "station",
+                         ("gemini south", "cerro pachon")),
 }
 
 
@@ -135,6 +147,19 @@ def stellar_line_mask(
     return np.all(np.abs(velocity) > half_width_kms, axis=1)
 
 
+def _number(value, default=np.nan) -> float:
+    """A header value as a float, tolerating the blanks the old schema leaves.
+
+    The 2014 McDonald headers carry several numeric cards as empty strings,
+    which ``float()`` refuses; there is nothing wrong with the frame.
+    """
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _card(header: Mapping[str, object], key: str) -> float | None:
     """A numeric header card, or ``None`` when it is absent or blank.
 
@@ -154,15 +179,28 @@ def _card(header: Mapping[str, object], key: str) -> float | None:
 
 
 def site_for(header: Mapping[str, object]) -> Site:
-    """The :class:`Site` a frame was taken at, from its ``TELESCOP`` card."""
+    """The :class:`Site` a frame was taken at, from ``TELESCOP`` or ``OBSERVAT``.
 
-    telescope = str(header.get("TELESCOP", "")).strip()
-    for key, site in SITES.items():
-        if telescope.startswith(key):
-            return site
+    Both cards are tried because neither is stable across the archive, and
+    neither is the observatory's formal name: McDonald frames identify the
+    telescope ('Harlen J. Smith', '2.7-m Harlen J. Smith') while DCT frames
+    identify the programme ('Discovery Channel'). Matching is on a per-site
+    alias list rather than on a prefix, so a new spelling fails loudly instead
+    of being silently attached to whichever site sorts first.
+    """
+
+    cards = [str(header.get(key, "")).strip() for key in ("TELESCOP", "OBSERVAT")]
+    for card in cards:
+        lowered = card.lower()
+        if not lowered:
+            continue
+        for site in SITES.values():
+            if any(alias in lowered for alias in site.aliases):
+                return site
+    named = " / ".join(c for c in cards if c) or "nothing"
     raise ValueError(
-        f"unknown IGRINS telescope {telescope!r}; add it to SITES with its altitude "
-        "and the unit conventions its headers use"
+        f"unknown IGRINS telescope: the header says {named}. Add an alias to SITES "
+        "with the site's altitude and the unit conventions its headers use."
     )
 
 
@@ -434,8 +472,8 @@ def read_igrins_observation(
         object_type=str(header.get("OBJTYPE", "")).strip(),
         telescope=str(header.get("TELESCOP", "")).strip(),
         date_obs=str(header.get("DATE-OBS", "")).strip(),
-        mjd=float(header.get("MJD-OBS", np.nan)),
-        exposure_time_s=float(header.get("EXPTIME", np.nan)),
+        mjd=_number(header.get("MJD-OBS")),
+        exposure_time_s=_number(header.get("EXPTIME")),
         zenith_angle_deg=zenith_angle_deg(header),
         wavelength_vacuum_nm=wavelength_um * 1000.0,
         flux=flux,

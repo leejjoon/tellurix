@@ -255,3 +255,59 @@ def test_a_missing_variance_file_is_refused(tmp_path):
     shutil.copy(FIXTURE, spec)
     with pytest.raises(FileNotFoundError):
         read_igrins_observation(spec)
+
+
+# --- what the real archive actually puts in TELESCOP ---
+
+# The reduced McDonald headers name the telescope, not the observatory, and the
+# spelling changed: 2014 says '2.7-m Harlen J. Smith' with OBSERVAT 'McDonald',
+# 2017 says 'Harlen J. Smith' with OBSERVAT 'McDonald Observatory'. An earlier
+# version of SITES keyed on a 'McDonald' prefix of TELESCOP and matched neither.
+MCDONALD_2017 = {"TELESCOP": "Harlen J. Smith", "OBSERVAT": "McDonald Observatory",
+                 "AIRTEMP": 65.0, "BARPRESS": 23.6, "HUMIDITY": 49.0, "ZDSTART": 37.79,
+                 "ZDEND": 37.93}
+MCDONALD_2014 = {"TELESCOP": "2.7-m Harlen J. Smith", "OBSERVAT": "McDonald",
+                 "AIRTEMP": "", "BARPRESS": "", "HUMIDITY": "", "ZDSTART": "",
+                 "AMSTART": 1.0110, "AMEND": 1.0115}
+
+
+@pytest.mark.parametrize("header", [MCDONALD_2017, MCDONALD_2014])
+def test_mcdonald_is_recognised_however_the_header_spells_it(header):
+    assert site_for(header).name == "McDonald Observatory"
+
+
+def test_the_mcdonald_convention_on_a_real_header():
+    """65 degF and 23.6 inHg, which is 291.5 K and 799 hPa at 2077 m."""
+    conditions = surface_conditions(MCDONALD_2017)
+    assert conditions["temperature_k"] == pytest.approx(291.48, abs=0.05)
+    assert conditions["pressure_hpa"] == pytest.approx(799.2, abs=1.0)
+    assert conditions["relative_humidity_percent"] == 49.0
+
+
+def test_the_observatory_card_is_used_when_the_telescope_card_is_unknown():
+    assert site_for({"TELESCOP": "something new", "OBSERVAT": "Lowell Observatory"}).name == (
+        "Lowell Discovery Telescope")
+
+
+def test_a_bare_gemini_card_is_refused_because_it_cannot_tell_north_from_south():
+    """IGRINS-2 is at Gemini North, 1900 m higher up a different mountain."""
+    with pytest.raises(ValueError, match="unknown IGRINS telescope"):
+        site_for({"TELESCOP": "Gemini", "OBSERVAT": "Gemini Observatory"})
+    assert site_for({"TELESCOP": "Gemini South", "OBSERVAT": "Gemini Observatory"}).name == (
+        "Gemini South")
+
+
+def test_blank_numeric_cards_do_not_break_the_reader():
+    """The 2014 schema leaves several numeric cards as empty strings."""
+    from jax_telluric.igrins import _number
+
+    assert np.isnan(_number(""))
+    assert np.isnan(_number(None))
+    assert _number("", default=0.0) == 0.0
+    assert _number("1.25") == pytest.approx(1.25)
+    # And the zenith angle still comes out, from the airmass fallback.
+    assert zenith_angle_deg(MCDONALD_2014) == pytest.approx(
+        np.degrees(np.arccos(1.0 / 1.01125)), abs=1e-6)
+    blank = surface_conditions(MCDONALD_2014)
+    assert all(blank[key] is None for key in
+               ("temperature_k", "pressure_hpa", "relative_humidity_percent"))
