@@ -85,14 +85,14 @@ PHYSICS = {
 # How an extracted order becomes a fittable one.
 ORDER = {
     "saturation_floor": 0.02,
-    # Measured by sweeping it against a *fixed* reference set -- the middle
-    # third of each order, identical for every setting, so the improvement is
-    # not just the cut hiding the pixels it removed. 0.25 to 0.45 takes the
-    # reference residual from 1.86 to 1.67 sigma for 16% fewer pixels and one
-    # order per band: the red edge was corrupting the whole-order continuum,
-    # not merely fitting badly itself. Raising the continuum degree from 9 to
-    # 13 adds only 0.03 on top and four more parameters.
-    "throughput_floor": 0.45,
+    # The floor's job is only to drop genuinely unusable pixels. It used to do
+    # more: without the fixed-pattern correction below, the red edge of every
+    # order corrupted the whole-order continuum, and raising this to 0.45 took
+    # the residual on a fixed middle-third reference set from 1.86 to 1.67 for
+    # 16% fewer pixels. The pattern handles that far better -- at 0.25 it takes
+    # one order from 2.59 to 0.89 -- and with it in place 0.25 and 0.45 land
+    # within 0.08 sigma of each other, so the pixels are worth keeping.
+    "throughput_floor": 0.25,
     "continuum_percentile": 95.0,
     "mask_hydrogen_kms": 600.0,
     "minimum_pixels": 256,
@@ -251,8 +251,14 @@ def build_order_context(observation, index, args, root, profile, stellar):
     }
 
 
-def fit_one(context, observation, args, objective):
+def fit_one(context, observation, args, objective, response=None, write_arrays=True):
     """Fit one order of one frame, reusing whatever the context already built.
+
+    ``response`` is a fractional instrument-response correction for this order,
+    measured from the *other* frames of the night (see
+    :func:`leave_one_out_patterns`). Dividing the flux and its uncertainty by
+    ``1 + response`` is algebraically identical to multiplying the model by it,
+    and needs no change to the forward model.
 
     Returns the row and the objective -- the compiled one when it could be
     rebound onto this frame, a fresh one when it could not.
@@ -260,8 +266,8 @@ def fit_one(context, observation, args, objective):
 
     from jax_telluric import (
         ArrayOpacityBackend, OrderObjective, TelluricModel, TelluricParameters,
-        chebyshev_continuum, continuum_level, fit_order, igrins_spectral_order,
-        ils_fingerprint,
+        SpectralOrder, chebyshev_continuum, continuum_level, fit_order,
+        igrins_spectral_order, ils_fingerprint,
     )
 
     timing, started = {}, time.time()
@@ -288,6 +294,13 @@ def fit_one(context, observation, args, objective):
         raise RuntimeError(
             f"order {index} keeps {int(np.count_nonzero(order.mask))} pixels, "
             f"below the {ORDER['minimum_pixels']} this driver requires")
+    if response is not None:
+        scale = 1.0 + np.clip(np.asarray(response, dtype=float), -0.8, 5.0)
+        order = SpectralOrder(
+            order.wavelength_vacuum_nm, np.asarray(order.flux) / scale,
+            np.asarray(order.uncertainty) / scale, mask=order.mask,
+            zenith_angle_deg=order.zenith_angle_deg,
+            source_flux_model_grid=order.source_flux_model_grid)
     mark("order")
 
     degree = args.continuum_degree
@@ -383,8 +396,20 @@ def fit_one(context, observation, args, objective):
     residual_rms = float(np.sqrt(np.mean(residual[reliable] ** 2))) if reliable.any() else float("nan")
     mark("products")
 
+    # The fractional model error on the order's own axis, which is what the
+    # night's other frames are averaged over to find the fixed pattern. Only
+    # where the model is well above zero: in a saturated core the ratio is
+    # meaningless and would dominate a median.
+    native_model = np.asarray(exact.predict(order, parameters))
+    native_continuum = np.asarray(chebyshev_continuum(
+        parameters.continuum_coeffs, np.linspace(-1.0, 1.0, len(order.wavelength_vacuum_nm))))
+    deep = native_model > 0.2 * native_continuum
+    fractional = np.where(
+        np.asarray(order.mask) & deep,
+        (np.asarray(order.flux) - native_model) / np.maximum(native_model, 1e-12), np.nan)
+
     stem = observation.path.name.split(".")[0]
-    if args.output_dir is not None:
+    if args.output_dir is not None and write_arrays:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         arrays = dict(
             wavenumber_cm1=nu, observed=np.where(mask, observed, np.nan),
@@ -395,6 +420,8 @@ def fit_one(context, observation, args, objective):
             arrays["plp_telluric"] = plp_telluric
         if extracted.plp_continuum is not None:
             arrays["plp_continuum"] = np.asarray(extracted.plp_continuum)[axis]
+        if response is not None:
+            arrays["response_pattern"] = np.asarray(response)[axis]
         np.savez_compressed(args.output_dir / f"{stem}_{extracted.name}.npz", **arrays)
 
     names = list(objective.codec.names)
@@ -480,6 +507,11 @@ def fit_one(context, observation, args, objective):
     }
     row["_parameter_names"] = tuple(names)
     row["_species"] = tuple(model.species)
+    row["_fractional_residual"] = fractional
+    row["response_pattern_rms"] = (
+        float(np.sqrt(np.nanmean(np.asarray(response)[np.asarray(order.mask)] ** 2)))
+        if response is not None else 0.0)
+    row["_record"]["response_pattern_rms"] = row["response_pattern_rms"]
     return row, objective
 
 
@@ -563,6 +595,14 @@ def main() -> None:
                              "each other and each keeps only its own orders.")
     parser.add_argument("--precompute-opacity", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--self-broadening", choices=("linear", "frozen"), default="linear")
+    parser.add_argument("--throughput-floor", type=float, default=None,
+                        help="override ORDER['throughput_floor']; the cut on the smoothed blaze")
+    parser.add_argument("--fixed-pattern", action=argparse.BooleanOptionalAction, default=True,
+                        help="measure each order's repeatable instrument response from the "
+                             "night's OTHER frames and divide it out, then refit. Worth about "
+                             "1.7x on the residual and most of that at the order edges.")
+    parser.add_argument("--fixed-pattern-min-frames", type=int, default=5,
+                        help="below this many frames the pattern is too noisy to be a calibration")
     parser.add_argument("--no-covariance", action="store_true",
                         help="skip the formal errors, and with them the 8.2 s Hessian compile")
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"),
@@ -570,6 +610,8 @@ def main() -> None:
     parser.add_argument("--platform", choices=("cpu", "gpu"), default="gpu")
     args = parser.parse_args()
 
+    if args.throughput_floor is not None:
+        ORDER["throughput_floor"] = args.throughput_floor
     os.environ["JAX_PLATFORMS"] = "cuda" if args.platform == "gpu" else "cpu"
     os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
     # Path("") is Path("."), which is truthy -- check the string, not the path,
@@ -580,7 +622,8 @@ def main() -> None:
         jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
         jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
-    from jax_telluric import StellarSpectrum, load_atmosphere_csv, read_igrins_observation
+    from jax_telluric import (StellarSpectrum, leave_one_out_patterns, load_atmosphere_csv,
+                              read_igrins_observation)
 
     observations = [read_igrins_observation(path) for path in args.spec]
     profile = load_atmosphere_csv(root / args.profile)
@@ -607,6 +650,7 @@ def main() -> None:
 
     for index in indices:
         context, objective = None, None
+        first_pass = []
         for observation in observations:
             if context is None:
                 try:
@@ -621,19 +665,48 @@ def main() -> None:
                     continue
             began = time.time()
             try:
-                row, objective = fit_one(context, observation, args, objective)
+                row, objective = fit_one(context, observation, args, objective,
+                                         write_arrays=not args.fixed_pattern)
             except (RuntimeError, ValueError) as exc:
                 failures[id(observation)].append({"order": index, "error": str(exc)})
                 print(f"  order {index:2d}  {observation.path.name[5:18]}  skipped: {exc}")
                 continue
             row["seconds"] = round(time.time() - began, 1)
+            first_pass.append((observation, row))
+
+        # Second pass. The night's other frames measure this order's fixed
+        # instrument response, which is the dominant residual at the red edge;
+        # one pass cannot see it, because a single frame cannot tell a
+        # repeatable response error from its own noise.
+        corrected = None
+        if args.fixed_pattern and len(first_pass) >= args.fixed_pattern_min_frames:
+            patterns = leave_one_out_patterns([r["_fractional_residual"] for _, r in first_pass])
+            corrected = []
+            for (observation, previous), pattern in zip(first_pass, patterns):
+                began = time.time()
+                try:
+                    row, objective = fit_one(context, observation, args, objective,
+                                             response=pattern)
+                except (RuntimeError, ValueError) as exc:
+                    failures[id(observation)].append({"order": index, "error": str(exc)})
+                    continue
+                row["seconds"] = round(previous["seconds"] + time.time() - began, 1)
+                row["residual_rms_over_noise_uncorrected"] = previous["residual_rms_over_noise"]
+                row["_record"]["response_pattern_rms"] = row["response_pattern_rms"]
+                corrected.append((observation, row))
+        elif args.fixed_pattern:
+            print(f"  order {index:2d}  fewer than {args.fixed_pattern_min_frames} frames; "
+                  "no fixed-pattern correction")
+
+        for observation, row in (corrected if corrected is not None else first_pass):
             results[id(observation)].append(row)
             tag = "reused" if row["reused_compilation"] else "built "
-            plp = (f"  plp d={row['plp_rms_difference']:.4f}" if "plp_rms_difference" in row else "")
+            was = (f"  was {row['residual_rms_over_noise_uncorrected']:5.2f}"
+                   if "residual_rms_over_noise_uncorrected" in row else "")
             print(f"  order {index:2d}  {observation.path.name[5:18]}  "
                   f"T={row['median_transmission']:.3f}  rms/sig={row['residual_rms_over_noise']:6.2f}  "
                   f"R={row['resolving_power_fitted']:6.0f}  v={row['velocity_kms']:+5.2f}  "
-                  f"{tag} {row['seconds']:5.1f}s{plp}")
+                  f"{tag} {row['seconds']:5.1f}s{was}")
 
     elapsed = time.time() - started
     for observation in observations:
@@ -661,6 +734,8 @@ def main() -> None:
                 "precompute_opacity": args.precompute_opacity,
                 "self_broadening": args.self_broadening,
                 "covariance": not args.no_covariance,
+                "fixed_pattern": args.fixed_pattern,
+                "fixed_pattern_min_frames": args.fixed_pattern_min_frames,
                 "frames_in_run": len(observations),
             },
             "physics": dict(PHYSICS), "order_rule": dict(ORDER),
@@ -731,6 +806,7 @@ def main() -> None:
                            ("surface_temperature_k", "f8"),
                            ("surface_pressure_hpa", "f8"),
                            ("surface_humidity_percent", "f8"),
+                           ("response_pattern_rms", "f8"),
                            ("reused_compilation", "?")),
         )
         print(f"wrote {record_path} ({record_path.stat().st_size / 1e6:.2f} MB)")
