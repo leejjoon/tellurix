@@ -329,6 +329,73 @@ driver's own SHA-256, which is what pins the rest for a run made from a working
 tree. The first atlas-wide run predates that block and carries a backfilled copy
 marked `"recorded": "backfilled"`.
 
+## The run record, and rebuilding from it
+
+Every array the atlas run writes is a pure function of the atlas page, the
+stellar model and about thirty fitted numbers. `data/corrected/atlas/arcturus_atlas.h5`
+holds those numbers, so the `.npz` files are a cache rather than the product.
+
+`scripts/rebuild_arcturus_page.py --page ab5000_ --epoch summer --check`
+reconstructs the forward model from the record alone and compares. Measured on
+two pages spanning the window:
+
+| array | ab5000_ summer | ab4025_ summer |
+|---|---:|---:|
+| transmission | 1.1e-16 | 1.1e-16 |
+| model_flux | 5.6e-16 | 5.6e-16 |
+| stellar_only | 0 | 0 |
+| continuum | 0 | 0 |
+| corrected | 1.2e-13 | 2.2e-11 |
+
+That is float64 round-off. The rebuild script deliberately shares no code with
+the fitting driver: calling one construction twice would only show it is
+deterministic, whereas an independent reconstruction landing on the same
+numbers is what shows the record is sufficient.
+
+The record identifies its inputs by content, not by path -- the atlas page, the
+stellar `.npz`, the profile, the MT_CKD file, the ILS report and each AER line
+file are hashed -- and the rebuild refuses before computing anything if one has
+changed. It also stores a 65-sample fingerprint of the instrument profile, taken
+by pushing a unit impulse through the real `convolve`, so a later change to
+`BoxcarFTSInstrumentProfile` cannot silently reinterpret an old record.
+
+`docs/arcturus_atlas_summary.json` remains as a readable projection and names
+the record it projects, with its hash. It rounds to six significant digits, so
+rebuild from the record rather than from the JSON.
+
+### Formal errors, and why they are not uncertainties
+
+`FitResult` now inverts the objective's actual Hessian over the parameters that
+were free and not resting on a bound. What it used to report -- L-BFGS-B's
+`hess_inv` -- was a byproduct of the line search and overstated the column
+errors by two orders of magnitude.
+
+The new numbers are correct and still must not be quoted as uncertainties. They
+assume independent Gaussian pixel errors, and this residual is dominated by
+correlated stellar line-list error. On `ab5000_`:
+
+| sigma on the water column | |
+|---|---:|
+| formal, from the Hessian | 0.76% |
+| times sqrt(reduced chi-squared) = 3.59 | 2.71% |
+| **measured sub-window scatter** | **6.5-9%** |
+
+Scaling by chi-squared undercorrects, because it assumes the excess is white.
+A unit test confirms the computation itself is right: fitted against data with
+genuinely white noise, the formal sigma matches the scatter over independent
+noise realizations.
+
+What survives a wrong noise model is the **correlation matrix**, which describes
+the shape of the likelihood rather than its scale, and is where the degeneracies
+live. On `ab5000_`, `CO2` against `continuum_0` is +0.71 -- the continuum/column
+degeneracy measured directly, rather than inferred afterwards from
+`continuum_level`. The record stores the correlation and the standard deviations
+separately; `covariance = correlation * outer(sigma, sigma)` recovers the matrix.
+
+`condition_number` and `at_bound` are stored beside them. On `ab5000_`
+`lsf_sigma_kms` sat exactly on its lower bound: including it made the Hessian
+singular at a condition number of 2.6e18, and excluding it leaves 5.9e3.
+
 ## L5 — two epochs
 
 Summer and winter fitted independently, same stellar spectrum, each with its

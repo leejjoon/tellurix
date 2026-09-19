@@ -34,6 +34,7 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/validate_arcturus_fit.py      # syn
 UV_CACHE_DIR=.uv-cache uv run python scripts/fit_arcturus_page.py --stellar <npz>
 UV_CACHE_DIR=.uv-cache uv run python scripts/fit_arcturus_batch.py         # resumable, whole atlas
 UV_CACHE_DIR=.uv-cache uv run python scripts/trim_atlas_summary.py         # -> docs/arcturus_atlas_summary.json
+UV_CACHE_DIR=.uv-cache uv run python scripts/rebuild_arcturus_page.py --page ab5000_ --epoch summer --check
 ```
 
 The batch driver writes its full summary to `data/corrected/atlas/summary.json`
@@ -263,8 +264,20 @@ opt-in to keep the default numerically identical to ExoJAX.
   so regenerating those reports requires a working LBLRTM build. Update the
   numbers in README/docs prose whenever a report is regenerated.
 - `mt_ckd.py` carries an AER copyright notice; keep it with any derived code.
-- `FitResult.covariance` comes from L-BFGS-B's inverse Hessian and is **not** a
-  covariance: on the Arcturus fit it overestimates the column errors by two orders
-  of magnitude. Never quote it as an uncertainty; use an explicit study instead.
+- `FitResult.covariance` now inverts the objective's actual Hessian over the
+  parameters that were free and not on a bound (`_uncertainty` in `fit.py`); the
+  old `hess_inv` value was a line-search byproduct and was out by two orders of
+  magnitude. It is a *formal* covariance and still must not be quoted as an
+  uncertainty — it assumes independent pixel errors, and this residual is
+  dominated by correlated stellar error, so it comes out 3–9x too small
+  (measured: 0.76% formal on the water column against 6.5–9% of sub-window
+  scatter). Use `FitResult.correlation` for degeneracies, which survives a wrong
+  noise model, and an empirical study for an actual error bar.
+- A run's product is `data/corrected/atlas/arcturus_atlas.h5`
+  (`src/jax_telluric/record.py`), not the `.npz` arrays, which are a cache.
+  `scripts/rebuild_arcturus_page.py --check` reconstructs a page from the record
+  alone and agrees to 1e-13. It shares no code with the fitting driver on
+  purpose — an independent reconstruction is the evidence; calling one function
+  twice is not. Keep it that way.
 - Commit subjects are short imperative lines with no body (`Add native JAX
   MT_CKD continuum`).
