@@ -42,8 +42,7 @@ STAGES = ("continuum", "velocity", "columns", "stellar")
 # second description of it that can drift away from the code.
 PHYSICS = {
     "accuracy_mode": "mt_ckd",
-    "continuum_model": "native MT_CKD 4.3",
-    "line_source": "AER Line File 3.9",
+    "opacity_method": "direct_sparse",
     "mt_ckd_file": "absco-ref_wv-mt-ckd.nc",
     "pressure_shift": True,
     "mixed_precision": True,
@@ -52,10 +51,23 @@ PHYSICS = {
     "instrument": "boxcar FTS sinc",
     "max_lsf_sigma_kms": 4.0,
     "instrument_residual_sigma_kms": 4.0,
-    "zenith_angle_deg": 0.0,
     "vsini_kms": 2.0,
     "macroturbulence_kms": 2.15,
+    "limb_darkening": 0.6,
+    "normalize_stellar_source": True,
     "stages": list(STAGES),
+}
+
+# How a page becomes a fittable order. These were `arcturus_spectral_order`
+# defaults that the driver never named, so nothing recorded them even though
+# they decide which pixels exist. `continuum_model` and `line_source` used to
+# sit in PHYSICS as hand-typed strings; they are read from the files themselves
+# now, which is what the block above claims to do for everything in it.
+ORDER = {
+    "column": "observed",
+    "saturation_floor": 0.02,
+    "telluric_ceiling": 1.05,
+    "zenith_angle_deg": 0.0,
 }
 
 
@@ -97,7 +109,7 @@ def enable_compilation_cache(directory: Path) -> None:
     jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
 
-def physics_record(root: Path) -> dict:
+def physics_record(root: Path, continuum_version: str | None = None) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The driver's own hash is the only thing that pins the parts of the
@@ -108,9 +120,12 @@ def physics_record(root: Path) -> dict:
     driver = Path(__file__).resolve()
     return {
         **PHYSICS,
+        **ORDER,
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "jax_telluric": version("jax-telluric") if version else None,
+        # Read off the file that was loaded, rather than typed here a second time.
+        "continuum_model": continuum_version,
     }
 
 
@@ -119,7 +134,8 @@ def run_one(window, epoch, args, root):
     import jax.numpy as jnp
     from jax_telluric import (
         AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
-        chebyshev_continuum, select_significant_lines, trim_wavenumber_grid,
+        chebyshev_continuum, file_sha256, ils_fingerprint,
+        select_significant_lines, trim_wavenumber_grid,
         ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum, TelluricModel,
         OrderObjective, TelluricParameters, arcturus_spectral_order, epoch_velocity_kms,
         fit_order,
@@ -183,15 +199,18 @@ def run_one(window, epoch, args, root):
     # to break that fusion.
     chunk = args.layer_chunk_size or None
     opacity = ExoJAXOpacityBackend.prepare(
-        databases, grid, methods="direct_sparse",
+        databases, grid,
         temperature_range_k=(float(np.min(profile.temperature_k)), float(np.max(profile.temperature_k))),
         maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
+        methods=PHYSICS["opacity_method"],
         vectorize_layers=PHYSICS["vectorize_layers"],
         mixed_precision=PHYSICS["mixed_precision"], pressure_shift=PHYSICS["pressure_shift"],
         layer_chunk_size=chunk)
     mark("opacity_prepare")
     continuum = MTCKDWaterContinuum.from_netcdf(
         root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc", grid)
+    # Read now: `continuum` is rebound to the fitted continuum array further down.
+    mt_ckd_version = continuum.version
     instrument = BoxcarFTSInstrumentProfile(
         mopd_cm=window["mopd_cm"], wavenumber_center_cm1=float(0.5 * (v1 + v2)),
         max_residual_sigma_kms=PHYSICS["instrument_residual_sigma_kms"])
@@ -205,7 +224,11 @@ def run_one(window, epoch, args, root):
                                     vsini_kms=PHYSICS["vsini_kms"],
                                     macroturbulence_kms=PHYSICS["macroturbulence_kms"])
     mark("stellar_source")
-    order = arcturus_spectral_order(page, source_flux_model_grid=source)
+    order = arcturus_spectral_order(
+        page, source_flux_model_grid=source, column=ORDER["column"],
+        saturation_floor=ORDER["saturation_floor"],
+        telluric_ceiling=ORDER["telluric_ceiling"],
+        zenith_angle_deg=ORDER["zenith_angle_deg"])
 
     # Evaluate the line-by-line kernel once and carry it as fixed arrays,
     # expanded to first order in the self-broadening pressure. That is the only
@@ -332,12 +355,55 @@ def run_one(window, epoch, args, root):
         transmission=transmission, corrected=corrected, stellar_only=star,
         continuum=continuum, corrected_normalized=corrected_normalized,
         residual=residual, mask=mask, reliable=reliable,
-        atlas_telluric=page.telluric[::-1], atlas_ratioed=page.ratioed[::-1])
+        # Not reversed: every other array here is on the ascending-wavenumber
+        # axis built at order_idx above, and the page's own columns already are.
+        # The single-page driver does reverse them, because it saves on the
+        # order's ascending-wavelength axis instead.
+        atlas_telluric=page.telluric, atlas_ratioed=page.ratioed)
+
+    names = list(shared.codec.names)
+    deviation = (np.sqrt(np.clip(np.diag(result.covariance), 0.0, None))
+                 if result.covariance is not None else np.zeros(len(names)))
+    correlation = (result.correlation if result.correlation is not None
+                   else np.zeros((len(names), len(names))))
+    ils_velocity, ils_profile = ils_fingerprint(
+        instrument, float(parameters.lsf_sigma_kms), model.velocity_step_kms
+    )
+    record_row = {
+        "page": window["page"], "epoch": epoch, "page_sha256": page.sha256,
+        "log_column_scales": {s: float(parameters.log_column_scales[s]) for s in model.species},
+        "continuum_coeffs": np.asarray(parameters.continuum_coeffs, dtype=float),
+        "v1": v1, "v2": v2, "mopd_cm": window["mopd_cm"],
+        "pixels": int(mask.size), "grid_points": int(grid.size), "reliable": int(reliable.sum()),
+        "velocity_kms": float(parameters.velocity_kms),
+        "stellar_velocity_kms": float(parameters.stellar_velocity_kms),
+        "wavelength_stretch": float(parameters.wavelength_stretch),
+        "lsf_sigma_kms": float(parameters.lsf_sigma_kms),
+        "log_jitter": float(parameters.log_jitter),
+        "pixel_sigma": sigma,
+        "residual_rms": float(np.sqrt(np.mean(residual[mask] ** 2))),
+        "residual_rms_over_noise": float(np.sqrt(np.mean(residual[mask] ** 2)) / sigma),
+        "reduced_chi2": float(np.mean((residual[mask] / sigma) ** 2)),
+        "median_transmission": float(np.median(transmission[mask])),
+        "continuum_level": 0.0 if level != level else level,
+        "continuum_level_pixels": int(clean.sum()),
+        "condition_number": float(result.condition_number or 0.0),
+        "all_stages_converged": all(s["success"] for s in stages),
+        "negligible_telluric": negligible_telluric,
+        "free_species": "+".join(free_species),
+        "at_bound": "+".join(result.at_bound),
+        # In this page's own parameter order; main() places them into the
+        # record's fixed naming, which spans every molecule the atlas uses.
+        "parameter_names": names, "sigma": deviation, "correlation": correlation,
+        "ils_velocity_kms": ils_velocity, "ils_profile": ils_profile,
+    }
 
     return {
+        "_record": record_row,
         "page": window["page"], "epoch": epoch, "wavenumber_cm1": [v1, v2],
         "pixels": int(mask.size), "reliable": int(reliable.sum()),
         "grid_points": int(grid.size), "layer_chunk": chunk, "timing": timing,
+        "continuum_version": mt_ckd_version,
         "grid_margin_cm1": args.grid_margin_cm1, "line_margin_cm1": args.margin_cm1,
         "precomputed_opacity": (args.self_broadening if args.precompute_opacity else None),
         "mopd_cm": window["mopd_cm"], "lines": lines, "lines_kept": lines_kept,
@@ -401,6 +467,9 @@ def main() -> None:
                         help="optical depth of the weakest lines to discard; 0 keeps every line")
     # A string, not a Path: Path("") is Path("."), which is truthy and would
     # scatter cache entries through the repository root.
+    parser.add_argument("--record", type=Path,
+                        default=root / "data/corrected/atlas/arcturus_atlas.h5",
+                        help="the run's parameter record; the arrays are a cache of this")
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"),
                         help="directory for persisted XLA executables; empty string disables it")
     args = parser.parse_args()
@@ -408,6 +477,45 @@ def main() -> None:
         enable_compilation_cache(Path(args.compilation_cache))
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
+    def input_hashes() -> dict:
+        """Identify the files a run consumed, not just where they were.
+
+        A silently changed line list or profile is exactly what this record
+        exists to catch, and a path cannot catch it.
+        """
+
+        # Imported here, not at module scope: importing jax_telluric enables
+        # float64 and pulls in JAX, which must happen after JAX_PLATFORMS and
+        # the compilation cache are settled.
+        from jax_telluric import file_sha256
+
+        line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
+        entries = {
+            "atlas_root": str(args.atlas_root),
+            "stellar": str(args.stellar), "profile": str(root / args.profile),
+            "mt_ckd": str(root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc"),
+            "ils_report": str(args.ils_report),
+            "aer_line_root": str(line_root), "aer_version": "3.9",
+        }
+        for key in ("stellar", "profile", "mt_ckd", "ils_report"):
+            candidate = Path(entries[key])
+            if candidate.exists():
+                entries[f"{key}_sha256"] = file_sha256(candidate)
+        for species, molecule_id in sorted(MOLECULE_IDS.items()):
+            name = f"{molecule_id:02d}_{species}"
+            candidate = line_root / name / name
+            if candidate.exists():
+                entries[f"aer_{species}_sha256"] = file_sha256(candidate)
+        return entries
+
+    def continuum_version() -> str | None:
+        """The MT_CKD version string, as the loaded file declares it."""
+        for row in results:
+            if "continuum_version" in row:
+                return row["continuum_version"]
+        return None
+
+    record_rows: dict = {}
     done = {}
     if args.resume and args.summary.exists():
         for row in json.loads(args.summary.read_text())["results"]:
@@ -439,6 +547,8 @@ def main() -> None:
             row = {"page": window["page"], "epoch": epoch, "error": str(exc),
                    "traceback": traceback.format_exc()[-1500:]}
             status = f"FAILED: {exc}"
+        if "_record" in row:
+            record_rows[key] = row.pop("_record")
         results.append(row)
         done[key] = row
         elapsed = time.time() - started
@@ -447,7 +557,7 @@ def main() -> None:
             {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
              "atlas_root": str(args.atlas_root), "stellar": str(args.stellar),
              "profile": str(args.profile),
-             "physics": physics_record(root),
+             "physics": physics_record(root, continuum_version()),
              "settings": {"resolving_power": args.resolving_power,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,
@@ -455,6 +565,42 @@ def main() -> None:
                           "min_transmission": args.min_transmission},
              "results": sorted(results, key=lambda r: (r["page"], r["epoch"]))},
             indent=2) + "\n", encoding="utf-8")
+
+    if record_rows:
+        from jax_telluric import write_record
+        from jax_telluric.fit import _ParameterCodec
+
+        species = sorted(MOLECULE_IDS)
+        codec = _ParameterCodec(species, args.continuum_degree + 1, include_stellar_velocity=True)
+        position = {name: index for index, name in enumerate(codec.names)}
+        for entry in record_rows.values():
+            local = entry.pop("parameter_names")
+            where = np.array([position[name] for name in local])
+            sigma = np.zeros(len(codec.names))
+            correlation = np.zeros((len(codec.names), len(codec.names)))
+            sigma[where] = entry["sigma"]
+            correlation[np.ix_(where, where)] = entry["correlation"]
+            entry["sigma"], entry["correlation"] = sigma, correlation
+        args.record.parent.mkdir(parents=True, exist_ok=True)
+        write_record(
+            args.record,
+            run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                 **{k: v for k, v in physics_record(root, continuum_version()).items()
+                    if k in ("driver", "driver_sha256", "jax_telluric")}},
+            config={"resolving_power": args.resolving_power,
+                    "samples_per_resolution": args.samples_per_resolution,
+                    "margin_cm1": args.margin_cm1, "grid_margin_cm1": args.grid_margin_cm1,
+                    "continuum_degree": args.continuum_degree,
+                    "min_optical_depth": args.min_optical_depth,
+                    "min_transmission": args.min_transmission,
+                    "line_budget": args.line_budget, **ORDER},
+            physics=physics_record(root, continuum_version()),
+            inputs=input_hashes(),
+            parameter_names=codec.names, species=species,
+            pages=[record_rows[k] for k in sorted(record_rows)],
+            continuum_degree=args.continuum_degree,
+        )
+        print(f"wrote {args.record} ({args.record.stat().st_size/1e6:.2f} MB)")
 
     ok = [r for r in results if "error" not in r]
     print(f"\n{len(ok)} of {len(results)} succeeded; wrote {args.summary}")

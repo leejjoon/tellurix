@@ -44,6 +44,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--full", type=Path, default=root / "data/corrected/atlas/summary.json")
     parser.add_argument("--output", type=Path, default=root / "docs/arcturus_atlas_summary.json")
+    parser.add_argument("--record", type=Path,
+                        default=root / "data/corrected/atlas/arcturus_atlas.h5",
+                        help="the run's authoritative record; named here so the "
+                             "readable view points at what it is a view of")
     args = parser.parse_args()
 
     full = json.loads(args.full.read_text())
@@ -65,9 +69,21 @@ def main() -> None:
            if k in full}
     out["settings"] = settings
     out["source"] = str(args.full.relative_to(root)) if args.full.is_relative_to(root) else str(args.full)
+    if args.record.exists():
+        # This file is a readable projection. The record is what a rebuild reads,
+        # and it keeps full float64 where the rounding below does not.
+        from jax_telluric.record import file_sha256, read_record
+
+        out["record"] = {
+            "path": str(args.record.relative_to(root)) if args.record.is_relative_to(root)
+                    else str(args.record),
+            "sha256": file_sha256(args.record),
+            "format_version": read_record(args.record).format_version,
+        }
     out["trimmed"] = (
         "Per-page timings, the per-stage optimizer log and per-species line counts are in "
-        "the full summary named above, which is not kept in git."
+        "the full summary named above, which is not kept in git. Floats here are rounded "
+        f"to {DIGITS} significant digits, so rebuild from the record rather than from this."
     )
     # One page-epoch per line: a table of 598 rows reads better this way than
     # as 60,000 lines of nesting, and is a third of the size.
