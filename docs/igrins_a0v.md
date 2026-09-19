@@ -210,20 +210,21 @@ time, and against both.
 
 | species | orders/frame | per airmass | per hour | joint d/dAM | frame scatter |
 |---|---:|---:|---:|---:|---:|
-| H2O | 39 | +0.1122 ± 0.0673 (1.7σ) | **-0.0371 ± 0.0073 (5.1σ)** | -0.0249 | 0.1187 |
-| CO2 | 18 | +0.0074 ± 0.0047 (1.6σ) | -0.0008 ± 0.0008 (0.9σ) | +0.0049 | 0.0102 |
-| CH4 | 19 | +0.0024 ± 0.0071 (0.3σ) | -0.0000 ± 0.0012 (0.0σ) | +0.0038 | 0.0043 |
+| H2O | 39 | +0.1206 ± 0.0665 (1.8σ) | **-0.0372 ± 0.0071 (5.2σ)** | -0.0258 | 0.1188 |
+| CO2 | 18 | +0.0042 ± 0.0046 (0.9σ) | -0.0003 ± 0.0008 (0.3σ) | +0.0045 | 0.0100 |
+| CH4 | 19 | +0.0037 ± 0.0070 (0.5σ) | -0.0004 ± 0.0011 (0.4σ) | +0.0020 | 0.0040 |
 
 **The well-mixed species show no airmass dependence.** CH4 is flat to
-+0.0024 ± 0.0071 per unit airmass and CO2 to +0.0074 ± 0.0047, with frame-to-frame
-scatters of 0.4% and 1.0%. Their abundances are known and fixed, so this
-is not a fit succeeding — it is the slant-path treatment and the assumed profile
-shape tested against a factor of 2.35 in path length and not breaking. Taking
-either species' 2σ bound over the observed airmass range puts any systematic
-slant-path error below about **2.4% out to airmass 2.5**.
++0.0037 ± 0.0070 per unit airmass (0.5σ) and CO2 to +0.0042 ± 0.0046
+(0.9σ), with frame-to-frame scatters of 0.4% and 1.0%. Their abundances
+are known and fixed, so this is not a fit succeeding — it is the slant-path
+treatment and the assumed profile shape tested against a factor of 2.35 in path
+length and not breaking. Taking either species' 2σ bound over the observed
+airmass range puts any systematic slant-path error below about **2.4% out to
+airmass 2.5**.
 
 Adding K roughly doubles the orders that constrain CO2 and CH4 (9 to 18 and 8 to
-19) and halves the slope error on CO2, from ±0.0091 to ±0.0047.
+19) and halves the slope error on CO2, from ±0.0091 to ±0.0046.
 
 **The water trend is the sky, not the model.** Against airmass H2O looks like a
 1.7σ effect; against time it is 5.1σ, and the residual scatter halves. In a
@@ -234,7 +235,7 @@ from the spectra alone.
 
 **Repeatability.** chi Cap was observed twice 3.7 minutes apart at airmass
 2.46 and 2.50, where nothing about the sky had time to change. The columns
-differ by CH4 +0.004, CO2 -0.010, H2O -0.025 — so under 1% is the noise floor for the
+differ by CH4 +0.004, CO2 -0.010, H2O -0.025 — so around 1% is the noise floor for the
 well-mixed species, and H2O's 12% frame-to-frame scatter is real weather.
 
 **Fit quality does not degrade with airmass**: +0.291 ± 0.204 sigma per unit
@@ -367,15 +368,46 @@ uv run python scripts/summarize_igrins_fit.py \
 `docs/igrins_a0v_results.json` and the two-order fixture under
 `tests/data/igrins/`.
 
+## The run record
+
+Per the repository's convention the record is the product and the `.npz` arrays
+are a regenerable cache. `record.py` used to key its rows on a hard-coded
+`page`/`epoch` pair; it now takes `key_fields`, so the Arcturus atlas keys on
+`("page", "epoch")` and an IGRINS night on `("frame", "order")`, and
+`extra_columns` carries what the shared schema has no place for — the band, the
+airmass, the zenith angle, the MJD, the telescope and the normalized surface
+conditions.
+
+Two details were not obvious. Which molecules have lines depends on the window,
+so an order's parameter vector is *not* the run's: the driver builds the union
+of species across orders and remaps every row's sigma and correlation into it,
+or the record would line one order's CH4 up against another's CO2. And the
+instrument fingerprint had to learn the built-in Gaussian, since there is no
+`InstrumentProfile` object on this path; `ils_fingerprint(None, ...)` pushes an
+impulse through the same `_gaussian_convolve` the model calls, for the same
+reason the FTS branch pushes one through the real `convolve`.
+
+A record written before `key_fields` existed reads back as `("page", "epoch")`,
+so the committed `arcturus_atlas.h5` is untouched and
+`scripts/rebuild_arcturus_page.py --check` still reproduces its cached arrays to
+2.8e-7.
+
+For this night the two records come to 712 KB together, against 71 MB of `.npz`
+for the same 485 order-frames.
+
+Sharding one band across devices by order makes each shard write its own record
+and its own per-frame summaries; `--summary-suffix` keeps them apart and
+`merge_records` combines the shards afterwards. H and K cannot merge into one
+record, because their `inputs` name different files — one record per band per
+night.
+
+
 ## What is not done yet
 
 - **A second night, and a second site.** Everything above is one night at DCT
   plus one Gemini South frame. The weather-convention normaliser is exercised
   on real DCT and Gemini headers but not yet on a McDonald one, where the
   degF/inHg branch lives.
-- **The run record.** These fits write `.npz` and a JSON summary.
-  `src/jax_telluric/record.py` keys its rows on a hard-coded `page`/`epoch`
-  pair; generalizing that would let one record module serve both pipelines.
 - **A per-frame atmosphere.** One profile is built per night from the median
   surface conditions, though the header gives T, P and humidity per frame and
   they moved by 3 K and 2 hPa across this night. The fitted column scales

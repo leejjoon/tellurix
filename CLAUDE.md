@@ -342,8 +342,17 @@ opt-in to keep the default numerically identical to ExoJAX.
   (measured: 0.76% formal on the water column against 6.5–9% of sub-window
   scatter). Use `FitResult.correlation` for degeneracies, which survives a wrong
   noise model, and an empirical study for an actual error bar.
-- A run's product is `data/corrected/atlas/arcturus_atlas.h5`
-  (`src/jax_telluric/record.py`), not the `.npz` arrays, which are a cache.
+- A run's product is its HDF5 record (`src/jax_telluric/record.py`), not the
+  `.npz` arrays, which are a cache. `write_record` takes `key_fields` naming the
+  columns that identify a row -- `("page", "epoch")` for the atlas, `("frame",
+  "order")` for an IGRINS night -- and `extra_columns` for what the shared
+  schema has no place for. A file written before that was configurable reads
+  back as `("page", "epoch")`, so the committed `arcturus_atlas.h5` still
+  works. Two traps when adding a pipeline: an order's parameter vector is not
+  the run's when the species present depend on the window, so remap each row's
+  sigma and correlation into the union rather than assuming one length; and
+  `ils_fingerprint(None, ...)` is the built-in Gaussian branch, for a model with
+  no `InstrumentProfile` object.
   `scripts/rebuild_arcturus_page.py --check` reconstructs a page from the record
   alone and agrees to 1e-13. It shares no code with the fitting driver on
   purpose — an independent reconstruction is the evidence; calling one function

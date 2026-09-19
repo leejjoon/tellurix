@@ -15,72 +15,72 @@
   "note": "log_column_scale scales the VERTICAL column; the model already divides optical depth by cos(z) with the measured zenith angle. A slope against airmass is therefore a model error, not a geometry term. For the well-mixed species it cannot be anything else, because their abundances do not vary.",
   "column_vs_airmass": {
     "H2O": {
-      "slope": 0.11217794495376467,
-      "slope_error": 0.06728173112754114,
-      "intercept": -0.664380188569018,
+      "slope": 0.12063081237340927,
+      "slope_error": 0.06651356048277113,
+      "intercept": -0.6838098173562587,
       "points": 10,
-      "scatter": 0.09167086593022253,
+      "scatter": 0.09084468594893962,
       "vs_time": {
-        "slope": -0.03713279348230724,
-        "slope_error": 0.007314831393246144,
-        "intercept": -0.38330123703748287,
+        "slope": -0.037150034027380485,
+        "slope_error": 0.007082779248983307,
+        "intercept": -0.3849393923760352,
         "points": 10,
-        "scatter": 0.052438231623219485
+        "scatter": 0.052537399738653616
       },
-      "joint_slope_per_airmass": -0.024859860743243645,
-      "joint_slope_per_hour": -0.04001185021207438,
-      "joint_scatter": 0.05189478077734266,
-      "mean_log_column": -0.5238161711667764,
-      "scatter_between_frames": 0.11867926031314574,
+      "joint_slope_per_airmass": -0.025839303500730645,
+      "joint_slope_per_hour": -0.04015493703977365,
+      "joint_scatter": 0.051951994613018235,
+      "mean_log_column": -0.5236218035556688,
+      "scatter_between_frames": 0.11875840205194325,
       "median_orders_per_frame": 39.0
     },
     "CO2": {
-      "slope": 0.007365676957327005,
-      "slope_error": 0.004674445796078606,
-      "intercept": -0.041556925434758835,
+      "slope": 0.004213736270398907,
+      "slope_error": 0.004551103605897294,
+      "intercept": -0.03600096332248135,
       "points": 10,
-      "scatter": 0.009595864449699839,
+      "scatter": 0.009635419313340521,
       "vs_time": {
-        "slope": -0.0007755922226620874,
-        "slope_error": 0.0008326466972626149,
-        "intercept": -0.026995690207973492,
+        "slope": -0.0002624773026847857,
+        "slope_error": 0.0007534328500676516,
+        "intercept": -0.028329385437592388,
         "points": 10,
-        "scatter": 0.009721402625284455
+        "scatter": 0.009819430550315774
       },
-      "joint_slope_per_airmass": 0.004918206709454472,
-      "joint_slope_per_hour": -0.0004636822116808525,
-      "joint_scatter": 0.009559260818585507,
-      "mean_log_column": -0.031055737006016503,
-      "scatter_between_frames": 0.010196636190379355,
+      "joint_slope_per_airmass": 0.004452689266008782,
+      "joint_slope_per_hour": -0.00018685978753307797,
+      "joint_scatter": 0.009614318314288396,
+      "mean_log_column": -0.030616423458236442,
+      "scatter_between_frames": 0.009963116593149563,
       "median_orders_per_frame": 18.0
     },
     "CH4": {
-      "slope": 0.002358421711461082,
-      "slope_error": 0.007087028385439318,
-      "intercept": -0.029726930834726963,
+      "slope": 0.0036947522178411873,
+      "slope_error": 0.006951239367021477,
+      "intercept": -0.03266271192652793,
       "points": 10,
-      "scatter": 0.004249105165828948,
+      "scatter": 0.003764032732603836,
       "vs_time": {
-        "slope": -4.090825681487919e-05,
-        "slope_error": 0.001165488969638956,
-        "intercept": -0.025787589934458278,
+        "slope": -0.00043085900463923606,
+        "slope_error": 0.0011069139937596993,
+        "intercept": -0.02513839828752139,
         "points": 10,
-        "scatter": 0.004295717421444854
+        "scatter": 0.003775061458976172
       },
-      "joint_slope_per_airmass": 0.0038215832232373205,
-      "joint_slope_per_hour": 0.00048633940302879406,
-      "joint_scatter": 0.004140305520353886,
-      "mean_log_column": -0.025652491712950743,
-      "scatter_between_frames": 0.004295588127719764,
+      "joint_slope_per_airmass": 0.0020469757520336996,
+      "joint_slope_per_hour": -0.0001385550121308992,
+      "joint_scatter": 0.0037245337110954598,
+      "mean_log_column": -0.026392172177836497,
+      "scatter_between_frames": 0.003956529756171632,
       "median_orders_per_frame": 19.0
     }
   },
   "quality_vs_airmass": {
-    "slope": 0.29129229883331603,
-    "slope_error": 0.20374627470685464,
-    "intercept": 1.5201294127380032,
+    "slope": 0.2905899847634914,
+    "slope_error": 0.20419259186692262,
+    "intercept": 1.5203195996375771,
     "points": 10,
-    "scatter": 0.2801716367125147
+    "scatter": 0.28078536773365376
   },
   "repeat_observations": [
     {
@@ -96,8 +96,8 @@
       ],
       "delta_log_column": {
         "CH4": 0.0044,
-        "CO2": -0.01,
-        "H2O": -0.0251
+        "CO2": -0.0096,
+        "H2O": -0.0245
       }
     },
     {
@@ -113,8 +113,8 @@
       ],
       "delta_log_column": {
         "CH4": 0.0074,
-        "CO2": 0.0248,
-        "H2O": 0.0779
+        "CO2": 0.0294,
+        "H2O": 0.0769
       }
     },
     {
@@ -131,7 +131,7 @@
       "delta_log_column": {
         "CH4": -0.009,
         "CO2": -0.0069,
-        "H2O": -0.0923
+        "H2O": -0.093
       }
     },
     {
@@ -146,9 +146,9 @@
         1.216
       ],
       "delta_log_column": {
-        "CH4": 0.0049,
-        "CO2": -0.0079,
-        "H2O": 0.0794
+        "CH4": -0.0025,
+        "CO2": -0.0053,
+        "H2O": 0.0793
       }
     },
     {
@@ -164,8 +164,8 @@
       ],
       "delta_log_column": {
         "CH4": -0.0001,
-        "CO2": 0.0004,
-        "H2O": 0.1591
+        "CO2": 0.0002,
+        "H2O": 0.1604
       }
     },
     {
@@ -181,8 +181,8 @@
       ],
       "delta_log_column": {
         "CH4": -0.0091,
-        "CO2": -0.0065,
-        "H2O": 0.0668
+        "CO2": -0.0066,
+        "H2O": 0.0674
       }
     }
   ],
@@ -196,7 +196,7 @@
       "zenith_angle_deg": 20.17,
       "airmass": 1.0653329359452386,
       "orders": 49,
-      "median_rms_over_noise": 2.3332415210370505,
+      "median_rms_over_noise": 2.3332415236546296,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -206,18 +206,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.668916238633491,
-          "error": 0.008991779465188443,
+          "log_column": -0.6689159456139949,
+          "error": 0.008991765355696592,
           "orders": 39
         },
         "CO2": {
-          "log_column": -0.02360379949176618,
-          "error": 0.010715594269655484,
+          "log_column": -0.023604668242129003,
+          "error": 0.010915561450401508,
           "orders": 18
         },
         "CH4": {
-          "log_column": -0.025353541697065607,
-          "error": 0.013023287300936173,
+          "log_column": -0.025353187585570484,
+          "error": 0.013023374749658161,
           "orders": 19
         }
       },
@@ -232,7 +232,7 @@
       "zenith_angle_deg": 34.665,
       "airmass": 1.2158178278445957,
       "orders": 49,
-      "median_rms_over_noise": 1.9680194423636688,
+      "median_rms_over_noise": 1.968019979758976,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -242,18 +242,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.5894812756713501,
-          "error": 0.008383605203502746,
+          "log_column": -0.589642327691249,
+          "error": 0.008421948997669243,
           "orders": 39
         },
         "CO2": {
-          "log_column": -0.03147770610203296,
-          "error": 0.005298260936435283,
+          "log_column": -0.0289521395650032,
+          "error": 0.0049760598330819885,
           "orders": 19
         },
         "CH4": {
-          "log_column": -0.020434275682068584,
-          "error": 0.010297924136709937,
+          "log_column": -0.027833734372024358,
+          "error": 0.008501926266133617,
           "orders": 19
         }
       },
@@ -268,7 +268,7 @@
       "zenith_angle_deg": 35.33,
       "airmass": 1.2257381787218862,
       "orders": 49,
-      "median_rms_over_noise": 1.6157274071842331,
+      "median_rms_over_noise": 1.6157290150955956,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -278,18 +278,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.4907059137672623,
-          "error": 0.008220579720200688,
+          "log_column": -0.49070493495873385,
+          "error": 0.008220538585113894,
           "orders": 39
         },
         "CO2": {
-          "log_column": -0.028837238794661726,
-          "error": 0.006043396091961985,
+          "log_column": -0.028679191771637344,
+          "error": 0.005616997076140889,
           "orders": 18
         },
         "CH4": {
-          "log_column": -0.023739893859563467,
-          "error": 0.015177350997593405,
+          "log_column": -0.023739968072890874,
+          "error": 0.01517730696641204,
           "orders": 19
         }
       },
@@ -304,7 +304,7 @@
       "zenith_angle_deg": 39.57,
       "airmass": 1.297274479469181,
       "orders": 49,
-      "median_rms_over_noise": 1.7812972632498938,
+      "median_rms_over_noise": 1.7812944294620636,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -314,18 +314,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.6500670355178108,
-          "error": 0.009913744549598898,
+          "log_column": -0.6500669769275168,
+          "error": 0.009909251207918203,
           "orders": 39
         },
         "CO2": {
-          "log_column": -0.027466822739311756,
-          "error": 0.012045739808867998,
+          "log_column": -0.02743530312274085,
+          "error": 0.01205624351590398,
           "orders": 20
         },
         "CH4": {
-          "log_column": -0.02526623185563419,
-          "error": 0.009631352640027077,
+          "log_column": -0.025267088935962183,
+          "error": 0.009631254412122283,
           "orders": 19
         }
       },
@@ -340,7 +340,7 @@
       "zenith_angle_deg": 40.29,
       "airmass": 1.3109919260009886,
       "orders": 49,
-      "median_rms_over_noise": 1.946717651290753,
+      "median_rms_over_noise": 1.9467229300291262,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -350,18 +350,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.6695073871043801,
-          "error": 0.009116445248437306,
+          "log_column": -0.6685698810747409,
+          "error": 0.008893718618593267,
           "orders": 39
         },
         "CO2": {
-          "log_column": -0.0580081415824841,
-          "error": 0.013172887578635292,
+          "log_column": -0.058007799038070074,
+          "error": 0.013396080420610334,
           "orders": 18
         },
         "CH4": {
-          "log_column": -0.033845160975179533,
-          "error": 0.009600596907842438,
+          "log_column": -0.03384492401279274,
+          "error": 0.009600158773053098,
           "orders": 19
         }
       },
@@ -376,7 +376,7 @@
       "zenith_angle_deg": 46.605000000000004,
       "airmass": 1.4555530093261704,
       "orders": 49,
-      "median_rms_over_noise": 1.8784265675420033,
+      "median_rms_over_noise": 1.8784274383470778,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -386,18 +386,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.5916259580740794,
-          "error": 0.0072687255050050805,
+          "log_column": -0.5916258873106054,
+          "error": 0.007268752511056144,
           "orders": 39
         },
         "CO2": {
-          "log_column": -0.033213566505899406,
-          "error": 0.009427484282259181,
+          "log_column": -0.028644081357474094,
+          "error": 0.011275769946675222,
           "orders": 18
         },
         "CH4": {
-          "log_column": -0.026437755086880194,
-          "error": 0.00962442133753368,
+          "log_column": -0.02643748412156025,
+          "error": 0.009633067238250512,
           "orders": 19
         }
       },
@@ -412,7 +412,7 @@
       "zenith_angle_deg": 49.19,
       "airmass": 1.5300984567312788,
       "orders": 48,
-      "median_rms_over_noise": 1.695904483026911,
+      "median_rms_over_noise": 1.694420936717927,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -422,18 +422,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.33159083384109905,
-          "error": 0.004566169818289224,
+          "log_column": -0.3303084267845666,
+          "error": 0.0049670968037547475,
           "orders": 38
         },
         "CO2": {
-          "log_column": -0.028434082576873364,
-          "error": 0.007529497745582899,
+          "log_column": -0.02843243094562687,
+          "error": 0.005977009832511933,
           "orders": 18
         },
         "CH4": {
-          "log_column": -0.023813301998649405,
-          "error": 0.011846489504488116,
+          "log_column": -0.023813236078534288,
+          "error": 0.011798944954106915,
           "orders": 19
         }
       },
@@ -448,7 +448,7 @@
       "zenith_angle_deg": 56.53,
       "airmass": 1.8132356802288738,
       "orders": 48,
-      "median_rms_over_noise": 1.8834159334154434,
+      "median_rms_over_noise": 1.8756291402897323,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -458,18 +458,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.4238956205034729,
-          "error": 0.005907116909137545,
+          "log_column": -0.4233510712913856,
+          "error": 0.006033700699266357,
           "orders": 38
         },
         "CO2": {
-          "log_column": -0.03529745422140082,
-          "error": 0.005231467340594211,
+          "log_column": -0.03529664180336588,
+          "error": 0.00523177109519689,
           "orders": 17
         },
         "CH4": {
-          "log_column": -0.03282209133733826,
-          "error": 0.010070160243703533,
+          "log_column": -0.03281971117527345,
+          "error": 0.010083620857674641,
           "orders": 19
         }
       },
@@ -484,7 +484,7 @@
       "zenith_angle_deg": 65.97999999999999,
       "airmass": 2.4566674218206765,
       "orders": 47,
-      "median_rms_over_noise": 2.7461561954767664,
+      "median_rms_over_noise": 2.746176195419283,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -494,18 +494,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.3986132668356415,
-          "error": 0.005855018230417202,
+          "log_column": -0.3992584839649107,
+          "error": 0.005775512931880011,
           "orders": 37
         },
         "CO2": {
-          "log_column": -0.017100754936176816,
-          "error": 0.005506538922211387,
+          "log_column": -0.01874565354044682,
+          "error": 0.00608700370706006,
           "orders": 18
         },
         "CH4": {
-          "log_column": -0.024619593411783616,
-          "error": 0.01257894724096722,
+          "log_column": -0.024619551674442054,
+          "error": 0.012392053052653345,
           "orders": 19
         }
       },
@@ -520,7 +520,7 @@
       "zenith_angle_deg": 66.43,
       "airmass": 2.500817946923358,
       "orders": 48,
-      "median_rms_over_noise": 1.975641500007173,
+      "median_rms_over_noise": 1.9756414474874182,
       "surface": {
         "site": "Lowell Discovery Telescope",
         "altitude_km": 2.36,
@@ -530,18 +530,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.4237581817191757,
-          "error": 0.004773510451730472,
+          "log_column": -0.4237740999389829,
+          "error": 0.005220166825876602,
           "orders": 37
         },
         "CO2": {
-          "log_column": -0.027117803109557928,
-          "error": 0.007746426225568474,
+          "log_column": -0.028366325195870297,
+          "error": 0.007310472041562696,
           "orders": 18
         },
         "CH4": {
-          "log_column": -0.020193071225344583,
-          "error": 0.009501394641100988,
+          "log_column": -0.02019283574931434,
+          "error": 0.009501546971996002,
           "orders": 19
         }
       },
