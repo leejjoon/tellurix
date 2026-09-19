@@ -85,10 +85,23 @@ PHYSICS = {
 # How an extracted order becomes a fittable one.
 ORDER = {
     "saturation_floor": 0.02,
-    "throughput_floor": 0.25,
+    # Measured by sweeping it against a *fixed* reference set -- the middle
+    # third of each order, identical for every setting, so the improvement is
+    # not just the cut hiding the pixels it removed. 0.25 to 0.45 takes the
+    # reference residual from 1.86 to 1.67 sigma for 16% fewer pixels and one
+    # order per band: the red edge was corrupting the whole-order continuum,
+    # not merely fitting badly itself. Raising the continuum degree from 9 to
+    # 13 adds only 0.03 on top and four more parameters.
+    "throughput_floor": 0.45,
     "continuum_percentile": 95.0,
     "mask_hydrogen_kms": 600.0,
     "minimum_pixels": 256,
+    # How far a Chebyshev coefficient above the constant may move. The blaze
+    # spans a factor of ten or more in log flux across an order, so this has to
+    # be generous: at 1.5 it was binding on 218 of 248 order-frames, with
+    # coefficient 3 sitting at its bound in 103 of them, which strangles the
+    # continuum rather than regularising it.
+    "continuum_bound": 5.0,
 }
 
 
@@ -121,7 +134,8 @@ def stage_bounds(stage, model_species, free_species, parameters, degree, fit_ste
             # constant term sits near zero. The blaze shape the rest describe
             # runs over a factor of a few across an order, which is wider than
             # the atlas needed but far short of the counts scale.
-            bounds[f"continuum_{index}"] = (-2.0, 2.0) if index == 0 else (-1.5, 1.5)
+            bound = ORDER["continuum_bound"]
+            bounds[f"continuum_{index}"] = (-2.0, 2.0) if index == 0 else (-bound, bound)
     bounds["log_jitter"] = ((np.log(1e-5), np.log(0.5)) if "log_jitter" in free
                             else pinned(parameters.log_jitter))
     bounds["stellar_velocity_kms"] = ((-60.0, 60.0) if ("stellar_velocity_kms" in free and fit_stellar)
