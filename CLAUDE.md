@@ -92,6 +92,24 @@ L-BFGS-B's rescaling onto that bound drives the continuum to zero (measured:
 220 sigma against 2.7). The continuum degree is 9, not 3 -- an order spans
 77-96 cm-1 and carries the blaze.
 
+The dominant local error is the **red edge of every order**, not the line spread
+function: |residual| in continuum units triples between the middle third and the
+last sixth, and by the same factor in orders with no telluric absorption at all,
+so it is the blaze and the extraction. `throughput_floor` is 0.45 for that
+reason, measured by sweeping it against a fixed middle-third reference set so
+the gain is not just the cut hiding what it removed (1.86 to 1.67 sigma for 16%
+fewer pixels). Two things that looked like causes and are not: the continuum
+coefficient bound was binding on 218 of 248 order-frames yet loosening it
+changes the residual by 0.01 sigma (it is now 5.0 anyway, so `at_bound` stays
+meaningful); and the fitted LSF really does narrow by 10-33% along an order, but
+freeing it per segment is worth a median 1.02.
+
+An airmass ladder is confounded by its targets: a night observes few stars, each
+over a limited airmass span. On the DCT night one star, chi Cap, is the only
+target above airmass 1.82, and dropping it moves every species' slope by 2.5-3.5
+sigma. `analyze_igrins_ladder.py` reports `leave_one_object_out` for this
+reason. Quote a slant-path bound only over the range several stars cover.
+
 `igrins.py` reads the RRISA reduced products. Two of its rules exist because
 the archive is not self-describing. `surface_conditions` normalizes the weather
 cards from the `TELESCOP` card -- McDonald is degF/inHg, DCT is

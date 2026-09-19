@@ -193,52 +193,73 @@ absorption depth, not averaged.
 ## Results: an airmass ladder, and what it measures
 
 DCT 2018-12-20, ten standards spanning **airmass 1.065 to 2.501** in one
-night, **H and K** (500 order-frames; 23 K orders skipped at the band edges).
-Site profile `data/profiles/dct_2018.csv`, flat source, hydrogen series masked.
-H and K are simultaneous readouts of one pointing, so the analysis merges them
-per exposure.
+night, H and K, 466 order-frames. Site profile `data/profiles/dct_2018.csv`,
+flat source, hydrogen series masked. H and K are simultaneous readouts of one
+pointing, so the analysis merges them per exposure.
 
 The forward model already divides optical depth by cos(z) with the measured
 zenith angle, so a fitted `log_column_scale` scales the **vertical** column
 with the slant path removed. If the atmosphere model is right it does not
 depend on where the telescope was pointing.
 
-One trap first. Airmass and time of night correlate at **-0.788** on this
-night — targets rise — so a trend fitted against airmass alone absorbs anything
-that varies with time. Every trend below is fitted against airmass, against
-time, and against both.
+Two confounds have to be handled before any of that is readable.
+
+**Time.** Airmass and time of night correlate at -0.788 here — targets rise —
+so a trend fitted against airmass alone absorbs anything that varies with time.
+Everything below is fitted against airmass, against time, and against both.
+
+**The stars themselves.** A night observes a handful of targets, each over a
+limited span of airmass, so star identity and airmass are partly confounded.
+On this night they are *completely* confounded at the top: chi Cap is the only
+target above airmass 1.82.
 
 | species | orders/frame | per airmass | per hour | joint d/dAM | frame scatter |
 |---|---:|---:|---:|---:|---:|
-| H2O | 39 | +0.1206 ± 0.0665 (1.8σ) | **-0.0372 ± 0.0071 (5.2σ)** | -0.0258 | 0.1188 |
-| CO2 | 18 | +0.0042 ± 0.0046 (0.9σ) | -0.0003 ± 0.0008 (0.3σ) | +0.0045 | 0.0100 |
-| CH4 | 19 | +0.0037 ± 0.0070 (0.5σ) | -0.0004 ± 0.0011 (0.4σ) | +0.0020 | 0.0040 |
+| H2O | 37 | +0.1204 ± 0.0602 (2.0σ) | **-0.0354 ± 0.0069 (5.2σ)** | -0.0320 | 0.1204 |
+| CO2 | 17 | +0.0021 ± 0.0039 (0.5σ) | +0.0003 ± 0.0007 (0.4σ) | +0.0058 | 0.0102 |
+| CH4 | 19 | +0.0198 ± 0.0096 (2.1σ) | -0.0018 ± 0.0017 (1.1σ) | +0.0287 | 0.0130 |
 
-**The well-mixed species show no airmass dependence.** CH4 is flat to
-+0.0037 ± 0.0070 per unit airmass (0.5σ) and CO2 to +0.0042 ± 0.0046
-(0.9σ), with frame-to-frame scatters of 0.4% and 1.0%. Their abundances
-are known and fixed, so this is not a fit succeeding — it is the slant-path
-treatment and the assumed profile shape tested against a factor of 2.35 in path
-length and not breaking. Taking either species' 2σ bound over the observed
-airmass range puts any systematic slant-path error below about **2.4% out to
-airmass 2.5**.
+### One target carries every slope
 
-Adding K roughly doubles the orders that constrain CO2 and CH4 (9 to 18 and 8 to
-19) and halves the slope error on CO2, from ±0.0091 to ±0.0046.
+Refitting with each object dropped in turn:
 
-**The water trend is the sky, not the model.** Against airmass H2O looks like a
-1.7σ effect; against time it is 5.1σ, and the residual scatter halves. In a
-joint fit the airmass term collapses to -0.0249 while the time term survives at
--0.0400 per hour. The retrieved precipitable water falls monotonically from
-2.7 mm at 01:00 UT to 2.0 mm at 07:47 — an ordinary drying night, recovered
-from the spectra alone.
+| species | slope, all 10 frames | without chi Cap | shift |
+|---|---:|---:|---:|
+| H2O | +0.1204 | +0.3291 | 3.5σ |
+| CO2 | +0.0021 | -0.0081 | 2.6σ |
+| CH4 | +0.0198 | -0.0043 | 2.5σ |
 
-**Repeatability.** chi Cap was observed twice 3.7 minutes apart at airmass
-2.46 and 2.50, where nothing about the sky had time to change. The columns
-differ by CH4 +0.004, CO2 -0.010, H2O -0.025 — so around 1% is the noise floor for the
-well-mixed species, and H2O's 12% frame-to-frame scatter is real weather.
+Dropping chi Cap moves every slope by 2.5 to 3.5 sigma. Collapsing its two
+frames — taken 3.7 minutes apart — into one point does *not* remove the effect
+(CH4 goes from 2.1σ to 1.9σ), so this is not double counting: chi Cap's fitted
+columns genuinely differ from the rest, and because it is the only target above
+airmass 1.82, that difference is indistinguishable from an airmass effect.
 
-**Fit quality does not degrade with airmass**: +0.291 ± 0.204 sigma per unit
+**So the defensible statement is narrower than it first appears.** Over airmass
+**1.07 to 1.81, with three independent stars**, the well-mixed columns are flat:
+CH4 −0.0043 ± 0.0233 (0.2σ) and CO2 −0.0081 ± 0.0093 (0.9σ). Their 2σ bounds put
+any systematic slant-path error below about **2% (CO2) to 4% (CH4)** across that
+range. The extension to airmass 2.5 rests on one star and cannot be attributed
+to the atmosphere rather than to the target.
+
+An earlier version of this document quoted a 2.4% bound out to airmass 2.5. That
+was the same confounded fit; CH4 simply happened to land near zero that time.
+The lesson is that a ladder needs *several* stars at high airmass, not several
+frames of one — see `leave_one_object_out` in the analysis, which now reports
+this by default.
+
+**The water trend is the sky, not the model.** Against airmass H2O is 2.0σ;
+against time it is 5.2σ, and the residual scatter halves. In a joint fit the
+airmass term collapses to -0.0320 while the time term survives at
+-0.0411 per hour. The retrieved precipitable water falls monotonically
+through the night — an ordinary drying night, recovered from the spectra alone.
+
+**Repeatability.** chi Cap's two frames 3.7 minutes apart differ by CH4
++0.002, CO2 +0.001, H2O -0.027 — so a few tenths of a percent is the
+noise floor for the well-mixed species, and H2O's 12% frame-to-frame
+scatter is real weather.
+
+**Fit quality does not degrade with airmass**: +0.111 ± 0.096 sigma per unit
 airmass, consistent with flat.
 
 ### What IGRINS can and cannot measure
@@ -367,6 +388,71 @@ uv run python scripts/summarize_igrins_fit.py \
 `data/igrins/` and the per-order `.npz` are gitignored; the committed record is
 `docs/igrins_a0v_results.json` and the two-order fixture under
 `tests/data/igrins/`.
+
+## What limits the residual: the order edges, not the line spread function
+
+The residual-against-transmission curve has a floor of a couple of sigma where
+there is *no absorption at all*, which cannot be the atmosphere. Chasing it
+turned up one real cause and two dead ends, all measured on one frame.
+
+**The line spread function does vary along an order, and it does not matter
+much.** `lsf_sigma_kms` is fitted per order but is a single constant within
+one. Splitting orders into six x-segments with five Chebyshev coefficients free
+per segment — smooth enough not to trace a three-pixel line, free enough that
+the blaze cannot leak into the width — the fitted R varies monotonically with
+pixel: 29,400 to 40,400 across order 2 (33%), 42,600 to 47,200 across order 24
+(10%), always narrower at high x. But freeing the width per segment improves the
+residual by a median of only 1.02, best 1.55. Velocity per pixel is constant to
+3.1% across the band, so a constant sigma in km/s is already very nearly a
+constant sigma in *pixels*; adding an x term is a real refinement worth a couple
+of percent, not a fix. The calibration products cannot settle it independently:
+`SKY_*.wvlsol_v1.fits` is only the wavelength array, with no line table and no
+extracted sky spectrum, so an arc-line measurement would need the PLP re-run on
+raw frames.
+
+**The continuum coefficient bound was binding and that did not matter either.**
+218 of 248 order-frames had at least one Chebyshev coefficient pinned at ±1.5,
+coefficient 3 in 103 of them. Loosening the bound to ±8 releases them all and
+changes the reference residual by 0.01 sigma. The basis is degenerate enough
+that a railed coefficient is compensated by its neighbours. It is still worth
+loosening — the ladder filters on `at_bound`, and 218 spurious flags pollute
+that — so the bound is now ±5, but it is not a residual fix.
+
+**The red edge of every order is the real one.** Across all 17 fitted H orders
+of one frame, |residual| in continuum units is 0.0044 in the middle third and
+0.0141 in the last sixth — a **3.2× degradation**, while the quoted sigma stays
+flat, so it is model error and not underestimated noise. Crucially the same 3.2×
+appears in the 11 orders whose median transmission exceeds 0.99, where there are
+no telluric lines to get wrong. Throughput there falls from ~0.6 to ~0.16, the
+steepest blaze gradient anywhere in the order, and the old 0.25 floor only bit
+at x ≈ 1960. Our continuum diverges from the PLP's own by 3–4% in that region
+against 0.3–1.2% mid-order.
+
+Raising the throughput floor from 0.25 to 0.45 was tested against a **fixed**
+reference set — the middle third of each order, identical for every setting, so
+the gain cannot be the cut hiding the pixels it removed:
+
+| floor | continuum degree | rms on the fixed reference set | pixels kept |
+|---:|---:|---:|---:|
+| 0.25 | 9 | 1.86 | 1397 |
+| 0.35 | 9 | 1.81 | 1296 |
+| **0.45** | **9** | **1.67** | **1142** |
+| 0.55 | 9 | 1.58 | 960 |
+| 0.45 | 13 | 1.64 | 1142 |
+
+The fit gets better *where nothing was cut*, which means the red edge was
+corrupting the whole-order continuum solution rather than merely fitting badly
+itself. Order 15 shows the mechanism outright: at floor 0.25 its H2O column
+railed to the bound at exactly −2.0000, and raising the floor releases it.
+0.45 is the knee — 10% better for 16% fewer pixels and one order per band.
+Degree 13 adds 0.03 more for four extra parameters, which is not worth it.
+
+Adopted: `throughput_floor` 0.45 and `continuum_bound` 5.0. Median residual over
+the whole ladder falls from about 1.9 to **1.17** sigma in H and 1.24 in K, and
+railed continuum coefficients from 218 of 248 rows to 67 in H and 4 in K. Note
+that most of that headline drop is the excluded pixels; the honest measure of
+the model improving is the 1.86 to 1.67 on the fixed reference set.
+
 
 ## The run record
 
