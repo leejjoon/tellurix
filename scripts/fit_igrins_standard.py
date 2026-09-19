@@ -601,6 +601,10 @@ def main() -> None:
                         help="measure each order's repeatable instrument response from the "
                              "night's OTHER frames and divide it out, then refit. Worth about "
                              "1.7x on the residual and most of that at the order edges.")
+    parser.add_argument("--pattern-smooth-pixels", type=int, default=51,
+                        help="boxcar applied to the pattern. Without it the correction also "
+                             "removes our own telluric model error, which every frame shares; "
+                             "0 disables the guard and invalidates the residual as a test.")
     parser.add_argument("--fixed-pattern-min-frames", type=int, default=5,
                         help="below this many frames the pattern is too noisy to be a calibration")
     parser.add_argument("--no-covariance", action="store_true",
@@ -680,7 +684,9 @@ def main() -> None:
         # repeatable response error from its own noise.
         corrected = None
         if args.fixed_pattern and len(first_pass) >= args.fixed_pattern_min_frames:
-            patterns = leave_one_out_patterns([r["_fractional_residual"] for _, r in first_pass])
+            patterns = leave_one_out_patterns(
+                [r["_fractional_residual"] for _, r in first_pass],
+                smooth_pixels=args.pattern_smooth_pixels)
             corrected = []
             for (observation, previous), pattern in zip(first_pass, patterns):
                 began = time.time()
@@ -736,6 +742,7 @@ def main() -> None:
                 "covariance": not args.no_covariance,
                 "fixed_pattern": args.fixed_pattern,
                 "fixed_pattern_min_frames": args.fixed_pattern_min_frames,
+                "pattern_smooth_pixels": args.pattern_smooth_pixels,
                 "frames_in_run": len(observations),
             },
             "physics": dict(PHYSICS), "order_rule": dict(ORDER),
