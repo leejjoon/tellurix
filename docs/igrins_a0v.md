@@ -193,52 +193,119 @@ absorption depth, not averaged.
 ## Results: an airmass ladder, and what it measures
 
 DCT 2018-12-20, ten standards spanning **airmass 1.065 to 2.501** in one
-night, H band, 240 order-frames. Site profile `data/profiles/dct_2018.csv`,
-flat source, hydrogen series masked.
+night, **H and K** (500 order-frames; 23 K orders skipped at the band edges).
+Site profile `data/profiles/dct_2018.csv`, flat source, hydrogen series masked.
+H and K are simultaneous readouts of one pointing, so the analysis merges them
+per exposure.
 
 The forward model already divides optical depth by cos(z) with the measured
 zenith angle, so a fitted `log_column_scale` scales the **vertical** column
 with the slant path removed. If the atmosphere model is right it does not
 depend on where the telescope was pointing.
 
-One trap first. Airmass and time of night correlate at
-**-0.788** on this night — targets rise — so a trend fitted against
-airmass alone absorbs anything that varies with time. Every trend below is
-fitted against airmass, against time, and against both.
+One trap first. Airmass and time of night correlate at **-0.788** on this
+night — targets rise — so a trend fitted against airmass alone absorbs anything
+that varies with time. Every trend below is fitted against airmass, against
+time, and against both.
 
-| species | per airmass | per hour | joint d/dAM | frame scatter |
-|---|---:|---:|---:|---:|
-| H2O | +0.1214 ± 0.0639 (1.9σ) | **-0.0374 ± 0.0071 (5.3σ)** | -0.0219 | 0.1221 |
-| CO2 | -0.0110 ± 0.0091 (1.2σ) | +0.0016 ± 0.0014 (1.2σ) | -0.0079 | 0.0096 |
-| CH4 | -0.0021 ± 0.0068 (0.3σ) | +0.0007 ± 0.0010 (0.7σ) | +0.0112 | 0.0088 |
+| species | orders/frame | per airmass | per hour | joint d/dAM | frame scatter |
+|---|---:|---:|---:|---:|---:|
+| H2O | 39 | +0.1122 ± 0.0673 (1.7σ) | **-0.0371 ± 0.0073 (5.1σ)** | -0.0249 | 0.1187 |
+| CO2 | 18 | +0.0074 ± 0.0047 (1.6σ) | -0.0008 ± 0.0008 (0.9σ) | +0.0049 | 0.0102 |
+| CH4 | 19 | +0.0024 ± 0.0071 (0.3σ) | -0.0000 ± 0.0012 (0.0σ) | +0.0038 | 0.0043 |
 
 **The well-mixed species show no airmass dependence.** CH4 is flat to
--0.0021 ± 0.0068 per unit airmass and CO2 to -0.0110 ± 0.0091, with
-frame-to-frame scatters of 0.9% and 1.0%. Their abundances are known and
-fixed, so this is not a fit succeeding — it is the slant-path treatment and the
-assumed profile shape being tested against a factor of 2.35 in path length and
-not breaking. Taking CH4's 2σ upper bound over the observed airmass range
-bounds any systematic slant-path error at about **2% out to airmass 2.5**.
++0.0024 ± 0.0071 per unit airmass and CO2 to +0.0074 ± 0.0047, with frame-to-frame
+scatters of 0.4% and 1.0%. Their abundances are known and fixed, so this
+is not a fit succeeding — it is the slant-path treatment and the assumed profile
+shape tested against a factor of 2.35 in path length and not breaking. Taking
+either species' 2σ bound over the observed airmass range puts any systematic
+slant-path error below about **2.4% out to airmass 2.5**.
 
-**The water trend is the sky, not the model.** Fitted against airmass H2O looks
-like a 1.9σ effect; fitted against time it is 5.3σ, and the residual scatter
-halves from 0.093 to 0.053. In a joint fit the airmass term collapses to
--0.0219 while the time term survives at -0.0408 per hour. The retrieved
-precipitable water falls monotonically from 2.7 mm at 01:00 UT to 2.0 mm at
-07:47 — an ordinary drying night, recovered from the spectra alone.
+Adding K roughly doubles the orders that constrain CO2 and CH4 (9 to 18 and 8 to
+19) and halves the slope error on CO2, from ±0.0091 to ±0.0047.
+
+**The water trend is the sky, not the model.** Against airmass H2O looks like a
+1.7σ effect; against time it is 5.1σ, and the residual scatter halves. In a
+joint fit the airmass term collapses to -0.0249 while the time term survives at
+-0.0400 per hour. The retrieved precipitable water falls monotonically from
+2.7 mm at 01:00 UT to 2.0 mm at 07:47 — an ordinary drying night, recovered
+from the spectra alone.
 
 **Repeatability.** chi Cap was observed twice 3.7 minutes apart at airmass
-2.46 and 2.50, where nothing about the sky had time to change. The
-columns differ by CH4 +0.006, CO2 -0.017, H2O -0.024 — so 1–2% is the noise
-floor, and H2O's 12% frame-to-frame scatter is real weather at roughly ten
-times it.
+2.46 and 2.50, where nothing about the sky had time to change. The columns
+differ by CH4 +0.004, CO2 -0.010, H2O -0.025 — so under 1% is the noise floor for the
+well-mixed species, and H2O's 12% frame-to-frame scatter is real weather.
 
-**Fit quality does not degrade with airmass**: +0.317 ± 0.210 sigma per
-unit airmass, consistent with flat.
+**Fit quality does not degrade with airmass**: +0.291 ± 0.204 sigma per unit
+airmass, consistent with flat.
 
-This is the measurement the Arcturus atlas could not make at all, because its
-zenith angle was pinned at zero and every airmass effect was absorbed into the
-fitted columns.
+### What IGRINS can and cannot measure
+
+Peak vertical optical depth reached anywhere in one exposure:
+
+| species | H band | K band | orders above 0.15 |
+|---|---:|---:|---:|
+| H2O | 992 | 1973 | 39 |
+| CO2 | 2.33 | 168 | 20 |
+| CH4 | 1.53 | 3.26 | 19 |
+| N2O | 0.002 | 0.125 | 0 |
+| CO | 0.001 | 0.115 | 0 |
+| O2 | **0.000** | **0.000** | 0 |
+
+**O2 is not measurable with IGRINS at all** — its near-infrared bands are at
+0.76 and 1.27 um, both blueward of the instrument, so its optical depth is
+exactly zero across H and K. Earlier drafts of this document listed it among
+the well-mixed species to test; that was wrong. CO and N2O peak just under the
+0.15 threshold this analysis uses; admitting them at 0.10 gives
++0.0156 ± 0.0388 and +0.0353 ± 0.0241 per airmass — consistent with zero, but
+with errors five to eight times CO2's, so they constrain nothing. CO2 and CH4
+are the well-mixed test, and they are enough.
+
+## Results: does a real A0V model beat masking the hydrogen lines?
+
+The flat source plus a ±600 km/s hydrogen mask discards about 22% of the H-band
+pixels. `scripts/generate_payne_zero_a0v.py` synthesizes an A0V (9,500 K,
+log g 4.1, solar) across 1415-2545 nm; fitting with it and the mask lifted asks
+whether that is worth it.
+
+Two controls first. On orders with no Brackett line the A0V source changes
+nothing: the residual outside the windows agrees with the flat-source fit to
+0.022 sigma. And the A0V run reproduces the flat run's fitted velocities and
+resolving powers.
+
+Inside the hydrogen windows, with both residuals divided by the same real
+uncertainty:
+
+| order | line | pixels | no-star model | A0V model | gain |
+|---|---|---:|---:|---:|---:|
+| H05 | Br10 | 594 | 17.09 | 2.56 | 6.7 |
+| H11 | Br12 | 576 | 2.88 | 2.14 | 1.4 |
+| H15 | Br14 | 602 | 6.43 | 1.87 | 3.4 |
+| H19 | Br18/19 | 912 | 20.95 | 2.66 | 7.9 |
+| **pooled** | | 2684 | **13.97** | **2.33** | **6.0** |
+
+The A0V model removes a factor of six, and leaves 2.33 sigma — slightly *better*
+than the 2.6 sigma floor the rest of the band reaches, because the Brackett
+lines sit mid-order where the blaze is flattest and the signal to noise is
+highest. So the hydrogen lines stop being a limiting error and those 22% of
+pixels come back.
+
+That is a better outcome than expected. The synthesis reports
+`atmosphere_converged: false`, meaning it rests on Payne Zero's learned
+initializer rather than a converged solve, and at 9,500 K the hydrogen lines
+are the entire spectrum — the reason for building the flat-source path first
+was that this might not work. It does. The flat source remains the conservative
+default because it depends on no stellar model at all, which is what makes the
+residual-against-transmission curve above a clean measurement of the
+atmosphere; use the A0V model when the masked pixels are worth recovering.
+
+One caveat that survives: the model's Brackett lines are shallower than the
+observed absorption at the same wavelengths (0.20 against 0.53 of the continuum
+at Br10). That comparison is confounded, because the observed depth contains
+telluric absorption and continuum-fit freedom as well as the star, so it is not
+by itself evidence of a bad profile — but the residual is the metric that
+matters, and it is fine.
 
 ## Cost
 
@@ -302,16 +369,18 @@ uv run python scripts/summarize_igrins_fit.py \
 
 ## What is not done yet
 
-- **The K band.** The reader and driver handle it, but only H has been run.
-  K carries Br-gamma at 2.1661 um and the Pfund crowd above 2.27 um, both
-  already in `stellar_line_mask`, plus CO and CH4 that H does not constrain.
-- **A real A0V model.** `--stellar <npz>` accepts one and lifts the hydrogen
-  mask. Payne Zero's range reaches 9,500 K, but the only features that matter
-  here are Stark-broadened hydrogen lines, and an emulator spanning 6,500 K may
-  not reproduce those. The flat-source path does not depend on it, and
-  `A0V_NORM` in the file is a free comparison.
-- **O2 and CO in the ladder.** The H band constrains only H2O, CO2 and CH4 well
-  enough to measure a column; O2 and CO need the K band.
+- **A second night, and a second site.** Everything above is one night at DCT
+  plus one Gemini South frame. The weather-convention normaliser is exercised
+  on real DCT and Gemini headers but not yet on a McDonald one, where the
+  degF/inHg branch lives.
 - **The run record.** These fits write `.npz` and a JSON summary.
   `src/jax_telluric/record.py` keys its rows on a hard-coded `page`/`epoch`
   pair; generalizing that would let one record module serve both pipelines.
+- **A per-frame atmosphere.** One profile is built per night from the median
+  surface conditions, though the header gives T, P and humidity per frame and
+  they moved by 3 K and 2 hPa across this night. The fitted column scales
+  absorb most of that, and the airmass test above bounds what is left.
+- **`vsini` is fixed, not fitted.** The A0V run used 150 km/s for every
+  standard. A0V rotation velocities range over roughly 100-250 km/s, and the
+  Brackett lines are already hundreds of km/s wide from Stark broadening, so
+  this should be second order — but it is assumed, not measured.

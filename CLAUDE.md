@@ -104,6 +104,24 @@ peak, on the *smoothed* flux, is ours and is asymmetric because the blaze
 roll-off is. `reduced_log.csv`'s `AM` column writes `-1` for missing and carries
 impossible values -- the airmass comes from the header.
 
+What the two bands can measure, from the peak vertical optical depth reached
+anywhere in an exposure: H2O and CO2 and CH4 yes; CO and N2O peak at 0.115 and
+0.125, just under the 0.15 the ladder analysis requires; **O2 is exactly zero in
+both bands** and is not measurable with this instrument at all, its near-infrared
+bands being at 0.76 and 1.27 um. `analyze_igrins_ladder.py` merges H and K of one
+exposure, and merges order-shards of one band, by the date and frame number in
+the filename -- sharding one band by order needs `--summary-suffix`, or every
+shard writes the same per-frame summary and they overwrite each other.
+
+`scripts/generate_payne_zero_a0v.py` synthesizes the A0V source, in Payne Zero's
+own environment for the same reason the Arcturus one does. Its metadata reports
+`atmosphere_converged: false`, and at 9,500 K the hydrogen lines are the whole
+spectrum, so this was expected to be the weak link -- measured, it removes a
+factor of six from the residual inside the Brackett windows and leaves 2.33
+sigma, at the floor the rest of the band reaches. Use `--stellar flat` when the
+point is to measure the atmosphere, since it depends on no stellar model at all;
+use the A0V model to recover the 22% of H-band pixels the hydrogen mask discards.
+
 `scripts/generate_payne_zero_arcturus.py` makes the stellar source and does **not**
 run in this environment: Payne Zero needs Python >= 3.11 while this package is pinned
 to 3.10 by `exojax==2.5.0`. It runs in Payne Zero's own venv and writes an npz that
