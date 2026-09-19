@@ -24,6 +24,14 @@ A third check comes free wherever the same star was observed twice close
 together: the difference is repeatability, with no real atmospheric change in
 between.
 
+The trap this cannot design away is that a night observes a handful of stars,
+each over a limited range of airmass, so star identity and airmass are partly
+confounded -- and at the extremes, often completely. A slope that rests on the
+one star that reached airmass 2.5 is measuring that star as much as the
+atmosphere. `leave_one_object_out` refits with each object dropped in turn and
+reports the worst excursion, so a slope carried by a single target cannot be
+read as a measurement of the slant path.
+
     uv run python scripts/analyze_igrins_ladder.py --directory data/corrected/igrins/ladder
 """
 
@@ -87,6 +95,42 @@ def weighted_line(x, y, sigma):
     return {"slope": float(slope), "slope_error": float(np.sqrt(max(chi2_nu, 1.0) / sxx)),
             "intercept": float(intercept), "points": int(x.size),
             "scatter": float(np.std(residual))}
+
+
+def leave_one_object_out(frames, species):
+    """How much of a slope rests on any single target.
+
+    Returns the full-sample slope, the widest slope seen when one object is
+    dropped, and which object that was. When the two disagree by more than the
+    quoted error, the slope is a property of that star and not of the airmass.
+    """
+
+    have = [f for f in frames if species in f["columns"]]
+    if len(have) < 4:
+        return None
+    full = weighted_line([f["airmass"] for f in have],
+                         [f["columns"][species]["log_column"] for f in have],
+                         [f["columns"][species]["error"] for f in have])
+    worst, culprit, remaining = full["slope"], None, None
+    for name in sorted({f["object"] for f in have}):
+        kept = [f for f in have if f["object"] != name]
+        if len({f["airmass"] for f in kept}) < 3:
+            continue
+        trial = weighted_line([f["airmass"] for f in kept],
+                              [f["columns"][species]["log_column"] for f in kept],
+                              [f["columns"][species]["error"] for f in kept])
+        if not np.isfinite(trial["slope"]):
+            continue
+        if abs(trial["slope"] - full["slope"]) > abs(worst - full["slope"]) or culprit is None:
+            worst, culprit, remaining = trial["slope"], name, trial
+    return {
+        "slope": full["slope"], "slope_error": full["slope_error"],
+        "worst_without_one_object": worst,
+        "object_dropped": culprit,
+        "slope_error_without": remaining["slope_error"] if remaining else float("nan"),
+        "shift_in_sigma": (abs(worst - full["slope"]) / full["slope_error"]
+                           if full["slope_error"] > 0 else float("nan")),
+    }
 
 
 def main() -> None:
@@ -209,6 +253,12 @@ def main() -> None:
             })
     repeats.sort(key=lambda r: r["minutes_apart"])
 
+    robustness = {s: r for s in ("H2O",) + WELL_MIXED
+                  if (r := leave_one_object_out(frames, s)) is not None}
+    objects_by_airmass = [
+        {"airmass": round(f["airmass"], 3), "object": f["object"]}
+        for f in sorted(frames, key=lambda f: f["airmass"])]
+
     quality = weighted_line([f["airmass"] for f in frames],
                             [f["median_rms_over_noise"] for f in frames],
                             [0.1] * len(frames))
@@ -229,6 +279,8 @@ def main() -> None:
             "because their abundances do not vary."
         ),
         "column_vs_airmass": trends,
+        "leave_one_object_out": robustness,
+        "objects_by_airmass": objects_by_airmass,
         "quality_vs_airmass": quality,
         "repeat_observations": repeats,
         "per_frame": frames,
@@ -256,6 +308,16 @@ def main() -> None:
         print(f"  {species:6s} {t['slope']:+8.4f}+-{t['slope_error']:.4f} ({sig:4.1f}s) "
               f"{v['slope']:+8.4f}+-{v['slope_error']:.4f} ({sig_time:4.1f}s) "
               f"{t['joint_slope_per_airmass']:+8.4f}/AM {t['joint_slope_per_hour']:+7.4f}/hr")
+
+    print("\nhow much of each slope rests on one target")
+    print(f"  {'':6s} {'slope':>10} {'drop one object':>17} {'object':>16} {'shift':>7}")
+    for name, entry in robustness.items():
+        print(f"  {name:6s} {entry['slope']:+10.4f} {entry['worst_without_one_object']:+17.4f} "
+              f"{str(entry['object_dropped'])[:16]:>16} {entry['shift_in_sigma']:6.1f}s")
+    span = objects_by_airmass
+    print(f"  airmass {span[0]['airmass']:.2f} ({span[0]['object'][:14]}) to "
+          f"{span[-1]['airmass']:.2f} ({span[-1]['object'][:14]}); "
+          f"{len({o['object'] for o in span})} distinct targets")
 
     if repeats:
         print("\nrepeat observations of one star")
