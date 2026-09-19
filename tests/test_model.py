@@ -3,6 +3,8 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
+from jax_telluric.fit import _ParameterCodec
+
 from jax_telluric import (
     ArrayOpacityBackend,
     BoxcarFTSInstrumentProfile,
@@ -805,3 +807,92 @@ def test_a_trimmed_grid_predicts_what_the_untrimmed_one_did():
         predictions[margin] = np.asarray(model.predict(order, params(sigma=2.0)))
     difference = np.abs(predictions[25.0] - predictions[3.0])
     assert difference.max() < 1.0e-6, difference.max()
+
+
+def _covariance_fixture(count=200, noise=2.0e-3, seed=0):
+    """A well-conditioned fit on data with exactly the assumed white noise."""
+    model, nu = make_model()
+    wavelength = np.linspace(1.0e7 / nu[-20], 1.0e7 / nu[20], count)
+    blank = SpectralOrder(wavelength, np.ones(count), np.full(count, noise))
+    truth = params(scale=0.3)
+    clean = np.asarray(model.predict(blank, truth))
+    flux = clean + np.random.default_rng(seed).normal(0.0, noise, count)
+    order = SpectralOrder(wavelength, flux, np.full(count, noise))
+    bounds = {
+        "H2O": (-1.0, 1.0), "velocity_kms": (0.0, 0.0), "wavelength_stretch": (0.0, 0.0),
+        "lsf_sigma_kms": (2.8, 2.8), "continuum_0": (-0.3, 0.3),
+        "continuum_1": (0.0, 0.0), "continuum_2": (0.0, 0.0),
+        "log_jitter": (np.log(1.0e-8), np.log(1.0e-8)),
+    }
+    return model, order, bounds, truth
+
+
+def test_covariance_inverts_the_objective_hessian():
+    """It must be the curvature of the objective, not the optimizer's guess."""
+    model, order, bounds, _ = _covariance_fixture()
+    result = fit_order(model, order, params(scale=0.0), bounds)
+    assert result.covariance is not None, result.message
+    objective = OrderObjective(model, order, 3)
+    vector = objective.codec.pack(result.parameters)
+    free = [objective.codec.names.index(n) for n in ("H2O", "continuum_0")]
+
+    step = 1.0e-5
+    numerical = np.zeros((2, 2))
+    for a in range(2):
+        for b in range(2):
+            shifted = np.zeros(4)
+            total = 0.0
+            for sa, sb, sign in ((1, 1, 1.0), (1, -1, -1.0), (-1, 1, -1.0), (-1, -1, 1.0)):
+                probe = vector.copy()
+                probe[free[a]] += sa * step
+                probe[free[b]] += sb * step
+                total += sign * objective(probe)[0]
+            numerical[a, b] = total / (4.0 * step * step)
+            del shifted
+    analytic = np.linalg.inv(result.covariance[np.ix_(free, free)])
+    np.testing.assert_allclose(analytic, numerical, rtol=2e-3)
+
+
+def test_formal_errors_match_the_scatter_when_the_noise_model_is_true():
+    """The whole point: with genuinely white noise the formal sigma is right.
+
+    On real data the residual is dominated by correlated model error and the
+    same number comes out several times too small -- which is why FitResult
+    documents it as formal rather than as an uncertainty.
+    """
+    recovered, reported = [], []
+    for seed in range(8):
+        model, order, bounds, _ = _covariance_fixture(seed=seed)
+        result = fit_order(model, order, params(scale=0.0), bounds)
+        assert result.covariance is not None, result.message
+        index = list(_ParameterCodec(model.species, 3).names).index("H2O")
+        recovered.append(float(result.parameters.log_column_scales["H2O"]))
+        reported.append(np.sqrt(result.covariance[index, index]))
+
+    scatter = float(np.std(recovered, ddof=1))
+    formal = float(np.mean(reported))
+    assert 0.55 < scatter / formal < 1.8, f"scatter {scatter:.3e} against formal {formal:.3e}"
+
+
+def test_a_parameter_resting_on_a_bound_is_named_and_excluded():
+    model, order, bounds, _ = _covariance_fixture()
+    # A ceiling far below the solution, so the fit must stop against it.
+    bounds = {**bounds, "H2O": (-1.0, 0.05)}
+    result = fit_order(model, order, params(scale=0.0), bounds)
+    assert "H2O" in result.at_bound
+    index = list(_ParameterCodec(model.species, 3).names).index("H2O")
+    if result.covariance is not None:
+        assert result.covariance[index, index] == 0.0
+
+
+def test_correlation_is_unit_diagonal_and_symmetric_where_it_is_defined():
+    model, order, bounds, _ = _covariance_fixture()
+    result = fit_order(model, order, params(scale=0.0), bounds)
+    assert result.correlation is not None
+    free = [list(_ParameterCodec(model.species, 3).names).index(n)
+            for n in ("H2O", "continuum_0")]
+    block = result.correlation[np.ix_(free, free)]
+    np.testing.assert_allclose(np.diag(block), 1.0, rtol=1e-10)
+    np.testing.assert_allclose(block, block.T, rtol=1e-10)
+    assert np.all(np.abs(block) <= 1.0 + 1e-10)
+    assert result.condition_number is not None and result.condition_number > 1.0

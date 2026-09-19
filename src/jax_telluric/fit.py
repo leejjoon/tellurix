@@ -19,6 +19,30 @@ _MAX_PROJECTED_SCALED_GRADIENT = 1.0
 
 @dataclass(frozen=True)
 class FitResult:
+    """A fit and what can honestly be said about its uncertainty.
+
+    ``covariance`` is the inverse Hessian of the objective at the solution,
+    restricted to the parameters that were free and not resting on a bound, and
+    padded with zeros elsewhere so its indices match ``codec.names``. That is a
+    *formal* covariance: it assumes the residuals are independent and Gaussian
+    with the stated uncertainties. On this atlas they are neither -- the
+    residual is dominated by stellar line-list error, which is correlated
+    between pixels -- so the formal errors come out far too small. Measured on
+    ``ab5000_``: formal sigma on the water column 0.76%, 2.7% after scaling by
+    the square root of reduced chi-squared, against 6.5-9% actually measured
+    from sub-window to sub-window. Scaling by chi-squared undercorrects because
+    it assumes the excess is white.
+
+    ``correlation`` carries the part that survives all of that. It describes the
+    shape of the likelihood rather than its scale, so a wrong noise model leaves
+    it intact, and it is where the degeneracies show: a column scale strongly
+    correlated with the continuum means the data cannot separate them.
+
+    ``condition_number`` is that of the inverted submatrix, and ``at_bound``
+    names the free parameters excluded for resting on a bound -- where the
+    quadratic approximation does not hold and the matrix would be singular.
+    """
+
     parameters: TelluricParameters
     covariance: np.ndarray | None
     transmission: np.ndarray
@@ -28,6 +52,9 @@ class FitResult:
     message: str
     objective: float
     iterations: int
+    correlation: np.ndarray | None = None
+    condition_number: float | None = None
+    at_bound: tuple[str, ...] = ()
 
 
 class _ParameterCodec:
@@ -109,6 +136,53 @@ def _projected_gradient(vector, gradient, lower, upper):
     projected[(vector >= upper - tolerance) & (projected < 0.0)] = 0.0
     return projected
 
+_AT_BOUND_TOLERANCE = 1.0e-6
+# Past this the submatrix is singular to working precision and inverting it
+# produces numbers rather than an error, which is worse than refusing.
+_MAXIMUM_CONDITION_NUMBER = 1.0e12
+
+
+def _uncertainty(objective, vector, free_indices, bound_array, names):
+    """Formal covariance, correlation and conditioning at the solution.
+
+    L-BFGS-B's ``hess_inv`` used to be reported here. It is a byproduct of the
+    line search rather than a curvature estimate, and on this atlas it
+    overstated the column errors by two orders of magnitude. This inverts the
+    actual Hessian instead, over the parameters that were free and are not
+    resting on a bound -- at a bound the quadratic approximation does not hold
+    and the direction is not free, so including it makes the matrix singular.
+    """
+
+    at_bound = tuple(
+        names[index] for index in free_indices
+        if min(abs(vector[index] - bound_array[index, 0]),
+               abs(vector[index] - bound_array[index, 1])) < _AT_BOUND_TOLERANCE
+    )
+    usable = np.asarray(
+        [index for index in free_indices if names[index] not in at_bound], dtype=int
+    )
+    if usable.size == 0:
+        return None, None, None, at_bound
+
+    hessian = objective.hessian(vector)[np.ix_(usable, usable)]
+    if not np.all(np.isfinite(hessian)):
+        return None, None, None, at_bound
+    condition = float(np.linalg.cond(hessian))
+    eigenvalues = np.linalg.eigvalsh(hessian)
+    # A minimum has positive curvature in every direction; anything else means
+    # the solver stopped somewhere an error bar has no meaning.
+    if condition > _MAXIMUM_CONDITION_NUMBER or eigenvalues.min() <= 0.0:
+        return None, None, condition, at_bound
+
+    inverse = np.linalg.inv(hessian)
+    covariance = np.zeros((len(names), len(names)))
+    covariance[np.ix_(usable, usable)] = inverse
+    sigma = np.sqrt(np.diag(inverse))
+    correlation = np.zeros((len(names), len(names)))
+    correlation[np.ix_(usable, usable)] = inverse / np.outer(sigma, sigma)
+    return covariance, correlation, condition, at_bound
+
+
 class OrderObjective:
     """Compiled value and gradient for one model and one order, reusable.
 
@@ -153,10 +227,17 @@ class OrderObjective:
             return 0.5 * jnp.sum(jnp.where(mask, terms, 0.0))
 
         self._value_and_grad = jax.jit(jax.value_and_grad(objective))
+        # Over the full parameter vector, so one compilation serves every stage
+        # and every choice of free set; the caller slices out what it needs.
+        self._hessian = jax.jit(jax.hessian(objective))
 
     def __call__(self, vector: np.ndarray) -> tuple[float, np.ndarray]:
         value, gradient = self._value_and_grad(jnp.asarray(vector))
         return float(value), np.asarray(gradient, dtype=float)
+
+    def hessian(self, vector: np.ndarray) -> np.ndarray:
+        """Second derivatives of the objective at one full parameter vector."""
+        return np.asarray(self._hessian(jnp.asarray(vector)), dtype=float)
 
 
 def fit_order(
@@ -269,17 +350,16 @@ def fit_order(
     parameters = codec.unpack(jnp.asarray(final_vector))
     model_flux = np.asarray(model.predict(order, parameters))
     residuals = np.asarray(order.flux) - model_flux
-    covariance = None
-    if hasattr(result.hess_inv, "todense"):
-        scaled_covariance = np.asarray(result.hess_inv.todense())
-        covariance = np.zeros((len(names), len(names)))
-        covariance[np.ix_(free_indices, free_indices)] = (
-            scales[:, None] * scaled_covariance * scales[None, :]
-        )
+    covariance, correlation, condition, at_bound = _uncertainty(
+        objective, final_vector, free_indices, bound_array, names
+    )
     normalization = 0.5 * np.sum(np.where(np.asarray(order.mask), np.log(np.asarray(order.uncertainty) ** 2), 0.0))
     return FitResult(
         parameters=parameters,
         covariance=covariance,
+        correlation=correlation,
+        condition_number=condition,
+        at_bound=at_bound,
         transmission=np.asarray(model.transmission(parameters, order.zenith_angle_deg)),
         model_flux=model_flux,
         residuals=residuals,
