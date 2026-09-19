@@ -190,6 +190,97 @@ absorption leave the column unconstrained, and only the absorbing orders carry
 information. Treat the per-order values as a distribution to be cut on
 absorption depth, not averaged.
 
+## Results: an airmass ladder, and what it measures
+
+DCT 2018-12-20, ten standards spanning **airmass 1.065 to 2.501** in one
+night, H band, 240 order-frames. Site profile `data/profiles/dct_2018.csv`,
+flat source, hydrogen series masked.
+
+The forward model already divides optical depth by cos(z) with the measured
+zenith angle, so a fitted `log_column_scale` scales the **vertical** column
+with the slant path removed. If the atmosphere model is right it does not
+depend on where the telescope was pointing.
+
+One trap first. Airmass and time of night correlate at
+**-0.788** on this night — targets rise — so a trend fitted against
+airmass alone absorbs anything that varies with time. Every trend below is
+fitted against airmass, against time, and against both.
+
+| species | per airmass | per hour | joint d/dAM | frame scatter |
+|---|---:|---:|---:|---:|
+| H2O | +0.1214 ± 0.0639 (1.9σ) | **-0.0374 ± 0.0071 (5.3σ)** | -0.0219 | 0.1221 |
+| CO2 | -0.0110 ± 0.0091 (1.2σ) | +0.0016 ± 0.0014 (1.2σ) | -0.0079 | 0.0096 |
+| CH4 | -0.0021 ± 0.0068 (0.3σ) | +0.0007 ± 0.0010 (0.7σ) | +0.0112 | 0.0088 |
+
+**The well-mixed species show no airmass dependence.** CH4 is flat to
+-0.0021 ± 0.0068 per unit airmass and CO2 to -0.0110 ± 0.0091, with
+frame-to-frame scatters of 0.9% and 1.0%. Their abundances are known and
+fixed, so this is not a fit succeeding — it is the slant-path treatment and the
+assumed profile shape being tested against a factor of 2.35 in path length and
+not breaking. Taking CH4's 2σ upper bound over the observed airmass range
+bounds any systematic slant-path error at about **2% out to airmass 2.5**.
+
+**The water trend is the sky, not the model.** Fitted against airmass H2O looks
+like a 1.9σ effect; fitted against time it is 5.3σ, and the residual scatter
+halves from 0.093 to 0.053. In a joint fit the airmass term collapses to
+-0.0219 while the time term survives at -0.0408 per hour. The retrieved
+precipitable water falls monotonically from 2.7 mm at 01:00 UT to 2.0 mm at
+07:47 — an ordinary drying night, recovered from the spectra alone.
+
+**Repeatability.** chi Cap was observed twice 3.7 minutes apart at airmass
+2.46 and 2.50, where nothing about the sky had time to change. The
+columns differ by CH4 +0.006, CO2 -0.017, H2O -0.024 — so 1–2% is the noise
+floor, and H2O's 12% frame-to-frame scatter is real weather at roughly ten
+times it.
+
+**Fit quality does not degrade with airmass**: +0.317 ± 0.210 sigma per
+unit airmass, consistent with flat.
+
+This is the measurement the Arcturus atlas could not make at all, because its
+zenith angle was pinned at zero and every airmass effect was absorbed into the
+fitted columns.
+
+## Cost
+
+An order-frame took 31.7 s before this was profiled. The breakdown was not what
+it looked like:
+
+| | per order |
+|---|---:|
+| fitting, three stages | 16.3 s |
+| opacity precompute | 7.4 s |
+| gradient compile | 4.9 s |
+| Hessian compile (hidden inside stage 1) | 8.2 s |
+| steady gradient / Hessian call | 2.6 ms / 3.1 ms |
+
+**13.1 s of it was XLA compilation**, and the Hessian half was invisible in the
+stage log because `fit_order` computes the covariance unconditionally, so the
+lazy `jax.hessian` compile landed on the first stage and made "continuum" look
+like it cost ten times per iteration what the other stages did.
+
+Two IGRINS-specific facts make almost all of that shareable. Within a night the
+PLP uses one wavelength solution, so order N covers a **bit-identical**
+wavenumber range in every frame (measured spread across ten frames: 0.0000
+cm-1); across nights and sites it moves at most 0.16 cm-1 on an 80 cm-1 window,
+far inside the 5 cm-1 grid margin. So the driver loops **orders outside,
+frames inside**, and `OrderObjective` takes the per-frame flux, mask,
+uncertainty and zenith angle as jit *operands* rather than captured constants,
+so one compiled executable serves every frame. `OrderObjective.rebind` checks
+the wavelength grid and the source match before reusing, and `fit_order` gained
+`covariance=False` so only the final stage ever asks for the Hessian.
+
+Measured on 3 orders x 5 frames: **141 s against 475 s, a 70% saving**, with the
+first frame of an order costing 19-26 s and the rest 2.7-7.0 s. Results agree
+with the old path to 1e-5 relative — not bit-identical, because XLA fuses a
+different graph when arrays are operands rather than folded constants and
+L-BFGS-B amplifies that over hundreds of iterations, but four orders of
+magnitude below the 0.0155 rms the fit itself reaches.
+
+What is deliberately **not** shared is the starting point. Warm-starting each
+frame from the previous one would pull its fitted columns toward that neighbour
+and shrink exactly the frame-to-frame scatter the ladder above exists to
+measure. Every frame starts from the same neutral guess.
+
 ## Running it
 
 ```bash
@@ -219,13 +310,8 @@ uv run python scripts/summarize_igrins_fit.py \
   here are Stark-broadened hydrogen lines, and an emulator spanning 6,500 K may
   not reproduce those. The flat-source path does not depend on it, and
   `A0V_NORM` in the file is a free comparison.
-- **The airmass ladder**, which is the test that makes all of this worth doing.
-  DCT 2018-12-20 has 10 standards from airmass 1.07 to 2.49 in one night,
-  including the same star three times. The retrieved H2O column should scale as
-  sec(z); the retrieved CO2, CH4 and O2 column scales should be **constant**,
-  because those abundances are known and fixed, so any airmass trend in them is
-  a direct measurement of atmosphere-profile error. Nothing in the Arcturus
-  atlas could measure that.
+- **O2 and CO in the ladder.** The H band constrains only H2O, CO2 and CH4 well
+  enough to measure a column; O2 and CO need the K band.
 - **The run record.** These fits write `.npz` and a JSON summary.
   `src/jax_telluric/record.py` keys its rows on a hard-coded `page`/`epoch`
   pair; generalizing that would let one record module serve both pipelines.

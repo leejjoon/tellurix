@@ -63,6 +63,24 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_standard.py --spec <SDCH
 UV_CACHE_DIR=.uv-cache uv run python scripts/summarize_igrins_fit.py --summary <*_summary.json>
 ```
 
+`fit_igrins_standard.py` takes **several `--spec` frames at once** and loops
+orders outside, frames inside. That is worth 70% of the runtime and is specific
+to this instrument: within a night the PLP uses one wavelength solution, so
+order N covers a bit-identical wavenumber range in every frame (measured spread
+across ten frames: 0.0000 cm-1), and across nights it moves at most 0.16 cm-1
+against a 5 cm-1 grid margin. Everything expensive -- grid, lines, opacity,
+precompute, and both XLA compilations -- therefore belongs to the order, not the
+frame. Profiled before this: 13.1 s of a 31.7 s order-frame was compilation
+(4.9 s gradient, 8.2 s Hessian), the Hessian half invisible because `fit_order`
+computed the covariance unconditionally and the lazy `jax.hessian` compile
+landed on stage 1. `OrderObjective` now takes flux, mask, uncertainty and the
+zenith angle as jit **operands** rather than captured constants, so one
+executable serves every frame; `rebind` checks the wavelength grid and source
+match first, and `fit_order(covariance=False)` lets the intermediate stages skip
+the Hessian entirely. Do **not** add warm-starting across frames: it would pull
+each fit toward its neighbour and shrink the very frame-to-frame scatter the
+airmass ladder measures.
+
 Three things differ from the Arcturus driver and all three are load-bearing.
 The instrument is the **default Gaussian**, not `BoxcarFTSInstrumentProfile` --
 a grating spectrograph's LSF is the fitted `lsf_sigma_kms` itself, so there is

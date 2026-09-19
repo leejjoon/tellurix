@@ -1,0 +1,145 @@
+{
+  "star": "A0V (spectral-type average)",
+  "labels": {
+    "effective_temperature": 9500.0,
+    "log_surface_gravity": 4.1,
+    "metallicity": 0.0,
+    "alpha_enhancement": 0.0,
+    "microturbulence_km_s": 2.0
+  },
+  "label_source": "spectral-type average for A0V (Teff 9500 K, log g 4.1); not a fit to any individual standard, and not Vega, which is a pole-on rapid rotator",
+  "wavelength_nm": [
+    1415.0,
+    2545.0
+  ],
+  "r_grid": 600000,
+  "points": 352201,
+  "velocity_step_kms": 0.4996536805577608,
+  "normalized_flux_range": [
+    0.6203921919804654,
+    1.0000000027785747
+  ],
+  "hydrogen_lines": {
+    "Br7": {
+      "wavelength_nm": 2166.1287,
+      "minimum_normalized_flux": 0.71819
+    },
+    "Br8": {
+      "wavelength_nm": 1945.0951,
+      "minimum_normalized_flux": 0.70222
+    },
+    "Br9": {
+      "wavelength_nm": 1817.9158,
+      "minimum_normalized_flux": 0.70441
+    },
+    "Br10": {
+      "wavelength_nm": 1736.6921,
+      "minimum_normalized_flux": 0.71725
+    },
+    "Br11": {
+      "wavelength_nm": 1681.1179,
+      "minimum_normalized_flux": 0.73654
+    },
+    "Br12": {
+      "wavelength_nm": 1641.174,
+      "minimum_normalized_flux": 0.76072
+    },
+    "Br13": {
+      "wavelength_nm": 1611.3778,
+      "minimum_normalized_flux": 0.79513
+    },
+    "Br14": {
+      "wavelength_nm": 1588.4944,
+      "minimum_normalized_flux": 0.80345
+    },
+    "Br15": {
+      "wavelength_nm": 1570.5015,
+      "minimum_normalized_flux": 0.88561
+    },
+    "Br16": {
+      "wavelength_nm": 1556.0761,
+      "minimum_normalized_flux": 0.9105
+    },
+    "Br17": {
+      "wavelength_nm": 1544.32,
+      "minimum_normalized_flux": 0.93148
+    },
+    "Br18": {
+      "wavelength_nm": 1534.6043,
+      "minimum_normalized_flux": 0.93053
+    },
+    "Br19": {
+      "wavelength_nm": 1526.4768,
+      "minimum_normalized_flux": 0.94481
+    },
+    "Br20": {
+      "wavelength_nm": 1519.6056,
+      "minimum_normalized_flux": 0.94564
+    },
+    "Br21": {
+      "wavelength_nm": 1513.7417,
+      "minimum_normalized_flux": 0.93917
+    },
+    "Br22": {
+      "wavelength_nm": 1508.6956,
+      "minimum_normalized_flux": 0.93376
+    },
+    "Br23": {
+      "wavelength_nm": 1504.3207,
+      "minimum_normalized_flux": 0.75246
+    },
+    "Br24": {
+      "wavelength_nm": 1500.502,
+      "minimum_normalized_flux": 0.9408
+    },
+    "Br25": {
+      "wavelength_nm": 1497.1484,
+      "minimum_normalized_flux": 0.93499
+    },
+    "Pf16": {
+      "wavelength_nm": 2526.0976,
+      "minimum_normalized_flux": 0.96523
+    },
+    "Pf17": {
+      "wavelength_nm": 2495.2614,
+      "minimum_normalized_flux": 0.97619
+    },
+    "Pf18": {
+      "wavelength_nm": 2469.9943,
+      "minimum_normalized_flux": 0.98032
+    },
+    "Pf19": {
+      "wavelength_nm": 2449.0072,
+      "minimum_normalized_flux": 0.98197
+    },
+    "Pf20": {
+      "wavelength_nm": 2431.3689,
+      "minimum_normalized_flux": 0.98277
+    },
+    "Pf21": {
+      "wavelength_nm": 2416.392,
+      "minimum_normalized_flux": 0.98187
+    },
+    "Pf22": {
+      "wavelength_nm": 2403.5591,
+      "minimum_normalized_flux": 0.93774
+    },
+    "Pf23": {
+      "wavelength_nm": 2392.4743,
+      "minimum_normalized_flux": 0.98085
+    },
+    "Pf24": {
+      "wavelength_nm": 2382.8298,
+      "minimum_normalized_flux": 0.98141
+    },
+    "Pf25": {
+      "wavelength_nm": 2374.3837,
+      "minimum_normalized_flux": 0.98185
+    }
+  },
+  "initializer_family": "five_label",
+  "atmosphere_converged": false,
+  "atmosphere_closure_required": true,
+  "seconds": 1498.3390515511855,
+  "sha256": "f15057939e4c8db86acb03cee2492ccaec6e5e085007e61d8650713f413d6b61"
+}
