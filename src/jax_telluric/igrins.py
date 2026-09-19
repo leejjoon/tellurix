@@ -22,6 +22,7 @@ silent convention change is exactly the failure this module has to survive.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping
@@ -502,6 +503,76 @@ def smoothed_blaze(flux: np.ndarray, window: int = 51) -> np.ndarray:
     total = np.convolve(np.where(finite, values, 0.0), kernel, mode="same")
     weight = np.convolve(finite.astype(float), kernel, mode="same")
     return total / np.maximum(weight, 1.0e-9)
+
+
+def leave_one_out_patterns(fractional, minimum_frames=3):
+    """One instrument-response pattern per frame, from every *other* frame.
+
+    The red edge of an IGRINS order carries a residual that repeats frame to
+    frame: measured over ten standards of five different stars spanning airmass
+    1.07 to 2.50, 56-76% of each frame's residual variance is common, it is
+    strongest in orders with no telluric absorption at all, and its amplitude
+    does not grow with airmass. That is the instrument, not the atmosphere.
+
+    Deriving a frame's correction from the other frames only is what keeps this
+    a calibration rather than a way of fitting the noise: a pattern taken from
+    the frame it corrects would absorb genuine residual and flatter the telluric
+    model. Every number this pipeline reports is therefore leave-one-out.
+    """
+
+    stack = np.asarray(fractional, dtype=float)
+    patterns = []
+    for index in range(stack.shape[0]):
+        others = np.delete(stack, index, axis=0)
+        with warnings.catch_warnings():
+            # A pixel no frame measured is an all-NaN slice; that is the
+            # ordinary case at an order edge, and it is handled below.
+            warnings.simplefilter("ignore", RuntimeWarning)
+            pattern = np.nanmedian(others, axis=0)
+        enough = np.sum(np.isfinite(others), axis=0) >= minimum_frames
+        patterns.append(np.where(enough & np.isfinite(pattern), np.nan_to_num(pattern), 0.0))
+    return patterns
+
+
+def run_provenance(root: Path, args, observations, profile_path: Path) -> tuple[dict, dict]:
+    """What produced this run, and the identity of everything that went into it.
+
+    Paths alone are not provenance: a line list can be replaced under the same
+    name. The hashes are what let a rebuild say whether it is looking at the
+    same inputs.
+    """
+
+    import jax
+    import jax_telluric
+    from jax_telluric import file_sha256
+
+    driver = Path(__file__).resolve()
+    inputs = {
+        "profile": str(profile_path), "profile_sha256": file_sha256(profile_path),
+        "stellar": args.stellar,
+        "frames": [str(o.path) for o in observations],
+        "frame_sha256": [o.sha256["spec"] for o in observations],
+    }
+    if args.stellar != "flat" and Path(args.stellar).exists():
+        inputs["stellar_sha256"] = file_sha256(args.stellar)
+    mt_ckd = root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc"
+    if mt_ckd.exists():
+        inputs["mt_ckd"] = str(mt_ckd)
+        inputs["mt_ckd_sha256"] = file_sha256(mt_ckd)
+    line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
+    inputs["aer_line_root"] = str(line_root)
+    for species, molecule_id in sorted(MOLECULE_IDS.items()):
+        stem = f"{molecule_id:02d}_{species}"
+        path = line_root / stem / stem
+        if path.exists():
+            inputs[f"aer_{species}_sha256"] = file_sha256(path)
+    run = {
+        "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "driver": driver.name, "driver_sha256": file_sha256(driver),
+        "jax_telluric": getattr(jax_telluric, "__version__", ""),
+        "jax": jax.__version__,
+    }
+    return run, inputs
 
 
 def continuum_level(order: IGRINSOrder, percentile: float = 95.0) -> float:

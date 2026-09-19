@@ -311,3 +311,58 @@ def test_blank_numeric_cards_do_not_break_the_reader():
     blank = surface_conditions(MCDONALD_2014)
     assert all(blank[key] is None for key in
                ("temperature_k", "pressure_hpa", "relative_humidity_percent"))
+
+
+# --- the fixed instrument-response pattern ---
+
+
+def test_a_frames_pattern_never_uses_that_frame():
+    """The whole validity of the correction rests on this."""
+    from jax_telluric import leave_one_out_patterns
+
+    common = np.array([0.01, -0.02, 0.03, 0.00])
+    stack = np.array([common + 0.001 * i for i in range(6)])
+    # Corrupt one frame beyond recognition; every *other* frame's pattern must
+    # be untouched by it, and its own must come from the rest.
+    stack[2] = 99.0
+    patterns = leave_one_out_patterns(stack)
+    for index, pattern in enumerate(patterns):
+        assert np.max(np.abs(pattern)) < 1.0, f"frame {index} absorbed the outlier"
+    # The outlier's own correction is the clean median of the others.
+    np.testing.assert_allclose(patterns[2], np.median(np.delete(stack, 2, axis=0), axis=0))
+
+
+def test_the_pattern_recovers_an_injected_response():
+    from jax_telluric import leave_one_out_patterns
+
+    rng = np.random.default_rng(0)
+    truth = np.array([0.05, -0.03, 0.10, -0.08, 0.00])
+    stack = truth + rng.normal(0.0, 0.01, (12, truth.size))
+    for pattern in leave_one_out_patterns(stack):
+        np.testing.assert_allclose(pattern, truth, atol=0.01)
+
+
+def test_too_few_frames_leave_a_pixel_uncorrected():
+    """A pattern from one or two frames is that frame's noise, not a calibration."""
+    from jax_telluric import leave_one_out_patterns
+
+    stack = np.full((4, 3), 0.2)
+    stack[:, 1] = np.nan          # nothing measures this pixel
+    stack[1:, 2] = np.nan         # only one frame measures this one
+    patterns = leave_one_out_patterns(stack, minimum_frames=3)
+    for pattern in patterns:
+        assert pattern[0] == pytest.approx(0.2)
+        assert pattern[1] == 0.0, "an unmeasured pixel must be left alone"
+        assert pattern[2] == 0.0, "one frame is not enough to call something a pattern"
+    assert np.all(np.isfinite(np.asarray(patterns)))
+
+
+def test_dividing_by_the_response_is_the_same_as_scaling_the_model():
+    """Which is why the correction needs no change to the forward model."""
+    rng = np.random.default_rng(1)
+    flux, model, sigma = rng.normal(10, 1, 50), rng.normal(10, 1, 50), np.full(50, 0.2)
+    response = rng.normal(0.0, 0.05, 50)
+    scale = 1.0 + response
+    scaled_model = np.sum(((flux - scale * model) / sigma) ** 2)
+    scaled_data = np.sum(((flux / scale - model) / (sigma / scale)) ** 2)
+    assert scaled_data == pytest.approx(scaled_model, rel=1e-12)
