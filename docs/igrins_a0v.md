@@ -215,9 +215,9 @@ target above airmass 1.82.
 
 | species | orders/frame | per airmass | per hour | joint d/dAM | frame scatter |
 |---|---:|---:|---:|---:|---:|
-| H2O | 37 | +0.1204 ± 0.0602 (2.0σ) | **-0.0354 ± 0.0069 (5.2σ)** | -0.0320 | 0.1204 |
-| CO2 | 17 | +0.0021 ± 0.0039 (0.5σ) | +0.0003 ± 0.0007 (0.4σ) | +0.0058 | 0.0102 |
-| CH4 | 19 | +0.0198 ± 0.0096 (2.1σ) | -0.0018 ± 0.0017 (1.1σ) | +0.0287 | 0.0130 |
+| H2O | 39 | +0.1321 ± 0.0645 (2.0σ) | **-0.0368 ± 0.0068 (5.4σ)** | -0.0260 | 0.1181 |
+| CO2 | 18 | -0.0006 ± 0.0052 (0.1σ) | +0.0004 ± 0.0008 (0.6σ) | +0.0036 | 0.0101 |
+| CH4 | 19 | +0.0030 ± 0.0071 (0.4σ) | -0.0004 ± 0.0011 (0.3σ) | +0.0000 | 0.0042 |
 
 ### One target carries every slope
 
@@ -225,28 +225,27 @@ Refitting with each object dropped in turn:
 
 | species | slope, all 10 frames | without chi Cap | shift |
 |---|---:|---:|---:|
-| H2O | +0.1204 | +0.3291 | 3.5σ |
-| CO2 | +0.0021 | -0.0081 | 2.6σ |
-| CH4 | +0.0198 | -0.0043 | 2.5σ |
+| H2O | +0.1321 | +0.3968 | 4.1σ |
+| CO2 | -0.0006 | -0.0102 | 1.8σ |
+| CH4 | +0.0030 | -0.0026 | 0.8σ |
 
-Dropping chi Cap moves every slope by 2.5 to 3.5 sigma. Collapsing its two
-frames — taken 3.7 minutes apart — into one point does *not* remove the effect
-(CH4 goes from 2.1σ to 1.9σ), so this is not double counting: chi Cap's fitted
-columns genuinely differ from the rest, and because it is the only target above
-airmass 1.82, that difference is indistinguishable from an airmass effect.
+Dropping chi Cap still moves the water slope by 4.1 sigma — but water genuinely
+varies, so that is weather. For the well-mixed species the correction above
+largely cured it: CH4's leave-one-out shift fell from 2.5σ to **0.8σ** and CO2's
+from 2.6σ to 1.8σ, because part of what made chi Cap look different was the
+frame-varying component of the instrument response.
 
-**So the defensible statement is narrower than it first appears.** Over airmass
-**1.07 to 1.81, with three independent stars**, the well-mixed columns are flat:
-CH4 −0.0043 ± 0.0233 (0.2σ) and CO2 −0.0081 ± 0.0093 (0.9σ). Their 2σ bounds put
-any systematic slant-path error below about **2% (CO2) to 4% (CH4)** across that
-range. The extension to airmass 2.5 rests on one star and cannot be attributed
-to the atmosphere rather than to the target.
+**The defensible statement is still narrower than the table alone suggests.**
+chi Cap is the only target above airmass 1.82, so star identity and airmass stay
+confounded at the top and no slope across that gap is purely atmospheric. What
+the night supports is that the well-mixed columns are flat to
+CO2 −0.0006 ± 0.0052 and CH4 +0.0030 ± 0.0071 per unit airmass, both under 0.5σ,
+with a leave-one-out excursion no larger than the quoted error for CH4.
 
-An earlier version of this document quoted a 2.4% bound out to airmass 2.5. That
-was the same confounded fit; CH4 simply happened to land near zero that time.
-The lesson is that a ladder needs *several* stars at high airmass, not several
-frames of one — see `leave_one_object_out` in the analysis, which now reports
-this by default.
+An earlier version of this document quoted a 2.4% bound out to airmass 2.5 from
+a fit with the same confounding, before the instrument response was corrected.
+A ladder needs *several* stars at high airmass, not several frames of one; see
+`leave_one_object_out`, which the analysis now reports by default.
 
 **The water trend is the sky, not the model.** Against airmass H2O is 2.0σ;
 against time it is 5.2σ, and the residual scatter halves. In a joint fit the
@@ -389,70 +388,93 @@ uv run python scripts/summarize_igrins_fit.py \
 `docs/igrins_a0v_results.json` and the two-order fixture under
 `tests/data/igrins/`.
 
-## What limits the residual: the order edges, not the line spread function
+## What limits the residual, and the fix
 
-The residual-against-transmission curve has a floor of a couple of sigma where
+The residual-against-transmission curve had a floor of a couple of sigma where
 there is *no absorption at all*, which cannot be the atmosphere. Chasing it
-turned up one real cause and two dead ends, all measured on one frame.
+found one cause and two dead ends.
 
-**The line spread function does vary along an order, and it does not matter
-much.** `lsf_sigma_kms` is fitted per order but is a single constant within
-one. Splitting orders into six x-segments with five Chebyshev coefficients free
-per segment — smooth enough not to trace a three-pixel line, free enough that
-the blaze cannot leak into the width — the fitted R varies monotonically with
-pixel: 29,400 to 40,400 across order 2 (33%), 42,600 to 47,200 across order 24
-(10%), always narrower at high x. But freeing the width per segment improves the
-residual by a median of only 1.02, best 1.55. Velocity per pixel is constant to
-3.1% across the band, so a constant sigma in km/s is already very nearly a
-constant sigma in *pixels*; adding an x term is a real refinement worth a couple
-of percent, not a fix. The calibration products cannot settle it independently:
-`SKY_*.wvlsol_v1.fits` is only the wavelength array, with no line table and no
-extracted sky spectrum, so an arc-line measurement would need the PLP re-run on
-raw frames.
+### Two things that looked like causes and are not
+
+**The line spread function does vary along an order, and it barely matters.**
+`lsf_sigma_kms` is fitted per order but is a single constant within one.
+Splitting orders into six x-segments, with five Chebyshev coefficients free per
+segment so the blaze cannot leak into the width, the fitted R varies
+monotonically with pixel: 29,400 to 40,400 across order 2 (33%), 42,600 to
+47,200 across order 24 (10%), always narrower at high x. But freeing the width
+per segment improves the residual by a median of 1.02, best 1.55. Velocity per
+pixel is constant to 3.1% across the band, so a constant sigma in km/s is
+already nearly a constant sigma in *pixels*. The calibration products cannot
+settle it independently: `SKY_*.wvlsol_v1.fits` is only the wavelength array,
+with no line table and no extracted sky spectrum.
 
 **The continuum coefficient bound was binding and that did not matter either.**
-218 of 248 order-frames had at least one Chebyshev coefficient pinned at ±1.5,
-coefficient 3 in 103 of them. Loosening the bound to ±8 releases them all and
-changes the reference residual by 0.01 sigma. The basis is degenerate enough
-that a railed coefficient is compensated by its neighbours. It is still worth
-loosening — the ladder filters on `at_bound`, and 218 spurious flags pollute
-that — so the bound is now ±5, but it is not a residual fix.
+218 of 248 order-frames had a Chebyshev coefficient pinned at ±1.5, coefficient
+3 in 103 of them. Loosening it to ±8 releases them all and changes the residual
+by 0.01 sigma; the basis is degenerate enough that a railed coefficient is
+compensated by its neighbours. Worth loosening anyway — the ladder filters on
+`at_bound` and 218 spurious flags pollute it — so the bound is now ±5.
 
-**The red edge of every order is the real one.** Across all 17 fitted H orders
-of one frame, |residual| in continuum units is 0.0044 in the middle third and
-0.0141 in the last sixth — a **3.2× degradation**, while the quoted sigma stays
-flat, so it is model error and not underestimated noise. Crucially the same 3.2×
-appears in the 11 orders whose median transmission exceeds 0.99, where there are
-no telluric lines to get wrong. Throughput there falls from ~0.6 to ~0.16, the
-steepest blaze gradient anywhere in the order, and the old 0.25 floor only bit
-at x ≈ 1960. Our continuum diverges from the PLP's own by 3–4% in that region
-against 0.3–1.2% mid-order.
+### The cause: a repeatable instrument response
 
-Raising the throughput floor from 0.25 to 0.45 was tested against a **fixed**
-reference set — the middle third of each order, identical for every setting, so
-the gain cannot be the cut hiding the pixels it removed:
+Across all 17 fitted H orders of one frame, |residual| in continuum units is
+0.0044 in the middle third and 0.0141 in the last sixth — a **3.2×
+degradation** — while the quoted sigma stays flat, so it is model error and not
+underestimated noise. The same 3.2× appears in the 11 orders whose median
+transmission exceeds 0.99, where there are no telluric lines to get wrong.
 
-| floor | continuum degree | rms on the fixed reference set | pixels kept |
-|---:|---:|---:|---:|
-| 0.25 | 9 | 1.86 | 1397 |
-| 0.35 | 9 | 1.81 | 1296 |
-| **0.45** | **9** | **1.67** | **1142** |
-| 0.55 | 9 | 1.58 | 960 |
-| 0.45 | 13 | 1.64 | 1142 |
+It is the same pattern in every frame:
 
-The fit gets better *where nothing was cut*, which means the red edge was
-corrupting the whole-order continuum solution rather than merely fitting badly
-itself. Order 15 shows the mechanism outright: at floor 0.25 its H2O column
-railed to the bound at exactly −2.0000, and raising the floor releases it.
-0.45 is the knee — 10% better for 16% fewer pixels and one order per band.
-Degree 13 adds 0.03 more for four extra parameters, which is not worth it.
+- 56–76% of each frame's residual variance is **common across all ten frames**,
+  five different stars spanning airmass 1.07 to 2.50.
+- It is strongest in orders with no telluric absorption (H10, median T 0.998,
+  71% common), so it is not the line list.
+- Its amplitude is 0.13–0.21 with only 0.012–0.021 scatter, and the sign of its
+  airmass dependence is **inconsistent between orders**. A telluric-model error
+  would grow consistently with airmass.
+- It is fixed in *detector* coordinates. Five stars with radial velocities
+  differing by tens of km/s — several pixels — could not correlate at r ≈ 0.7
+  without a shift.
 
-Adopted: `throughput_floor` 0.45 and `continuum_bound` 5.0. Median residual over
-the whole ladder falls from about 1.9 to **1.17** sigma in H and 1.24 in K, and
-railed continuum coefficients from 218 of 248 rows to 67 in H and 4 in K. Note
-that most of that headline drop is the excluded pixels; the honest measure of
-the model improving is the 1.86 to 1.67 on the fixed reference set.
+That is the instrument, and it can be measured and divided out.
 
+### The correction
+
+`leave_one_out_patterns` (in `igrins.py`) takes the fractional model error of
+every frame of a night at one order and returns, for each frame, the median of
+the **others**. The driver runs two passes: fit, build the patterns, divide the
+flux and its uncertainty by `1 + pattern`, refit. Dividing the data is
+algebraically identical to multiplying the model, so the forward model is
+untouched.
+
+Deriving a frame's correction from the other frames only is what makes this a
+calibration rather than a way of fitting the noise. A pattern taken from the
+frame it corrects would absorb genuine residual and flatter the telluric model —
+the self-validation trap — so every number below is leave-one-out.
+
+| | before | after | gain |
+|---|---:|---:|---:|
+| pooled over seven orders | 1.48σ | **0.86σ** | 1.72 |
+| H02, high x only | 2.65σ | 1.07σ | 2.5 |
+| H24, high x only | 1.73σ | 0.87σ | 2.0 |
+| whole ladder, H band | ~1.9σ | **0.80σ** | |
+| whole ladder, K band | ~1.9σ | **0.83σ** | |
+
+The median pattern amplitude is 2.1% of the continuum.
+
+With the pattern in place the throughput floor goes back to **0.25** — its job
+is now only to drop genuinely dead pixels. At 0.25 the correction takes one
+order from 2.59σ to 0.89σ, and 0.25 and 0.45 then land within 0.08σ of each
+other, so the 16% of pixels and the one order per band that a 0.45 floor cost
+are worth keeping. The second pass costs about 1.8× in runtime (5.4 to 9.6 s per
+order-frame).
+
+A residual of 0.80σ is *below* the quoted photon noise, which says the PLP's
+variance is conservative by roughly 15%. That is worth understanding rather
+than banking, and is on the list below.
+
+**It needs at least five frames of a night** (`--fixed-pattern-min-frames`),
+and it is per night — night-to-night stability is untested.
 
 ## The run record
 
