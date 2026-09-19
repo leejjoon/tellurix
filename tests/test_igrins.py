@@ -1,0 +1,257 @@
+"""The IGRINS reader must survive nine years of header drift across three sites."""
+
+import numpy as np
+import pytest
+
+from jax_telluric import (
+    continuum_level,
+    hydrogen_series_um,
+    igrins_spectral_order,
+    read_igrins_observation,
+    site_for,
+    stellar_line_mask,
+    surface_conditions,
+    zenith_angle_deg,
+)
+
+FIXTURE = "tests/data/igrins/SDCH_test_0001.spec.fits"
+
+# The three conventions actually observed in the archive, each with the value a
+# real frame carried. Nothing in the file says which is in force.
+MCDONALD = {"TELESCOP": "McDonald Observatory", "AIRTEMP": 78.0, "BARPRESS": 23.6,
+            "HUMIDITY": 56.0, "ZDSTART": 30.0, "ZDEND": 31.0}
+DCT = {"TELESCOP": "Discovery Channel", "AIRTEMP": 10.6, "BARPRESS": 1025.0,
+       "HUMIDITY": 22.0, "ZDSTART": 20.0, "ZDEND": 20.4}
+GEMINI = {"TELESCOP": "Gemini South", "AIRTEMP": 11.0, "BARPRESS": 730.0,
+          "HUMIDITY": 36.1, "ZDSTART": 15.9, "ZDEND": 15.7}
+
+
+@pytest.fixture(scope="module")
+def observation():
+    return read_igrins_observation(FIXTURE)
+
+
+def test_a_real_plp_product_round_trips(observation):
+    assert observation.band == "H"
+    assert observation.object_type == "STD"
+    assert observation.telescope == "Gemini South"
+    assert observation.orders == 2
+    assert set(observation.sha256) == {"spec", "variance", "flattened"}
+    assert all(len(digest) == 64 for digest in observation.sha256.values())
+    # The flattened product is read for comparison only, never for the fit.
+    assert observation.telluric_model is not None
+    assert observation.plp_continuum is not None
+
+
+def test_an_order_is_ascending_and_finite(observation):
+    for index in range(observation.orders):
+        order = observation.order(index)
+        wavelength = order.wavelength_vacuum_nm
+        assert np.all(np.isfinite(wavelength))
+        assert np.all(np.diff(wavelength) > 0.0), "SpectralOrder requires ascending wavelength"
+        low, high = order.wavenumber_range_cm1
+        assert low < high
+        assert 1.40e3 < wavelength[0] < 1.85e3, "the H band, in nanometres"
+
+
+def test_the_uncertainty_is_the_measured_variance(observation):
+    """The atlas had to estimate its noise; this does not, and must not."""
+
+    order = observation.order(0)
+    fitted = igrins_spectral_order(order, normalize=False, throughput_floor=0.0,
+                                   mask_hydrogen_kms=None)
+    mask = np.asarray(fitted.mask)
+    np.testing.assert_allclose(
+        np.asarray(fitted.uncertainty)[mask], np.sqrt(np.asarray(order.variance))[mask], rtol=1e-12
+    )
+
+
+def test_masked_pixels_keep_a_finite_but_worthless_uncertainty(observation):
+    """SpectralOrder demands a positive sigma everywhere, including where it is junk."""
+
+    fitted = igrins_spectral_order(observation.order(0))
+    sigma = np.asarray(fitted.uncertainty)
+    mask = np.asarray(fitted.mask)
+    assert np.all(np.isfinite(sigma)) and np.all(sigma > 0.0)
+    assert np.all(np.isfinite(np.asarray(fitted.flux)))
+    assert sigma[~mask].min() > 1.0e3 * sigma[mask].max()
+
+
+def test_normalizing_puts_the_continuum_near_one(observation):
+    """The fitted continuum's constant term is a log flux, so the scale matters."""
+
+    order = observation.order(0)
+    level = continuum_level(order)
+    assert level > 1.0e3, "PLP counts run to tens of thousands"
+
+    raw = igrins_spectral_order(order, normalize=False)
+    scaled = igrins_spectral_order(order, normalize=True)
+    mask = np.asarray(scaled.mask)
+    np.testing.assert_array_equal(mask, np.asarray(raw.mask))
+    np.testing.assert_allclose(
+        np.asarray(scaled.flux)[mask], np.asarray(raw.flux)[mask] / level, rtol=1e-12
+    )
+    assert 0.1 < np.median(np.asarray(scaled.flux)[mask]) < 2.0
+
+
+def test_the_throughput_cut_removes_the_blaze_roll_off(observation):
+    """It is asymmetric: the roll-off is at the start of an order, not both ends."""
+
+    order = observation.order(0)
+    without = np.asarray(igrins_spectral_order(order, throughput_floor=0.0).mask)
+    with_cut = np.asarray(igrins_spectral_order(order, throughput_floor=0.25).mask)
+    assert with_cut.sum() < without.sum()
+    assert np.all(without[with_cut]), "the cut may only remove pixels"
+
+    dropped = np.flatnonzero(without & ~with_cut)
+    assert dropped.size > 100
+    # Far more of what goes is at the blue start of the order than the red end.
+    start = np.count_nonzero(dropped < without.size // 2)
+    assert start > 3 * (dropped.size - start)
+
+
+def test_the_plp_mask_is_not_used(observation):
+    """It flags over half the band by its own flattening criterion, not ours."""
+
+    fitted = igrins_spectral_order(observation.order(0), mask_hydrogen_kms=None)
+    assert np.mean(np.asarray(fitted.mask)) > 0.4
+
+
+# --- the hydrogen series, which is the whole of an A0V spectrum here ---
+
+
+def test_the_brackett_series_lands_where_it_should():
+    brackett = hydrogen_series_um(4, (1.40, 2.55))
+    # Br-gamma, the n = 7 -> 4 line, is the one everyone quotes.
+    assert np.min(np.abs(brackett - 2.1661)) < 5.0e-4
+    # Br-delta and Br-epsilon.
+    assert np.min(np.abs(brackett - 1.9451)) < 5.0e-4
+    assert np.min(np.abs(brackett - 1.8179)) < 5.0e-4
+    # The series converges on its limit and never crosses it.
+    assert brackett.min() > 1.4584
+    assert np.all(np.diff(brackett) > 0.0)
+
+
+def test_the_series_sum_has_to_be_bounded():
+    with pytest.raises(ValueError, match="max_upper_level"):
+        hydrogen_series_um(4, (1.4, 2.5), max_upper_level=4)
+    near = hydrogen_series_um(4, (1.40, 2.55), max_upper_level=12)
+    far = hydrogen_series_um(4, (1.40, 2.55), max_upper_level=40)
+    assert far.size > near.size
+    assert far.min() < near.min(), "more terms crowd closer to the limit"
+
+
+def test_the_mask_removes_a_brackett_line_and_leaves_a_clean_order(observation):
+    """Order 11 of this frame carries Br12 at 1.6403 um; order 2 carries none."""
+
+    with_line = stellar_line_mask(observation.order(1).wavelength_vacuum_nm)
+    clean = stellar_line_mask(observation.order(0).wavelength_vacuum_nm)
+    assert np.count_nonzero(~with_line) > 200
+    assert np.all(clean)
+
+
+def test_a_wider_mask_removes_more():
+    wavelength = np.linspace(1630.0, 1655.0, 2048)
+    narrow = np.count_nonzero(~stellar_line_mask(wavelength, 200.0))
+    wide = np.count_nonzero(~stellar_line_mask(wavelength, 800.0))
+    assert 0 < narrow < wide
+    with pytest.raises(ValueError, match="half width"):
+        stellar_line_mask(wavelength, 0.0)
+
+
+# --- the three weather conventions ---
+
+
+@pytest.mark.parametrize(
+    "header,temperature_k",
+    [(MCDONALD, 298.7), (DCT, 283.75), (GEMINI, 284.15)],
+)
+def test_each_site_normalizes_to_one_unit_system(header, temperature_k):
+    conditions = surface_conditions(header)
+    assert conditions["temperature_k"] == pytest.approx(temperature_k, abs=0.1)
+    # Whatever the file said, the answer is a station pressure consistent with
+    # the site altitude -- which is the only thing that makes the three
+    # comparable at all.
+    site = site_for(header)
+    expected = 1013.25 * (1.0 - 0.0065 * site.altitude_km * 1000.0 / 288.15) ** 5.25588
+    assert conditions["pressure_hpa"] == pytest.approx(expected, rel=0.05)
+    assert conditions["relative_humidity_percent"] == header["HUMIDITY"]
+
+
+def test_a_changed_convention_fails_loudly():
+    """A DCT frame that switched to station pressure must not pass silently."""
+
+    with pytest.raises(ValueError, match="convention has changed"):
+        surface_conditions({**DCT, "BARPRESS": 763.0})
+
+
+def test_an_unknown_telescope_is_refused():
+    with pytest.raises(ValueError, match="unknown IGRINS telescope"):
+        surface_conditions({**GEMINI, "TELESCOP": "Subaru"})
+
+
+def test_missing_weather_cards_come_back_as_none():
+    """Gemini 2021 and 2023 keep HUMIDITY and drop the rest; 2015 McDonald drops all four."""
+
+    partial = surface_conditions({"TELESCOP": "Gemini South", "HUMIDITY": 16.1})
+    assert partial["relative_humidity_percent"] == 16.1
+    assert partial["temperature_k"] is None and partial["pressure_hpa"] is None
+
+    blank = surface_conditions({"TELESCOP": "McDonald Observatory", "AIRTEMP": "",
+                                "BARPRESS": "", "HUMIDITY": ""})
+    assert all(blank[key] is None for key in
+               ("temperature_k", "pressure_hpa", "relative_humidity_percent"))
+
+
+# --- the slant path, which the atlas never had ---
+
+
+def test_the_zenith_angle_prefers_the_measured_distance():
+    assert zenith_angle_deg(GEMINI) == pytest.approx(15.8)
+
+
+def test_the_airmass_is_the_fallback():
+    header = {"TELESCOP": "Gemini South", "AMSTART": 2.0, "AMEND": 2.0}
+    assert zenith_angle_deg(header) == pytest.approx(np.degrees(np.arccos(0.5)))
+
+
+def test_a_sentinel_airmass_is_not_a_measurement():
+    """reduced_log.csv writes -1 for a missing airmass; a header can too."""
+
+    with pytest.raises(ValueError, match="neither a usable zenith distance nor an airmass"):
+        zenith_angle_deg({"TELESCOP": "Gemini South", "AMSTART": -1.0, "AMEND": -1.0})
+
+
+def test_the_order_carries_the_slant_path(observation):
+    order = observation.order(0)
+    fitted = igrins_spectral_order(order)
+    assert fitted.zenith_angle_deg == pytest.approx(observation.zenith_angle_deg)
+    assert 0.0 <= fitted.zenith_angle_deg < 90.0
+
+
+# --- refusals ---
+
+
+def test_an_order_outside_the_band_is_refused(observation):
+    with pytest.raises(ValueError, match="outside"):
+        observation.order(observation.orders)
+
+
+@pytest.mark.parametrize("floor", [-0.1, 1.0, 2.0])
+def test_an_impossible_floor_is_refused(observation, floor):
+    with pytest.raises(ValueError, match="floor must be in"):
+        igrins_spectral_order(observation.order(0), saturation_floor=floor)
+
+
+def test_masking_everything_is_an_error_not_an_empty_fit(observation):
+    with pytest.raises(ValueError, match="keeps too few pixels"):
+        igrins_spectral_order(observation.order(1), mask_hydrogen_kms=50_000.0)
+
+
+def test_a_missing_variance_file_is_refused(tmp_path):
+    import shutil
+
+    spec = tmp_path / "SDCH_test_0001.spec.fits"
+    shutil.copy(FIXTURE, spec)
+    with pytest.raises(FileNotFoundError):
+        read_igrins_observation(spec)
