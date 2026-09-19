@@ -248,3 +248,84 @@ def test_merging_compares_list_valued_settings_without_tripping(tmp_path):
     odd = write_record(tmp_path / "c.h5", pages=make_pages(1, seed=3), **conflicting)
     with pytest.raises(ValueError, match="disagree about config: stages"):
         merge_records([left, odd], tmp_path / "bad.h5")
+
+
+def igrins_pages(count=3):
+    """Rows keyed the way an IGRINS night is: one frame, many echelle orders."""
+    pages = []
+    for index in range(count):
+        page = make_pages(1, seed=index)[0]
+        page.pop("page"), page.pop("epoch")
+        page.update({"frame": "SDCH_20181220_0100", "order": f"H{index:02d}",
+                     "airmass": 1.07 + 0.4 * index, "zenith_angle_deg": 20.0 + index,
+                     "telescope": "Discovery Channel"})
+        pages.append(page)
+    return pages
+
+
+def write_igrins(tmp_path, pages=None):
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    return write_record(
+        tmp_path / "night.h5",
+        run={"created": "2026-09-19T00:00:00", "driver": "igrins", "driver_sha256": "0" * 64},
+        config={"resolving_power": 45000.0}, physics={"accuracy_mode": "mt_ckd"},
+        inputs={"spec": "SDCH.fits"}, parameter_names=NAMES, species=SPECIES,
+        pages=igrins_pages() if pages is None else pages, continuum_degree=3,
+        key_fields=("frame", "order"),
+        extra_columns=(("airmass", "f8"), ("zenith_angle_deg", "f8"),
+                       ("telescope", "S256")),
+    )
+
+
+def test_a_record_can_be_keyed_on_something_other_than_a_page(tmp_path):
+    record = read_record(write_igrins(tmp_path))
+
+    assert record.key_fields == ("frame", "order")
+    assert record.key(0) == ("SDCH_20181220_0100", "H00")
+    row = record.row("SDCH_20181220_0100", "H01")
+    assert text(row["order"]) == "H01"
+    assert row["airmass"] == pytest.approx(1.47)
+    assert text(row["telescope"]) == "Discovery Channel"
+    # The shared schema is still all there.
+    assert row["lsf_sigma_kms"] == pytest.approx(0.5)
+    assert row["log_column_H2O"] == pytest.approx(0.0)
+
+
+def test_the_wrong_number_of_key_values_is_refused(tmp_path):
+    record = read_record(write_igrins(tmp_path))
+    with pytest.raises(KeyError, match="keyed on frame, order"):
+        record.row("SDCH_20181220_0100")
+
+
+def test_a_json_view_follows_whatever_the_key_is(tmp_path):
+    view = to_json(read_record(write_igrins(tmp_path)))
+    assert view["results"][0]["frame"] == "SDCH_20181220_0100"
+    assert view["results"][0]["order"] == "H00"
+    assert "page" not in view["results"][0]
+    assert view["results"][0]["airmass"] == pytest.approx(1.07)
+    json.dumps(view)
+
+
+def test_merging_keeps_the_key_and_sorts_on_it(tmp_path):
+    from jax_telluric.record import merge_records
+
+    left = write_igrins(tmp_path / "a")
+    right_pages = igrins_pages()
+    for index, page in enumerate(right_pages):
+        page["frame"] = "SDCH_20181220_0033"
+        page["order"] = f"H{index + 10:02d}"
+    right = write_igrins(tmp_path / "b", pages=right_pages)
+
+    merged = read_record(merge_records([left, right], tmp_path / "all.h5"))
+    assert merged.key_fields == ("frame", "order")
+    assert len(merged.pages) == 6
+    keys = [merged.key(i) for i in range(len(merged.pages))]
+    assert keys == sorted(keys), "rows should come back in a stable order"
+    assert merged.row("SDCH_20181220_0033", "H12")["airmass"] == pytest.approx(1.87)
+
+
+def test_the_arcturus_default_is_unchanged(tmp_path):
+    """The atlas record predates the configurable key and must still read."""
+    record = read_record(write(tmp_path))
+    assert record.key_fields == ("page", "epoch")
+    assert record.row("ab5001_", "summer") is not None

@@ -56,15 +56,19 @@ def ils_fingerprint(
     pushing a unit impulse through the real ``convolve``. That keeps the
     fingerprint honest: it records what the code did, not what a second
     implementation here believes it should have done.
+
+    ``instrument=None`` is the model's own built-in Gaussian, which is the whole
+    line spread function of a grating spectrograph. It goes through
+    ``model._gaussian_convolve``'s function for the same reason.
     """
 
     if samples < 9 or samples % 2 == 0:
         raise ValueError("use an odd number of samples, at least nine")
     from .types import TelluricParameters
 
-    width = _ILS_HALF_WIDTH_RESOLUTION_ELEMENTS * max(
-        float(getattr(instrument, "first_zero_kms", velocity_step_kms)), velocity_step_kms
-    )
+    reach = (float(lsf_sigma_kms) if instrument is None
+             else float(getattr(instrument, "first_zero_kms", velocity_step_kms)))
+    width = _ILS_HALF_WIDTH_RESOLUTION_ELEMENTS * max(reach, velocity_step_kms)
     count = 2 * int(np.ceil(width / velocity_step_kms)) + 1
     impulse = np.zeros(count)
     impulse[count // 2] = 1.0
@@ -72,7 +76,16 @@ def ils_fingerprint(
         log_column_scales={}, velocity_kms=0.0, wavelength_stretch=0.0,
         lsf_sigma_kms=float(lsf_sigma_kms), continuum_coeffs=np.zeros(1), log_jitter=0.0,
     )
-    response = np.asarray(instrument.convolve(impulse, parameters, velocity_step_kms), dtype=float)
+    if instrument is None:
+        from .model import _gaussian_convolve
+
+        half = count // 2
+        response = np.asarray(
+            _gaussian_convolve(impulse, float(lsf_sigma_kms), velocity_step_kms, half),
+            dtype=float)
+    else:
+        response = np.asarray(
+            instrument.convolve(impulse, parameters, velocity_step_kms), dtype=float)
     offsets = (np.arange(count) - count // 2) * velocity_step_kms
     wanted = np.linspace(-width, width, samples)
     return wanted, np.interp(wanted, offsets, response)
@@ -88,20 +101,35 @@ class Record:
     physics: dict
     inputs: dict
     parameter_names: tuple[str, ...]
+    key_fields: tuple[str, ...]
     pages: np.ndarray
     sigma: np.ndarray
     correlation: np.ndarray
     ils_velocity_kms: np.ndarray
     ils_profile: np.ndarray
 
-    def row(self, page: str, epoch: str) -> np.void:
-        """The one row for a page-epoch, or a clear failure."""
-        match = np.flatnonzero(
-            (self.pages["page"] == page.encode()) & (self.pages["epoch"] == epoch.encode())
-        )
-        if match.size != 1:
-            raise KeyError(f"{page} {epoch} is not in this record")
-        return self.pages[int(match[0])]
+    def row(self, *key: str) -> np.void:
+        """The one row with this key, or a clear failure.
+
+        The key is whatever :func:`write_record` was told identifies a row --
+        ``("page", "epoch")`` for the Arcturus atlas, ``("frame", "order")``
+        for an IGRINS night.
+        """
+
+        if len(key) != len(self.key_fields):
+            raise KeyError(
+                f"this record is keyed on {', '.join(self.key_fields)}; got {len(key)} value(s)")
+        match = np.ones(len(self.pages), dtype=bool)
+        for field, value in zip(self.key_fields, key):
+            match &= self.pages[field] == str(value).encode()
+        found = np.flatnonzero(match)
+        if found.size != 1:
+            raise KeyError(f"{' '.join(str(k) for k in key)} is not in this record")
+        return self.pages[int(found[0])]
+
+    def key(self, index: int) -> tuple[str, ...]:
+        """This row's key, decoded."""
+        return tuple(text(self.pages[index][field]) for field in self.key_fields)
 
     def covariance(self, index: int) -> np.ndarray:
         """Rebuild the formal covariance from the stored correlation and sigma."""
@@ -109,12 +137,22 @@ class Record:
         return self.correlation[index].astype(float) * np.outer(deviation, deviation)
 
 
-def _dtype(columns: Sequence[tuple[str, str]], species: Sequence[str], continuum: int) -> np.dtype:
+def _dtype(
+    columns: Sequence[tuple[str, str]],
+    species: Sequence[str],
+    continuum: int,
+    key_fields: Sequence[str] = ("page", "epoch"),
+    extra: Sequence[tuple[str, str]] = (),
+) -> np.dtype:
     fields = [
-        ("page", _STRING), ("epoch", _STRING), ("page_sha256", _STRING),
+        *((name, _STRING) for name in key_fields),
+        # The hash of the observed data this row was fitted to: an atlas page
+        # for Arcturus, a PLP spec file for IGRINS. The name is historical.
+        ("page_sha256", _STRING),
         *((f"log_column_{name}", "f8") for name in species),
         ("continuum_coeffs", "f8", (continuum,)),
         *columns,
+        *extra,
         ("free_species", _LONG_STRING), ("at_bound", _LONG_STRING),
     ]
     return np.dtype(fields)
@@ -164,8 +202,20 @@ def write_record(
     species: Sequence[str],
     pages: Sequence[Mapping],
     continuum_degree: int,
+    key_fields: Sequence[str] = ("page", "epoch"),
+    extra_columns: Sequence[tuple] = (),
 ) -> Path:
-    """Write one run to HDF5. Overwrites; a run is written once, whole."""
+    """Write one run to HDF5. Overwrites; a run is written once, whole.
+
+    ``key_fields`` names the columns that identify a row. The Arcturus atlas
+    keys on ``("page", "epoch")``; an IGRINS night keys on ``("frame",
+    "order")``. They are stored so a reader does not have to guess, and a file
+    written before this was configurable is read as ``("page", "epoch")``.
+
+    ``extra_columns`` are ``(name, dtype)`` pairs appended to the row, for
+    whatever a pipeline records that the shared schema does not -- the airmass
+    and the surface conditions, say. A string dtype is filled from ``str()``.
+    """
 
     import h5py
 
@@ -173,7 +223,17 @@ def write_record(
         raise ValueError("a record needs at least one page")
     names = tuple(parameter_names)
     species = tuple(species)
-    table = np.zeros(len(pages), dtype=_dtype(_SCALARS, species, continuum_degree + 1))
+    key_fields = tuple(key_fields)
+    extra_columns = tuple(tuple(column) for column in extra_columns)
+    table = np.zeros(
+        len(pages),
+        dtype=_dtype(_SCALARS, species, continuum_degree + 1, key_fields, extra_columns))
+    # Which columns take text rather than a number, derived from the dtype so
+    # adding a string column cannot forget to update a hand-written list.
+    text_fields = {
+        field for field in table.dtype.names
+        if table.dtype[field].kind in ("S", "U")
+    }
     sigma = np.zeros((len(pages), len(names)))
     correlation = np.zeros((len(pages), len(names), len(names)), dtype=np.float32)
     ils = np.zeros((len(pages), _ILS_SAMPLES), dtype=np.float32)
@@ -181,7 +241,7 @@ def write_record(
 
     for index, page in enumerate(pages):
         for field in table.dtype.names:
-            if field in ("free_species", "at_bound", "page", "epoch", "page_sha256"):
+            if field in text_fields:
                 table[field][index] = str(page.get(field, "")).encode()[:255]
             elif field == "continuum_coeffs":
                 table[field][index] = np.asarray(page["continuum_coeffs"], dtype=float)
@@ -211,6 +271,7 @@ def write_record(
             group = handle.create_group(name)
             for key, value in block.items():
                 group.attrs[key] = "" if value is None else value
+        handle.attrs["key_fields"] = [f.encode() for f in key_fields]
         handle.create_dataset("parameter_names", data=[n.encode() for n in names])
         handle.create_dataset("species", data=[s.encode() for s in species])
         rows = handle.create_dataset("pages", data=table, compression="gzip")
@@ -262,9 +323,15 @@ def read_record(path: str | Path) -> Record:
             key: (value.item() if isinstance(value, np.generic) else value)
             for key, value in dict(group.attrs).items()
         }
+        # A file written before the key was configurable is keyed the way the
+        # Arcturus atlas was, which is the only thing it could have been.
+        key_fields = tuple(
+            text(f) for f in handle.attrs.get("key_fields", [b"page", b"epoch"]))
         return Record(
             format_version=stored,
-            run={k: v for k, v in decode(handle).items() if k != "format_version"},
+            key_fields=key_fields,
+            run={k: v for k, v in decode(handle).items()
+                 if k not in ("format_version", "key_fields")},
             config=decode(handle["config"]),
             physics=decode(handle["physics"]),
             inputs=decode(handle["inputs"]),
@@ -312,8 +379,13 @@ def merge_records(paths: Sequence[str | Path], output: str | Path) -> Path:
             if differing:
                 raise ValueError(f"shards disagree about {name}: {', '.join(differing)}")
 
+    keys = {r.key_fields for r in records}
+    if len(keys) != 1:
+        raise ValueError(f"shards disagree about how a row is keyed: {sorted(keys)}")
+    key_fields = keys.pop()
     pages = np.concatenate([r.pages for r in records])
-    order = np.argsort([f"{text(row['page'])}_{text(row['epoch'])}" for row in pages])
+    order = np.argsort(
+        ["\x00".join(text(row[field]) for field in key_fields) for row in pages])
     sigma = np.concatenate([r.sigma for r in records])[order]
     correlation = np.concatenate([r.correlation for r in records])[order]
     profile = np.concatenate([r.ils_profile for r in records])[order]
@@ -357,14 +429,38 @@ def parameters_from_row(row, species: Sequence[str]):
     )
 
 
+def _jsonable(value):
+    """Coerce an HDF5 attribute into something ``json.dumps`` accepts.
+
+    h5py hands a list-valued attribute back as a numpy array of bytes, which
+    is neither a list nor a string as far as the encoder is concerned.
+    """
+
+    if isinstance(value, bytes):
+        return value.decode()
+    if isinstance(value, np.ndarray):
+        return [_jsonable(item) for item in value.tolist()]
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, np.bool_):
+        return bool(value)
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.floating):
+        return float(value)
+    if isinstance(value, Mapping):
+        return {str(k): _jsonable(v) for k, v in value.items()}
+    return value
+
+
 def to_json(record: Record) -> dict:
     """A readable projection of a record, for the committed report."""
 
     rows = []
     for index, row in enumerate(record.pages):
-        entry = {"page": text(row["page"]), "epoch": text(row["epoch"])}
+        entry = {field: text(row[field]) for field in record.key_fields}
         for field in record.pages.dtype.names:
-            if field in ("page", "epoch"):
+            if field in record.key_fields:
                 continue
             value = row[field]
             if isinstance(value, np.ndarray):
@@ -380,11 +476,12 @@ def to_json(record: Record) -> dict:
         entry["sigma"] = [float(f"{v:.6g}") for v in record.sigma[index]]
         rows.append(entry)
     return {
-        **record.run,
+        **_jsonable(record.run),
         "format_version": record.format_version,
-        "config": record.config,
-        "physics": record.physics,
-        "inputs": record.inputs,
+        "key_fields": list(record.key_fields),
+        "config": _jsonable(record.config),
+        "physics": _jsonable(record.physics),
+        "inputs": _jsonable(record.inputs),
         "parameter_names": list(record.parameter_names),
         "results": rows,
     }
