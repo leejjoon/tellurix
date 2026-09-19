@@ -5,6 +5,15 @@ from jax import config as _jax_config
 _jax_config.update("jax_enable_x64", True)
 
 from .fit import FitResult, OrderObjective, fit_order
+from .record import (
+    Record,
+    file_sha256,
+    ils_fingerprint,
+    merge_records,
+    parameters_from_row,
+    read_record,
+    write_record,
+)
 from .corrections import LBLRTMOpticalDepthCorrection, build_lblrtm_correction
 from .aer import (
     AERLineDatabase,
@@ -78,6 +87,13 @@ __all__ = [
     "degrade_to_resolving_power",
     "epoch_velocity_kms",
     "OrderObjective",
+    "Record",
+    "file_sha256",
+    "ils_fingerprint",
+    "merge_records",
+    "parameters_from_row",
+    "read_record",
+    "write_record",
     "fit_order",
     "igrins_wavenumber_grid",
     "trim_wavenumber_grid",

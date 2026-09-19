@@ -759,6 +759,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "exojax" },
+    { name = "h5py" },
     { name = "jax" },
     { name = "numpy" },
     { name = "scipy" },
@@ -777,6 +778,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "exojax", specifier = "==2.5.0" },
+    { name = "h5py", specifier = ">=3.10,<4" },
     { name = "jax", specifier = ">=0.5,<0.7" },
     { name = "jax", extras = ["cuda12"], marker = "extra == 'gpu'", specifier = ">=0.5,<0.7" },
     { name = "numpy", specifier = ">=1.26,<2" },

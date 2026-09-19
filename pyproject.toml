@@ -10,6 +10,8 @@ readme = "README.md"
 requires-python = ">=3.10,<3.11"
 dependencies = [
   "exojax==2.5.0",
+  # Already in the lock via exojax; declared because record.py uses it directly.
+  "h5py>=3.10,<4",
   "jax>=0.5,<0.7",
   # RADIS currently pulls a vaex wheel built against NumPy 1.x.
   "numpy>=1.26,<2",
