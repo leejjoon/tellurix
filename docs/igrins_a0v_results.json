@@ -1,0 +1,622 @@
+{
+  "observation": {
+    "path": "data/igrins/20180402_0104/SDCH_20180402_0104.spec.fits",
+    "object": "HIP 53433",
+    "object_type": "STD",
+    "band": "H",
+    "telescope": "Gemini South",
+    "date_obs": "2018-04-03T01:40:00.273",
+    "mjd": 58211.069448,
+    "exposure_time_s": 35.0,
+    "zenith_angle_deg": 15.8119,
+    "sha256": {
+      "spec": "243e523b9dc55f45e79f125108019dc89e2b9ceb3102348108857dbdea1d191f",
+      "variance": "7dd1f4a8ae1dd3057ca338e308b3abbea941e10aac5c468816c89c44ed4d8eee",
+      "flattened": "e1115ff1e5eb48cf33f9b8a2ae4486adc325ca8cff9f9646d8acf65b100300a5"
+    },
+    "surface": {
+      "site": "Gemini South",
+      "altitude_km": 2.722,
+      "temperature_k": 283.65,
+      "pressure_hpa": 728.5,
+      "relative_humidity_percent": 42.7
+    }
+  },
+  "settings": {
+    "profile": "data/profiles/gemini_south_2018.csv",
+    "stellar": "flat",
+    "resolving_power": 45000.0,
+    "samples_per_resolution": 4.0,
+    "margin_cm1": 25.0,
+    "grid_margin_cm1": 5.0,
+    "continuum_degree": 9,
+    "min_optical_depth": 0.02,
+    "min_transmission": 0.15,
+    "precompute_opacity": true,
+    "self_broadening": "linear"
+  },
+  "physics": {
+    "accuracy_mode": "mt_ckd",
+    "opacity_method": "direct_sparse",
+    "mt_ckd_file": "absco-ref_wv-mt-ckd.nc",
+    "pressure_shift": true,
+    "mixed_precision": true,
+    "vectorize_layers": true,
+    "pixel_integration": "simpson",
+    "instrument": "gaussian",
+    "max_lsf_sigma_kms": 10.0,
+    "vsini_kms": 0.0,
+    "macroturbulence_kms": 0.0,
+    "limb_darkening": 0.6,
+    "normalize_stellar_source": true,
+    "stages": [
+      "continuum",
+      "velocity",
+      "columns"
+    ]
+  },
+  "order_rule": {
+    "saturation_floor": 0.02,
+    "throughput_floor": 0.25,
+    "continuum_percentile": 95.0,
+    "mask_hydrogen_kms": 600.0,
+    "minimum_pixels": 256
+  },
+  "orders_fitted": 24,
+  "orders_skipped": 4,
+  "pixels": 25511,
+  "quality": {
+    "median_rms_over_noise": 2.572910802130211,
+    "min_rms_over_noise": 1.395300577175596,
+    "max_rms_over_noise": 5.545826673880567,
+    "median_rms_over_noise_absorbing": 2.7785894375932307,
+    "median_rms_over_noise_clear": 2.307609779954268
+  },
+  "residual_vs_transmission": [
+    {
+      "transmission_low": 0.15,
+      "transmission_high": 0.4,
+      "pixels": 494,
+      "rms_over_noise": 6.71508211974416,
+      "median_abs_z": 3.711382556466449,
+      "median_bias_over_continuum": -0.0023418456406258934
+    },
+    {
+      "transmission_low": 0.4,
+      "transmission_high": 0.6,
+      "pixels": 856,
+      "rms_over_noise": 5.1348556526600975,
+      "median_abs_z": 2.824987214582576,
+      "median_bias_over_continuum": 0.00019001213054652675
+    },
+    {
+      "transmission_low": 0.6,
+      "transmission_high": 0.8,
+      "pixels": 1814,
+      "rms_over_noise": 3.78228419125532,
+      "median_abs_z": 1.9625514634128862,
+      "median_bias_over_continuum": -0.0009712636093339325
+    },
+    {
+      "transmission_low": 0.8,
+      "transmission_high": 0.9,
+      "pixels": 2223,
+      "rms_over_noise": 2.76986419830299,
+      "median_abs_z": 1.4712226266916755,
+      "median_bias_over_continuum": -0.0013254806270762167
+    },
+    {
+      "transmission_low": 0.9,
+      "transmission_high": 0.97,
+      "pixels": 3477,
+      "rms_over_noise": 2.5949479242889355,
+      "median_abs_z": 1.4146209890765047,
+      "median_bias_over_continuum": -0.0006382981871840079
+    },
+    {
+      "transmission_low": 0.97,
+      "transmission_high": 0.995,
+      "pixels": 7351,
+      "rms_over_noise": 2.59615408391199,
+      "median_abs_z": 1.5125046478484403,
+      "median_bias_over_continuum": 0.00011828374891295486
+    },
+    {
+      "transmission_low": 0.995,
+      "transmission_high": 1.01,
+      "pixels": 9285,
+      "rms_over_noise": 2.6182842033577494,
+      "median_abs_z": 1.4826906749260333,
+      "median_bias_over_continuum": -0.00014727696143483897
+    }
+  ],
+  "transmission_against_the_data": [
+    {
+      "model": "jax-telluric (this fit)",
+      "pixels": 25511,
+      "bins": [
+        {
+          "transmission_low": 0.15,
+          "transmission_high": 0.4,
+          "pixels": 483,
+          "median_difference": 0.003625644552656432,
+          "rms_difference": 0.02411876479760856
+        },
+        {
+          "transmission_low": 0.4,
+          "transmission_high": 0.6,
+          "pixels": 867,
+          "median_difference": 0.0006459798265836536,
+          "rms_difference": 0.021227127569003343
+        },
+        {
+          "transmission_low": 0.6,
+          "transmission_high": 0.8,
+          "pixels": 1852,
+          "median_difference": 0.001814932890446097,
+          "rms_difference": 0.02661573505743962
+        },
+        {
+          "transmission_low": 0.8,
+          "transmission_high": 0.97,
+          "pixels": 6013,
+          "median_difference": 0.0028092431751173264,
+          "rms_difference": 0.017693844153893676
+        },
+        {
+          "transmission_low": 0.97,
+          "transmission_high": 1.02,
+          "pixels": 15909,
+          "median_difference": -0.0004893619677776018,
+          "rms_difference": 0.009787900978443448
+        }
+      ],
+      "median_difference": 0.00031104894190769894,
+      "rms_difference": 0.015496970935498849
+    },
+    {
+      "model": "IGRINS PLP MODEL_TELTRANS",
+      "pixels": 23602,
+      "bins": [
+        {
+          "transmission_low": 0.15,
+          "transmission_high": 0.4,
+          "pixels": 361,
+          "median_difference": -0.22578860893149746,
+          "rms_difference": 0.23487522097242686
+        },
+        {
+          "transmission_low": 0.4,
+          "transmission_high": 0.6,
+          "pixels": 629,
+          "median_difference": -0.31597718626929583,
+          "rms_difference": 0.3153288649503327
+        },
+        {
+          "transmission_low": 0.6,
+          "transmission_high": 0.8,
+          "pixels": 1303,
+          "median_difference": -0.2454706094456658,
+          "rms_difference": 0.2596077009042185
+        },
+        {
+          "transmission_low": 0.8,
+          "transmission_high": 0.97,
+          "pixels": 5042,
+          "median_difference": -0.06957896654826984,
+          "rms_difference": 0.1055194789762534
+        },
+        {
+          "transmission_low": 0.97,
+          "transmission_high": 1.02,
+          "pixels": 15885,
+          "median_difference": -0.0033732798343435455,
+          "rms_difference": 0.01562969358207421
+        }
+      ],
+      "median_difference": -0.008936410713068388,
+      "rms_difference": 0.09903000437754442
+    }
+  ],
+  "wavelength_solution": {
+    "mean_velocity_kms": -1.089056342658971,
+    "scatter_kms": 0.18056425553384436,
+    "trend_kms_per_1000_cm1": 0.42721968433907487,
+    "scatter_about_trend_kms": 0.07840328335341386,
+    "orders_used": 23
+  },
+  "water": {
+    "mean_log_column_scale": 0.15470621838977505,
+    "scatter_log_column_scale": 0.34709524739890574,
+    "column_factor_on_the_seed": 1.1673149750530838
+  },
+  "per_order": [
+    {
+      "name": "H01",
+      "v1": 5504.6762795515815,
+      "v2": 5581.979003188379,
+      "kept": 944,
+      "reliable": 817,
+      "median_transmission": 0.6552156880903048,
+      "residual_rms_over_noise": 3.394798292629213,
+      "resolving_power_fitted": 31795.263472122242,
+      "velocity_kms": -1.3806590637607576,
+      "free_species": [
+        "CH4",
+        "H2O"
+      ],
+      "all_stages_converged": false
+    },
+    {
+      "name": "H02",
+      "v1": 5558.836403246104,
+      "v2": 5636.905406031893,
+      "kept": 1507,
+      "reliable": 1405,
+      "median_transmission": 0.8855147521337621,
+      "residual_rms_over_noise": 3.343223988230719,
+      "resolving_power_fitted": 34495.80847970983,
+      "velocity_kms": -1.412732689593746,
+      "free_species": [
+        "CH4",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H03",
+      "v1": 5612.953974270169,
+      "v2": 5691.787944767473,
+      "kept": 1542,
+      "reliable": 1508,
+      "median_transmission": 0.9614241761479576,
+      "residual_rms_over_noise": 2.870069792693177,
+      "resolving_power_fitted": 34784.53998860222,
+      "velocity_kms": -1.3070999769238472,
+      "free_species": [
+        "CH4",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H04",
+      "v1": 5667.028766543022,
+      "v2": 5746.625963197968,
+      "kept": 1567,
+      "reliable": 1539,
+      "median_transmission": 0.9883275994454895,
+      "residual_rms_over_noise": 2.7785894375932307,
+      "resolving_power_fitted": 34938.882761104454,
+      "velocity_kms": -1.3696434360932357,
+      "free_species": [
+        "CH4",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H05",
+      "v1": 5721.060560925233,
+      "v2": 5801.4187972806185,
+      "kept": 972,
+      "reliable": 957,
+      "median_transmission": 0.9868762113385638,
+      "residual_rms_over_noise": 2.3797782593990453,
+      "resolving_power_fitted": 37679.91081093445,
+      "velocity_kms": -1.2278906224022026,
+      "free_species": [
+        "CH4",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H06",
+      "v1": 5775.04914520308,
+      "v2": 5856.165775174818,
+      "kept": 1561,
+      "reliable": 1561,
+      "median_transmission": 0.9939393118160346,
+      "residual_rms_over_noise": 2.6791002298925024,
+      "resolving_power_fitted": 36314.985642391184,
+      "velocity_kms": -1.1991730966226966,
+      "free_species": [
+        "CH4",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H07",
+      "v1": 5828.994314072582,
+      "v2": 5910.866217290673,
+      "kept": 1542,
+      "reliable": 1542,
+      "median_transmission": 0.993067162357371,
+      "residual_rms_over_noise": 2.5469113794452216,
+      "resolving_power_fitted": 40558.47112242627,
+      "velocity_kms": -1.1302385256733798,
+      "free_species": [
+        "CH4",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H08",
+      "v1": 5882.895869123179,
+      "v2": 5965.519436338413,
+      "kept": 1330,
+      "reliable": 1330,
+      "median_transmission": 0.9974437976715052,
+      "residual_rms_over_noise": 2.726456881040595,
+      "resolving_power_fitted": 40177.3666897518,
+      "velocity_kms": -1.1768883964712673,
+      "free_species": [
+        "CH4",
+        "H2O"
+      ],
+      "all_stages_converged": false
+    },
+    {
+      "name": "H09",
+      "v1": 5936.753618821072,
+      "v2": 6020.124737378599,
+      "kept": 961,
+      "reliable": 961,
+      "median_transmission": 0.9975702892777633,
+      "residual_rms_over_noise": 1.8897428925370199,
+      "resolving_power_fitted": 40547.272984257404,
+      "velocity_kms": -1.189139916804006,
+      "free_species": [
+        "CH4",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H10",
+      "v1": 5990.567378492229,
+      "v2": 6074.681417873198,
+      "kept": 1522,
+      "reliable": 1522,
+      "median_transmission": 0.9970987568302917,
+      "residual_rms_over_noise": 2.6786783332462614,
+      "resolving_power_fitted": 47113.34587975434,
+      "velocity_kms": -1.0763300216963863,
+      "free_species": [
+        "CH4",
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H11",
+      "v1": 6044.3369703050785,
+      "v2": 6129.188767737483,
+      "kept": 932,
+      "reliable": 932,
+      "median_transmission": 0.9954619757519845,
+      "residual_rms_over_noise": 2.756883867709838,
+      "resolving_power_fitted": 44370.53701828839,
+      "velocity_kms": -0.9593716783359655,
+      "free_species": [
+        "CH4",
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H12",
+      "v1": 6098.062223252863,
+      "v2": 6183.6460693927875,
+      "kept": 1371,
+      "reliable": 1371,
+      "median_transmission": 0.9979545951147606,
+      "residual_rms_over_noise": 1.9145086912979665,
+      "resolving_power_fitted": 41105.349360980086,
+      "velocity_kms": -1.0378569435384206,
+      "free_species": [
+        "CH4",
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H13",
+      "v1": 6151.74297313571,
+      "v2": 6238.052597820105,
+      "kept": 994,
+      "reliable": 994,
+      "median_transmission": 0.9979480767936323,
+      "residual_rms_over_noise": 2.2555749814016277,
+      "resolving_power_fitted": 37653.2229428589,
+      "velocity_kms": -1.2879192971505737,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H14",
+      "v1": 6205.379062542386,
+      "v2": 6292.4076206145755,
+      "kept": 1217,
+      "reliable": 1217,
+      "median_transmission": 0.9927377162716542,
+      "residual_rms_over_noise": 1.8840785972436043,
+      "resolving_power_fitted": 41446.30124267276,
+      "velocity_kms": -1.0027897918336275,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H15",
+      "v1": 6258.970340831781,
+      "v2": 6346.710398040815,
+      "kept": 892,
+      "reliable": 892,
+      "median_transmission": 0.9988387811218367,
+      "residual_rms_over_noise": 3.1251233072845777,
+      "resolving_power_fitted": 43023.89369045477,
+      "velocity_kms": -1.05126489156852,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H16",
+      "v1": 6312.516664114067,
+      "v2": 6400.960183089113,
+      "kept": 980,
+      "reliable": 980,
+      "median_transmission": 0.9938362339728288,
+      "residual_rms_over_noise": 2.444423629897288,
+      "resolving_power_fitted": 43437.081402562064,
+      "velocity_kms": -0.8959384456574183,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": false
+    },
+    {
+      "name": "H17",
+      "v1": 6366.017895231634,
+      "v2": 6455.1562215325475,
+      "kept": 800,
+      "reliable": 800,
+      "median_transmission": 0.9994778580652401,
+      "residual_rms_over_noise": 1.5596244369985302,
+      "resolving_power_fitted": 64556.20201467805,
+      "velocity_kms": -1.023715647183861,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": false
+    },
+    {
+      "name": "H18",
+      "v1": 6419.473903739716,
+      "v2": 6509.297751984922,
+      "kept": 548,
+      "reliable": 548,
+      "median_transmission": 0.9990004115539062,
+      "residual_rms_over_noise": 1.5179269773412711,
+      "resolving_power_fitted": 45469.95277283796,
+      "velocity_kms": -1.0251778434055214,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H19",
+      "v1": 6472.884565886779,
+      "v2": 6563.384005959645,
+      "kept": 538,
+      "reliable": 538,
+      "median_transmission": 0.9964683835425876,
+      "residual_rms_over_noise": 1.395300577175596,
+      "resolving_power_fitted": 43984.800113926496,
+      "velocity_kms": -0.8432403195788055,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H20",
+      "v1": 6526.249764594663,
+      "v2": 6617.414207929466,
+      "kept": 288,
+      "reliable": 288,
+      "median_transmission": 0.9960749316312189,
+      "residual_rms_over_noise": 2.307609779954268,
+      "resolving_power_fitted": 48383.96735944013,
+      "velocity_kms": -0.8898678733090308,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    },
+    {
+      "name": "H23",
+      "v1": 6686.071508978056,
+      "v2": 6779.160642207066,
+      "kept": 1223,
+      "reliable": 1154,
+      "median_transmission": 0.8933885730174667,
+      "residual_rms_over_noise": 2.0942446378010993,
+      "resolving_power_fitted": 43180.50209822795,
+      "velocity_kms": -0.8836992511161211,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": false
+    },
+    {
+      "name": "H24",
+      "v1": 6739.253815906051,
+      "v2": 6832.958742213195,
+      "kept": 1156,
+      "reliable": 1056,
+      "median_transmission": 0.7961635448884836,
+      "residual_rms_over_noise": 2.6978740033931157,
+      "resolving_power_fitted": 42211.38379415491,
+      "velocity_kms": -0.8086796603664544,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": false
+    },
+    {
+      "name": "H25",
+      "v1": 6792.390173392516,
+      "v2": 6886.696809122488,
+      "kept": 1171,
+      "reliable": 1098,
+      "median_transmission": 0.7916045079414105,
+      "residual_rms_over_noise": 2.5989102248152003,
+      "resolving_power_fitted": 42892.338640892456,
+      "velocity_kms": -0.868978492070494,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": false
+    },
+    {
+      "name": "H26",
+      "v1": 6845.480503969156,
+      "v2": 6940.37402646894,
+      "kept": 518,
+      "reliable": 501,
+      "median_transmission": 0.8504439104014849,
+      "residual_rms_over_noise": 5.545826673880567,
+      "resolving_power_fitted": 46477.39930047902,
+      "velocity_kms": 0.22777559045556264,
+      "free_species": [
+        "CO2",
+        "H2O"
+      ],
+      "all_stages_converged": true
+    }
+  ]
+}

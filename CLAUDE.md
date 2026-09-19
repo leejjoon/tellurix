@@ -53,6 +53,39 @@ pixel wavenumbers, not the operator the correction applied. That is
 differ by up to 0.126 against 0.0059 of noise. `docs/arcturus_fit.md` lists
 every saved array and the summary's `physics` block.
 
+The IGRINS A0V standard pipeline (see `docs/igrins_a0v.md`). Same AER and
+MT_CKD inputs; the spectra come from the RRISA reduced archive, not the atlas:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run python scripts/download_rrisa_standard.py --catalog
+UV_CACHE_DIR=.uv-cache uv run python scripts/download_rrisa_standard.py --list --facility DCT --night 20181220
+UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_standard.py --spec <SDCH_*.spec.fits>
+UV_CACHE_DIR=.uv-cache uv run python scripts/summarize_igrins_fit.py --summary <*_summary.json>
+```
+
+Three things differ from the Arcturus driver and all three are load-bearing.
+The instrument is the **default Gaussian**, not `BoxcarFTSInstrumentProfile` --
+a grating spectrograph's LSF is the fitted `lsf_sigma_kms` itself, so there is
+no MOPD to measure. `pixel_integration` is `"simpson"`, because IGRINS pixels
+integrate while the FTS point-samples. And `igrins_spectral_order` **normalizes
+the order** to `continuum_level`: the continuum's constant term is a log flux,
+so raw PLP counts put it near 10, its bound has to span the counts scale, and
+L-BFGS-B's rescaling onto that bound drives the continuum to zero (measured:
+220 sigma against 2.7). The continuum degree is 9, not 3 -- an order spans
+77-96 cm-1 and carries the blaze.
+
+`igrins.py` reads the RRISA reduced products. Two of its rules exist because
+the archive is not self-describing. `surface_conditions` normalizes the weather
+cards from the `TELESCOP` card -- McDonald is degF/inHg, DCT is
+sea-level-reduced hPa, Gemini South is station hPa, and nothing in the file says
+which -- then checks the result against the site's hydrostatic expectation and
+raises past 8%, so a convention change fails instead of placing the observatory
+at sea level. And the PLP's own `MASK` is **not** used (it flags 56% of H and
+76% of K by its own flattening criterion); the throughput cut at a quarter of
+peak, on the *smoothed* flux, is ours and is asymmetric because the blaze
+roll-off is. `reduced_log.csv`'s `AM` column writes `-1` for missing and carries
+impossible values -- the airmass comes from the header.
+
 `scripts/generate_payne_zero_arcturus.py` makes the stellar source and does **not**
 run in this environment: Payne Zero needs Python >= 3.11 while this package is pinned
 to 3.10 by `exojax==2.5.0`. It runs in Payne Zero's own venv and writes an npz that
