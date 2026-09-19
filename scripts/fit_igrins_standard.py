@@ -454,6 +454,11 @@ def main() -> None:
     parser.add_argument("--min-optical-depth", type=float, default=0.02)
     parser.add_argument("--min-transmission", type=float, default=0.15)
     parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/igrins")
+    parser.add_argument("--summary-suffix", default="",
+                        help="appended to the summary filename. Sharding one band across "
+                             "devices by order needs this: every shard writes a summary for "
+                             "the same frames, and without a distinct name they overwrite "
+                             "each other and each keeps only its own orders.")
     parser.add_argument("--precompute-opacity", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--self-broadening", choices=("linear", "frozen"), default="linear")
     parser.add_argument("--no-covariance", action="store_true",
@@ -558,7 +563,7 @@ def main() -> None:
             "physics": dict(PHYSICS), "order_rule": dict(ORDER),
             "results": rows, "failures": failures[id(observation)],
         }
-        path = args.output_dir / f"{stem}_summary.json"
+        path = args.output_dir / f"{stem}{args.summary_suffix}_summary.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(summary, indent=2))
         if rows:

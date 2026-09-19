@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -40,6 +41,11 @@ import numpy as np
 # demand rather more, or orders with a trace of absorption dominate the count
 # while carrying no information.
 MINIMUM_OPTICAL_DEPTH = 0.15
+# O2 stays in the list but never has data: its near-infrared bands are at 0.76
+# and 1.27 um, blueward of IGRINS, so its optical depth across H and K is
+# exactly zero. CO and N2O peak at 0.115 and 0.125, just under the threshold;
+# dropping to 0.10 admits them with errors five to eight times CO2's, so they
+# constrain nothing. CO2 and CH4 are the well-mixed test that works here.
 WELL_MIXED = ("CO2", "CH4", "O2", "N2O", "CO")
 
 
@@ -87,22 +93,40 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--directory", type=Path, default=root / "data/corrected/igrins/ladder")
+    parser.add_argument("--directory", type=Path, nargs="+",
+                        default=[root / "data/corrected/igrins/ladder"],
+                        help="one or more directories of per-frame summaries; H and K of the "
+                             "same exposure, and shards of one band, are merged")
     parser.add_argument("--output", type=Path, default=root / "docs/igrins_airmass_ladder.json")
     parser.add_argument("--min-optical-depth", type=float, default=MINIMUM_OPTICAL_DEPTH)
     args = parser.parse_args()
 
-    summaries = sorted(args.directory.glob("*_summary.json"))
+    summaries = sorted(
+        path for directory in args.directory for path in directory.glob("*_summary.json"))
     if not summaries:
-        raise SystemExit(f"no summaries in {args.directory}")
+        raise SystemExit(f"no summaries in {', '.join(str(d) for d in args.directory)}")
 
-    frames = []
+    # One exposure can arrive as several files: H and K are simultaneous
+    # readouts of the same pointing, and sharding one band across devices by
+    # order splits it further. Group on the date and frame number, which is
+    # what identifies the exposure, and merge the orders.
+    grouped: dict[tuple[str, str], dict] = {}
     for path in summaries:
         summary = json.loads(path.read_text())
-        observation = summary["observation"]
+        match = re.match(r"SDC[HK]_(\d{8})_(\d+)", path.name)
+        key = (match.group(1), match.group(2)) if match else (path.name, "")
+        entry = grouped.setdefault(key, {"observation": summary["observation"],
+                                         "results": [], "failures": [], "bands": set()})
+        entry["results"].extend(summary["results"])
+        entry["failures"].extend(summary["failures"])
+        entry["bands"].add(summary["observation"]["band"])
+
+    frames = []
+    for key, entry in sorted(grouped.items()):
+        observation = entry["observation"]
         zenith = float(observation["zenith_angle_deg"])
         airmass = 1.0 / np.cos(np.radians(zenith))
-        rows = summary["results"]
+        rows = entry["results"]
         if not rows:
             continue
         species_columns = {}
@@ -119,7 +143,8 @@ def main() -> None:
                                             "orders": count}
         ratio = np.array([r["residual_rms_over_noise"] for r in rows])
         frames.append({
-            "frame": path.name.replace("_summary.json", ""),
+            "frame": f"{key[0]}_{key[1]}",
+            "bands": "".join(sorted(entry["bands"])),
             "object": observation["object"],
             "ut": observation["date_obs"][11:19],
             "mjd": observation["mjd"],
@@ -190,8 +215,8 @@ def main() -> None:
 
     report = {
         "night": frames[0]["frame"].split("_")[1] if frames else None,
-        "telescope": json.loads(summaries[0].read_text())["observation"]["telescope"],
-        "band": json.loads(summaries[0].read_text())["observation"]["band"],
+        "telescope": frames[0]["surface"]["site"] if frames else None,
+        "bands": sorted({b for f in frames for b in f["bands"]}),
         "frames": len(frames),
         "airmass_range": [frames[0]["airmass"], frames[-1]["airmass"]],
         "minimum_optical_depth": args.min_optical_depth,
@@ -211,8 +236,8 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2))
 
-    print(f"{len(frames)} frames, airmass {frames[0]['airmass']:.3f}-{frames[-1]['airmass']:.3f}, "
-          f"{report['telescope']} {report['band']} band\n")
+    print(f"{len(frames)} exposures, airmass {frames[0]['airmass']:.3f}-{frames[-1]['airmass']:.3f}, "
+          f"{report['telescope']}, band(s) {'+'.join(report['bands'])}\n")
     print(f"{'frame':22s} {'object':14s} {'UT':9s} {'AM':>6} {'rms/sig':>8}  columns")
     for f in frames:
         cols = "  ".join(f"{s} {v['log_column']:+.3f}({v['orders']})"
