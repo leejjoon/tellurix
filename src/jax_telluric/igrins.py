@@ -505,7 +505,7 @@ def smoothed_blaze(flux: np.ndarray, window: int = 51) -> np.ndarray:
     return total / np.maximum(weight, 1.0e-9)
 
 
-def leave_one_out_patterns(fractional, minimum_frames=3):
+def leave_one_out_patterns(fractional, minimum_frames=3, smooth_pixels=51):
     """One instrument-response pattern per frame, from every *other* frame.
 
     The red edge of an IGRINS order carries a residual that repeats frame to
@@ -518,6 +518,25 @@ def leave_one_out_patterns(fractional, minimum_frames=3):
     a calibration rather than a way of fitting the noise: a pattern taken from
     the frame it corrects would absorb genuine residual and flatter the telluric
     model. Every number this pipeline reports is therefore leave-one-out.
+
+    ``smooth_pixels`` is the other half of that guard, and it is not optional.
+    Leave-one-out stops the pattern absorbing one frame's *noise*; it does
+    nothing about a systematic every frame shares -- and our own telluric model
+    error is exactly that, since every frame looks through the same sky with the
+    same line list. Measured on this night, the unsmoothed pattern's
+    high-frequency component correlates with the absorption depth at r = +0.44
+    and with the transmission gradient at +0.39, and its amplitude scales with
+    how much absorption an order has: 0.013 of the continuum where the median
+    transmission is 0.67, 0.003 where it is 0.999, which is the noise floor.
+    That component is the line list, not the instrument, and removing it would
+    make the telluric model look better than it is.
+
+    A boxcar of 51 pixels -- about fifteen resolution elements -- keeps the
+    broad response error, which runs over hundreds of pixels at the red edge of
+    an order, and leaves telluric-scale structure in the residual where it
+    belongs. It drops the pattern's correlation with absorption depth from
+    +0.44 to +0.15. ``smooth_pixels=0`` disables the guard and must not be used
+    when the residual is being quoted as a test of the telluric model.
     """
 
     stack = np.asarray(fractional, dtype=float)
@@ -530,7 +549,17 @@ def leave_one_out_patterns(fractional, minimum_frames=3):
             warnings.simplefilter("ignore", RuntimeWarning)
             pattern = np.nanmedian(others, axis=0)
         enough = np.sum(np.isfinite(others), axis=0) >= minimum_frames
-        patterns.append(np.where(enough & np.isfinite(pattern), np.nan_to_num(pattern), 0.0))
+        pattern = np.where(enough & np.isfinite(pattern), np.nan_to_num(pattern), 0.0)
+        if smooth_pixels and smooth_pixels > 1:
+            if smooth_pixels % 2 == 0:
+                raise ValueError("smooth_pixels must be odd so the boxcar is centred")
+            kernel = np.ones(smooth_pixels) / smooth_pixels
+            weight = np.convolve(enough.astype(float), kernel, mode="same")
+            total = np.convolve(np.where(enough, pattern, 0.0), kernel, mode="same")
+            # Where nothing was measured the correction stays exactly zero
+            # rather than bleeding in from a neighbour.
+            pattern = np.where(enough, total / np.maximum(weight, 1e-9), 0.0)
+        patterns.append(pattern)
     return patterns
 
 

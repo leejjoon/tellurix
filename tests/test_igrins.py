@@ -325,7 +325,8 @@ def test_a_frames_pattern_never_uses_that_frame():
     # Corrupt one frame beyond recognition; every *other* frame's pattern must
     # be untouched by it, and its own must come from the rest.
     stack[2] = 99.0
-    patterns = leave_one_out_patterns(stack)
+    # smoothing off: this checks the leave-one-out median, not the boxcar
+    patterns = leave_one_out_patterns(stack, smooth_pixels=0)
     for index, pattern in enumerate(patterns):
         assert np.max(np.abs(pattern)) < 1.0, f"frame {index} absorbed the outlier"
     # The outlier's own correction is the clean median of the others.
@@ -338,7 +339,7 @@ def test_the_pattern_recovers_an_injected_response():
     rng = np.random.default_rng(0)
     truth = np.array([0.05, -0.03, 0.10, -0.08, 0.00])
     stack = truth + rng.normal(0.0, 0.01, (12, truth.size))
-    for pattern in leave_one_out_patterns(stack):
+    for pattern in leave_one_out_patterns(stack, smooth_pixels=0):
         np.testing.assert_allclose(pattern, truth, atol=0.01)
 
 
@@ -349,7 +350,7 @@ def test_too_few_frames_leave_a_pixel_uncorrected():
     stack = np.full((4, 3), 0.2)
     stack[:, 1] = np.nan          # nothing measures this pixel
     stack[1:, 2] = np.nan         # only one frame measures this one
-    patterns = leave_one_out_patterns(stack, minimum_frames=3)
+    patterns = leave_one_out_patterns(stack, minimum_frames=3, smooth_pixels=0)
     for pattern in patterns:
         assert pattern[0] == pytest.approx(0.2)
         assert pattern[1] == 0.0, "an unmeasured pixel must be left alone"
@@ -366,3 +367,38 @@ def test_dividing_by_the_response_is_the_same_as_scaling_the_model():
     scaled_model = np.sum(((flux - scale * model) / sigma) ** 2)
     scaled_data = np.sum(((flux / scale - model) / (sigma / scale)) ** 2)
     assert scaled_data == pytest.approx(scaled_model, rel=1e-12)
+
+
+def test_the_pattern_keeps_the_broad_response_and_drops_line_scale_structure():
+    """Leave-one-out stops the pattern eating one frame's noise. Smoothing stops
+    it eating the telluric model error that every frame shares."""
+    from jax_telluric import leave_one_out_patterns
+
+    rng = np.random.default_rng(0)
+    x = np.arange(400)
+    broad = 0.03 * np.sin(x / 120.0)      # instrument: hundreds of pixels
+    fine = 0.02 * np.sin(x / 1.5)         # line list: a few pixels
+    stack = broad + fine + rng.normal(0.0, 0.002, (9, 400))
+
+    smoothed = leave_one_out_patterns(stack)[0]
+    raw = leave_one_out_patterns(stack, smooth_pixels=0)[0]
+    assert np.std(smoothed - broad) < 0.15 * np.std(fine), "line-scale structure leaked through"
+    assert np.std(raw - broad) > 0.8 * np.std(fine), "the unsmoothed pattern should carry it"
+    np.testing.assert_allclose(smoothed, broad, atol=0.005)
+
+
+def test_an_even_smoothing_window_is_refused():
+    from jax_telluric import leave_one_out_patterns
+
+    with pytest.raises(ValueError, match="odd"):
+        leave_one_out_patterns(np.zeros((5, 50)), smooth_pixels=50)
+
+
+def test_smoothing_never_invents_a_correction_where_nothing_was_measured():
+    from jax_telluric import leave_one_out_patterns
+
+    stack = np.full((6, 60), 0.05)
+    stack[:, 20:30] = np.nan          # a gap no frame measured
+    pattern = leave_one_out_patterns(stack, smooth_pixels=11)[0]
+    assert np.all(pattern[20:30] == 0.0), "a boxcar must not bleed into an unmeasured gap"
+    assert pattern[5] == pytest.approx(0.05, abs=1e-9)
