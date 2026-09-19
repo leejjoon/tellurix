@@ -562,7 +562,23 @@ class TelluricModel:
         position = jnp.clip(jnp.arange(count) + shift, 0.0, count - 1.0)
         return _catmull_rom(values, position)
 
-    def predict(self, order: SpectralOrder, parameters: TelluricParameters) -> jnp.ndarray:
+    def predict(
+        self,
+        order: SpectralOrder,
+        parameters: TelluricParameters,
+        zenith_angle_deg=None,
+    ) -> jnp.ndarray:
+        """Model flux on the order's pixels.
+
+        ``zenith_angle_deg`` overrides the order's own value and may be a
+        tracer. That is what lets one compiled objective serve several
+        observations that share a grid but point in different directions --
+        :class:`SpectralOrder` validates its own angle eagerly, so a traced one
+        cannot be carried there.
+        """
+
+        if zenith_angle_deg is None:
+            zenith_angle_deg = order.zenith_angle_deg
         wavelength = jnp.asarray(order.wavelength_vacuum_nm)
         x = jnp.linspace(-1.0, 1.0, wavelength.size)
         shifted_wavelength = wavelength * (1.0 + jnp.asarray(parameters.velocity_kms) / _C_KMS)
@@ -576,7 +592,7 @@ class TelluricModel:
             if model_source.shape != (self.wavenumber_cm1.size,):
                 raise ValueError("model-grid source flux must match the model wavenumber grid")
             source_hi = self._shift_log_uniform(model_source, parameters.stellar_velocity_kms)
-        raw_hi = self.transmission(parameters, order.zenith_angle_deg) * source_hi
+        raw_hi = self.transmission(parameters, zenith_angle_deg) * source_hi
         if self.instrument is None:
             convolved_hi = self._convolve_lsf(raw_hi, jnp.asarray(parameters.lsf_sigma_kms))
         else:

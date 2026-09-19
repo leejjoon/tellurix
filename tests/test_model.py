@@ -896,3 +896,73 @@ def test_correlation_is_unit_diagonal_and_symmetric_where_it_is_defined():
     np.testing.assert_allclose(block, block.T, rtol=1e-10)
     assert np.all(np.abs(block) <= 1.0 + 1e-10)
     assert result.condition_number is not None and result.condition_number > 1.0
+
+
+def test_skipping_the_covariance_changes_nothing_but_the_covariance():
+    """Only this call ever compiles the Hessian, and that compile is 8.2 s."""
+    model, order, bounds, _ = _covariance_fixture()
+    full = fit_order(model, order, params(scale=0.0), bounds)
+    cheap = fit_order(model, order, params(scale=0.0), bounds, covariance=False)
+
+    assert cheap.covariance is None and cheap.correlation is None
+    assert cheap.condition_number is None and cheap.at_bound == ()
+    assert full.covariance is not None
+    assert cheap.objective == pytest.approx(full.objective, rel=1e-12)
+    np.testing.assert_allclose(
+        np.asarray(cheap.parameters.continuum_coeffs),
+        np.asarray(full.parameters.continuum_coeffs), rtol=1e-12)
+    assert float(cheap.parameters.log_column_scales["H2O"]) == pytest.approx(
+        float(full.parameters.log_column_scales["H2O"]), rel=1e-12)
+
+
+def test_rebinding_an_objective_serves_another_observation():
+    """One compilation per echelle order, not per order per frame.
+
+    The saving is the whole XLA compilation, which on an IGRINS order is most
+    of what the fit costs. It is only sound if the rebound objective gives the
+    same answer as a freshly built one, so that is what this checks.
+    """
+    model, first, bounds, _ = _covariance_fixture(seed=0)
+    # A second frame: the same grid and source, different noise and a
+    # different slant path, which is exactly what changes between frames.
+    _, other, _, _ = _covariance_fixture(seed=7)
+    second = SpectralOrder(other.wavelength_vacuum_nm, other.flux, other.uncertainty,
+                           zenith_angle_deg=35.0)
+
+    shared = OrderObjective(model, first, 3)
+    fit_order(model, first, params(scale=0.0), bounds, objective=shared)
+    rebound = fit_order(model, second, params(scale=0.0), bounds,
+                        objective=shared.rebind(second))
+    fresh = fit_order(model, second, params(scale=0.0), bounds)
+
+    assert shared.order is second
+    assert float(rebound.parameters.log_column_scales["H2O"]) == pytest.approx(
+        float(fresh.parameters.log_column_scales["H2O"]), abs=1e-6)
+    assert rebound.objective == pytest.approx(fresh.objective, rel=1e-6)
+    np.testing.assert_allclose(rebound.model_flux, fresh.model_flux, atol=1e-8)
+
+
+def test_rebinding_refuses_a_different_grid():
+    """The compiled graph is only valid for the wavelengths it was built on."""
+    model, first, _, _ = _covariance_fixture()
+    shared = OrderObjective(model, first, 3)
+    shifted = SpectralOrder(np.asarray(first.wavelength_vacuum_nm) + 0.01,
+                            first.flux, first.uncertainty)
+    with pytest.raises(ValueError, match="identical wavelength grid"):
+        shared.rebind(shifted)
+    assert shared.order is first, "a refused rebind must leave the objective alone"
+
+
+def test_the_zenith_angle_can_be_overridden_for_tracing():
+    """SpectralOrder validates its angle eagerly, so a traced one cannot live there."""
+    model, order, _, truth = _covariance_fixture()
+    steep = SpectralOrder(order.wavelength_vacuum_nm, order.flux, order.uncertainty,
+                          zenith_angle_deg=60.0)
+    np.testing.assert_allclose(
+        np.asarray(model.predict(order, truth, zenith_angle_deg=60.0)),
+        np.asarray(model.predict(steep, truth)), rtol=1e-12)
+    # And the default still comes from the order itself.
+    np.testing.assert_allclose(
+        np.asarray(model.predict(order, truth)),
+        np.asarray(model.predict(order, truth, zenith_angle_deg=order.zenith_angle_deg)),
+        rtol=1e-12)
