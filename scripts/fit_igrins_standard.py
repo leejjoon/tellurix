@@ -247,6 +247,7 @@ def fit_one(context, observation, args, objective):
     from jax_telluric import (
         ArrayOpacityBackend, OrderObjective, TelluricModel, TelluricParameters,
         chebyshev_continuum, continuum_level, fit_order, igrins_spectral_order,
+        ils_fingerprint,
     )
 
     timing, started = {}, time.time()
@@ -422,7 +423,91 @@ def fit_one(context, observation, args, objective):
         "timing": timing,
         **comparison,
     }
+
+    # The record is the run's product; the .npz above is a regenerable cache.
+    # Keyed on frame and order, because that is what identifies a row here --
+    # the atlas keyed on page and epoch.
+    correlation = (result.correlation if result.correlation is not None
+                   else np.zeros((len(names), len(names))))
+    ils_velocity, ils_profile = ils_fingerprint(
+        None, float(parameters.lsf_sigma_kms), model.velocity_step_kms)
+    row["_record"] = {
+        "frame": stem, "order": extracted.name,
+        "page_sha256": observation.sha256["spec"],
+        "log_column_scales": row["log_column_scales"],
+        "continuum_coeffs": np.asarray(parameters.continuum_coeffs, dtype=float),
+        "v1": context["v1"], "v2": context["v2"], "mopd_cm": 0.0,
+        "pixels": row["pixels"], "grid_points": row["grid_points"],
+        "reliable": row["reliable"],
+        "velocity_kms": row["velocity_kms"],
+        "stellar_velocity_kms": row["stellar_velocity_kms"],
+        "wavelength_stretch": 0.0, "lsf_sigma_kms": row["lsf_sigma_kms"],
+        "log_jitter": row["log_jitter"], "pixel_sigma": pixel_sigma,
+        "residual_rms": residual_rms,
+        "residual_rms_over_noise": row["residual_rms_over_noise"],
+        "reduced_chi2": 0.0, "median_transmission": row["median_transmission"],
+        "continuum_level": row["continuum_level_counts"], "continuum_level_pixels": 0,
+        "condition_number": row["condition_number"] or 0.0,
+        "all_stages_converged": row["all_stages_converged"],
+        "negligible_telluric": not context["free_species"],
+        "free_species": "+".join(context["free_species"]),
+        "at_bound": "+".join(row["at_bound"]),
+        "sigma": deviation, "correlation": correlation,
+        "ils_velocity_kms": ils_velocity, "ils_profile": ils_profile,
+        # Columns the atlas had no use for.
+        "band": extracted.band, "order_index": index,
+        "airmass": row["airmass"], "zenith_angle_deg": row["zenith_angle_deg"],
+        "mjd": observation.mjd, "telescope": observation.telescope,
+        "object": observation.object_name, "date_obs": observation.date_obs,
+        "surface_temperature_k": observation.surface["temperature_k"] or 0.0,
+        "surface_pressure_hpa": observation.surface["pressure_hpa"] or 0.0,
+        "surface_humidity_percent": observation.surface["relative_humidity_percent"] or 0.0,
+        "reused_compilation": reused,
+    }
+    row["_parameter_names"] = tuple(names)
+    row["_species"] = tuple(model.species)
     return row, objective
+
+
+def run_provenance(root: Path, args, observations, profile_path: Path) -> tuple[dict, dict]:
+    """What produced this run, and the identity of everything that went into it.
+
+    Paths alone are not provenance: a line list can be replaced under the same
+    name. The hashes are what let a rebuild say whether it is looking at the
+    same inputs.
+    """
+
+    import jax
+    import jax_telluric
+    from jax_telluric import file_sha256
+
+    driver = Path(__file__).resolve()
+    inputs = {
+        "profile": str(profile_path), "profile_sha256": file_sha256(profile_path),
+        "stellar": args.stellar,
+        "frames": [str(o.path) for o in observations],
+        "frame_sha256": [o.sha256["spec"] for o in observations],
+    }
+    if args.stellar != "flat" and Path(args.stellar).exists():
+        inputs["stellar_sha256"] = file_sha256(args.stellar)
+    mt_ckd = root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc"
+    if mt_ckd.exists():
+        inputs["mt_ckd"] = str(mt_ckd)
+        inputs["mt_ckd_sha256"] = file_sha256(mt_ckd)
+    line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
+    inputs["aer_line_root"] = str(line_root)
+    for species, molecule_id in sorted(MOLECULE_IDS.items()):
+        stem = f"{molecule_id:02d}_{species}"
+        path = line_root / stem / stem
+        if path.exists():
+            inputs[f"aer_{species}_sha256"] = file_sha256(path)
+    run = {
+        "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "driver": driver.name, "driver_sha256": file_sha256(driver),
+        "jax_telluric": getattr(jax_telluric, "__version__", ""),
+        "jax": jax.__version__,
+    }
+    return run, inputs
 
 
 def main() -> None:
@@ -454,6 +539,9 @@ def main() -> None:
     parser.add_argument("--min-optical-depth", type=float, default=0.02)
     parser.add_argument("--min-transmission", type=float, default=0.15)
     parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/igrins")
+    parser.add_argument("--record", type=Path, default=None,
+                        help="the run's HDF5 record, which is its product; the .npz arrays "
+                             "are a regenerable cache. Defaults beside the summaries.")
     parser.add_argument("--summary-suffix", default="",
                         help="appended to the summary filename. Sharding one band across "
                              "devices by order needs this: every shard writes a summary for "
@@ -535,7 +623,8 @@ def main() -> None:
 
     elapsed = time.time() - started
     for observation in observations:
-        rows = sorted(results[id(observation)], key=lambda r: r["order"])
+        rows = [{k: v for k, v in row.items() if not k.startswith("_")}
+                for row in sorted(results[id(observation)], key=lambda r: r["order"])]
         stem = observation.path.name.split(".")[0]
         summary = {
             "observation": {
@@ -570,6 +659,67 @@ def main() -> None:
             ratio = np.array([r["residual_rms_over_noise"] for r in rows])
             print(f"\n{stem}: {len(rows)} orders, median rms/sigma {np.median(ratio):.2f}, "
                   f"range {ratio.min():.2f}-{ratio.max():.2f}")
+
+    record_rows = [r["_record"] for rows in results.values() for r in rows]
+    if record_rows:
+        from jax_telluric import write_record
+
+        all_rows = [r for rows in results.values() for r in rows]
+        # Which molecules have lines depends on the window, so an order's
+        # parameter vector is not the run's. Build the union and remap every
+        # row's sigma and correlation into it, or the record would silently
+        # line up one order's CH4 against another's CO2.
+        species = sorted({s for r in all_rows for s in r["_species"]})
+        template = max(all_rows, key=lambda r: len(r["_parameter_names"]))
+        trailing = [n for n in template["_parameter_names"] if n not in template["_species"]]
+        run_names = species + trailing
+        position = {name: i for i, name in enumerate(run_names)}
+        for row in all_rows:
+            names = list(row["_parameter_names"])
+            index = np.array([position[n] for n in names])
+            sigma = np.zeros(len(run_names))
+            sigma[index] = np.asarray(row["_record"]["sigma"], dtype=float)
+            correlation = np.zeros((len(run_names), len(run_names)))
+            correlation[np.ix_(index, index)] = np.asarray(
+                row["_record"]["correlation"], dtype=float)
+            row["_record"]["sigma"] = sigma
+            row["_record"]["correlation"] = correlation
+        run, inputs = run_provenance(root, args, observations, root / args.profile)
+        record_path = args.record or (
+            args.output_dir / f"record{args.summary_suffix}.h5")
+        record_path.parent.mkdir(parents=True, exist_ok=True)
+        write_record(
+            record_path,
+            run=run,
+            config={"resolving_power": args.resolving_power,
+                    "samples_per_resolution": args.samples_per_resolution,
+                    "margin_cm1": args.margin_cm1,
+                    "grid_margin_cm1": args.grid_margin_cm1,
+                    "continuum_degree": args.continuum_degree,
+                    "min_optical_depth": args.min_optical_depth,
+                    "min_transmission": args.min_transmission,
+                    "vsini_kms": args.vsini_kms, "stellar": args.stellar,
+                    **ORDER},
+            physics=PHYSICS,
+            inputs=inputs,
+            parameter_names=run_names,
+            species=species,
+            pages=sorted(record_rows, key=lambda r: (r["frame"], r["order"])),
+            continuum_degree=args.continuum_degree,
+            # An atlas row is a page-epoch; here it is one echelle order of one
+            # exposure. Shards of one band write separate records that
+            # merge_records combines.
+            key_fields=("frame", "order"),
+            extra_columns=(("band", "S256"), ("order_index", "i4"),
+                           ("airmass", "f8"), ("zenith_angle_deg", "f8"),
+                           ("mjd", "f8"), ("telescope", "S256"), ("object", "S256"),
+                           ("date_obs", "S256"),
+                           ("surface_temperature_k", "f8"),
+                           ("surface_pressure_hpa", "f8"),
+                           ("surface_humidity_percent", "f8"),
+                           ("reused_compilation", "?")),
+        )
+        print(f"wrote {record_path} ({record_path.stat().st_size / 1e6:.2f} MB)")
 
     fitted = sum(len(r) for r in results.values())
     reused = sum(1 for rows in results.values() for r in rows if r["reused_compilation"])
