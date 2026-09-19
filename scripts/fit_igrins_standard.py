@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Fit the telluric absorption in one IGRINS A0V standard, order by order.
+"""Fit the telluric absorption in IGRINS A0V standards, order by order.
 
 This is the Arcturus batch driver's structure applied to a different kind of
 data, and the differences are the point:
@@ -17,7 +17,31 @@ data, and the differences are the point:
     uv run python scripts/fit_igrins_standard.py \\
         --spec data/igrins/20180402_0104/SDCH_20180402_0104.spec.fits --orders 2
 
-Give ``--orders`` a comma-separated list, or leave it out for every order.
+Give several ``--spec`` paths to fit a whole night at once, which is far cheaper
+per frame than running them one at a time -- see below. ``--orders`` takes a
+comma-separated list; leave it out for all of them.
+
+Why the loops are this way round
+--------------------------------
+The outer loop is over echelle orders and the inner one over frames, which is
+the opposite of the obvious nesting and is worth about two thirds of the
+runtime.
+
+Within a night the PLP uses one wavelength solution, so order N covers a
+*bit-identical* wavenumber range in every frame (measured spread across ten
+frames: 0.0000 cm-1); across nights and sites it moves by at most 0.16 cm-1 on
+an 80 cm-1 window, far inside the 5 cm-1 grid margin. Everything expensive
+therefore belongs to the order and not to the frame: the grid, the line
+selection, the opacity calculators, the precomputed kernel, and -- once the
+per-frame arrays are passed as operands rather than captured as constants --
+the two XLA compilations, which were 13.1 s of the 31.7 s an order used to cost
+(4.9 s for the gradient, 8.2 s for the Hessian, against 2.6 ms and 3.1 ms to
+run them).
+
+What is deliberately *not* shared is the starting point. Warm-starting each
+frame from the previous one would pull its fitted columns toward that
+neighbour and shrink exactly the frame-to-frame scatter an airmass ladder
+exists to measure. Every frame starts from the same neutral guess.
 """
 
 from __future__ import annotations
@@ -52,7 +76,6 @@ PHYSICS = {
     # here and no MOPD to measure.
     "instrument": "gaussian",
     "max_lsf_sigma_kms": 10.0,
-    "vsini_kms": 0.0,
     "macroturbulence_kms": 0.0,
     "limb_darkening": 0.6,
     "normalize_stellar_source": True,
@@ -106,23 +129,28 @@ def stage_bounds(stage, model_species, free_species, parameters, degree, fit_ste
     return bounds
 
 
-def run_one(observation, index, args, root, profile, stellar):
-    """Fit one echelle order and export its corrected spectrum."""
+def build_order_context(observation, index, args, root, profile, stellar):
+    """Everything about one echelle order that no frame can change.
+
+    The window comes from one frame's wavelength solution, which within a night
+    is every frame's wavelength solution. Across nights it moves far less than
+    the grid margin, so a context built on one night still covers another -- but
+    the objective compiled against it will refuse to rebind onto a different
+    pixel grid, which is what keeps that assumption honest rather than silent.
+    """
 
     import jax.numpy as jnp
     from jax_telluric import (
-        AERLineDatabase, ArrayOpacityBackend, ExoJAXOpacityBackend, MTCKDWaterContinuum,
-        OrderObjective, StellarSpectrum, TelluricModel, TelluricParameters,
-        chebyshev_continuum, continuum_level, fit_order, igrins_spectral_order,
-        igrins_wavenumber_grid, prepare_stellar_source, trim_wavenumber_grid,
+        AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum,
+        TelluricModel, igrins_wavenumber_grid, prepare_stellar_source, trim_wavenumber_grid,
     )
 
-    timing, _mark = {}, time.time()
+    timing, started = {}, time.time()
 
     def mark(name):
-        nonlocal _mark
-        timing[name] = round(time.time() - _mark, 2)
-        _mark = time.time()
+        nonlocal started
+        timing[name] = round(time.time() - started, 2)
+        started = time.time()
 
     extracted = observation.order(index)
     v1, v2 = extracted.wavenumber_range_cm1
@@ -163,7 +191,6 @@ def run_one(observation, index, args, root, profile, stellar):
 
     continuum_backend = MTCKDWaterContinuum.from_netcdf(
         root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc", grid)
-    mt_ckd_version = continuum_backend.version
     # No `instrument=`: the default Gaussian is the whole line spread function
     # of a grating spectrograph.
     model = TelluricModel(profile, grid, opacity, continuum=continuum_backend,
@@ -174,32 +201,19 @@ def run_one(observation, index, args, root, profile, stellar):
 
     spectrum = StellarSpectrum.flat(grid) if stellar is None else stellar
     source = prepare_stellar_source(
-        spectrum, model, vsini_kms=PHYSICS["vsini_kms"],
+        spectrum, model, vsini_kms=args.vsini_kms,
         limb_darkening=PHYSICS["limb_darkening"],
         macroturbulence_kms=PHYSICS["macroturbulence_kms"],
         normalize=PHYSICS["normalize_stellar_source"])
     mark("stellar_source")
-
-    level = continuum_level(extracted, ORDER["continuum_percentile"])
-    order = igrins_spectral_order(
-        extracted, source_flux_model_grid=source,
-        saturation_floor=ORDER["saturation_floor"],
-        throughput_floor=ORDER["throughput_floor"],
-        continuum_percentile=ORDER["continuum_percentile"],
-        # With a flat source the hydrogen series is unmodelled and has to go.
-        # With a real A0V model it is the thing being tested, so it stays.
-        mask_hydrogen_kms=ORDER["mask_hydrogen_kms"] if stellar is None else None)
-    if int(np.count_nonzero(order.mask)) < ORDER["minimum_pixels"]:
-        raise RuntimeError(
-            f"order {index} keeps {int(np.count_nonzero(order.mask))} pixels, "
-            f"below the {ORDER['minimum_pixels']} this driver requires")
 
     fit_model = (model.precompute_opacity(self_broadening=args.self_broadening)
                  if args.precompute_opacity else model)
     mark("precompute")
 
     # Decide which species the data can actually measure. Everything stays in
-    # the model; only what is constrained is freed.
+    # the model; only what is constrained is freed. This depends on the profile
+    # and the grid, not on the frame, so it belongs here too.
     pressure = jnp.asarray(profile.pressure_layer_bar)
     partial = {s: pressure * jnp.asarray(profile.vmr[s]) for s in model.species}
     cross_sections = fit_model.opacity.cross_sections(
@@ -210,8 +224,56 @@ def run_one(observation, index, args, root, profile, stellar):
                                * (air_column * np.asarray(profile.vmr[s]))[:, None], axis=0)))
         for s in model.species
     }
-    free_species = sorted(s for s, t in optical_depth.items() if t >= args.min_optical_depth)
     mark("species_scan")
+
+    return {
+        "index": index, "v1": v1, "v2": v2, "grid": grid, "model": model,
+        "fit_model": fit_model, "source": source, "profile": profile,
+        "databases": databases, "absent": absent, "optical_depth": optical_depth,
+        "free_species": sorted(s for s, t in optical_depth.items() if t >= args.min_optical_depth),
+        "mt_ckd_version": continuum_backend.version,
+        "setup_timing": timing,
+        "setup_seconds": round(sum(timing.values()), 2),
+    }
+
+
+def fit_one(context, observation, args, objective):
+    """Fit one order of one frame, reusing whatever the context already built.
+
+    Returns the row and the objective -- the compiled one when it could be
+    rebound onto this frame, a fresh one when it could not.
+    """
+
+    from jax_telluric import (
+        ArrayOpacityBackend, OrderObjective, TelluricModel, TelluricParameters,
+        chebyshev_continuum, continuum_level, fit_order, igrins_spectral_order,
+    )
+
+    timing, started = {}, time.time()
+
+    def mark(name):
+        nonlocal started
+        timing[name] = round(time.time() - started, 2)
+        started = time.time()
+
+    index = context["index"]
+    model, fit_model = context["model"], context["fit_model"]
+    profile, grid = context["profile"], context["grid"]
+    extracted = observation.order(index)
+    level = continuum_level(extracted, ORDER["continuum_percentile"])
+    order = igrins_spectral_order(
+        extracted, source_flux_model_grid=context["source"],
+        saturation_floor=ORDER["saturation_floor"],
+        throughput_floor=ORDER["throughput_floor"],
+        continuum_percentile=ORDER["continuum_percentile"],
+        # With a flat source the hydrogen series is unmodelled and has to go.
+        # With a real A0V model it is the thing being tested, so it stays.
+        mask_hydrogen_kms=ORDER["mask_hydrogen_kms"] if args.stellar == "flat" else None)
+    if int(np.count_nonzero(order.mask)) < ORDER["minimum_pixels"]:
+        raise RuntimeError(
+            f"order {index} keeps {int(np.count_nonzero(order.mask))} pixels, "
+            f"below the {ORDER['minimum_pixels']} this driver requires")
+    mark("order")
 
     degree = args.continuum_degree
     usable = np.asarray(order.flux)[np.asarray(order.mask)]
@@ -224,24 +286,36 @@ def run_one(observation, index, args, root, profile, stellar):
         log_jitter=float(np.log(np.median(np.asarray(order.uncertainty)[np.asarray(order.mask)]))),
         stellar_velocity_kms=0.0)
 
-    shared = OrderObjective(fit_model, order, degree + 1)
-    # Force the compilation here so the stage timings measure fitting, not the
-    # one-time XLA cost that would otherwise land entirely on the first stage.
-    shared(shared.codec.pack(parameters))
+    reused = False
+    if objective is not None:
+        try:
+            objective = objective.rebind(order)
+            reused = True
+        except ValueError:
+            objective = None
+    if objective is None:
+        objective = OrderObjective(fit_model, order, degree + 1)
+        # Force the compilation here so the stage timings measure fitting, not
+        # the one-time XLA cost that would otherwise land on the first stage.
+        objective(objective.codec.pack(parameters))
     mark("compile_objective")
 
     stages = []
-    for stage in STAGES:
-        started = time.time()
+    for position, stage in enumerate(STAGES):
+        began = time.time()
         result = fit_order(
             fit_model, order, parameters,
-            stage_bounds(stage, model.species, free_species, parameters, degree,
-                         fit_stellar=stellar is not None),
-            objective=shared)
+            stage_bounds(stage, model.species, context["free_species"], parameters, degree,
+                         fit_stellar=args.stellar != "flat"),
+            objective=objective,
+            # Only this call ever compiles the Hessian, and that compilation
+            # costs 8.2 s against 3.1 ms to run it. The intermediate stages'
+            # covariances are thrown away, so only the last stage asks.
+            covariance=(position == len(STAGES) - 1) and not args.no_covariance)
         parameters = result.parameters
         stages.append({"stage": stage, "success": bool(result.success),
                        "objective": result.objective, "iterations": result.iterations,
-                       "seconds": round(time.time() - started, 1)})
+                       "seconds": round(time.time() - began, 1)})
     mark("stages")
 
     star_only = TelluricModel(
@@ -294,6 +368,7 @@ def run_one(observation, index, args, root, profile, stellar):
     residual_rms = float(np.sqrt(np.mean(residual[reliable] ** 2))) if reliable.any() else float("nan")
     mark("products")
 
+    stem = observation.path.name.split(".")[0]
     if args.output_dir is not None:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         arrays = dict(
@@ -305,27 +380,25 @@ def run_one(observation, index, args, root, profile, stellar):
             arrays["plp_telluric"] = plp_telluric
         if extracted.plp_continuum is not None:
             arrays["plp_continuum"] = np.asarray(extracted.plp_continuum)[axis]
-        np.savez_compressed(
-            args.output_dir / f"{observation.path.name.split('.')[0]}_{extracted.name}.npz",
-            **arrays)
+        np.savez_compressed(args.output_dir / f"{stem}_{extracted.name}.npz", **arrays)
 
-    names = list(shared.codec.names)
+    names = list(objective.codec.names)
     deviation = (np.sqrt(np.clip(np.diag(result.covariance), 0.0, None))
                  if result.covariance is not None else np.zeros(len(names)))
-    return {
+    row = {
         "order": index,
         "band": extracted.band,
         "name": extracted.name,
-        "v1": v1, "v2": v2,
+        "v1": context["v1"], "v2": context["v2"],
         "pixels": int(mask.size), "grid_points": int(grid.size),
         "kept": int(mask.sum()), "reliable": int(reliable.sum()),
         "continuum_level_counts": float(level),
         "zenith_angle_deg": float(order.zenith_angle_deg),
         "airmass": float(1.0 / np.cos(np.radians(order.zenith_angle_deg))),
-        "lines": {k: int(np.asarray(v.nu_lines).size) for k, v in databases.items()},
-        "absent_species": absent,
-        "free_species": free_species,
-        "max_optical_depth": {k: round(v, 4) for k, v in optical_depth.items()},
+        "lines": {k: int(np.asarray(v.nu_lines).size) for k, v in context["databases"].items()},
+        "absent_species": context["absent"],
+        "free_species": context["free_species"],
+        "max_optical_depth": {k: round(v, 4) for k, v in context["optical_depth"].items()},
         "log_column_scales": {s: float(parameters.log_column_scales[s]) for s in model.species},
         "sigma": {n: float(d) for n, d in zip(names, deviation)},
         "at_bound": list(result.at_bound or ()),
@@ -343,25 +416,31 @@ def run_one(observation, index, args, root, profile, stellar):
         "residual_rms_over_noise": residual_rms / pixel_sigma,
         "median_transmission": float(np.median(transmission[mask])),
         "all_stages_converged": all(s["success"] for s in stages),
-        "mt_ckd_version": mt_ckd_version,
+        "mt_ckd_version": context["mt_ckd_version"],
+        "reused_compilation": reused,
         "stages": stages,
         "timing": timing,
         **comparison,
     }
+    return row, objective
 
 
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--spec", type=Path, required=True,
-                        help="the PLP .spec.fits of one band of one exposure")
+    parser.add_argument("--spec", type=Path, required=True, nargs="+",
+                        help="one or more PLP .spec.fits files; giving a whole night at once "
+                             "shares the grid, the opacity and the compilations across frames")
     parser.add_argument("--orders", default=None,
                         help="comma-separated order indices; default every order")
     parser.add_argument("--profile", type=Path, default=Path("data/profiles/gemini_south_2018.csv"))
     parser.add_argument("--stellar", default="flat",
                         help="'flat' for a featureless source with the hydrogen series masked, "
                              "or the path to a stellar npz")
+    parser.add_argument("--vsini-kms", type=float, default=0.0,
+                        help="rotational broadening of the stellar source; A0V standards are "
+                             "fast rotators, so set this when --stellar is a model")
     parser.add_argument("--resolving-power", type=float, default=45_000.0)
     parser.add_argument("--samples-per-resolution", type=float, default=4.0)
     parser.add_argument("--margin-cm1", type=float, default=25.0,
@@ -375,9 +454,10 @@ def main() -> None:
     parser.add_argument("--min-optical-depth", type=float, default=0.02)
     parser.add_argument("--min-transmission", type=float, default=0.15)
     parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/igrins")
-    parser.add_argument("--summary", type=Path, default=None)
     parser.add_argument("--precompute-opacity", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--self-broadening", choices=("linear", "frozen"), default="linear")
+    parser.add_argument("--no-covariance", action="store_true",
+                        help="skip the formal errors, and with them the 8.2 s Hessian compile")
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"),
                         help="pass an empty string to disable")
     parser.add_argument("--platform", choices=("cpu", "gpu"), default="gpu")
@@ -395,70 +475,101 @@ def main() -> None:
 
     from jax_telluric import StellarSpectrum, load_atmosphere_csv, read_igrins_observation
 
-    observation = read_igrins_observation(args.spec)
+    observations = [read_igrins_observation(path) for path in args.spec]
     profile = load_atmosphere_csv(root / args.profile)
     stellar = None if args.stellar == "flat" else StellarSpectrum.from_npz(args.stellar)
 
-    indices = (list(range(observation.orders)) if args.orders is None
+    counts = {o.orders for o in observations}
+    if len(counts) != 1:
+        raise SystemExit(f"these frames disagree about how many orders they have: {counts}")
+    indices = (list(range(counts.pop())) if args.orders is None
                else [int(value) for value in args.orders.split(",")])
-    print(f"{observation.object_name} ({observation.object_type}) {observation.band} band, "
-          f"{observation.telescope}, {observation.date_obs}")
-    print(f"zenith {observation.zenith_angle_deg:.2f} deg "
-          f"(airmass {1.0 / np.cos(np.radians(observation.zenith_angle_deg)):.3f}), "
+
+    print(f"{len(observations)} frame(s), {len(indices)} orders, "
           f"source {'flat' if stellar is None else args.stellar}")
-    print(f"surface {observation.surface}")
+    for observation in observations:
+        print(f"  {observation.path.name.split('.')[0]:22s} {observation.object_name[:16]:16s} "
+              f"{observation.telescope:14s} {observation.date_obs[:19]}  "
+              f"airmass {1.0 / np.cos(np.radians(observation.zenith_angle_deg)):.3f}")
     print()
 
-    results, failures = [], []
+    results = {id(o): [] for o in observations}
+    failures = {id(o): [] for o in observations}
+    started = time.time()
+    setup_total = 0.0
+
     for index in indices:
-        started = time.time()
-        try:
-            row = run_one(observation, index, args, root, profile, stellar)
-        except (RuntimeError, ValueError) as exc:
-            failures.append({"order": index, "error": str(exc)})
-            print(f"  order {index:2d}  skipped: {exc}")
-            continue
-        row["seconds"] = round(time.time() - started, 1)
-        results.append(row)
-        plp = (f"  plp d={row['plp_rms_difference']:.4f}" if "plp_rms_difference" in row else "")
-        print(f"  order {index:2d}  {row['v1']:7.1f}-{row['v2']:7.1f} cm-1  "
-              f"T={row['median_transmission']:.3f}  rms/sig={row['residual_rms_over_noise']:6.2f}  "
-              f"R={row['resolving_power_fitted']:6.0f}  v={row['velocity_kms']:+5.2f}  "
-              f"{row['seconds']:5.1f}s{plp}")
+        context, objective = None, None
+        for observation in observations:
+            if context is None:
+                try:
+                    context = build_order_context(observation, index, args, root, profile, stellar)
+                    setup_total += context["setup_seconds"]
+                except (RuntimeError, ValueError) as exc:
+                    # The window belongs to the order, so a failure here is
+                    # usually shared; try the next frame anyway, because a bad
+                    # extraction in one frame is not a property of the order.
+                    failures[id(observation)].append({"order": index, "error": str(exc)})
+                    print(f"  order {index:2d}  {observation.path.name[5:18]}  skipped: {exc}")
+                    continue
+            began = time.time()
+            try:
+                row, objective = fit_one(context, observation, args, objective)
+            except (RuntimeError, ValueError) as exc:
+                failures[id(observation)].append({"order": index, "error": str(exc)})
+                print(f"  order {index:2d}  {observation.path.name[5:18]}  skipped: {exc}")
+                continue
+            row["seconds"] = round(time.time() - began, 1)
+            results[id(observation)].append(row)
+            tag = "reused" if row["reused_compilation"] else "built "
+            plp = (f"  plp d={row['plp_rms_difference']:.4f}" if "plp_rms_difference" in row else "")
+            print(f"  order {index:2d}  {observation.path.name[5:18]}  "
+                  f"T={row['median_transmission']:.3f}  rms/sig={row['residual_rms_over_noise']:6.2f}  "
+                  f"R={row['resolving_power_fitted']:6.0f}  v={row['velocity_kms']:+5.2f}  "
+                  f"{tag} {row['seconds']:5.1f}s{plp}")
 
-    summary = {
-        "observation": {
-            "path": str(args.spec), "object": observation.object_name,
-            "object_type": observation.object_type, "band": observation.band,
-            "telescope": observation.telescope, "date_obs": observation.date_obs,
-            "mjd": observation.mjd, "exposure_time_s": observation.exposure_time_s,
-            "zenith_angle_deg": observation.zenith_angle_deg,
-            "sha256": dict(observation.sha256), "surface": dict(observation.surface),
-        },
-        "settings": {
-            "profile": str(args.profile), "stellar": args.stellar,
-            "resolving_power": args.resolving_power,
-            "samples_per_resolution": args.samples_per_resolution,
-            "margin_cm1": args.margin_cm1, "grid_margin_cm1": args.grid_margin_cm1,
-            "continuum_degree": args.continuum_degree,
-            "min_optical_depth": args.min_optical_depth,
-            "min_transmission": args.min_transmission,
-            "precompute_opacity": args.precompute_opacity,
-            "self_broadening": args.self_broadening,
-        },
-        "physics": dict(PHYSICS), "order_rule": dict(ORDER),
-        "results": results, "failures": failures,
-    }
-    path = args.summary or (args.output_dir /
-                            f"{args.spec.name.split('.')[0]}_summary.json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(summary, indent=2))
-    print(f"\nwrote {path}")
+    elapsed = time.time() - started
+    for observation in observations:
+        rows = sorted(results[id(observation)], key=lambda r: r["order"])
+        stem = observation.path.name.split(".")[0]
+        summary = {
+            "observation": {
+                "path": str(observation.path), "object": observation.object_name,
+                "object_type": observation.object_type, "band": observation.band,
+                "telescope": observation.telescope, "date_obs": observation.date_obs,
+                "mjd": observation.mjd, "exposure_time_s": observation.exposure_time_s,
+                "zenith_angle_deg": observation.zenith_angle_deg,
+                "sha256": dict(observation.sha256), "surface": dict(observation.surface),
+            },
+            "settings": {
+                "profile": str(args.profile), "stellar": args.stellar,
+                "vsini_kms": args.vsini_kms,
+                "resolving_power": args.resolving_power,
+                "samples_per_resolution": args.samples_per_resolution,
+                "margin_cm1": args.margin_cm1, "grid_margin_cm1": args.grid_margin_cm1,
+                "continuum_degree": args.continuum_degree,
+                "min_optical_depth": args.min_optical_depth,
+                "min_transmission": args.min_transmission,
+                "precompute_opacity": args.precompute_opacity,
+                "self_broadening": args.self_broadening,
+                "covariance": not args.no_covariance,
+                "frames_in_run": len(observations),
+            },
+            "physics": dict(PHYSICS), "order_rule": dict(ORDER),
+            "results": rows, "failures": failures[id(observation)],
+        }
+        path = args.output_dir / f"{stem}_summary.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(summary, indent=2))
+        if rows:
+            ratio = np.array([r["residual_rms_over_noise"] for r in rows])
+            print(f"\n{stem}: {len(rows)} orders, median rms/sigma {np.median(ratio):.2f}, "
+                  f"range {ratio.min():.2f}-{ratio.max():.2f}")
 
-    if results:
-        ratio = np.array([r["residual_rms_over_noise"] for r in results])
-        print(f"{len(results)} orders, median rms/sigma {np.median(ratio):.2f}, "
-              f"range {ratio.min():.2f}-{ratio.max():.2f}")
+    fitted = sum(len(r) for r in results.values())
+    reused = sum(1 for rows in results.values() for r in rows if r["reused_compilation"])
+    print(f"\n{fitted} order-frames in {elapsed:.0f} s ({elapsed / max(fitted, 1):.1f} s each); "
+          f"{reused} reused a compilation; {setup_total:.0f} s of that was per-order setup")
 
 
 if __name__ == "__main__":
