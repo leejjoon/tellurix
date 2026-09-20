@@ -185,6 +185,19 @@ credentials and costs 150 MB a profile because its chunks are global; CDS needs
 `~/.cdsapirc`, charges by fields (times x levels x variables) and is 4x faster
 and 1.5 kB a profile once batched, with a limit near 8,000 fields a request.
 
+The response pattern belongs to the **spectrograph, not the telescope or the
+night**: IGRINS moved McDonald -> DCT -> Gemini South, its order centres agree to
+0.04 nm across four nights spanning 2016-2021, and the patterns correlate at
+median r = +0.89 to +0.95 for every pair, including McDonald 2017 against Gemini
+South 2021. One master pattern captures 74-88% of each night's own. So a single
+pattern measured once can serve nights with too few standards and the science
+targets, which have none.
+
+ERA5 also supplies the **station pressure** via `station_pressure_from_era5`,
+matching the header's `BARPRESS` to 0.2% on the three nights that carry it.
+That is what makes the no-weather nights work at all, since the column has to be
+anchored somewhere; `--anchor auto` prefers the header and falls back.
+
 An airmass ladder is confounded by its targets: a night observes few stars, each
 over a limited airmass span. On the DCT night chi Cap is the only target above
 airmass 1.82. `analyze_igrins_ladder.py` reports `leave_one_object_out` for this

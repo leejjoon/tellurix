@@ -846,6 +846,63 @@ whole archive that is ~100 requests and under 100 MB against ARCO's 730 GB.
 Use ARCO for a one-off profile or without an account; use CDS for bulk.
 
 
+## A Gemini South night, and what it shows
+
+31% of the archive — every Gemini South standard from 2020 on — carries no
+`AIRTEMP`, `BARPRESS` or `DEWPOINT`, so no profile can be built from its
+headers. That ERA5 unblocks them was an argument until now; **2021-03-16**
+demonstrates it.
+
+The blocker is real: those 14 frames carry a humidity and nothing else, and
+`igrins_site_profile.py` refuses them outright. ERA5 needs neither. It also
+supplies the one thing the header was still being asked for — the station
+pressure that anchors the column — by interpolating its own geopotential to the
+telescope's altitude. Against the three nights that *do* carry `BARPRESS` that
+agrees to **0.4-1.7 hPa, or 0.2%**, so `--anchor auto` prefers the header and
+falls back to ERA5 without loss.
+
+| night | site | H rows | H residual | K residual | water scale |
+|---|---|---:|---:|---:|---:|
+| DCT 2018-12-20 | DCT | 270 | 1.30 | 1.32 | 1.00 |
+| McDonald 2017-04-20 | McDonald | 214 | 1.76 | 2.24 | 1.22 |
+| DCT 2016-12-08 | DCT | 297 | 1.86 | 1.59 | 0.90 |
+| **Gemini S 2021-03-16** | **Gemini South** | **378** | **1.76** | **1.64** | **1.20** |
+
+A night with no usable weather at all fits as well as the ones that have it.
+Gemini tracks near the zenith, so its airmass range (1.27-1.78) makes a poor
+ladder by design — but with 14 standards it is the best-determined response
+pattern in the set, which turned out to matter.
+
+### The response pattern belongs to the spectrograph, not the telescope
+
+IGRINS is one instrument that moved from McDonald to DCT to Gemini South. Its
+order centres agree to 0.04 nm across all four nights, so the spectral format
+survived the moves. So does the response:
+
+| pair | orders | median r |
+|---|---:|---:|
+| DCT 2018 vs DCT 2016 | 26 | +0.942 |
+| DCT 2018 vs Gemini S 2021 | 26 | +0.954 |
+| DCT 2016 vs Gemini S 2021 | 26 | +0.954 |
+| DCT 2016 vs McDonald 2017 | 25 | +0.925 |
+| McDonald 2017 vs Gemini S 2021 | 24 | +0.920 |
+| DCT 2018 vs McDonald 2017 | 24 | +0.894 |
+
+McDonald 2017 against Gemini South 2021 is a different telescope on a different
+continent four years later, and it correlates at +0.92.
+
+A single master pattern — the median of the four nights, amplitude 0.0109 over
+the 33,087 pixels all four measure — captures **74-88%** of each night's own
+pattern by variance.
+
+That is a bigger result than the per-night calibration it replaces. It means one
+pattern, measured once from a handful of well-populated nights, could serve the
+whole archive: the 46% of nights with fewer than five standards, and the 12,866
+science targets, which have no standards of their own at all. The per-night
+pattern stays the better choice where five standards exist; the master pattern
+is what makes everything else possible.
+
+
 ## The run record
 
 Per the repository's convention the record is the product and the `.npz` arrays
@@ -890,9 +947,10 @@ night.
   directions, and that CO2 and CH4 can show a 4-sigma dependence on time of
   night, which is impossible. Something per-night moves them and it is not the
   slant path. That is now the most interesting open question here.
-- **A pattern measured per instrument configuration** rather than per night,
-  which the two-year stability above shows is defensible and would let nights
-  with fewer than five standards be corrected at all.
+- **Build and ship the master pattern.** The four nights above show it would
+  capture 74-88% of each night's response and works across telescopes, so it is
+  now a matter of measuring it from enough nights and storing it, not of
+  establishing whether it is sound.
 - **Two unexplained order-frames**, H09 and H06 of the DCT A0V run, at 115 and
   33 sigma out of 516. They are excluded from the pooled statistics above by a
   cut rather than understood.
