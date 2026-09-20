@@ -170,6 +170,21 @@ surface arguments, taking the column from the dewpoint via
 scale height, which is not the 2.0 km the layer profile uses and is calibrated
 on three nights. Worst case 1.6x against 2.0x by hand.
 
+`scripts/era5_site_profile.py` replaces the analytic profile with a real one
+from ERA5, writing the same CSV with the same layer edges so only T(z) and q(z)
+change. It anchors at the **station pressure from the frame's own header** and
+integrates upward, which is why the 0.25-degree cell's orography (1844 m where
+DCT is at 2360 m) does not matter. Measured: ERA5's water column agrees with the
+fitted one to 0.4% and 4.5% on the two DCT nights, and the real lapse rate is
+4.5-8.3 K/km against the assumed 6.5. It **halves CO2's inter-night
+inconsistency** (chi-squared 6.8 to 3.4 on 2 dof) but does not fix CH4 and does
+not improve the residual at all. The strongest reason to use it is coverage: 31%
+of the archive (Gemini South from 2020) carries no weather cards, and ERA5 needs
+only a position and a time. Two backends -- ARCO-ERA5 on Google Cloud needs no
+credentials and costs 150 MB a profile because its chunks are global; CDS needs
+`~/.cdsapirc`, charges by fields (times x levels x variables) and is 4x faster
+and 1.5 kB a profile once batched, with a limit near 8,000 fields a request.
+
 An airmass ladder is confounded by its targets: a night observes few stars, each
 over a limited airmass span. On the DCT night chi Cap is the only target above
 airmass 1.82. `analyze_igrins_ladder.py` reports `leave_one_object_out` for this

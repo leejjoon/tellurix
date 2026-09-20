@@ -760,6 +760,92 @@ The orders where the two nights agree least (H02 at r = 0.52, H05 at 0.65) are
 the low-throughput ones with the fewest shared pixels.
 
 
+## Does a reanalysis atmosphere help?
+
+The layer profile is analytic: a constant 6.5 K/km lapse rate to a 216.65 K
+tropopause, and water falling exponentially with a 2 km scale height. The fit
+gives each species one free scale factor on its whole column, which absorbs an
+error in the *total* but not in the vertical *distribution* — and that is the
+shape of the per-night systematic above. ERA5 tests it directly.
+
+`scripts/era5_site_profile.py` writes the same CSV with the same layer edges, so
+a fit against the two differs in T(z) and q(z) and in nothing else. The column is
+anchored at the **station pressure from the frame's own header** and integrated
+upward, which sidesteps the orography problem entirely: the 0.25 degree cell
+containing DCT has a surface elevation of 1844 m against the telescope's 2360 m,
+but ERA5's pressure-level data is a real atmospheric column whatever the model
+thinks the ground is, and the levels it reports below the telescope are
+extrapolated and discarded.
+
+### First, ERA5 agrees with the fit about the water
+
+| night | ERA5 | fitted (analytic profile) | from the dewpoint | ERA5 lapse rate |
+|---|---:|---:|---:|---:|
+| DCT 2018-12-20 | 2.35 mm | 2.36 mm | 3.8 | 5.14 K/km |
+| McDonald 2017-04-20 | 7.87 | 9.99 | 9.7 | 8.29 K/km |
+| DCT 2016-12-08 | 7.20 | 6.89 | 5.7 | 4.54 K/km |
+
+Two independent methods agreeing to 0.4% and 4.5% on the two DCT nights is a
+real check on both. And the true lapse rate is 4.5–8.3 K/km — off the assumed
+6.5 by up to 30%, **in both directions, varying by night**, which is exactly the
+sort of thing that produces inconsistent per-night systematics. The profiles
+differ substantially: ERA5 is up to 3.9 K warmer in the lower troposphere, 13 K
+colder in the stratosphere, and its water has a different *shape*, 0.33x the
+analytic value at 3 km but 2.3x at 8.4 km.
+
+Fitting against ERA5 leaves the water scale near unity (1.00, 1.22, 0.90 against
+0.59, 1.00, 1.97), which is what a correct profile should do.
+
+### But it only half works
+
+| | analytic | ERA5 |
+|---|---:|---:|
+| **CO2** scatter between nights | 0.0285 | **0.0221** |
+| CO2 chi-squared for a common value (2 dof) | 6.8 | **3.4** |
+| **CH4** scatter | 0.0245 | 0.0229 |
+| CH4 chi-squared | 7.1 | 6.6 |
+| residual, H band | 1.33 / 1.78 / 1.89 | 1.30 / 1.76 / 1.86 |
+
+**CO2 improves properly.** Its chi-squared halves, from inconsistent with a
+common value (p = 0.03) to consistent (p = 0.18). **CH4 barely moves** and its
+signs still disagree. And the **residual does not improve at all** — a 6.5 K/km
+lapse rate and an exponential water profile fit the spectra just as well as the
+real atmosphere does.
+
+So the reanalysis fixes part of what it should and nothing it should not. The
+asymmetry is suggestive: CO2's strongest lines are the saturated 2.0 um band,
+which forms high in the column where the profile shape matters most, while CH4
+is spread thinner across both bands. Whatever remains in CH4 is not the
+temperature or water profile.
+
+### Worth adopting, for a different reason
+
+On accuracy alone this is a marginal call: better absolute columns, no better
+residual. The stronger argument is coverage. **31% of the archive — every
+Gemini South standard from 2020 on — carries no AIRTEMP, BARPRESS or DEWPOINT**,
+so no profile can be built from its headers at all. ERA5 needs none of them; it
+needs only a position and a time, which every frame has.
+
+Both download paths work and the script supports either:
+
+| | ARCO-ERA5 (Google Cloud) | Copernicus CDS |
+|---|---|---|
+| credentials | none | `~/.cdsapirc` |
+| one profile | 20 s, 150 MB | 30 s, 0.05 MB |
+| 140 profiles batched | 47 min, 21 GB | **11 min, 0.2 MB** |
+| per profile in bulk | 20 s, 150 MB | **4.6 s, 1.5 kB** |
+
+ARCO chunks are one timestep by global by all 37 levels, so extracting one
+column always costs 150 MB. CDS charges by *fields* — times times levels times
+variables — and serves a single grid point, which is four times faster and five
+orders of magnitude less data once batched. Its limit is about 8,000 fields a
+request, so bulk work batches in roughly ten-day blocks per site, and asking
+only for the levels above the observatory halves the count for free. For the
+whole archive that is ~100 requests and under 100 MB against ARCO's 730 GB.
+
+Use ARCO for a one-off profile or without an account; use CDS for bulk.
+
+
 ## The run record
 
 Per the repository's convention the record is the product and the `.npz` arrays
@@ -796,6 +882,9 @@ night.
 
 ## What is not done yet
 
+- **What is left of the per-night systematic.** ERA5 removes the CO2 half of
+  it; CH4's inconsistent slopes survive a real temperature and water profile, so
+  they are not the atmosphere's vertical structure.
 - **Where the per-night systematic comes from.** Three nights agree that the
   well-mixed columns wander by about 3% per unit airmass in inconsistent
   directions, and that CO2 and CH4 can show a 4-sigma dependence on time of
