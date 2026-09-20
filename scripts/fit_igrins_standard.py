@@ -105,6 +105,7 @@ ORDER = {
     "continuum_percentile": 95.0,
     "mask_hydrogen_kms": 600.0,
     "minimum_pixels": 256,
+    "minimum_reliable": 64,
     # How far a Chebyshev coefficient above the constant may move. The blaze
     # spans a factor of ten or more in log flux across an order, so this has to
     # be generous: at 1.5 it was binding on 218 of 248 order-frames, with
@@ -384,6 +385,13 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         parameters.continuum_coeffs,
         np.linspace(-1.0, 1.0, len(order.wavelength_vacuum_nm))))[axis]
     reliable = mask & (transmission >= args.min_transmission)
+    if int(reliable.sum()) < ORDER["minimum_reliable"]:
+        # A band that is opaque end to end -- the 2.0 um CO2 band at high water,
+        # say -- is a legitimate outcome, but it has nothing to report. Skipping
+        # it keeps a NaN row out of the record.
+        raise RuntimeError(
+            f"order {index} leaves {int(reliable.sum())} pixels above a transmission of "
+            f"{args.min_transmission}; nothing to measure")
     corrected = (observed / np.maximum(np.abs(model_flux), 1e-6)) * star
 
     plp_telluric = (np.asarray(extracted.telluric_model)[axis]
