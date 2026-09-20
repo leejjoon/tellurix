@@ -73,7 +73,6 @@ def main() -> None:
         file_sha256, igrins_wavenumber_grid, load_atmosphere_csv, parameters_from_row,
         read_record, select_significant_lines, trim_wavenumber_grid,
     )
-    from jax_telluric.record import text
 
     record = read_record(args.record)
     config, physics, inputs = record.config, record.physics, record.inputs
@@ -89,7 +88,16 @@ def main() -> None:
 
     profile = load_atmosphere_csv(verified("profile", Path(inputs["profile"])))
     line_root = Path(inputs["aer_line_root"])
-    zenith = float(config["zenith_angle_deg"])
+
+    # The atlas fits everything at the zenith and carries one angle in the
+    # config; an IGRINS night carries the frame's own angle per row, 18.7 to
+    # 67.3 degrees on one night. Take the row's when it has one, so the saved T
+    # is the slant transmission that frame actually saw.
+    per_row_zenith = "zenith_angle_deg" in pages.dtype.names
+    if not per_row_zenith and "zenith_angle_deg" not in config:
+        raise SystemExit("this record carries no zenith angle, per row or in its config")
+    zenith_of = ((lambda row: float(row["zenith_angle_deg"])) if per_row_zenith
+                 else (lambda row: float(config["zenith_angle_deg"])))
 
     # Group the rows by window. Rounding to 1e-6 cm-1 is far below the 5 cm-1
     # grid margin and only exists so a float repr cannot split a shared window.
@@ -165,21 +173,25 @@ def main() -> None:
         present = [s for s in species_all if s in model.species]
         template = parameters_from_row(pages[windows[key][0]], present)
 
+        # The zenith angle is an operand, not a captured constant: IGRINS rows
+        # in one window come from frames at different airmasses and would
+        # otherwise recompile per frame.
         @jax.jit
-        def transmission_at(scales, _model=model, _template=template):
-            return _model.transmission(_template._replace(log_column_scales=scales), zenith)
+        def transmission_at(scales, angle, _model=model, _template=template):
+            return _model.transmission(_template._replace(log_column_scales=scales), angle)
 
         for index in windows[key]:
             row = pages[index]
             parameters = parameters_from_row(row, present)
             values = np.asarray(transmission_at(
                 {name: float(value)
-                 for name, value in parameters.log_column_scales.items()}))
+                 for name, value in parameters.log_column_scales.items()},
+                zenith_of(row)))
             transmission[index, :grid.size] = values
             grid_index[index] = position
 
             if args.check:
-                cached = args.record.parent / f"{text(row['page'])}_{text(row['epoch'])}.npz"
+                cached = args.record.parent / ("_".join(record.key(index)) + ".npz")
                 if cached.exists():
                     with np.load(cached) as stored:
                         pixels = np.asarray(stored["wavenumber_cm1"])
@@ -207,11 +219,12 @@ def main() -> None:
             "a multiplicand, not a divisor -- put it inside your own instrument convolution, "
             "Conv[continuum x source x T], and fit that against the raw observed spectrum. "
             "Row i uses grid grid_index[i], valid over its first grid_points entry. The "
-            "zenith angle is 0, so this is the vertical transmission; the fitted column "
-            "scales in /parameters already absorbed any slant path.")
+            "zenith angle is in /zenith_angle_deg, one per row: 0 for the Arcturus atlas, so "
+            "that is the vertical transmission and the fitted column scales in /parameters "
+            "already absorbed any slant path, and the frame's own angle for an IGRINS night, "
+            "so that is the slant transmission along the line of sight.")
         handle.attrs["format"] = "jax-telluric transmission 1"
         handle.attrs["record"] = str(args.record)
-        handle.attrs["zenith_angle_deg"] = zenith
         handle.attrs["resolving_power"] = float(config["resolving_power"])
         handle.attrs["samples_per_resolution"] = float(config["samples_per_resolution"])
         for key, value in record.run.items():
@@ -232,6 +245,10 @@ def main() -> None:
         handle.create_dataset("grid_points", data=grid_points)
         handle.create_dataset("grid_index", data=grid_index[keep].astype("i4"))
         handle["grid_index"].attrs["description"] = "which wavenumber_cm1 row this spectrum uses"
+        handle.create_dataset("zenith_angle_deg", data=np.array(
+            [zenith_of(pages[i]) for i in range(len(pages)) if keep[i]], dtype="f8"))
+        handle["zenith_angle_deg"].attrs["description"] = (
+            "the angle each row's transmission was evaluated at; 0 means a vertical column")
         handle.create_dataset("transmission", data=transmission[keep],
                               compression=args.compression, shuffle=True)
         handle["transmission"].attrs["units"] = "fraction"

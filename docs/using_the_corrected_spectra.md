@@ -15,6 +15,18 @@ Two datasets exist.
 | arrays | `data/corrected/atlas/*.npz` | `data/corrected/igrins/*/*.npz` |
 | residual | 4.22 sigma median | 1.30-1.86 sigma median |
 
+Three things can be handed to someone else, and which one you want depends
+entirely on what you are going to do with it:
+
+| you want | take | section |
+|---|---|---|
+| a corrected stellar spectrum | `corrected`, or the spectra export | [below](#if-you-just-want-a-file-of-spectra) |
+| to put the atmosphere in your own synthesis | the transmission export | [below](#if-you-want-the-atmosphere-not-our-spectrum) |
+| to reproduce or audit a fit | the record | [below](#what-is-in-the-record-and-why-it-is-the-real-product) |
+
+If you are running your own forward model, it is the second one, and you should
+not be reading `corrected` at all.
+
 ## Read this first: which array is the correction
 
 **Do not divide by `transmission`.** The array called `transmission` is the
@@ -57,7 +69,7 @@ wavelength and, for IGRINS, descending detector column.
 | `corrected` | **the product** — telluric removed, stellar model retained |
 | `model_flux` | the full forward model: continuum x source x transmission, convolved |
 | `stellar_only` | the same model with the atmosphere removed |
-| `transmission` | unconvolved transmission — *diagnostic only*, see above |
+| `transmission` | unconvolved transmission, interpolated to the pixels — *diagnostic only*, see above; the usable version is the [fine-grid export](#if-you-want-the-atmosphere-not-our-spectrum) |
 | `continuum` | the fitted Chebyshev continuum |
 | `residual` | `observed - model_flux` |
 | `mask` | True where a pixel was fitted |
@@ -135,11 +147,18 @@ the lines are already undersampled before the interpolation runs.
 uv run python scripts/export_transmission_hdf5.py \
     --record data/corrected/atlas/arcturus_atlas.h5 \
     --output data/corrected/arcturus_transmission.h5 --check
+
+# an IGRINS night works the same way
+uv run python scripts/export_transmission_hdf5.py \
+    --record data/corrected/igrins/dct2016_h/record.h5 \
+    --output data/corrected/dct2016_h_transmission.h5 --check
 ```
 
-That writes T on the forward model's own grid -- 4 samples per resolution
-element at R = 100,000, no interpolation anywhere in the path. Grids are shared
-between the two epochs of a page, so the file holds 310 grids for 598 rows:
+That writes T on the forward model's own grid -- 4.00 samples per resolution
+element at R = 100,000 (a 0.7494 km/s step), no interpolation anywhere in the
+path. **8.0 MB for all 598 Arcturus page-epochs, about 50 minutes on one GPU.**
+Grids are shared, because both epochs of a page sit on one window, so the file
+holds 310 grids for 598 rows:
 
 ```python
 import h5py
@@ -151,20 +170,31 @@ with h5py.File("data/corrected/arcturus_transmission.h5") as f:
     T  = f["transmission"][i][:n]
 ```
 
-The zenith angle is 0, so this is the vertical transmission and the fitted
-column scales in `/parameters` have already absorbed any slant path. `/profile`
-carries the layered atmosphere those scales multiply -- pressure, temperature,
-altitude, air column and every VMR -- so T can be regenerated on any other grid
-from this file plus a line list. `--check` interpolates the fine grid back down
-to the pixels and compares against the cached `transmission`; it agrees to
-3.1e-16.
+`/zenith_angle_deg` says what angle each row was evaluated at. For the Arcturus
+atlas it is 0 throughout, so T is the **vertical** transmission and the fitted
+column scales in `/parameters` have already absorbed any slant path. The same
+script runs on an IGRINS record, where the angle is the frame's own -- 18.7 to
+67.3 degrees on one night -- and T is then the slant transmission along that
+line of sight. `/profile` carries the layered atmosphere the scales multiply
+(pressure, temperature, altitude, air column, every VMR), so T can be
+regenerated on any other grid from this file plus a line list.
 
-Two things this does not solve. The columns were retrieved with our continuum
+`--check` interpolates the fine grid back down to the pixels and compares
+against the cached `transmission`:
+
+| record | agreement | why |
+|---|---|---|
+| Arcturus atlas | 2.2e-16 | same code path, machine precision |
+| IGRINS night | 3.1e-6 | the driver saves T from the refrozen linearized backend, this script evaluates the exact kernel; 1600x below the noise |
+
+Three things this does not solve. The columns were retrieved with our continuum
 and our source, so they carry whatever bias those imposed -- see the blanketing
-caveat below, which is worth a few percent in H2O. And T is the transmission at
-one fitted state, not a function you can re-fit; if you want to refit the
-columns inside your own synthesis, regenerate T from `/profile` rather than
-scaling this array.
+caveat below, which is worth a few percent in H2O. T is the transmission at one
+fitted state, not a function you can re-fit; to refit columns inside your own
+synthesis, regenerate T from `/profile` rather than scaling this array. And the
+ILS is still ours: T is unconvolved, which is the point, but the *columns* were
+fitted through our instrument model, so an error there has already leaked into
+them.
 
 ## What is in the record, and why it is the real product
 
@@ -293,6 +323,25 @@ Pass the whole night's frames in one command, not one at a time: the driver
 loops orders outside and frames inside, which shares the grid, the opacity and
 the XLA compilations and is worth about two thirds of the runtime. It also needs
 five frames to measure the instrument response.
+
+**For a new Arcturus run, fix the sinc globally.** The committed record measures
+the FTS path difference per page, and that measurement scatters +-12% about the
+constant-resolving-power law the atlas actually follows. The per-page Gaussian
+then absorbs the scatter and rails: `lsf_sigma_kms` is at a bound on 13.4% of
+converged pages, 76 of them pinned at the 0.05 km/s minimum, and it is the
+single largest contributor to the 22.2% overall at-bound rate.
+`fit_arcturus_page.py --sinc-resolving-power 115700` replaces the per-page
+measurement with one atlas-wide value. Measured on 16 pages spanning
+1868-10951 cm-1: the median residual moves by 0.2% (5.223 to 5.266 sigma, worst
+page 1.8%) and `lsf_sigma_kms` at bound falls from 7/16 to 4/16. The committed
+record predates this and still uses the per-page measurement.
+
+Do not read the per-page MOPD spread as a defect, and do not take the sinc alone
+as the resolution. `mopd_cm` runs 8.8 to 25.3 cm p16-p84 because the atlas holds
+a constant resolving power over a 5.84x range in wavenumber, so the path
+difference has to track 1/nu -- corr(mopd, nu) = -0.93. And R from the sinc alone
+is 115,700, but the fitted Gaussian carries the rest: in quadrature the two give
+**100,504, which is the R = 100,000 the atlas documents**.
 
 For a night whose headers carry no weather — every Gemini South frame from 2020
 — use ERA5 instead, which needs only a position and a time:
