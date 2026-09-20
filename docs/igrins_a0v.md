@@ -610,6 +610,76 @@ Both records are kept: `ladder/` and `ladder_k/` are the flat-source fits, which
 depend on no stellar model; `ladder_a0v/` and `ladder_k_a0v/` are these.
 
 
+## A second night, at a second site
+
+DCT 2018-12-20 has one flaw that bounds every conclusion drawn from it: chi Cap
+is the only target above airmass 1.82, so dropping it moves H2O by 3.9 sigma.
+**McDonald 2017-04-20** was chosen to break that — 8 standards, airmass
+1.020 to 2.991, 7 distinct stars, and **five different stars above
+airmass 1.8**. It is also the first McDonald night fitted, so it exercises the
+degF/inHg weather branch end to end: 23.4 inHg normalizes to 792.4 hPa station
+against 787.4 expected at Mt Locke, 0.6% out.
+
+| species | DCT (A0V) | McDonald (A0V) | joint d/dAM, McDonald | leave-one-out |
+|---|---:|---:|---:|---:|
+| H2O | +0.1237 ± 0.0628 (2.0σ) | +0.2180 ± 0.2378 (0.9σ) | -0.1146 | 1.2σ |
+| CO2 | +0.0054 ± 0.0039 (1.4σ) | +0.0390 ± 0.0273 (1.4σ) | -0.0003 | 1.4σ |
+| CH4 | +0.0129 ± 0.0052 (2.5σ) | +0.0274 ± 0.0181 (1.5σ) | +0.0034 | 0.6σ |
+
+**CH4 is not settled.** McDonald's slope has the same sign and a consistent
+magnitude, and this time it does not rest on one star — dropping any target
+moves it by 0.6 sigma. But its error is three and a half times DCT's, so it
+neither confirms nor refutes: the two are consistent with each other and both
+are consistent with zero at 1.5-2.5 sigma. In a joint fit against airmass *and*
+time, McDonald's airmass term falls to +0.0034 and DCT's to +0.0087. Two nights is
+still not enough; the question is worth a third.
+
+**Water behaves the same way at both sites**: 0.9 sigma against airmass and
+8.5 sigma against time here, the airmass term collapsing in a joint fit.
+The sky changes; the model does not need to.
+
+### A wetter site fits worse, everywhere
+
+McDonald carries about 10 mm of precipitable water against DCT's 2, and its
+median residual is 1.78 sigma in H and 2.37 in K against 1.33 and 1.31. Binned
+by transmission, using the median rather than the rms because two of DCT's 516
+order-frames are pathological (H09 at 115 sigma, H06 at 33, both unexplained):
+
+| effective transmission | DCT, ~2 mm | McDonald, ~10 mm |
+|---|---:|---:|
+| 0.150–0.400 | 1.62 | 2.52 |
+| 0.400–0.600 | 1.40 | 1.97 |
+| 0.600–0.800 | 1.15 | 1.49 |
+| 0.800–0.900 | 0.86 | 1.17 |
+| 0.900–0.970 | 0.66 | 0.91 |
+| 0.970–0.995 | 0.57 | 0.77 |
+| 0.995–1.010 | 0.57 | 0.78 |
+
+The *shape* is the same on both nights — the residual climbs monotonically with
+absorption depth — but McDonald sits about 1.4x higher at **every** level,
+including where there is no absorption at all. So it is not only that deeper
+lines expose more line-list error: something about the wetter night degrades
+even the clear pixels, which is what one would expect from the water continuum
+and the forest of weak lines that touch every pixel at 10 mm.
+
+Median |z| below 1 at the continuum on both nights is the same hint as before
+that the PLP's variance is conservative.
+
+### Two fixes this night forced
+
+An order that is opaque end to end — the 2.0 um CO2 band at 10 mm of water —
+used to produce a row with a NaN residual. It is now skipped and recorded as a
+failure, which removed 11 such rows from K.
+
+And the precipitable-water seed matters more than a pure column scaling would
+suggest, because `precompute_opacity` linearizes the self-broadening about the
+profile's own water content. Seeding 6 mm when the truth was 10 left the fitted
+scale at x1.7, well outside the +-25% the expansion is built for. Reseeding
+centred it at 1.00. It did **not** improve the residual, so the linearization
+was not what limited this night — but a seed within a factor of two is cheap
+insurance and the site profiles now carry one.
+
+
 ## The run record
 
 Per the repository's convention the record is the product and the `.npz` arrays
@@ -646,10 +716,12 @@ night.
 
 ## What is not done yet
 
-- **A second night, and a second site.** Everything above is one night at DCT
-  plus one Gemini South frame. The weather-convention normaliser is exercised
-  on real DCT and Gemini headers but not yet on a McDonald one, where the
-  degF/inHg branch lives.
+- **A third night.** Two nights leave CH4 unsettled: consistent slopes, but
+  McDonald's error is three and a half times DCT's. A night with both a long
+  airmass lever arm *and* DCT's dry, well-behaved conditions would decide it.
+- **Two unexplained order-frames**, H09 and H06 of the DCT A0V run, at 115 and
+  33 sigma out of 516. They are excluded from the pooled statistics above by a
+  cut rather than understood.
 - **A per-frame atmosphere.** One profile is built per night from the median
   surface conditions, though the header gives T, P and humidity per frame and
   they moved by 3 K and 2 hPa across this night. The fitted column scales

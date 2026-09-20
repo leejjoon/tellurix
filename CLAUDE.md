@@ -144,6 +144,18 @@ entirely and keeps 60% more pixels at the same residual. The bias is common to
 every frame of a night, so it cancels in an airmass slope but not in an absolute
 column.
 
+Two nights are fitted: DCT 2018-12-20 (dry, ~2 mm PWV) and McDonald 2017-04-20
+(~10 mm, and the only one that exercises the degF/inHg branch end to end). The
+wetter night fits about 1.4x worse at *every* transmission level, not only in
+deep lines, which points at the water continuum and the weak-line forest rather
+than at line depth alone. Two operational lessons from it: an order that is
+opaque end to end (2.0 um CO2 at high water) is now skipped rather than writing
+a NaN row (`minimum_reliable`); and the precipitable-water seed should be within
+about a factor of two of the truth, because `precompute_opacity` linearizes
+self-broadening about the profile's own water and a x1.7 scaling sits outside
+the +-25% it is built for. (Reseeding did not improve this night's residual, so
+that was not the limit here.)
+
 An airmass ladder is confounded by its targets: a night observes few stars, each
 over a limited airmass span. On the DCT night chi Cap is the only target above
 airmass 1.82. `analyze_igrins_ladder.py` reports `leave_one_object_out` for this
