@@ -555,6 +555,61 @@ because it depends on no stellar model at all; but the ladder should be rerun
 with the A0V model before any absolute column is quoted.
 
 
+## The ladder rerun with the A0V model
+
+The flat source plus a hydrogen mask keeps no stellar model in the loop, which
+is what makes it the right default for *measuring* the atmosphere. But the mask
+is too narrow to be clean (above), so the absolute columns it returns are biased
+at the few-percent level. Rerunning the whole night with the Payne Zero A0V and
+no mask fixes that, and costs about 1.4x in runtime.
+
+Fitting with a real stellar source needs one more thing: a **stellar stage**.
+These are five different A0V stars with radial velocities tens of km/s apart, so
+`stellar_velocity_kms` has to be fitted or the Brackett lines land in the wrong
+place. `stages_for()` adds it whenever `--stellar` is not `flat`. The fitted
+velocities are self-consistent per star -- chi Cap +58.9 and +57.6, k Tau +42.7
+and +43.8, HD 53205 +9.2 and +7.4 km/s -- which is a check on the whole
+arrangement that the flat source cannot provide.
+
+| | rows | reliable pixels | median residual |
+|---|---:|---:|---:|
+| H, flat + ±600 km/s mask | 248 | 261,053 | 1.30σ |
+| **H, A0V model, no mask** | **270** | **367,810 (+41%)** | 1.33σ |
+| K, flat + mask | 237 | 318,800 | 1.29σ |
+| **K, A0V model** | **246** | **377,645 (+18%)** | 1.31σ |
+
+Fitting 41% more pixels in H — including the Brackett cores, the hardest pixels
+in the band — moves the residual by 0.03σ. That is the strongest statement
+available that the A0V model is good enough to use.
+
+| species | per airmass | per hour | joint d/dAM | leave-one-out shift |
+|---|---:|---:|---:|---:|
+| H2O | +0.1237 ± 0.0628 (2.0σ) | **-0.0348 ± 0.0067 (5.2σ)** | -0.0322 | 3.9σ (chi Cap V ) |
+| CO2 | +0.0054 ± 0.0039 (1.4σ) | -0.0008 ± 0.0008 (1.0σ) | +0.0061 | 2.5σ (chi Cap V ) |
+| CH4 | +0.0129 ± 0.0052 (2.5σ) | -0.0023 ± 0.0010 (2.4σ) | +0.0087 | **0.4σ (HR 1558)** |
+
+Water is unchanged: 2.0σ against airmass, 5.2σ against time, the airmass term
+collapsing in a joint fit. The sky dried; the model is fine.
+
+**CO2 stays flat** at +0.0054 ± 0.0039 per unit airmass, 0.8% across the observed
+range with a 2σ bound of 1.9%.
+
+**CH4 changes status.** Its slope is much the same as the flat run's
+(+0.0153 ± 0.0080 there, +0.0129 ± 0.0052 here) but the extra pixels halve the error, so
+it is now 2.5σ — and, unlike before, it no longer rests on chi Cap: dropping
+any single target moves it by 0.4σ. That is 1.8% across the range, 3.3% at 2σ.
+
+Three reasons not to call that a detection yet. It is one of three species, so
+the multiple-comparison penalty is real. CH4 shows a 2.4σ dependence on *time*
+as well, which it cannot physically have, and airmass and time correlate at
+-0.788 here; in a joint fit the airmass term falls to +0.0087. And it is one
+night at one site. It is the most interesting thing in this dataset and the
+clearest argument for a second night.
+
+Both records are kept: `ladder/` and `ladder_k/` are the flat-source fits, which
+depend on no stellar model; `ladder_a0v/` and `ladder_k_a0v/` are these.
+
+
 ## The run record
 
 Per the repository's convention the record is the product and the `.npz` arrays

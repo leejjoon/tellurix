@@ -127,6 +127,13 @@ fitted LSF really does narrow by 10-33% along an order, but freeing it per
 segment is worth a median 1.02. `throughput_floor` is back to 0.25 -- it used to
 carry the red edge and no longer has to.
 
+Fitting with `--stellar <a0v npz>` adds a **stellar stage** (`stages_for()`):
+these are different A0V stars with radial velocities tens of km/s apart, so
+`stellar_velocity_kms` must be fitted or the Brackett lines land in the wrong
+place. Fitted velocities repeat per star to 1-2 km/s, which is a check the flat
+source cannot give. The A0V ladder fits 41% more H pixels than flat+mask,
+including the Brackett cores, and the residual moves by 0.03 sigma.
+
 `mask_hydrogen_kms` is 600 and that is **too narrow**: measured against the A0V
 model, a Brackett line is still 6-8% deep at that offset, and only reaches 1% by
 ±1800 km/s. It does not show in the residual -- the degree-9 continuum absorbs a
