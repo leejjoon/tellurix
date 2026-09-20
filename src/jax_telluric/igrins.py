@@ -161,6 +161,62 @@ def _number(value, default=np.nan) -> float:
         return default
 
 
+# Gas constant for water vapour, J/(kg K), and the Magnus coefficients.
+_WATER_GAS_CONSTANT = 461.5
+_MAGNUS_A, _MAGNUS_B, _MAGNUS_C = 6.112, 17.62, 243.12
+# Effective scale height of the water column, in km. Not the 2.0 km the layer
+# profile distributes water over: this is the height that reproduces the fitted
+# column from the *surface* vapour pressure, which is smaller because the real
+# profile falls off faster than exponential near the ground. Calibrated on three
+# fitted nights (DCT 2018-12-20, McDonald 2017-04-20, DCT 2016-12-08), where it
+# gives 1.4 km with 26% scatter.
+_WATER_SCALE_HEIGHT_KM = 1.4
+
+
+def saturation_vapour_pressure_hpa(temperature_c: float) -> float:
+    """Magnus formula, good to a few tenths of a percent over -40 to +50 C."""
+
+    return _MAGNUS_A * np.exp(_MAGNUS_B * temperature_c / (_MAGNUS_C + temperature_c))
+
+
+def precipitable_water_mm(
+    surface: Mapping[str, object], scale_height_km: float = _WATER_SCALE_HEIGHT_KM
+) -> float | None:
+    """Estimate the water column from the surface dewpoint, in millimetres.
+
+    For an exponential water profile the column is the surface density times a
+    scale height, and the surface density follows from the dewpoint alone:
+    ``e(Td) / (R_v T) * H``. The dewpoint is the right input because it *is* the
+    vapour pressure -- relative humidity needs the temperature as well and
+    inherits its error.
+
+    This is a seed, not a measurement: the fit scales the column freely. But it
+    has to be within about a factor of two, because ``precompute_opacity``
+    linearizes self-broadening about the profile's own water content. Measured
+    against three fitted nights it lands within 1.6x, where choosing by eye was
+    out by 2x.
+
+    Returns ``None`` when the header carries neither a dewpoint nor a humidity,
+    which is common in the archive.
+    """
+
+    temperature_k = surface.get("temperature_k")
+    dewpoint_c = surface.get("dewpoint_c")
+    if dewpoint_c is None:
+        humidity = surface.get("relative_humidity_percent")
+        if humidity is None or temperature_k is None or humidity <= 0.0:
+            return None
+        # Fall back to the humidity, which is the same information with the
+        # temperature's error folded in.
+        vapour = saturation_vapour_pressure_hpa(temperature_k - 273.15) * humidity / 100.0
+    else:
+        vapour = saturation_vapour_pressure_hpa(dewpoint_c)
+    if temperature_k is None or not np.isfinite(vapour) or vapour <= 0.0:
+        return None
+    return float(100.0 * vapour * scale_height_km * 1000.0
+                 / (_WATER_GAS_CONSTANT * temperature_k))
+
+
 def _card(header: Mapping[str, object], key: str) -> float | None:
     """A numeric header card, or ``None`` when it is absent or blank.
 
@@ -247,6 +303,10 @@ def surface_conditions(header: Mapping[str, object]) -> dict:
                 f"{site.altitude_km:.3f} km -- the header convention has changed"
             )
 
+    dewpoint = _card(header, "DEWPOINT")
+    if dewpoint is not None and site.temperature_unit == "F":
+        dewpoint = (dewpoint - 32.0) * 5.0 / 9.0
+
     humidity = _card(header, "HUMIDITY")
     return {
         "site": site.name,
@@ -254,6 +314,7 @@ def surface_conditions(header: Mapping[str, object]) -> dict:
         "temperature_k": temperature,
         "pressure_hpa": pressure,
         "relative_humidity_percent": humidity,
+        "dewpoint_c": dewpoint,
     }
 
 

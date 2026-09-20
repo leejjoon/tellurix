@@ -402,3 +402,69 @@ def test_smoothing_never_invents_a_correction_where_nothing_was_measured():
     pattern = leave_one_out_patterns(stack, smooth_pixels=11)[0]
     assert np.all(pattern[20:30] == 0.0), "a boxcar must not bleed into an unmeasured gap"
     assert pattern[5] == pytest.approx(0.05, abs=1e-9)
+
+
+# --- seeding the water column from the dewpoint ---
+
+
+def test_the_magnus_formula_matches_known_values():
+    from jax_telluric import saturation_vapour_pressure_hpa as es
+
+    # Standard table values, good to a few tenths of a percent.
+    assert es(0.0) == pytest.approx(6.112, rel=1e-3)
+    assert es(20.0) == pytest.approx(23.39, rel=5e-3)
+    assert es(-10.0) == pytest.approx(2.86, rel=1e-2)
+    assert es(30.0) > es(20.0) > es(10.0) > es(0.0) > es(-10.0)
+
+
+def test_the_water_column_comes_from_the_dewpoint_not_the_humidity():
+    """The dewpoint *is* the vapour pressure; humidity needs the temperature too."""
+    from jax_telluric import precipitable_water_mm, saturation_vapour_pressure_hpa
+
+    surface = {"temperature_k": 280.0, "dewpoint_c": -7.4,
+               "relative_humidity_percent": 34.0}
+    water = precipitable_water_mm(surface)
+    expected = 100.0 * saturation_vapour_pressure_hpa(-7.4) * 1400.0 / (461.5 * 280.0)
+    assert water == pytest.approx(expected, rel=1e-9)
+    # Changing the humidity must not move it while a dewpoint is present.
+    assert precipitable_water_mm({**surface, "relative_humidity_percent": 90.0}) == \
+        pytest.approx(water, rel=1e-12)
+
+
+def test_the_humidity_is_the_fallback_when_there_is_no_dewpoint():
+    from jax_telluric import precipitable_water_mm
+
+    with_dew = precipitable_water_mm({"temperature_k": 280.0, "dewpoint_c": -7.4})
+    # 34% at 280 K is very nearly a dewpoint of -7.4 C, so the two should agree.
+    without = precipitable_water_mm({"temperature_k": 280.0, "dewpoint_c": None,
+                                     "relative_humidity_percent": 34.0})
+    assert without == pytest.approx(with_dew, rel=0.05)
+
+
+def test_no_water_information_returns_none_rather_than_a_guess():
+    from jax_telluric import precipitable_water_mm
+
+    assert precipitable_water_mm({"temperature_k": 280.0, "dewpoint_c": None,
+                                  "relative_humidity_percent": None}) is None
+    assert precipitable_water_mm({"temperature_k": None, "dewpoint_c": -5.0}) is None
+    assert precipitable_water_mm({"temperature_k": 280.0, "dewpoint_c": None,
+                                  "relative_humidity_percent": 0.0}) is None
+
+
+def test_the_dewpoint_is_converted_from_fahrenheit_at_mcdonald():
+    """A real McDonald header: 42 degF is 5.6 C, not 42 C."""
+    conditions = surface_conditions({**MCDONALD_2017, "DEWPOINT": 42.0})
+    assert conditions["dewpoint_c"] == pytest.approx((42.0 - 32.0) * 5.0 / 9.0, abs=1e-9)
+    assert surface_conditions({**GEMINI, "DEWPOINT": -3.8})["dewpoint_c"] == pytest.approx(-3.8)
+
+
+def test_the_estimate_lands_within_a_factor_of_two_on_the_fitted_nights():
+    """The seed only has to be close enough for the self-broadening expansion."""
+    from jax_telluric import precipitable_water_mm
+
+    # Median surface conditions and the fitted column, from the three nights.
+    for dewpoint, temperature, fitted in ((-7.4, 281.15, 2.36), (5.9, 290.09, 9.99),
+                                          (-2.2, 275.85, 6.89)):
+        estimate = precipitable_water_mm(
+            {"temperature_k": temperature, "dewpoint_c": dewpoint})
+        assert 0.5 < estimate / fitted < 2.0, f"{estimate:.2f} against {fitted:.2f}"
