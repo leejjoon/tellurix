@@ -497,6 +497,64 @@ across every frame of a night and scales with absorption depth is an empirical
 map of the telluric line list's errors at this resolution. Nothing here exploits
 that yet, but it is the natural thing to compare against a different line list.
 
+## How much of an order survives, and why
+
+Coverage varies a lot between orders, and almost all of it is two cuts of ours.
+
+| cut | pixels removed, of 2048 | varies between orders? |
+|---|---|---|
+| throughput floor (< 0.25 of peak) | 464–1002, typically ~500 | no; it hits both ends of every order |
+| **hydrogen mask** | **0–1151** | **yes; this is what makes coverage vary** |
+| saturation floor, T < 0.15, model < 0.2 continuum | 0–170 | mostly negligible |
+
+An order with no Brackett line (H02, H03, H04, H06, H07, H10, H24, H25) loses
+nothing to the mask and keeps 73–77% of its columns. An order with one loses
+about 590, and H20, which holds Br19 and Br20, loses 1151 — 56% of the order,
+leaving 14%.
+
+That is arithmetic: ±600 km/s at 2.04 km/s per pixel is ±294 pixels per line.
+
+### The ±600 km/s mask is too narrow, and widening it is not the answer
+
+±600 was a guess when nothing better was available. Measured against the A0V
+model now in hand, using a continuum defined far outside the line, it is much
+too narrow:
+
+| offset from line centre | Br10 | Br11 | Br12 |
+|---|---:|---:|---:|
+| ±600 km/s (the mask edge) | 7.7% | 7.6% | 6.4% |
+| ±1200 km/s | 2.8% | 2.7% | 1.6% |
+| ±1800 km/s | 1.1% | 1.0% | 0.2% |
+
+At the mask edge the line is still 6–8% deep, so the flat-source fit is treating
+strongly absorbed pixels as continuum. This does *not* show up in the residual —
+just outside the mask it is −0.04% of the continuum — because the degree-9
+Chebyshev absorbs a broad smooth wing. The bias goes into the continuum instead,
+and through it into the columns.
+
+Three treatments of the same two orders and the same ten frames:
+
+| treatment | pixels kept | residual | ΔlogN(H2O) | ΔlogN(CO2) |
+|---|---:|---:|---:|---:|
+| flat source, ±600 km/s | 923 | 1.24σ | — | — |
+| flat source, ±1800 km/s | **269** | 1.54σ | +0.017 | +0.047 |
+| **A0V model, no mask** | **1499** | 1.31σ | −0.028 | −0.015 |
+
+Masking properly costs almost the whole order. The A0V model keeps 60% more
+pixels than the narrow mask *and* fits the Brackett cores, at the same residual.
+Across the ladder, orders containing a Brackett line retrieve columns offset
+from those that do not by −0.023 (H2O), +0.042 (CO2) and +0.034 (CH4) — though
+that comparison is confounded, since the two populations sit at different
+wavelengths.
+
+The offset is common to every frame of a night, so it largely cancels in a slope
+against airmass and the ladder conclusions stand. It biases the *absolute*
+columns at the few-percent level, which is the same size as the precision quoted
+there. The flat source remains the right default for measuring the atmosphere,
+because it depends on no stellar model at all; but the ladder should be rerun
+with the A0V model before any absolute column is quoted.
+
+
 ## The run record
 
 Per the repository's convention the record is the product and the `.npz` arrays

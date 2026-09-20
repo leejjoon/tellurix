@@ -127,6 +127,16 @@ fitted LSF really does narrow by 10-33% along an order, but freeing it per
 segment is worth a median 1.02. `throughput_floor` is back to 0.25 -- it used to
 carry the red edge and no longer has to.
 
+`mask_hydrogen_kms` is 600 and that is **too narrow**: measured against the A0V
+model, a Brackett line is still 6-8% deep at that offset, and only reaches 1% by
+±1800 km/s. It does not show in the residual -- the degree-9 continuum absorbs a
+broad wing -- so it biases the continuum and the columns instead, by a few
+percent. Widening it is not the fix: ±1800 km/s is ±880 pixels per line and
+leaves 269 pixels of an order. Use `--stellar <a0v npz>`, which lifts the mask
+entirely and keeps 60% more pixels at the same residual. The bias is common to
+every frame of a night, so it cancels in an airmass slope but not in an absolute
+column.
+
 An airmass ladder is confounded by its targets: a night observes few stars, each
 over a limited airmass span. On the DCT night chi Cap is the only target above
 airmass 1.82. `analyze_igrins_ladder.py` reports `leave_one_object_out` for this

@@ -595,6 +595,10 @@ def main() -> None:
                              "each other and each keeps only its own orders.")
     parser.add_argument("--precompute-opacity", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--self-broadening", choices=("linear", "frozen"), default="linear")
+    parser.add_argument("--hydrogen-mask-kms", type=float, default=None,
+                        help="override ORDER['mask_hydrogen_kms']. At the default 600 the "
+                             "Brackett line is still 6-8%% deep in an A0V model, so the flat "
+                             "source leaks stellar absorption into the continuum.")
     parser.add_argument("--throughput-floor", type=float, default=None,
                         help="override ORDER['throughput_floor']; the cut on the smoothed blaze")
     parser.add_argument("--fixed-pattern", action=argparse.BooleanOptionalAction, default=True,
@@ -614,6 +618,8 @@ def main() -> None:
     parser.add_argument("--platform", choices=("cpu", "gpu"), default="gpu")
     args = parser.parse_args()
 
+    if args.hydrogen_mask_kms is not None:
+        ORDER["mask_hydrogen_kms"] = args.hydrogen_mask_kms
     if args.throughput_floor is not None:
         ORDER["throughput_floor"] = args.throughput_floor
     os.environ["JAX_PLATFORMS"] = "cuda" if args.platform == "gpu" else "cpu"
