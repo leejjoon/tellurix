@@ -71,20 +71,31 @@ ORDER = {
 }
 
 
-def page_windows(ils_report: Path, epoch: str) -> list[dict]:
-    """Each page's own wavenumber range, trimmed off its neighbours' overlaps."""
+def page_windows(ils_report: Path, epoch: str, trim_cm1: float = 0.0) -> list[dict]:
+    """Each page's wavenumber range, by default the whole of it.
+
+    Adjacent atlas pages overlap by about 5 cm-1 -- 282 of 287 summer pairs do --
+    and the two copies of an overlap are not identical, because each page carries
+    its own scalar normalization. Trimming the overlap away makes the output tile,
+    which is convenient, and throws away 22.7% of the atlas's pixels, which is not
+    a trade worth making: the duplicate measurement is information, and the right
+    place to decide what to do with it is downstream, in view of both fits and
+    their quality flags.
+
+    So the default keeps every pixel the atlas ships and the products overlap.
+    ``trim_cm1`` restores the old behaviour -- 2.5 reproduces the record committed
+    before this changed -- and is there for that comparison, not for new runs.
+    """
+
     values = json.loads(ils_report.read_text())
     rows = [m for m in values["measurements"] if m.get("epoch") == epoch and "error" not in m]
     rows.sort(key=lambda m: m["wavenumber_min_cm1"])
     out = []
     for index, row in enumerate(rows):
-        # A page's nominal range starts at its own name and ends where the next
-        # page starts; that is what avoids the ~2 cm-1 overlap where adjacent
-        # pages differ by a per-page scalar.
-        lower = row["wavenumber_min_cm1"] + 2.5
-        upper = row["wavenumber_max_cm1"] - 2.5
-        if index + 1 < len(rows):
-            upper = min(upper, rows[index + 1]["wavenumber_min_cm1"] + 2.5)
+        lower = row["wavenumber_min_cm1"] + trim_cm1
+        upper = row["wavenumber_max_cm1"] - trim_cm1
+        if trim_cm1 > 0.0 and index + 1 < len(rows):
+            upper = min(upper, rows[index + 1]["wavenumber_min_cm1"] + trim_cm1)
         if upper - lower < 4.0:
             continue
         out.append({"page": row["page"], "v1": float(lower), "v2": float(upper),
@@ -446,6 +457,12 @@ def main() -> None:
                         help="how far outside the window a line may still contribute")
     parser.add_argument("--grid-margin-cm1", type=float, default=5.0,
                         help="how far outside the window the model grid extends")
+    parser.add_argument("--trim-overlap-cm1", type=float, default=0.0,
+                        help="cut this much off each end of every page. 0, the default, keeps "
+                             "every pixel the atlas ships and lets adjacent pages overlap by "
+                             "about 5 cm-1; 2.5 makes the pages tile and reproduces the record "
+                             "committed before this was configurable, at the cost of 22.7% of "
+                             "the pixels.")
     parser.add_argument("--continuum-degree", type=int, default=3)
     parser.add_argument("--min-optical-depth", type=float, default=0.02,
                         help="free a species only if its peak vertical optical depth reaches this")
@@ -523,7 +540,7 @@ def main() -> None:
 
     jobs = []
     for epoch in args.epochs.split(","):
-        windows = page_windows(args.ils_report, epoch.strip())
+        windows = page_windows(args.ils_report, epoch.strip(), args.trim_overlap_cm1)
         if args.pages:
             wanted = {p.strip() for p in args.pages.split(",")}
             windows = [w for w in windows if w["page"] in wanted]
