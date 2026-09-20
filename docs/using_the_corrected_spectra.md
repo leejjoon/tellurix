@@ -187,6 +187,35 @@ against the cached `transmission`:
 | Arcturus atlas | 2.2e-16 | same code path, machine precision |
 | IGRINS night | 3.1e-6 | the driver saves T from the refrozen linearized backend, this script evaluates the exact kernel; 1600x below the noise |
 
+### Stitching: the pixel products tile, the transmission grids overlap
+
+The raw atlas pages overlap each other by about 5 cm-1 -- 282 of 287 adjacent
+summer pages do. `page_windows()` trims 2.5 cm-1 off each end so the *fitted*
+windows tile instead: **0 of 287 overlap**, with a median gap of 0.02 cm-1,
+which is one atlas sample. Everything on the pixel grid inherits that, so the
+`.npz` arrays and the spectra export can be concatenated directly. The cost is
+2.64% of the raw union, lost at the outer edge of each of the atlas's ~38
+disconnected coverage blocks, not between pages.
+
+**The transmission export is the exception.** It is on the model grid, which
+`trim_wavenumber_grid` pads by 5 cm-1 on each side so line wings are present, so
+adjacent rows overlap by 9.99 cm-1 -- 282 of 287 pairs. Concatenating them
+double-counts. Cut each row to its own fitted window first, which `/parameters`
+carries:
+
+```python
+v1, v2 = f["parameters"]["v1"][i], f["parameters"]["v2"][i]
+inside = (nu >= v1) & (nu <= v2)          # now the rows tile
+```
+
+The margin is not junk -- it is the same atmosphere, extrapolated past the data
+that constrained it. Where one page is inside its window and its neighbour is in
+its margin, the two transmissions agree to a median of 0.0009 against 0.0059 of
+pixel noise. But the worst point in such an overlap is a median 0.027 across
+pairs, because a small difference in fitted column becomes a large difference in
+a line core. Use the margin for wings, never as a substitute for the neighbour's
+own fit.
+
 Three things this does not solve. The columns were retrieved with our continuum
 and our source, so they carry whatever bias those imposed -- see the blanketing
 caveat below, which is worth a few percent in H2O. T is the transmission at one
