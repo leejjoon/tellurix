@@ -56,6 +56,15 @@ import numpy as np
 
 MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
 STAGES = ("continuum", "velocity", "columns")
+# With a real stellar source the star's own velocity matters and has to be
+# fitted: these standards are different A0V stars with radial velocities tens of
+# km/s apart, and the Brackett lines land wherever the star puts them. A flat
+# source has no lines, so the parameter is meaningless there and stays pinned.
+STELLAR_STAGE = "stellar"
+
+
+def stages_for(stellar: str) -> tuple[str, ...]:
+    return STAGES if stellar == "flat" else STAGES + (STELLAR_STAGE,)
 
 # Everything about the physics that is the same for every order. Named here and
 # read from here, so the summary records what ran rather than a second
@@ -329,7 +338,8 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
     mark("compile_objective")
 
     stages = []
-    for position, stage in enumerate(STAGES):
+    schedule = stages_for(args.stellar)
+    for position, stage in enumerate(schedule):
         began = time.time()
         result = fit_order(
             fit_model, order, parameters,
@@ -339,7 +349,7 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
             # Only this call ever compiles the Hessian, and that compilation
             # costs 8.2 s against 3.1 ms to run it. The intermediate stages'
             # covariances are thrown away, so only the last stage asks.
-            covariance=(position == len(STAGES) - 1) and not args.no_covariance)
+            covariance=(position == len(schedule) - 1) and not args.no_covariance)
         parameters = result.parameters
         stages.append({"stage": stage, "success": bool(result.success),
                        "objective": result.objective, "iterations": result.iterations,
@@ -751,7 +761,8 @@ def main() -> None:
                 "pattern_smooth_pixels": args.pattern_smooth_pixels,
                 "frames_in_run": len(observations),
             },
-            "physics": dict(PHYSICS), "order_rule": dict(ORDER),
+            "physics": {**PHYSICS, "stages": list(stages_for(args.stellar))},
+            "order_rule": dict(ORDER),
             "results": rows, "failures": failures[id(observation)],
         }
         path = args.output_dir / f"{stem}{args.summary_suffix}_summary.json"
@@ -802,7 +813,7 @@ def main() -> None:
                     "min_transmission": args.min_transmission,
                     "vsini_kms": args.vsini_kms, "stellar": args.stellar,
                     **ORDER},
-            physics=PHYSICS,
+            physics={**PHYSICS, "stages": list(stages_for(args.stellar))},
             inputs=inputs,
             parameter_names=run_names,
             species=species,
