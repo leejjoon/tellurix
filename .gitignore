@@ -15,6 +15,10 @@ data/stellar/*.npz
 # scripts/export_corrected_spectrum.py and scripts/build_arcturus_review.py.
 # The .json summaries beside them stay in git.
 data/corrected/**/*.npz
+# Self-contained spectra files from scripts/export_spectra_hdf5.py. Produced on
+# demand for distribution; the run records beside them are the archival product
+# and stay in git.
+data/corrected/*_spectra.h5
 data/corrected/review/panels/
 # The batch driver's own summary; scripts/trim_atlas_summary.py writes the
 # committed record to docs/arcturus_atlas_summary.json.
