@@ -65,6 +65,7 @@ def main() -> None:
     os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
 
     import h5py
+    import jax
     import numpy as np
 
     from jax_telluric import (
@@ -153,15 +154,27 @@ def main() -> None:
         grids[position, :grid.size] = grid
         grid_points[position] = grid.size
 
-        # One compile per window, one evaluation per epoch on it. `transmission`
-        # reads only the column scales and the zenith angle, so the fitted
-        # velocity, LSF and continuum play no part and no instrument model is
-        # needed here at all.
+        # One compile per window, one evaluation per epoch on it. Calling
+        # `transmission` eagerly instead costs 35.9 s on the first call of a
+        # window against 6.1 s to compile and 0.013 s to run -- the uncompiled
+        # kernel dispatches operation by operation, which is the trap in
+        # CLAUDE.md under "What a fit costs". `transmission` reads only the
+        # column scales and the zenith angle, so the fitted velocity, LSF and
+        # continuum play no part and no instrument model is needed here at all,
+        # and the two epochs of a window differ only in those scales.
+        present = [s for s in species_all if s in model.species]
+        template = parameters_from_row(pages[windows[key][0]], present)
+
+        @jax.jit
+        def transmission_at(scales, _model=model, _template=template):
+            return _model.transmission(_template._replace(log_column_scales=scales), zenith)
+
         for index in windows[key]:
             row = pages[index]
-            present = [s for s in species_all if s in model.species]
             parameters = parameters_from_row(row, present)
-            values = np.asarray(model.transmission(parameters, zenith))
+            values = np.asarray(transmission_at(
+                {name: float(value)
+                 for name, value in parameters.log_column_scales.items()}))
             transmission[index, :grid.size] = values
             grid_index[index] = position
 
