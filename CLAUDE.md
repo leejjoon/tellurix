@@ -233,6 +233,47 @@ sigma, at the floor the rest of the band reaches. Use `--stellar flat` when the
 point is to measure the atmosphere, since it depends on no stellar model at all;
 use the A0V model to recover the 22% of H-band pixels the hydrogen mask discards.
 
+`scripts/export_transmission_hdf5.py` writes the unconvolved transmission on the
+model's own grid -- 4 samples per resolution element, no interpolation -- for a
+consumer who wants the atmosphere as a multiplicand inside *their* synthesis
+rather than our corrected spectrum. It rebuilds per **window**, not per row: both
+epochs of a page share one (v1, v2), so 598 rows need 310 grids, line
+selections, opacity backends and compilations. `--check` interpolates back to the
+pixels and reproduces the cached `transmission` to 3e-16.
+
+Three things the atlas ILS is not. **`mopd_cm` varying by a factor of 5 across
+the atlas is correct, not a defect**: the compilation holds a constant resolving
+power, so the path difference must track 1/nu, and it does -- corr(mopd, nu) =
+-0.93, and the residual scatter about the constant-R law is 27% p16-p84, not the
+factor of 3 the raw spread suggests. **The atlas's documented R = 100,000 is
+right and the sinc alone does not measure it**: R from the measured MOPD is
+115,700, but the fitted Gaussian carries the rest and the two in quadrature give
+100,504. Quoting the sinc alone reports ~117,000 and looks like a discrepancy.
+**The remaining +-12% scatter in the measured MOPD is what the per-page Gaussian
+is absorbing**, which is why `lsf_sigma_kms` is the dominant at-bound parameter
+(13.4% of converged pages, 76 of them railed at the 0.05 minimum, against 22.2%
+at-bound overall). `fit_arcturus_page.py --sinc-resolving-power 115700` replaces
+the per-page measurement with the atlas-wide law. Measured on 16 pages spanning
+1868-10951 cm-1: the median residual moves by 0.2% (5.223 to 5.266 sigma, worst
+page 1.8%) and `lsf_sigma_kms` at bound falls from 7/16 to 4/16. One fewer
+free-floating per-page input at no cost in fit quality, so prefer it for new
+runs; the committed record predates it.
+
+`stellar_only / continuum` is **not** the source normalized to its continuum and
+must not be read as one. `prepare_stellar_source` normalizes by the *median* over
+the page, which is exactly degenerate with the Chebyshev's constant term and so
+free to the fit, but it puts the unity level about 1.3% below the true continuum
+where the star is blanketed. Measured over 1500-1540 nm: mean depth 0.0278 for
+`stellar_only / continuum` against 0.0431 for the Payne Zero source against its
+own `flux_continuum` -- but renormalizing that same source by its median gives
+0.0304, so most of the gap is the zero point and only about 9% of it is anything
+the continuum absorbed. The visible consequence is that ~16% of
+`corrected / continuum` pixels sit above 1.02 at 1.5 um. Separately and still
+unexplained: heavily blanketed pages retrieve 3-7% less water than lightly
+blanketed ones, which survives a wavelength control (partial r = -0.19 summer,
+-0.11 winter) but is **not** fixed by `--continuum-anchor 0.98` (median H2O shift
++0.4%, residual 1.1% worse), so the continuum-source degeneracy is not the cause.
+
 `scripts/generate_payne_zero_arcturus.py` makes the stellar source and does **not**
 run in this environment: Payne Zero needs Python >= 3.11 while this package is pinned
 to 3.10 by `exojax==2.5.0`. It runs in Payne Zero's own venv and writes an npz that

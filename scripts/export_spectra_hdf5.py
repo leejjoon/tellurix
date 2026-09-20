@@ -53,7 +53,8 @@ COLUMNS = {
     "continuum": ("f4", "continuum units", "the fitted Chebyshev continuum"),
     "uncertainty": ("f4", "continuum units", "per-pixel sigma where the reduction supplies one"),
     "reliable": ("?", "", "True where the pixel was fitted and the transmission exceeds the "
-                          "run's floor -- select on this"),
+                          "run's floor (see the transmission_floor attribute). That floor is "
+                          "permissive by design -- recut on effective_transmission for line work"),
 }
 
 ABOUT = (
@@ -156,6 +157,8 @@ def main() -> None:
                                             compression=args.compression, shuffle=True)
             dataset.attrs["units"] = units
             dataset.attrs["description"] = description
+            if name == "reliable":
+                dataset.attrs["transmission_floor"] = float(record.config["min_transmission"])
 
         # The parameters and provenance, so the file stands on its own.
         handle.create_dataset("parameters", data=record.pages, compression=args.compression)

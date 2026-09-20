@@ -64,8 +64,9 @@ wavelength and, for IGRINS, descending detector column.
 | `reliable` | `mask` and transmission above 0.15 — **use this to select pixels** |
 
 Arcturus adds `corrected_normalized` (corrected divided by the fitted
-continuum), and the atlas's own `atlas_telluric` and `atlas_ratioed` columns for
-comparison. IGRINS adds `uncertainty` (the PLP's per-pixel sigma, a real
+continuum) and the atlas's own `atlas_telluric` and `atlas_ratioed` columns for
+comparison. **`corrected_normalized` is not a stellar normalization** -- see the
+caveat below before using it as one. IGRINS adds `uncertainty` (the PLP's per-pixel sigma, a real
 measurement), `plp_telluric` and `plp_continuum` (the pipeline's own, for
 comparison only — see the caveat below), and `response_pattern` (the instrument
 response that was divided out).
@@ -112,6 +113,59 @@ only, so the trap below is hard to fall into from the file alone.
 
 These are gitignored: produce one when you need to ship spectra.
 
+## If you want the atmosphere, not our spectrum
+
+If you run your own synthesis, do not use `corrected` at all. Take the
+transmission and put it inside your own convolution:
+
+```
+your_model(nu) = Conv_ILS[ your_continuum(nu) x your_source(nu) x T(nu) ]
+```
+
+fitted against the raw `observed` column. Nothing is ever divided by a convolved
+quantity, so the non-commutation above does not arise; our stellar model never
+enters your data; and your own continuum does the normalising.
+
+For that you need T on a grid fine enough to convolve, which the `.npz` cache
+and the spectra export do **not** give you -- their `transmission` is
+interpolated to the atlas pixels, about 2.3 samples per resolution element, so
+the lines are already undersampled before the interpolation runs.
+
+```bash
+uv run python scripts/export_transmission_hdf5.py \
+    --record data/corrected/atlas/arcturus_atlas.h5 \
+    --output data/corrected/arcturus_transmission.h5 --check
+```
+
+That writes T on the forward model's own grid -- 4 samples per resolution
+element at R = 100,000, no interpolation anywhere in the path. Grids are shared
+between the two epochs of a page, so the file holds 310 grids for 598 rows:
+
+```python
+import h5py
+with h5py.File("data/corrected/arcturus_transmission.h5") as f:
+    i = list(f["key"].asstr()).index("ab5000_ summer")
+    g = f["grid_index"][i]
+    n = f["grid_points"][g]
+    nu = f["wavenumber_cm1"][g][:n]
+    T  = f["transmission"][i][:n]
+```
+
+The zenith angle is 0, so this is the vertical transmission and the fitted
+column scales in `/parameters` have already absorbed any slant path. `/profile`
+carries the layered atmosphere those scales multiply -- pressure, temperature,
+altitude, air column and every VMR -- so T can be regenerated on any other grid
+from this file plus a line list. `--check` interpolates the fine grid back down
+to the pixels and compares against the cached `transmission`; it agrees to
+3.1e-16.
+
+Two things this does not solve. The columns were retrieved with our continuum
+and our source, so they carry whatever bias those imposed -- see the blanketing
+caveat below, which is worth a few percent in H2O. And T is the transmission at
+one fitted state, not a function you can re-fit; if you want to refit the
+columns inside your own synthesis, regenerate T from `/profile` rather than
+scaling this array.
+
 ## What is in the record, and why it is the real product
 
 The `.npz` arrays are a **regenerable cache**. The record — one HDF5 per run,
@@ -152,10 +206,52 @@ scatter — three to nine times too small. Use `record.correlation` for
 degeneracies, which survives a wrong noise model, and an empirical study for an
 error bar.
 
-**The corrected spectrum is not normalised.** Values above 1 are expected: the
-correction divides out the atmosphere, not the fitted continuum. Divide by
-`continuum` if you want a normalised spectrum. On the atlas the continuum level
-sits at 1.0011 median, but 10% of pages are off by more than 2%.
+**The corrected spectrum is not normalised, and `corrected_normalized` does not
+normalise it to the stellar continuum.** Values above 1 are expected: the
+correction divides out the atmosphere, not the fitted continuum. Dividing by
+`continuum` gets you close, and that is what `corrected_normalized` is, but the
+zero point is the *median* of the stellar source over the page, not its true
+continuum. `prepare_stellar_source` normalises by the median, which is exactly
+degenerate with the Chebyshev's constant term and therefore free as far as the
+fit is concerned -- but it puts the "1" level about 1.3% below the true continuum
+on a blanketed page. Measured over 1500-1540 nm: the mean line depth of
+`stellar_only / continuum` is 0.0278 where the Payne Zero source against its own
+`flux_continuum` gives 0.0431, and normalising that same source by its median
+reproduces 0.0304 of the 0.0431. So most of the gap is the choice of zero point,
+not absorbed blanketing. The consequence for a user is concrete: about 16% of
+`corrected / continuum` pixels sit more than 2% above 1 at 1.5 um, and that is
+the offset, not noise. If you need a true continuum normalisation, renormalise
+to a high percentile yourself, or use the transmission export and never touch
+our continuum at all.
+
+**`reliable` cuts at transmission > 0.15, which is far too permissive for line
+work.** It is a floor for "this pixel carries information at all", not a
+recommendation. Recut it yourself -- every file carries what you need:
+
+```python
+good = f["reliable"][i] & (f["effective_transmission"][i] > 0.8)
+```
+
+The floor the run used is on the dataset as `transmission_floor`.
+
+**The retrieved H2O column depends on how blanketed the page is.** Splitting the
+atlas at the median blanketing of the Payne Zero source over each page window,
+the heavily blanketed half retrieves 3.1% (summer) and 7.1% (winter) less water
+than the lightly blanketed half. Blanketing is confounded with wavelength
+(r = -0.31), but the effect survives removing it: within eight narrow wavenumber
+bands the partial correlation is still -0.19 (summer) and -0.11 (winter).
+
+The sign is what a continuum-source degeneracy predicts -- `continuum x source
+x T` lets a continuum placed too low be paid for by a transmission too high --
+but that mechanism has been tested and does not account for it. Refitting the
+twelve most blanketed page-epochs with `fit_arcturus_page.py --continuum-anchor
+0.98`, which drops the 38% of pixels where the source model sits below 0.98 so
+the Chebyshev is anchored only on near-continuum pixels, moves the retrieved
+H2O by a median of +0.4% and makes the residual 1.1% worse. So the effect is
+real, it is not the continuum degeneracy, and it is unexplained. Treat it as a
+floor on an absolute column from a single page; slopes and ratios across pages
+at similar blanketing are much safer. `--continuum-anchor` remains as an
+experiment flag, not a default.
 
 **The Arcturus residual is dominated by the stellar model, not the atmosphere.**
 It is flat against transmission — 0.97 in deep absorption, 1.52 at the continuum

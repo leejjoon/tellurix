@@ -11,6 +11,7 @@ being treated as random error.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 from pathlib import Path
 import time
@@ -127,6 +128,17 @@ def main() -> None:
     parser.add_argument("--pin", action="append", default=[], metavar="NAME=VALUE",
                         help="hold a parameter at a value, e.g. --pin CO2=0.2249 (log scale)")
     parser.add_argument("--ils-report", type=Path, default=Path("docs/arcturus_ils.json"))
+    parser.add_argument("--continuum-anchor", type=float, default=0.0,
+                        help="drop pixels where the normalized stellar source falls below this, "
+                             "so the Chebyshev continuum is anchored only on pixels the source "
+                             "says are near-continuum. 0 disables it. A degree-3 Chebyshev over "
+                             "a blanketed page otherwise absorbs about a third of the line "
+                             "blanketing, which biases the retrieved columns low.")
+    parser.add_argument("--sinc-resolving-power", type=float, default=None,
+                        help="override the per-page measured MOPD with one atlas-wide "
+                             "resolving power, mopd = 1.20671 * R / (2 * nu_center). The "
+                             "atlas is a constant-R compilation, so a constant R is the "
+                             "physical law and the measured MOPD scatters +-12% about it.")
     parser.add_argument("--gaussian-ils", action="store_true",
                         help="use the Gaussian line spread function instead of the measured sinc")
     parser.add_argument("--simpson", action="store_true",
@@ -200,9 +212,14 @@ def main() -> None:
     continuum = MTCKDWaterContinuum.from_netcdf(
         root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc", grid
     )
-    mopd_cm = None if args.gaussian_ils else measured_mopd_cm(
-        args.page.name, args.epoch, root / args.ils_report
-    )
+    if args.gaussian_ils:
+        mopd_cm = None
+    elif args.sinc_resolving_power is not None:
+        # The sinc FWHM is 1.20671 / (2 * MOPD) in cm-1, so a fixed resolving
+        # power at the window centre fixes the path difference.
+        mopd_cm = 1.20671 * args.sinc_resolving_power / (2.0 * 0.5 * (args.v1 + args.v2))
+    else:
+        mopd_cm = measured_mopd_cm(args.page.name, args.epoch, root / args.ils_report)
     instrument = None if args.gaussian_ils else BoxcarFTSInstrumentProfile(
         mopd_cm=mopd_cm,
         wavenumber_center_cm1=float(0.5 * (args.v1 + args.v2)),
@@ -227,6 +244,24 @@ def main() -> None:
             vsini_kms=args.vsini_kms, macroturbulence_kms=args.macroturbulence_kms,
         )
     order = arcturus_spectral_order(page, column=args.column, source_flux_model_grid=source)
+    if args.continuum_anchor > 0.0:
+        if args.stellar == "flat":
+            raise SystemExit("--continuum-anchor needs a real stellar model, not 'flat'")
+        # The source lives on the model grid; the cut is on pixels, so interpolate
+        # it down. Deep-source pixels are exactly where the fitted continuum and the
+        # source model's blanketing trade against each other.
+        pixel_nu = 1.0e7 / np.asarray(order.wavelength_vacuum_nm)
+        at_pixels = np.interp(pixel_nu[::-1], grid, source)[::-1]
+        anchored = np.asarray(order.mask) & (at_pixels > args.continuum_anchor)
+        if anchored.sum() < 64:
+            raise SystemExit(
+                f"--continuum-anchor {args.continuum_anchor} leaves {int(anchored.sum())} "
+                "pixels; this page is too blanketed for that threshold")
+        print(f"continuum anchor {args.continuum_anchor}: "
+              f"{int(np.asarray(order.mask).sum())} -> {int(anchored.sum())} pixels")
+        # dataclasses.replace cannot be used: __post_init__ materializes
+        # source_flux to ones, and passing both source forms back is rejected.
+        order = dataclasses.replace(order, mask=anchored, source_flux=None)
 
     # Evaluate the line-by-line kernel once and carry it as fixed arrays,
     # expanded to first order in the self-broadening pressure -- the only route
