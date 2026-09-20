@@ -454,7 +454,13 @@ opt-in to keep the default numerically identical to ExoJAX.
   scatter). Use `FitResult.correlation` for degeneracies, which survives a wrong
   noise model, and an empirical study for an actual error bar.
 - A run's product is its HDF5 record (`src/jax_telluric/record.py`), not the
-  `.npz` arrays, which are a cache. `write_record` takes `key_fields` naming the
+  `.npz` arrays, which are a cache. `docs/using_the_corrected_spectra.md` is the
+  user-facing guide -- point a consumer there, not at the development records in
+  `arcturus_fit.md` or `igrins_a0v.md`. `scripts/export_spectra_hdf5.py` packs a
+  run into one self-contained file readable with h5py alone (12.4 MB for the whole
+  atlas against 45.6 MB of npz); it is gitignored and produced on demand, and it
+  names the correction operator `effective_transmission` so the unconvolved-
+  transmission trap is hard to fall into from the file. `write_record` takes `key_fields` naming the
   columns that identify a row -- `("page", "epoch")` for the atlas, `("frame",
   "order")` for an IGRINS night -- and `extra_columns` for what the shared
   schema has no place for. A file written before that was configurable reads
