@@ -680,6 +680,60 @@ was not what limited this night — but a seed within a factor of two is cheap
 insurance and the site profiles now carry one.
 
 
+## Three nights, and what they settle
+
+A third night was run for one reason: to decide whether CH4's 2.5 sigma airmass
+trend on DCT 2018-12-20 was real. **DCT 2016-12-08** was the best available
+test — 11 frames, the most of any candidate, 10 distinct stars, the highest
+median signal to noise of the archive's ladders, airmass to 2.59, and the same
+site as the 2018 night two years earlier, which also makes it the night-to-night
+stability test the response correction needed.
+
+| night | PWV | frames | airmass | CH4 per airmass | CO2 per airmass |
+|---|---|---:|---|---:|---:|
+| DCT 2018-12-20 | ~2 mm | 10 | 1.07–2.50 | +0.0129 ± 0.0052 (2.5σ) | +0.0054 ± 0.0039 (1.4σ) |
+| McDonald 2017-04-20 | ~10 mm | 8 | 1.02–2.99 | +0.0274 ± 0.0181 (1.5σ) | +0.0390 ± 0.0273 (1.4σ) |
+| DCT 2016-12-08 | ~7 mm | 11 | 1.06–2.59 | **-0.0303 ± 0.0167 (1.8σ)** | **-0.0309 ± 0.0155 (2.0σ)** |
+
+**The signs disagree, so the trend is not real.** For CH4 the three nights give
++0.013, +0.027, -0.030: chi-squared for a common value is 7.1 on two degrees
+of freedom. CO2 behaves the same way — +0.005, +0.039, -0.031, chi-squared
+6.8. The 2.5 sigma from one night was a per-night systematic.
+
+The same night says it twice over. On DCT 2016 both CO2 and CH4 show a **4.4
+sigma** dependence on *time of night*, which neither can physically have — and
+that night has the weakest airmass-time correlation of the three (-0.452, against
+-0.788 and -0.681), so the two axes are best separated exactly where the
+impossible trend is clearest. These systematics are real and are not a fitting
+degeneracy between airmass and time.
+
+**So the slant-path bound is set by night-to-night scatter, not by any one
+night's formal error.** Across three nights the well-mixed columns scatter by
+0.0245 (CH4) and 0.0285 (CO2) per unit airmass, about **3%** over a
+typical range, against the 1.9% a single night's error bar suggested. That is
+the number to quote.
+
+Water is consistent throughout: no night shows a credible airmass dependence,
+and its time dependence is whatever the sky did.
+
+### The response pattern is stable for two years
+
+DCT 2016-12-08 and DCT 2018-12-20 are the same telescope 741 nights apart.
+Aligned on detector column, their fitted response patterns agree at a **median
+r of +0.943** across 26 orders. The amplitude is 0.0111 in 2018 and 0.0108 in
+2016; the rms of their *difference* is 0.0038, only 34% of either.
+
+So about nine tenths of the pattern's variance is a fixed property of the
+instrument rather than of the night. That is stronger than the correction
+needed, and it has a practical consequence: the pattern could be measured once
+per instrument configuration and applied to nights carrying fewer than the five
+standards `--fixed-pattern-min-frames` requires. The remaining third is the
+genuinely per-night part — flexure, focus, and which frames were taken.
+
+The orders where the two nights agree least (H02 at r = 0.52, H05 at 0.65) are
+the low-throughput ones with the fewest shared pixels.
+
+
 ## The run record
 
 Per the repository's convention the record is the product and the `.npz` arrays
@@ -716,9 +770,14 @@ night.
 
 ## What is not done yet
 
-- **A third night.** Two nights leave CH4 unsettled: consistent slopes, but
-  McDonald's error is three and a half times DCT's. A night with both a long
-  airmass lever arm *and* DCT's dry, well-behaved conditions would decide it.
+- **Where the per-night systematic comes from.** Three nights agree that the
+  well-mixed columns wander by about 3% per unit airmass in inconsistent
+  directions, and that CO2 and CH4 can show a 4-sigma dependence on time of
+  night, which is impossible. Something per-night moves them and it is not the
+  slant path. That is now the most interesting open question here.
+- **A pattern measured per instrument configuration** rather than per night,
+  which the two-year stability above shows is defensible and would let nights
+  with fewer than five standards be corrected at all.
 - **Two unexplained order-frames**, H09 and H06 of the DCT A0V run, at 115 and
   33 sigma out of 516. They are excluded from the pooled statistics above by a
   cut rather than understood.

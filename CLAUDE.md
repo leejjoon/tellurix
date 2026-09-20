@@ -144,8 +144,17 @@ entirely and keeps 60% more pixels at the same residual. The bias is common to
 every frame of a night, so it cancels in an airmass slope but not in an absolute
 column.
 
-Two nights are fitted: DCT 2018-12-20 (dry, ~2 mm PWV) and McDonald 2017-04-20
-(~10 mm, and the only one that exercises the degF/inHg branch end to end). The
+Three nights are fitted: DCT 2018-12-20 (~2 mm PWV), McDonald 2017-04-20
+(~10 mm, and the only one that exercises the degF/inHg branch end to end) and
+DCT 2016-12-08 (~7 mm). **Quote a slant-path bound from the scatter between
+nights, not from one night's error bar**: the three give CH4 slopes of +0.013,
++0.027 and -0.030 per unit airmass, chi-squared 7.1 on 2 dof, so the 2.5 sigma
+one night showed was a per-night systematic. CO2 does the same. On DCT 2016 both
+show a 4-sigma dependence on *time of night*, which neither can physically have.
+The honest bound is the ~3% night-to-night scatter. Separately, the response
+pattern **is** stable: DCT 2016 and 2018 agree at median r = +0.943 across 26
+orders, their difference only 34% of the pattern, so nine tenths of it belongs
+to the instrument rather than the night. The
 wetter night fits about 1.4x worse at *every* transmission level, not only in
 deep lines, which points at the water continuum and the weak-line forest rather
 than at line depth alone. Two operational lessons from it: an order that is
