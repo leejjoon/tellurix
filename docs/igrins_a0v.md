@@ -674,10 +674,36 @@ failure, which removed 11 such rows from K.
 And the precipitable-water seed matters more than a pure column scaling would
 suggest, because `precompute_opacity` linearizes the self-broadening about the
 profile's own water content. Seeding 6 mm when the truth was 10 left the fitted
-scale at x1.7, well outside the +-25% the expansion is built for. Reseeding
-centred it at 1.00. It did **not** improve the residual, so the linearization
-was not what limited this night — but a seed within a factor of two is cheap
-insurance and the site profiles now carry one.
+scale at x1.7, outside the +-25% the expansion is built for. Reseeding centred
+it at 1.00. It did **not** improve the residual, so the linearization was not
+what limited this night — but the seed should not be a guess.
+
+### Seeding the water column from the header
+
+`precipitable_water_mm` takes it from the surface dewpoint. For an exponential
+water profile the column is the surface density times a scale height, and the
+surface density follows from the dewpoint alone: `e(Td) / (R_v T) * H`. The
+dewpoint is the right input because it *is* the vapour pressure; relative
+humidity carries the same information with the temperature's error folded in.
+
+The scale height here is an *effective* 1.4 km, not the 2.0 km over which the
+layer profile distributes water — a different quantity, smaller because the real
+profile falls off faster than exponential near the ground. Calibrated against
+the three fitted nights it comes out at 1.4 km with 26% scatter:
+
+| night | seeded by eye | from the dewpoint | fitted |
+|---|---:|---:|---:|
+| DCT 2018-12-20 | 4.0 (1.69x) | 3.8 (1.61x) | 2.36 mm |
+| McDonald 2017-04-20 | 6.0 (0.60x) | 9.7 (0.98x) | 9.99 mm |
+| DCT 2016-12-08 | 3.5 (0.51x) | 5.7 (0.83x) | 6.89 mm |
+
+Worst case 1.6x against 2.0x by eye, and no longer a judgement call.
+`scripts/igrins_site_profile.py` reads a night's frames, takes medians of
+whatever weather cards they carry, estimates the column and calls
+`make_site_profile.py` — so there is still one piece of code that writes a
+profile, and none of its three numbers is chosen by hand. It refuses rather than
+inventing a column when no frame carries a dewpoint or humidity, which is the
+case for 2014 McDonald and recent Gemini frames.
 
 
 ## Three nights, and what they settle

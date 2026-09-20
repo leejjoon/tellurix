@@ -163,7 +163,12 @@ a NaN row (`minimum_reliable`); and the precipitable-water seed should be within
 about a factor of two of the truth, because `precompute_opacity` linearizes
 self-broadening about the profile's own water and a x1.7 scaling sits outside
 the +-25% it is built for. (Reseeding did not improve this night's residual, so
-that was not the limit here.)
+that was not the limit here.) Do not choose it by eye: `igrins_site_profile.py`
+reads a night's frames and fills in all three of `make_site_profile.py`'s
+surface arguments, taking the column from the dewpoint via
+`precipitable_water_mm` -- an exponential profile with an *effective* 1.4 km
+scale height, which is not the 2.0 km the layer profile uses and is calibrated
+on three nights. Worst case 1.6x against 2.0x by hand.
 
 An airmass ladder is confounded by its targets: a night observes few stars, each
 over a limited airmass span. On the DCT night chi Cap is the only target above
