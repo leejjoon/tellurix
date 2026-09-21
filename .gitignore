@@ -23,7 +23,8 @@ data/corrected/*_transmission.h5
 data/corrected/review/panels/
 # The batch driver's own summary; scripts/trim_atlas_summary.py writes the
 # committed record to docs/arcturus_atlas_summary.json.
-data/corrected/atlas/*.json
+data/corrected/atlas*/*.json
+data/corrected/atlas*/record_shard*.h5
 data/corrected/igrins/**/*.json
 # RRISA reduced products and their catalog, fetched by
 # scripts/download_rrisa_standard.py. The two-order fixture under tests/data

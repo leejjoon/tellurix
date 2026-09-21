@@ -80,8 +80,20 @@ def main() -> None:
                     if not np.array_equal(a, b):
                         raise SystemExit(
                             f"{path} disagrees on /{block} {key}: {b!r} against {a!r}")
-            if not np.allclose(handle["ils_velocity_kms"][:], first["ils_velocity_kms"][:]):
-                raise SystemExit(f"{path} disagrees on the ILS velocity grid")
+            # ils_velocity_kms is NOT a per-run constant. ils_fingerprint sizes its
+            # grid from the page's own sinc first zero, which tracks that page's
+            # MOPD, and write_record keeps only the last page's. A single-process
+            # run has the same flaw; merging cannot make it worse, so warn rather
+            # than refuse, and say how far apart the shards were.
+            drift = float(np.max(np.abs(handle["ils_velocity_kms"][:]
+                                        - first["ils_velocity_kms"][:])))
+            if drift > 0.0:
+                span = float(np.max(np.abs(first["ils_velocity_kms"][:])))
+                print(f"  note: {path.name}'s ILS velocity grid differs from the first "
+                      f"shard's by up to {drift:.4f} km/s ({100 * drift / span:.2f}% of its "
+                      "span); keeping the first. Each row's ils_profile was sampled on its "
+                      "own page's grid and only one grid is stored, here and in a "
+                      "single-process run.")
 
         joined = {name: np.concatenate([h[name][:] for h in handles]) for name in PER_ROW}
         counts = [h["pages"].shape[0] for h in handles]

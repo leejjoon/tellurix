@@ -94,9 +94,12 @@ def main() -> None:
         args.output,
         wavenumber_cm1=wavenumber_cm1[order],
         flux=normalized[order],
-        wavelength_vacuum_nm=wavelength_nm,
-        flux_total=np.asarray(spectrum.flux_total, dtype=float),
-        flux_continuum=np.asarray(spectrum.flux_continuum, dtype=float),
+        # Same ascending-wavenumber order for every array; see the note in
+        # generate_payne_zero_arcturus.py. The committed A0V npz has
+        # flux_total and flux_continuum reversed against wavenumber_cm1.
+        wavelength_vacuum_nm=wavelength_nm[order],
+        flux_total=np.asarray(spectrum.flux_total, dtype=float)[order],
+        flux_continuum=np.asarray(spectrum.flux_continuum, dtype=float)[order],
     )
 
     # Where the hydrogen lines landed and how deep they came out, so the one

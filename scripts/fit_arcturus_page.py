@@ -128,6 +128,13 @@ def main() -> None:
     parser.add_argument("--pin", action="append", default=[], metavar="NAME=VALUE",
                         help="hold a parameter at a value, e.g. --pin CO2=0.2249 (log scale)")
     parser.add_argument("--ils-report", type=Path, default=Path("docs/arcturus_ils.json"))
+    parser.add_argument("--source-already-normalized", action="store_true",
+                        help="skip the median normalization of the stellar source. Payne Zero "
+                             "ships flux = flux_total / flux_continuum, already normalized by "
+                             "its own continuum model and sitting at 1 where there is no line, "
+                             "so dividing by the median replaces a physical zero point with an "
+                             "arbitrary one 2.8%% off. The scale is degenerate with continuum_0, "
+                             "so this cannot change the fit, only where the split falls.")
     parser.add_argument("--continuum-anchor", type=float, default=0.0,
                         help="drop pixels where the normalized stellar source falls below this, "
                              "so the Chebyshev continuum is anchored only on pixels the source "
@@ -242,6 +249,7 @@ def main() -> None:
         source = prepare_stellar_source(
             stellar, model,
             vsini_kms=args.vsini_kms, macroturbulence_kms=args.macroturbulence_kms,
+            normalize=not args.source_already_normalized,
         )
     order = arcturus_spectral_order(page, column=args.column, source_flux_model_grid=source)
     if args.continuum_anchor > 0.0:

@@ -83,9 +83,14 @@ def main() -> None:
         args.output,
         wavenumber_cm1=wavenumber_cm1[order],
         flux=normalized[order],
-        wavelength_vacuum_nm=wavelength_nm,
-        flux_total=np.asarray(spectrum.flux_total, dtype=float),
-        flux_continuum=np.asarray(spectrum.flux_continuum, dtype=float),
+        # Every array goes in the same ascending-wavenumber order. Saving
+        # flux_total and flux_continuum unordered leaves them reversed against
+        # wavenumber_cm1, which is what the committed
+        # arcturus_payne_zero_full.npz has: `flux` is correct and is the only
+        # array the fit reads, but the other two are back to front there.
+        wavelength_vacuum_nm=wavelength_nm[order],
+        flux_total=np.asarray(spectrum.flux_total, dtype=float)[order],
+        flux_continuum=np.asarray(spectrum.flux_continuum, dtype=float)[order],
     )
 
     metadata = {
