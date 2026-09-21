@@ -47,6 +47,57 @@ Both fit drivers default to `--precompute-opacity` (see *What a fit costs*);
 `--no-precompute-opacity` restores the exact-kernel-per-iteration path and is
 the control to reach for when a fitted value looks wrong.
 
+The committed Arcturus record is the **full-coverage** run: `page_windows`
+no longer trims the ~5 cm-1 the atlas pages overlap by, so every pixel the atlas
+ships is fitted (822,928 against 636,444) and adjacent pages overlap in every
+product. `--trim-overlap-cm1 2.5` restores the old tiling and reproduces the
+superseded record (`git show 06e5e3d:data/corrected/atlas/arcturus_atlas.h5`).
+The residual median moves 4.22 -> 4.48 sigma, which is the page edges being
+harder, and the at-bound rate improves 21.6% -> 19.4%. **Nothing in the products
+tiles now**, so concatenating adjacent pages double-counts. The duplication is
+the point: the *data* differs between two pages over the same wavenumbers by a
+median 0.0128 against a 0.0045 pixel sigma, because each page carries its own
+scalar normalization, so the two copies are two reductions of one measurement
+rather than one measurement twice -- do not average them, use them as a
+consistency check. It works: ab6250_ landed on `lsf_sigma_kms` = 1.278 km/s
+against its neighbour's 0.110 with twice the residual, and only the overlap
+showed it.
+
+A sharded run writes one record per process; `scripts/merge_atlas_records.py`
+joins them at the HDF5 dataset level rather than through `write_record`, because
+the row dtype packs the column scales into `log_column_*` fields and unpacking
+them is where a merge would put a value in the wrong column. Splitting the
+598-row record three ways and merging it back is byte-identical. It warns, and
+does not refuse, when shards disagree on `ils_velocity_kms`: that array is
+**not** a per-run constant, since `ils_fingerprint` sizes its grid from each
+page's own sinc first zero and `write_record` keeps only the last page's, so
+every row's `ils_profile` is on its own grid while one grid is stored. That is
+true of a single-process run too.
+
+The stellar source is **already continuum-normalized** and the pipeline throws
+that away. Payne Zero ships `flux = flux_total / flux_continuum` (exact to
+6.7e-16), sitting at 1.0 where there is no line, and `prepare_stellar_source`
+then divides by the *median*, which replaces a physical zero point with an
+arbitrary one 2.8% off and is why the fitted continuum sits below the data's
+envelope. The divisor is a scalar exactly degenerate with `continuum_0`, so
+`--source-already-normalized` changes nothing measurable -- reduced chi2
+identical to four decimals, columns to five -- and moves the continuum from
+0.9554 to 0.9833 on ab6225_. Both committed npz files also store `flux_total`
+and `flux_continuum` **reversed** against `wavenumber_cm1` (the generators
+reordered only `flux`); the generators are fixed, and `StellarSpectrum.from_npz`
+detects the orientation from the identity rather than assuming one, so it reads
+both the broken and the fixed files. `resample_stellar_continuum` puts that
+continuum on any grid and the drivers save it as `stellar_continuum`. Keep the
+two apart: `continuum` is a free polynomial fitted jointly with fixed Payne Zero
+gf values and is circular for anyone measuring line strengths, while
+`stellar_continuum` is a prediction and carries the bound-free edges a
+polynomial cannot represent -- the Brackett edge at 1458.8 nm is a 0.19% step
+for Arcturus and **5.6%** for the A0V model, and the two IGRINS H orders
+straddling it fit at a median 3.76 sigma against 1.79 for the other 25.
+`corrected` itself is safe: it is exactly `observed / effective_transmission`,
+so the source enters only through the convolution weighting, worth a median
+0.00016 against 0.0137 of noise.
+
 The batch driver's saved `transmission` is the **unconvolved** transmission at
 pixel wavenumbers, not the operator the correction applied. That is
 `model_flux / stellar_only`, the convolved effective transmission; the two

@@ -11,24 +11,27 @@ Two datasets exist.
 |---|---|---|
 | what was fitted | Hinkle, Wallace & Livingston 1995, 598 page-epochs | 43 standards over 4 nights, 3 telescopes |
 | keyed on | `(page, epoch)` | `(frame, order)` |
-| arrays | `data/corrected/atlas*/*.npz` | `data/corrected/igrins/*/*.npz` |
+| record | `data/corrected/atlas/arcturus_atlas.h5` | `data/corrected/igrins/*/record.h5` |
+| arrays | `data/corrected/atlas/*.npz` | `data/corrected/igrins/*/*.npz` |
 
-**There are two Arcturus runs and they are not interchangeable.**
+The committed Arcturus record is the **full-coverage** run: every pixel the
+atlas ships is fitted and adjacent pages overlap, as the atlas itself does. It
+replaced a run that trimmed the overlap so the pages tiled, and the difference
+is worth knowing if you are comparing against an older number:
 
-| | trimmed (committed) | full coverage |
+| | trimmed (superseded) | full coverage (current) |
 |---|---|---|
-| record | `data/corrected/atlas/arcturus_atlas.h5` | `data/corrected/atlas_full/arcturus_atlas.h5` |
-| pages | tiled, no overlap | overlap by ~5 cm-1, as the atlas does |
 | pixels fitted | 636,444 | **822,928** |
 | reliable pixels | 590,763 | 760,325 |
 | residual, median | 4.22 sigma | 4.48 sigma |
 | any parameter at a bound | 21.6% | 19.4% |
-| `stellar_continuum` | no | yes |
+| `stellar_continuum` | absent | present |
 
-The full run is the one to use: it fits every pixel the atlas ships, and the
-0.26 sigma of extra residual is the page edges, which are genuinely harder. The
-trimmed record stays because it is what is committed and what earlier results
-were quoted from. IGRINS residuals are 1.30-1.86 sigma median.
+The extra 0.26 sigma is the page edges, which are genuinely harder; it is not a
+regression. The superseded record is recoverable with
+`git show 06e5e3d:data/corrected/atlas/arcturus_atlas.h5`, and its run can be
+reproduced with `--trim-overlap-cm1 2.5`. IGRINS residuals are 1.30-1.86 sigma
+median.
 
 Three things can be handed to someone else, and which one you want depends
 entirely on what you are going to do with it:
@@ -115,8 +118,8 @@ spectra instead:
 
 ```bash
 uv run python scripts/export_spectra_hdf5.py \
-    --record data/corrected/atlas_full/arcturus_atlas.h5 \
-    --output data/corrected/arcturus_spectra_full.h5
+    --record data/corrected/atlas/arcturus_atlas.h5 \
+    --output data/corrected/arcturus_spectra.h5
 ```
 
 One HDF5, **16.1 MB for all 598 Arcturus page-epochs** against 57.8 MB of
@@ -128,7 +131,7 @@ copied from the record, so it stands on its own.
 
 ```python
 import h5py
-with h5py.File("data/corrected/arcturus_spectra_full.h5") as f:
+with h5py.File("data/corrected/arcturus_spectra.h5") as f:
     i = list(f["key"].asstr()).index("ab5000_ summer")     # or "SDCH_20181220_0100 H10"
     good = f["reliable"][i]
     wavenumber = f["wavenumber_cm1"][i][good]
@@ -161,8 +164,8 @@ the lines are already undersampled before the interpolation runs.
 
 ```bash
 uv run python scripts/export_transmission_hdf5.py \
-    --record data/corrected/atlas_full/arcturus_atlas.h5 \
-    --output data/corrected/arcturus_transmission_full.h5 --check
+    --record data/corrected/atlas/arcturus_atlas.h5 \
+    --output data/corrected/arcturus_transmission.h5 --check
 
 # an IGRINS night works the same way
 uv run python scripts/export_transmission_hdf5.py \
@@ -178,7 +181,7 @@ holds 310 grids for 598 rows:
 
 ```python
 import h5py
-with h5py.File("data/corrected/arcturus_transmission_full.h5") as f:
+with h5py.File("data/corrected/arcturus_transmission.h5") as f:
     i = list(f["key"].asstr()).index("ab5000_ summer")
     g = f["grid_index"][i]
     n = f["grid_points"][g]
@@ -277,7 +280,7 @@ what you should archive or ship.
 
 ```python
 from jax_telluric import read_record, parameters_from_row
-record = read_record("data/corrected/atlas_full/arcturus_atlas.h5")
+record = read_record("data/corrected/atlas/arcturus_atlas.h5")
 row = record.row("ab5000_", "summer")        # IGRINS: record.row(frame, order)
 row["residual_rms_over_noise"], row["median_transmission"]
 parameters = parameters_from_row(row, ["H2O", "CO2", "CH4"])
@@ -439,14 +442,14 @@ it fitted, and they are joined afterwards:
 ```bash
 for i in 0 1 2 3; do
   CUDA_VISIBLE_DEVICES=$i uv run python scripts/fit_arcturus_batch.py \
-      --pages "$(cat shard$i.txt)" --output-dir data/corrected/atlas_full \
-      --summary data/corrected/atlas_full/summary$i.json \
-      --record  data/corrected/atlas_full/record_shard$i.h5 &
+      --pages "$(cat shard$i.txt)" --output-dir data/corrected/atlas \
+      --summary data/corrected/atlas/summary$i.json \
+      --record  data/corrected/atlas/record_shard$i.h5 &
 done; wait
 
 uv run python scripts/merge_atlas_records.py \
-    data/corrected/atlas_full/record_shard*.h5 \
-    --output data/corrected/atlas_full/arcturus_atlas.h5 --check
+    data/corrected/atlas/record_shard*.h5 \
+    --output data/corrected/atlas/arcturus_atlas.h5 --check
 ```
 
 The merge works on the HDF5 datasets rather than rebuilding rows through
