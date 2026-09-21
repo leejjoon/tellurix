@@ -39,6 +39,26 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/trim_atlas_summary.py         # -> 
 UV_CACHE_DIR=.uv-cache uv run python scripts/rebuild_arcturus_page.py --page ab5000_ --epoch summer --check
 ```
 
+`docs/arcturus_walkthrough.ipynb` is the end-to-end explanation of that pipeline
+-- every component on one page, then the same thing across all 598 -- and it is
+**generated, not hand-edited**, so the prose and the code stay in one reviewable
+file. Rebuild and re-execute it after changing anything it describes; the
+committed copy carries its outputs so it renders without being run.
+
+```bash
+uv run --with nbformat python scripts/build_arcturus_notebook.py
+CUDA_VISIBLE_DEVICES=0 uv run --with nbformat --with nbconvert --with ipykernel \
+    jupyter nbconvert --to notebook --execute --inplace \
+        --ExecutePreprocessor.timeout=1800 docs/arcturus_walkthrough.ipynb
+quarto render docs/arcturus_walkthrough.ipynb --to html   # optional, for a standalone page
+```
+
+It runs the real `fit_arcturus_page.py` on ab5000_ rather than reimplementing
+it, which is what makes it a test as well as a document: the live fit reproduces
+the committed record's 3.61 sigma to 3.62. Notebook tooling is deliberately not
+a project dependency -- `--with` keeps it out of the lock, the same way
+`era5_site_profile.py` takes `--with aiohttp`.
+
 The batch driver writes its full summary to `data/corrected/atlas/summary.json`
 (gitignored — 1.6 MB at atlas scale, mostly per-page timings and a per-stage
 optimizer log). `trim_atlas_summary.py` reduces it to the 0.39 MB record under

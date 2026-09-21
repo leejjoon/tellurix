@@ -1,7 +1,9 @@
 # Using the corrected spectra
 
 This is the short version, for someone who wants to *use* the output rather than
-reproduce it. `docs/arcturus_fit.md` and `docs/igrins_a0v.md` are the long
+reproduce it. If you want to know **how** the correction works rather than how to
+consume it, read `docs/arcturus_walkthrough.ipynb` instead: it takes one page
+through every component with plots, then repeats it across all 598. `docs/arcturus_fit.md` and `docs/igrins_a0v.md` are the long
 versions: they are development records, organised by how the work unfolded, and
 you should not have to read either to get a spectrum out.
 
