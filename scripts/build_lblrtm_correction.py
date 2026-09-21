@@ -12,7 +12,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from jax_telluric import (
+from tellurix import (
     AERLineDatabase,
     ExoJAXOpacityBackend,
     LBLRTMOpticalDepthCorrection,
@@ -150,7 +150,7 @@ def main() -> None:
     mt_ckd_data = reference / "LBLRTM/data/absco-ref_wv-mt-ckd.nc"
 
     def reference_error(run_profile, parameters, name, zenith_angle_deg=0.0):
-        from jax_telluric import LBLRTMRunConfig, run_lblrtm
+        from tellurix import LBLRTMRunConfig, run_lblrtm
 
         spectrum = run_lblrtm(
             reference / args.run_dir / f"validation_{name}",

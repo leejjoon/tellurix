@@ -9,7 +9,7 @@ authors divided by, and the ratio, for two epochs. Reference:
 A loader for the same files exists in the sibling ``differentiable_stellar_-
 spectroscopy`` project (``dss/data/atlases.py``). This one is deliberately
 separate and self-contained: that project is not installable, its ``mask``
-marks *bad* pixels where :class:`~jax_telluric.types.SpectralOrder` marks
+marks *bad* pixels where :class:`~tellurix.types.SpectralOrder` marks
 usable ones, and its telluric floor of 0.5 is meant for spectra that have
 already been divided -- here the deep lines are the signal.
 """

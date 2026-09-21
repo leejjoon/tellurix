@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`jax-telluric` (package `src/jax_telluric/`, repo directory `lblrtm/`) is a
+`tellurix` (package `src/tellurix/`, repo directory `lblrtm/`) is a
 differentiable JAX forward model for terrestrial (telluric) absorption in
 high-resolution spectra such as IGRINS. It wraps ExoJAX opacity calculators
 with a layered atmosphere, slant-path transmission, an instrument model, and a
@@ -15,7 +15,9 @@ correction templates.
 ## Commands
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv sync --dev          # environment (.venv, Python 3.10)
+UV_CACHE_DIR=.uv-cache uv sync --dev --extra gpu   # environment (.venv, Python 3.10)
+# Plain `uv sync --dev` REMOVES the CUDA wheels and leaves jax CPU-only; the extra is
+# what keeps the GPU working, and every fit driver defaults to --platform gpu.
 UV_CACHE_DIR=.uv-cache uv run pytest          # full suite, ~70 s, no external data needed
 UV_CACHE_DIR=.uv-cache uv run pytest tests/test_model.py::test_name   # one test
 ```
@@ -362,9 +364,17 @@ All of `data/lblrtm/`, `data/databases/`, `data/corrections/`, and
 `benchmarks/results/*` are gitignored — only compact fixtures under
 `tests/data/` and JSON reports under `docs/` are committed.
 
-For installed users, `jax-telluric-download-data {mt-ckd,aer-lines,all}`
-(`download.py`) fetches SHA-256-pinned copies into `$JAX_TELLURIC_DATA` or
-`~/.local/share/jax-telluric`.
+The package was `jax-telluric` until 0.2.0. The import is now `tellurix`, the
+console script `tellurix-download-data`, and the environment variable
+`TELLURIX_DATA`; `download.py` still honours `JAX_TELLURIC_DATA` and a non-empty
+`~/.local/share/jax-telluric` so an existing download is not orphaned. Records
+written before the rename carry `physics["jax_telluric"]` rather than
+`physics["tellurix"]` -- that is the honest provenance of those runs and nothing
+reads the key back, so it is left alone.
+
+For installed users, `tellurix-download-data {mt-ckd,aer-lines,all}`
+(`download.py`) fetches SHA-256-pinned copies into `$TELLURIX_DATA` or
+`~/.local/share/tellurix`.
 
 ## Architecture
 
@@ -515,8 +525,8 @@ opt-in to keep the default numerically identical to ExoJAX.
 
 ## Conventions
 
-- `jax_telluric/__init__.py` enables `jax_enable_x64` at import. Import
-  `jax_telluric` **before** ExoJAX so calculators are built in float64.
+- `tellurix/__init__.py` enables `jax_enable_x64` at import. Import
+  `tellurix` **before** ExoJAX so calculators are built in float64.
 - Public data classes are frozen dataclasses/NamedTuples that validate and
   normalize in `__post_init__` (species names uppercased, arrays coerced,
   physical ordering checked) and raise `ValueError` with a short message.
@@ -545,7 +555,7 @@ opt-in to keep the default numerically identical to ExoJAX.
   (measured: 0.76% formal on the water column against 6.5–9% of sub-window
   scatter). Use `FitResult.correlation` for degeneracies, which survives a wrong
   noise model, and an empirical study for an actual error bar.
-- A run's product is its HDF5 record (`src/jax_telluric/record.py`), not the
+- A run's product is its HDF5 record (`src/tellurix/record.py`), not the
   `.npz` arrays, which are a cache. `docs/using_the_corrected_spectra.md` is the
   user-facing guide -- point a consumer there, not at the development records in
   `arcturus_fit.md` or `igrins_a0v.md`. `scripts/export_spectra_hdf5.py` packs a

@@ -49,7 +49,7 @@ def main() -> None:
 
     import numpy as np
 
-    from jax_telluric import (
+    from tellurix import (
         AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
         ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum, TelluricModel,
         arcturus_spectral_order, chebyshev_continuum, file_sha256,
@@ -57,7 +57,7 @@ def main() -> None:
         parameters_from_row, prepare_stellar_source, read_arcturus_page, read_record,
         select_significant_lines, trim_wavenumber_grid,
     )
-    from jax_telluric.record import text
+    from tellurix.record import text
 
     record = read_record(args.record)
     row = record.row(args.page, args.epoch)

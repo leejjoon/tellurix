@@ -23,7 +23,7 @@ import time
 
 import numpy as np
 
-from jax_telluric import (
+from tellurix import (
     AERLineDatabase,
     BoxcarFTSInstrumentProfile,
     ExoJAXOpacityBackend,

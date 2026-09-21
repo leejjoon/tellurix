@@ -220,7 +220,7 @@ def build_lblrtm_correction(
 
     def run(run_profile, continuum_flag: int, name: str):
         config = LBLRTMRunConfig(float(nu[0]), float(nu[-1]), continuum_flag=continuum_flag,
-                                 description=f"jax-telluric correction {name}")
+                                 description=f"tellurix correction {name}")
         spectrum = run_lblrtm(root / name, run_profile, config, executable, tape3, mt_ckd_data)
         return _optical_depth_on_grid(spectrum, nu)
 

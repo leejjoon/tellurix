@@ -10,7 +10,7 @@ from pathlib import Path
 
 import numpy as np
 
-from jax_telluric import (
+from tellurix import (
     LBLRTMRunConfig,
     degrade_to_resolving_power,
     load_atmosphere_csv,

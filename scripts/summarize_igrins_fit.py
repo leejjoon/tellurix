@@ -130,7 +130,7 @@ def main() -> None:
         # what limits the fit; a rising one means it is.
         "residual_vs_transmission": profile,
         "transmission_against_the_data": [
-            against(model_t, "jax-telluric (this fit)"),
+            against(model_t, "tellurix (this fit)"),
             against(plp_t, "IGRINS PLP MODEL_TELTRANS"),
         ],
         "wavelength_solution": {

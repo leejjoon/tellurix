@@ -633,8 +633,8 @@ def run_provenance(root: Path, args, observations, profile_path: Path) -> tuple[
     """
 
     import jax
-    import jax_telluric
-    from jax_telluric import file_sha256
+    import tellurix
+    from tellurix import file_sha256
 
     driver = Path(__file__).resolve()
     inputs = {
@@ -659,7 +659,7 @@ def run_provenance(root: Path, args, observations, profile_path: Path) -> tuple[
     run = {
         "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "driver": driver.name, "driver_sha256": file_sha256(driver),
-        "jax_telluric": getattr(jax_telluric, "__version__", ""),
+        "tellurix": getattr(tellurix, "__version__", ""),
         "jax": jax.__version__,
     }
     return run, inputs

@@ -3,9 +3,9 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from jax_telluric.fit import _ParameterCodec
+from tellurix.fit import _ParameterCodec
 
-from jax_telluric import (
+from tellurix import (
     ArrayOpacityBackend,
     BoxcarFTSInstrumentProfile,
     AtmosphereProfile,

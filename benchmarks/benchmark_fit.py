@@ -41,7 +41,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=root / "docs/precomputed_opacity_results.json")
     args = parser.parse_args()
 
-    # Must be selected before importing JAX or jax_telluric.
+    # Must be selected before importing JAX or tellurix.
     os.environ["JAX_PLATFORMS"] = "cuda" if args.platform == "gpu" else "cpu"
     os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
 
@@ -49,7 +49,7 @@ def main() -> None:
     import jax.numpy as jnp
     import numpy as np
 
-    from jax_telluric import (
+    from tellurix import (
         AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, OrderObjective,
         SpectralOrder, TelluricModel, TelluricParameters, fit_order,
         igrins_wavenumber_grid, load_atmosphere_csv,

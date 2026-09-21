@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Pack a run's corrected spectra into one self-contained HDF5 file.
 
-The run record (`src/jax_telluric/record.py`) holds the fitted *parameters* and
+The run record (`src/tellurix/record.py`) holds the fitted *parameters* and
 is the archival product: 530 KB for the whole Arcturus atlas, from which
 `rebuild_arcturus_page.py` regenerates every array to 2.8e-7. That is the right
 thing to keep in git and the wrong thing to hand someone who wants spectra,
@@ -67,7 +67,7 @@ COLUMNS = {
 }
 
 ABOUT = (
-    "Telluric-corrected spectra from jax-telluric. Use 'corrected'; select pixels with "
+    "Telluric-corrected spectra from tellurix. Use 'corrected'; select pixels with "
     "'reliable'. Do NOT divide by 'transmission_unconvolved' -- convolution does not "
     "commute with multiplication, so that leaves a derivative-shaped spike beside every "
     "strong line, 86% of which is the method rather than the fit. The fitted parameters, "
@@ -90,8 +90,8 @@ def main() -> None:
 
     import h5py
 
-    from jax_telluric import read_record
-    from jax_telluric.record import text
+    from tellurix import read_record
+    from tellurix.record import text
 
     record = read_record(args.record)
     arrays = args.arrays or args.record.parent
@@ -127,7 +127,7 @@ def main() -> None:
     # refitting an atlas to add a column that was always derivable.
     stellar = None
     if "stellar" in record.inputs:
-        from jax_telluric import StellarSpectrum, resample_stellar_continuum
+        from tellurix import StellarSpectrum, resample_stellar_continuum
 
         stellar_path = Path(record.inputs["stellar"])
         if stellar_path.exists():
@@ -162,7 +162,7 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(args.output, "w") as handle:
         handle.attrs["about"] = ABOUT
-        handle.attrs["format"] = "jax-telluric spectra 1"
+        handle.attrs["format"] = "tellurix spectra 1"
         handle.attrs["record"] = str(args.record)
         handle.attrs["key_fields"] = [f.encode() for f in record.key_fields]
         for key, value in record.run.items():

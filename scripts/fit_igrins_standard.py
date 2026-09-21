@@ -164,7 +164,7 @@ def build_order_context(observation, index, args, root, profile, stellar):
     """
 
     import jax.numpy as jnp
-    from jax_telluric import (
+    from tellurix import (
         AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum,
         TelluricModel, igrins_wavenumber_grid, prepare_stellar_source, trim_wavenumber_grid,
     )
@@ -275,7 +275,7 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
     rebound onto this frame, a fresh one when it could not.
     """
 
-    from jax_telluric import (
+    from tellurix import (
         ArrayOpacityBackend, OrderObjective, TelluricModel, TelluricParameters,
         SpectralOrder, chebyshev_continuum, continuum_level, fit_order,
         igrins_spectral_order, ils_fingerprint, resample_stellar_continuum,
@@ -550,8 +550,8 @@ def run_provenance(root: Path, args, observations, profile_path: Path) -> tuple[
     """
 
     import jax
-    import jax_telluric
-    from jax_telluric import file_sha256
+    import tellurix
+    from tellurix import file_sha256
 
     driver = Path(__file__).resolve()
     inputs = {
@@ -576,7 +576,7 @@ def run_provenance(root: Path, args, observations, profile_path: Path) -> tuple[
     run = {
         "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "driver": driver.name, "driver_sha256": file_sha256(driver),
-        "jax_telluric": getattr(jax_telluric, "__version__", ""),
+        "tellurix": getattr(tellurix, "__version__", ""),
         "jax": jax.__version__,
     }
     return run, inputs
@@ -658,7 +658,7 @@ def main() -> None:
         jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
         jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
-    from jax_telluric import (StellarSpectrum, leave_one_out_patterns, load_atmosphere_csv,
+    from tellurix import (StellarSpectrum, leave_one_out_patterns, load_atmosphere_csv,
                               read_igrins_observation)
 
     observations = [read_igrins_observation(path) for path in args.spec]
@@ -791,7 +791,7 @@ def main() -> None:
 
     record_rows = [r["_record"] for rows in results.values() for r in rows]
     if record_rows:
-        from jax_telluric import write_record
+        from tellurix import write_record
 
         all_rows = [r for rows in results.values() for r in rows]
         # Which molecules have lines depends on the window, so an order's

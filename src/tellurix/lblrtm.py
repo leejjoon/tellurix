@@ -58,7 +58,7 @@ class LBLRTMRunConfig:
     wavenumber_max_cm1: float
     zenith_angle_deg: float = 0.0
     continuum_flag: int = 1
-    description: str = "jax-telluric reference atmosphere"
+    description: str = "tellurix reference atmosphere"
 
     def __post_init__(self) -> None:
         if not 0.0 < self.wavenumber_min_cm1 < self.wavenumber_max_cm1:
@@ -136,7 +136,7 @@ def write_tape5(
     )
     lines.append(f"{0.0:10.3f}{0.0:10.3f}{0.0:10.3f}{observer_altitude:10.3f}{space_altitude:10.3f}")
     nlevels = nlayers + 1
-    lines.append(f"{nlevels:5d}{' jax-telluric profile':24s}")
+    lines.append(f"{nlevels:5d}{' tellurix profile':24s}")
     for z_km, pressure, temp, abundances in zip(altitude, pressure_hpa, temperature, abundance_ppmv):
         lines.append(f"{z_km:10.3E}{pressure:10.3E}{temp:10.3E}     AA L AAAAAAA")
         lines.append("".join(f"{value:15.8E}" for value in abundances))

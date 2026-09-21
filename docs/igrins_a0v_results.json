@@ -132,7 +132,7 @@
   ],
   "transmission_against_the_data": [
     {
-      "model": "jax-telluric (this fit)",
+      "model": "tellurix (this fit)",
       "pixels": 25511,
       "bins": [
         {

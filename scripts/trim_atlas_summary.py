@@ -72,7 +72,7 @@ def main() -> None:
     if args.record.exists():
         # This file is a readable projection. The record is what a rebuild reads,
         # and it keeps full float64 where the rounding below does not.
-        from jax_telluric.record import file_sha256, read_record
+        from tellurix.record import file_sha256, read_record
 
         out["record"] = {
             "path": str(args.record.relative_to(root)) if args.record.is_relative_to(root)

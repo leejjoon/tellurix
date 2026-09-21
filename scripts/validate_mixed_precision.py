@@ -14,13 +14,13 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from jax_telluric import (
+from tellurix import (
     AERLineDatabase, AtmosphereProfile, ExoJAXOpacityBackend, SpectralOrder,
     TelluricModel, TelluricParameters, fit_order, igrins_wavenumber_grid,
     load_atmosphere_csv,
 )
 from exojax.opacity import OpaDirect
-from jax_telluric.direct import SparseCoreDirect
+from tellurix.direct import SparseCoreDirect
 
 ROOT = Path(__file__).resolve().parents[1]
 LINES = ROOT / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"

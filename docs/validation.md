@@ -14,7 +14,7 @@ The repository includes one such fixture for 5000--5100 cm-1. Rebuild it from
 UV_CACHE_DIR=.uv-cache uv run python scripts/run_lblrtm_reference.py
 ```
 
-`jax_telluric.compare_transmission` reports the median, 99th-percentile, and
+`tellurix.compare_transmission` reports the median, 99th-percentile, and
 maximum absolute errors plus the global line displacement in resolution
 elements. It interpolates the candidate spectrum onto the reference grid and
 applies the transmission threshold below.

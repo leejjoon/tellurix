@@ -112,7 +112,7 @@ class SpectralOrder:
     structure narrower than a pixel and is convolved again by the fitted line
     spread function, so a synthetic stellar spectrum belongs on the model grid.
     The two are mutually exclusive. The model-grid array is checked against the
-    grid itself by :class:`~jax_telluric.model.TelluricModel`, which is the only
+    grid itself by :class:`~tellurix.model.TelluricModel`, which is the only
     place both are known.
     """
 

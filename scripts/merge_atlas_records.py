@@ -135,7 +135,7 @@ def main() -> None:
 
     if not args.check:
         return
-    from jax_telluric import read_record
+    from tellurix import read_record
     merged = read_record(args.output)
     seen = 0
     for path in args.records:

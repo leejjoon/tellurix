@@ -191,7 +191,7 @@ def main() -> None:
                              "South frame from 2020 needs.")
     args = parser.parse_args()
 
-    from jax_telluric import read_igrins_observation
+    from tellurix import read_igrins_observation
 
     sites, pressures, times = set(), [], []
     for path in args.spec:

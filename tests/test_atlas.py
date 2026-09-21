@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from jax_telluric import (
+from tellurix import (
     arcturus_spectral_order,
     epoch_velocity_kms,
     read_arcturus_page,

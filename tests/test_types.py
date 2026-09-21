@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from jax_telluric import AtmosphereProfile, SpectralOrder, load_atmosphere_csv, load_mipas_profile
+from tellurix import AtmosphereProfile, SpectralOrder, load_atmosphere_csv, load_mipas_profile
 
 
 def test_profile_rejects_pressure_in_wrong_order():

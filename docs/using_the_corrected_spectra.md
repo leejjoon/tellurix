@@ -279,7 +279,7 @@ The `.npz` arrays are a **regenerable cache**. The record — one HDF5 per run,
 what you should archive or ship.
 
 ```python
-from jax_telluric import read_record, parameters_from_row
+from tellurix import read_record, parameters_from_row
 record = read_record("data/corrected/atlas/arcturus_atlas.h5")
 row = record.row("ab5000_", "summer")        # IGRINS: record.row(frame, order)
 row["residual_rms_over_noise"], row["median_transmission"]

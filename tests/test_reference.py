@@ -2,7 +2,7 @@ import struct
 
 import numpy as np
 
-from jax_telluric import read_tape12_single_precision
+from tellurix import read_tape12_single_precision
 
 
 def test_read_single_precision_tape12_panel(tmp_path):

@@ -68,7 +68,7 @@ def main() -> None:
     import jax
     import numpy as np
 
-    from jax_telluric import (
+    from tellurix import (
         AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, TelluricModel,
         file_sha256, igrins_wavenumber_grid, load_atmosphere_csv, parameters_from_row,
         read_record, select_significant_lines, trim_wavenumber_grid,
@@ -214,7 +214,7 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(args.output, "w") as handle:
         handle.attrs["about"] = (
-            "Unconvolved telluric transmission from jax-telluric, on the forward model's own "
+            "Unconvolved telluric transmission from tellurix, on the forward model's own "
             "grid: 4 samples per resolution element at R = 100,000, no interpolation. This is "
             "a multiplicand, not a divisor -- put it inside your own instrument convolution, "
             "Conv[continuum x source x T], and fit that against the raw observed spectrum. "
@@ -223,7 +223,7 @@ def main() -> None:
             "that is the vertical transmission and the fitted column scales in /parameters "
             "already absorbed any slant path, and the frame's own angle for an IGRINS night, "
             "so that is the slant transmission along the line of sight.")
-        handle.attrs["format"] = "jax-telluric transmission 1"
+        handle.attrs["format"] = "tellurix transmission 1"
         handle.attrs["record"] = str(args.record)
         handle.attrs["resolving_power"] = float(config["resolving_power"])
         handle.attrs["samples_per_resolution"] = float(config["samples_per_resolution"])

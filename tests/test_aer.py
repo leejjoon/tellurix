@@ -6,13 +6,13 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from jax_telluric import (
+from tellurix import (
     AERLineDatabase,
     AtmosphereProfile,
     line_optical_depth_bound,
     select_significant_lines,
 )
-from jax_telluric.direct import SparseCoreDirect
+from tellurix.direct import SparseCoreDirect
 
 
 def _line(nu, isotope=1):
@@ -141,7 +141,7 @@ def test_maximum_column_scale_only_raises_the_bound(tmp_path):
 
 def test_reader_agrees_with_a_plain_line_by_line_scan(tmp_path):
     """The fast index may only narrow the work, never make a decision."""
-    from jax_telluric.aer import _MOLECULE_IDS, _fortran_float
+    from tellurix.aer import _MOLECULE_IDS, _fortran_float
 
     rng = np.random.default_rng(11)
     nu = np.sort(rng.uniform(4990.0, 5010.0, 500))
@@ -179,7 +179,7 @@ def test_reader_agrees_with_a_plain_line_by_line_scan(tmp_path):
 
 def test_reader_falls_back_for_a_file_the_index_cannot_handle(tmp_path):
     """Carriage returns change line lengths, so the byte offsets would be wrong."""
-    from jax_telluric.aer import _build_file_index
+    from tellurix.aer import _build_file_index
 
     body = "\r\n".join(_record(nu, 1.0e-22) for nu in (4999.0, 5000.0, 5001.0)) + "\r\n"
     path = tmp_path / "05_CO"

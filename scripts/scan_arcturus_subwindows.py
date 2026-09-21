@@ -23,7 +23,7 @@ from pathlib import Path
 
 import numpy as np
 
-from jax_telluric import (
+from tellurix import (
     AERLineDatabase,
     BoxcarFTSInstrumentProfile,
     ExoJAXOpacityBackend,

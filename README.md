@@ -1,6 +1,6 @@
-# jax-telluric
+# tellurix
 
-`jax-telluric` is an experimental differentiable forward model for terrestrial
+`tellurix` is an experimental differentiable forward model for terrestrial
 absorption in high-resolution spectra. It wraps ExoJAX opacity calculators with
 a layered Earth atmosphere, slant-path transmission, and an observation model
 for wavelength corrections, continuum, and a Gaussian line-spread function.
@@ -23,17 +23,17 @@ After installing from PyPI or GitHub, download only the runtime data you need:
 
 ```bash
 # Small MT_CKD 4.3 coefficient file
-jax-telluric-download-data mt-ckd
+tellurix-download-data mt-ckd
 
 # AER line file 3.9 (approximately 406 MB compressed)
-jax-telluric-download-data aer-lines
+tellurix-download-data aer-lines
 
 # Or both
-jax-telluric-download-data all
+tellurix-download-data all
 ```
 
-The default location is `$JAX_TELLURIC_DATA`, when set, or
-`~/.local/share/jax-telluric`. Use `--output /path/to/data` to choose another
+The default location is `$TELLURIX_DATA`, when set, or
+`~/.local/share/tellurix`. Use `--output /path/to/data` to choose another
 location. Downloads use version-pinned official AER sources and are verified
 with SHA-256 before use. The line archive is extracted with path and file-type
 checks.
@@ -41,8 +41,8 @@ checks.
 The resulting runtime paths are:
 
 ```text
-~/.local/share/jax-telluric/mt_ckd/absco-ref_wv-mt-ckd.nc
-~/.local/share/jax-telluric/aer_v_3.9/line_files_By_Molecule/
+~/.local/share/tellurix/mt_ckd/absco-ref_wv-mt-ckd.nc
+~/.local/share/tellurix/aer_v_3.9/line_files_By_Molecule/
 ```
 
 To reproduce the reference compilers, builds, and line-file download:
@@ -118,7 +118,7 @@ For runtime MT_CKD 4.3 physics across pressure-temperature profiles, load the
 official coefficient file distributed with LBLRTM:
 
 ```python
-from jax_telluric import MTCKDWaterContinuum, TelluricModel, default_data_directory
+from tellurix import MTCKDWaterContinuum, TelluricModel, default_data_directory
 
 continuum = MTCKDWaterContinuum.from_netcdf(
     default_data_directory() / "mt_ckd/absco-ref_wv-mt-ckd.nc", nu_grid

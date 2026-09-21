@@ -7,10 +7,10 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-import jax_telluric  # enable float64 before importing ExoJAX
+import tellurix  # enable float64 before importing ExoJAX
 from exojax.opacity import OpaDirect
-from jax_telluric.direct import SparseCoreDirect, _wing, _mixed_wing
-from jax_telluric import ExoJAXOpacityBackend
+from tellurix.direct import SparseCoreDirect, _wing, _mixed_wing
+from tellurix import ExoJAXOpacityBackend
 
 
 @pytest.mark.parametrize("mixed_precision", [False, True])

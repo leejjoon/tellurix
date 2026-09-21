@@ -4,7 +4,7 @@ import json
 
 import numpy as np
 
-from jax_telluric import (
+from tellurix import (
     LBLRTMRunConfig,
     LBLRTMSpectrum,
     ArrayOpacityBackend,
@@ -15,7 +15,7 @@ from jax_telluric import (
     load_atmosphere_csv,
     write_tape5,
 )
-from jax_telluric import lblrtm as lblrtm_module
+from tellurix import lblrtm as lblrtm_module
 
 
 def test_tape5_writer_uses_requested_range_profile_and_continuum(tmp_path):
@@ -141,7 +141,7 @@ def test_build_lblrtm_correction_isolates_continuum_and_line_residual(tmp_path, 
             tau = 0.01
         return LBLRTMSpectrum(nu, np.exp(-tau) * np.ones_like(nu))
 
-    monkeypatch.setattr("jax_telluric.corrections.run_lblrtm", fake_lblrtm)
+    monkeypatch.setattr("tellurix.corrections.run_lblrtm", fake_lblrtm)
     correction = build_lblrtm_correction(
         tmp_path, profile, nu, opacity, "lblrtm", "TAPE3", "mt_ckd.nc"
     )

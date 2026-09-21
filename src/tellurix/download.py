@@ -1,4 +1,4 @@
-"""Download the external AER spectroscopy data used by jax-telluric."""
+"""Download the external AER spectroscopy data used by tellurix."""
 
 from __future__ import annotations
 
@@ -27,14 +27,26 @@ AER_LICENSE_SHA256 = "eed60bbf029b81fd0abd15ef48f0fb65176906a784a34f9eb7652bbc11
 
 
 def default_data_directory() -> Path:
-    """Return the configured per-user data directory."""
+    """Return the configured per-user data directory.
 
-    configured = os.environ.get("JAX_TELLURIC_DATA")
+    The package was called ``jax-telluric`` until 0.2, so the old environment
+    variable and the old directory are still honoured -- but only when they
+    point at data that is actually there. A user who downloaded gigabytes of AER
+    line files under the old name should not have to fetch them again, and
+    should not silently get an empty directory either.
+    """
+
+    configured = os.environ.get("TELLURIX_DATA") or os.environ.get("JAX_TELLURIC_DATA")
     if configured:
         return Path(configured).expanduser()
     xdg_data = os.environ.get("XDG_DATA_HOME")
     base = Path(xdg_data).expanduser() if xdg_data else Path.home() / ".local/share"
-    return base / "jax-telluric"
+    current = base / "tellurix"
+    if not current.exists():
+        legacy = base / "jax-telluric"
+        if legacy.is_dir() and any(legacy.iterdir()):
+            return legacy
+    return current
 
 
 def _sha256(path: Path) -> str:
@@ -57,7 +69,7 @@ def _download(url: str, destination: Path, expected_sha256: str) -> Path:
         print(f"Using verified {destination}")
         return destination
     offset = partial.stat().st_size if partial.is_file() else 0
-    headers = {"User-Agent": "jax-telluric-data-downloader/0.1"}
+    headers = {"User-Agent": "tellurix-data-downloader/0.1"}
     if offset:
         headers["Range"] = f"bytes={offset}-"
     print(f"Downloading {url}")
@@ -166,14 +178,14 @@ def download_aer_lines(directory: str | Path | None = None) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Download external spectroscopy data used by jax-telluric"
+        description="Download external spectroscopy data used by tellurix"
     )
     parser.add_argument("dataset", choices=("mt-ckd", "aer-lines", "all"))
     parser.add_argument(
         "--output",
         type=Path,
         default=default_data_directory(),
-        help="data root (default: JAX_TELLURIC_DATA or the user data directory)",
+        help="data root (default: TELLURIX_DATA, the legacy JAX_TELLURIC_DATA, or the user data directory)",
     )
     args = parser.parse_args()
     if args.dataset in ("mt-ckd", "all"):

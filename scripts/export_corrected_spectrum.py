@@ -24,7 +24,7 @@ from pathlib import Path
 
 import numpy as np
 
-from jax_telluric import chebyshev_continuum
+from tellurix import chebyshev_continuum
 
 
 def main() -> None:

@@ -5,8 +5,8 @@ import json
 import numpy as np
 import pytest
 
-from jax_telluric import BoxcarFTSInstrumentProfile, read_record, write_record
-from jax_telluric.record import (
+from tellurix import BoxcarFTSInstrumentProfile, read_record, write_record
+from tellurix.record import (
     FORMAT_VERSION,
     ils_fingerprint,
     file_sha256,
@@ -188,7 +188,7 @@ def test_file_hashing_matches_hashlib(tmp_path):
 
 def test_shards_merge_into_one_record(tmp_path):
     """A run is split across devices; its record must come back together."""
-    from jax_telluric.record import merge_records
+    from tellurix.record import merge_records
 
     left = write_record(
         tmp_path / "a.h5", run={"created": "x", "driver": "t", "driver_sha256": "0" * 64},
@@ -215,7 +215,7 @@ def test_shards_merge_into_one_record(tmp_path):
 
 
 def test_merging_refuses_shards_that_disagree(tmp_path):
-    from jax_telluric.record import merge_records
+    from tellurix.record import merge_records
 
     common = dict(run={"created": "x", "driver": "t", "driver_sha256": "0" * 64},
                   physics={"accuracy_mode": "mt_ckd"}, inputs={"stellar": "s.npz"},
@@ -230,7 +230,7 @@ def test_merging_refuses_shards_that_disagree(tmp_path):
 
 def test_merging_compares_list_valued_settings_without_tripping(tmp_path):
     """h5py hands a list-valued attribute back as an array; == is ambiguous there."""
-    from jax_telluric.record import merge_records
+    from tellurix.record import merge_records
 
     common = dict(run={"created": "x", "driver": "t", "driver_sha256": "0" * 64},
                   config={"stages": ["continuum", "velocity", "columns"]},
@@ -307,7 +307,7 @@ def test_a_json_view_follows_whatever_the_key_is(tmp_path):
 
 
 def test_merging_keeps_the_key_and_sorts_on_it(tmp_path):
-    from jax_telluric.record import merge_records
+    from tellurix.record import merge_records
 
     left = write_igrins(tmp_path / "a")
     right_pages = igrins_pages()

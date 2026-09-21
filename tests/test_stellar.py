@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from jax_telluric import (
+from tellurix import (
     ArrayOpacityBackend,
     AtmosphereProfile,
     StellarSpectrum,
@@ -130,7 +130,7 @@ def test_from_npz_recovers_a_reversed_continuum(tmp_path):
     flux = flux_total / flux_continuum rather than assuming either one."""
     import numpy as np
 
-    from jax_telluric import StellarSpectrum
+    from tellurix import StellarSpectrum
 
     nu = np.linspace(5000.0, 5100.0, 512)
     continuum = 1.0e6 * (1.0 + 0.3 * (nu - nu[0]) / (nu[-1] - nu[0]))
@@ -155,7 +155,7 @@ def test_from_npz_refuses_a_continuum_that_is_not_one(tmp_path):
     belong to this spectrum, and no continuum beats a wrong one."""
     import numpy as np
 
-    from jax_telluric import StellarSpectrum
+    from tellurix import StellarSpectrum
 
     nu = np.linspace(5000.0, 5100.0, 512)
     flux = 1.0 - 0.4 * np.exp(-0.5 * ((nu - 5050.0) / 0.5) ** 2)
@@ -168,7 +168,7 @@ def test_from_npz_refuses_a_continuum_that_is_not_one(tmp_path):
 def test_resample_stellar_continuum_needs_a_continuum():
     import numpy as np
 
-    from jax_telluric import StellarSpectrum, resample_stellar_continuum
+    from tellurix import StellarSpectrum, resample_stellar_continuum
 
     nu = np.linspace(5000.0, 5100.0, 64)
     assert resample_stellar_continuum(StellarSpectrum.flat(nu), nu[::2]) is None

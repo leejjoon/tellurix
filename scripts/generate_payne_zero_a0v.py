@@ -4,7 +4,7 @@
 Like ``generate_payne_zero_arcturus.py`` this does **not** run in the project
 environment: Payne Zero needs Python >= 3.11 and PyTorch while this package is
 pinned to 3.10 by ``exojax==2.5.0``. It runs in Payne Zero's own environment and
-writes an npz that :class:`jax_telluric.StellarSpectrum` reads back:
+writes an npz that :class:`tellurix.StellarSpectrum` reads back:
 
     cd /home/jjlee/work/payne-zero
     export PAYNE_ZERO_DATA_ROOT=$PWD/source_data_files
@@ -86,7 +86,7 @@ def main() -> None:
     if np.any(~np.isfinite(normalized)) or np.any(normalized <= 0.0):
         raise SystemExit("synthesis returned non-positive or non-finite normalized flux")
 
-    # jax_telluric works in ascending vacuum wavenumber.
+    # tellurix works in ascending vacuum wavenumber.
     wavenumber_cm1 = 1.0e7 / wavelength_nm
     order = np.argsort(wavenumber_cm1)
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -134,7 +134,7 @@ def physics_record(root: Path, continuum_version: str | None = None) -> dict:
         **ORDER,
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
-        "jax_telluric": version("jax-telluric") if version else None,
+        "tellurix": version("tellurix") if version else None,
         # Read off the file that was loaded, rather than typed here a second time.
         "continuum_model": continuum_version,
     }
@@ -143,7 +143,7 @@ def physics_record(root: Path, continuum_version: str | None = None) -> dict:
 def run_one(window, epoch, args, root):
     """Fit one page-epoch and export its corrected spectrum."""
     import jax.numpy as jnp
-    from jax_telluric import (
+    from tellurix import (
         AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
         chebyshev_continuum, file_sha256, ils_fingerprint,
         select_significant_lines, trim_wavenumber_grid,
@@ -509,10 +509,10 @@ def main() -> None:
         exists to catch, and a path cannot catch it.
         """
 
-        # Imported here, not at module scope: importing jax_telluric enables
+        # Imported here, not at module scope: importing tellurix enables
         # float64 and pulls in JAX, which must happen after JAX_PLATFORMS and
         # the compilation cache are settled.
-        from jax_telluric import file_sha256
+        from tellurix import file_sha256
 
         line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
         entries = {
@@ -592,8 +592,8 @@ def main() -> None:
             indent=2) + "\n", encoding="utf-8")
 
     if record_rows:
-        from jax_telluric import write_record
-        from jax_telluric.fit import _ParameterCodec
+        from tellurix import write_record
+        from tellurix.fit import _ParameterCodec
 
         species = sorted(MOLECULE_IDS)
         codec = _ParameterCodec(species, args.continuum_degree + 1, include_stellar_velocity=True)
@@ -611,7 +611,7 @@ def main() -> None:
             args.record,
             run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
                  **{k: v for k, v in physics_record(root, continuum_version()).items()
-                    if k in ("driver", "driver_sha256", "jax_telluric")}},
+                    if k in ("driver", "driver_sha256", "tellurix")}},
             config={"resolving_power": args.resolving_power,
                     "samples_per_resolution": args.samples_per_resolution,
                     "margin_cm1": args.margin_cm1, "grid_margin_cm1": args.grid_margin_cm1,

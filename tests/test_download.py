@@ -5,7 +5,7 @@ import tarfile
 
 import pytest
 
-from jax_telluric import download as download_module
+from tellurix import download as download_module
 
 
 def sha256(data: bytes) -> str:

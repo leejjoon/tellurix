@@ -18,7 +18,7 @@ LBLRTM is not executed during prediction or fitting.
 ## Native runtime MT_CKD
 
 ```python
-from jax_telluric import MTCKDWaterContinuum, TelluricModel
+from tellurix import MTCKDWaterContinuum, TelluricModel
 
 continuum = MTCKDWaterContinuum.from_netcdf(
     "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc", nu_grid
@@ -114,7 +114,7 @@ backend = ExoJAXOpacityBackend.prepare(
 Then select the continuum-only mode:
 
 ```python
-from jax_telluric import LBLRTMOpticalDepthCorrection, TelluricModel
+from tellurix import LBLRTMOpticalDepthCorrection, TelluricModel
 
 correction = LBLRTMOpticalDepthCorrection.load(
     "data/corrections/lblrtm_5000_5020.npz"
