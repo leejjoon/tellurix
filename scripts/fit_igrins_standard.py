@@ -253,6 +253,7 @@ def build_order_context(observation, index, args, root, profile, stellar):
     return {
         "index": index, "v1": v1, "v2": v2, "grid": grid, "model": model,
         "fit_model": fit_model, "source": source, "profile": profile,
+        "stellar": spectrum if stellar is not None else None,
         "databases": databases, "absent": absent, "optical_depth": optical_depth,
         "free_species": sorted(s for s, t in optical_depth.items() if t >= args.min_optical_depth),
         "mt_ckd_version": continuum_backend.version,
@@ -277,7 +278,7 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
     from jax_telluric import (
         ArrayOpacityBackend, OrderObjective, TelluricModel, TelluricParameters,
         SpectralOrder, chebyshev_continuum, continuum_level, fit_order,
-        igrins_spectral_order, ils_fingerprint,
+        igrins_spectral_order, ils_fingerprint, resample_stellar_continuum,
     )
 
     timing, started = {}, time.time()
@@ -373,6 +374,8 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
     wavenumber = 1.0e7 / np.asarray(order.wavelength_vacuum_nm)
     axis = np.argsort(wavenumber)
     nu = wavenumber[axis]
+    _stellar_continuum = (None if context.get("stellar") is None
+                          else resample_stellar_continuum(context["stellar"], nu))
     mask = np.asarray(order.mask)[axis]
     observed = np.asarray(order.flux)[axis]
     model_flux = np.asarray(exact.predict(order, parameters))[axis]
@@ -432,6 +435,11 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         arrays = dict(
             wavenumber_cm1=nu, observed=np.where(mask, observed, np.nan),
             model_flux=model_flux, transmission=transmission, corrected=corrected,
+            # The A0V model's own continuum. This band carries the Brackett
+            # bound-free edge at 1458.8 nm, a 5.6% step at 9500 K, which no
+            # fitted polynomial can represent and which lands inside the two
+            # bluest H orders.
+            **({} if _stellar_continuum is None else {"stellar_continuum": _stellar_continuum}),
             stellar_only=star, continuum=continuum, residual=residual,
             uncertainty=sigma, mask=mask, reliable=reliable)
         if plp_telluric is not None:

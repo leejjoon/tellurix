@@ -50,7 +50,16 @@ COLUMNS = {
     "transmission_unconvolved": ("f4", "fraction",
                                  "atmospheric transmission before the instrument profile; "
                                  "diagnostic only, do not divide by this"),
-    "continuum": ("f4", "continuum units", "the fitted Chebyshev continuum"),
+    "continuum": ("f4", "continuum units",
+                  "the FITTED Chebyshev continuum: a free polynomial carrying the instrument, "
+                  "the input's own normalisation and whatever else did not fit. It is not the "
+                  "star's continuum -- see stellar_continuum"),
+    "stellar_continuum": ("f4", "model flux units",
+                          "the stellar model's own physical continuum, interpolated to the "
+                          "pixels. Unlike the fitted continuum this is a prediction, not a "
+                          "free function, and it carries the bound-free edges: the Brackett "
+                          "edge at 1458.8 nm is a 0.19% step for Arcturus and 5.6% for A0V. "
+                          "Its units are the model's, so only its shape is meaningful"),
     "uncertainty": ("f4", "continuum units", "per-pixel sigma where the reduction supplies one"),
     "reliable": ("?", "", "True where the pixel was fitted and the transmission exceeds the "
                           "run's floor (see the transmission_floor attribute). That floor is "
@@ -112,6 +121,22 @@ def main() -> None:
         packed[name] = np.zeros((rows, width), dtype=dtype) if dtype == "?" else \
             np.full((rows, width), np.nan, dtype=dtype)
 
+    # A run older than the stellar_continuum column can still have it: the
+    # continuum is a pure function of the stellar model and the pixel
+    # wavenumbers, both of which the record identifies. Computing it here beats
+    # refitting an atlas to add a column that was always derivable.
+    stellar = None
+    if "stellar" in record.inputs:
+        from jax_telluric import StellarSpectrum, resample_stellar_continuum
+
+        stellar_path = Path(record.inputs["stellar"])
+        if stellar_path.exists():
+            stellar = StellarSpectrum.from_npz(stellar_path)
+            if stellar.continuum is None:
+                print(f"note: {stellar_path.name} carries no usable flux_continuum; "
+                      "stellar_continuum will be absent")
+                stellar = None
+
     present = set()
     for index, path in enumerate(paths):
         with np.load(path) as values:
@@ -127,6 +152,9 @@ def main() -> None:
                     packed[name][index, :n] = values["transmission"]
                 elif name in values:
                     packed[name][index, :n] = values[name]
+                elif name == "stellar_continuum" and stellar is not None:
+                    packed[name][index, :n] = resample_stellar_continuum(
+                        stellar, np.asarray(values["wavenumber_cm1"]))
                 else:
                     continue
                 present.add(name)

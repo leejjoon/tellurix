@@ -151,7 +151,7 @@ def run_one(window, epoch, args, root):
         OrderObjective, TelluricParameters, arcturus_spectral_order, epoch_velocity_kms,
         fit_order,
         igrins_wavenumber_grid, load_atmosphere_csv, prepare_stellar_source,
-        read_arcturus_page,
+        read_arcturus_page, resample_stellar_continuum,
     )
 
     v1, v2 = window["v1"], window["v2"]
@@ -231,7 +231,8 @@ def run_one(window, epoch, args, root):
                           pixel_integration=PHYSICS["pixel_integration"], instrument=instrument)
 
     mark("continuum")
-    source = prepare_stellar_source(StellarSpectrum.from_npz(args.stellar), model,
+    stellar = StellarSpectrum.from_npz(args.stellar)
+    source = prepare_stellar_source(stellar, model,
                                     vsini_kms=PHYSICS["vsini_kms"],
                                     macroturbulence_kms=PHYSICS["macroturbulence_kms"])
     mark("stellar_source")
@@ -353,6 +354,7 @@ def run_one(window, epoch, args, root):
     # looks fine, while the ratio used for the correction is off by the whole
     # degenerate factor. Comparing the two where the star itself is unabsorbed
     # turns that into a number instead of leaving it implicit.
+    stellar_continuum = resample_stellar_continuum(stellar, nu) if stellar is not None else None
     star_flat = star / np.maximum(continuum, 1e-12)
     clean = reliable & np.isfinite(corrected) & (star_flat > 0.98) & (star > 1e-6)
     level = float(np.median(corrected[clean] / star[clean])) if clean.sum() >= 20 else float("nan")
@@ -365,6 +367,12 @@ def run_one(window, epoch, args, root):
         wavenumber_cm1=nu, observed=np.where(mask, obs, np.nan), model_flux=model_flux,
         transmission=transmission, corrected=corrected, stellar_only=star,
         continuum=continuum, corrected_normalized=corrected_normalized,
+        # The stellar model's own physical continuum, which `continuum` above is
+        # not: that one is a free polynomial shaped by the fit and carries the
+        # instrument and the atlas normalization as well. Keeping both lets a
+        # consumer separate them, which matters to anyone deriving oscillator
+        # strengths, and it is the only place a bound-free edge appears at all.
+        **({} if stellar_continuum is None else {"stellar_continuum": stellar_continuum}),
         residual=residual, mask=mask, reliable=reliable,
         # Not reversed: every other array here is on the ascending-wavenumber
         # axis built at order_idx above, and the page's own columns already are.

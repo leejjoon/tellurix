@@ -69,6 +69,7 @@ from .stellar import (
     StellarSpectrum,
     broaden_stellar_source,
     prepare_stellar_source,
+    resample_stellar_continuum,
     resample_stellar_source,
 )
 from .types import AtmosphereProfile, SpectralOrder, TelluricParameters
@@ -119,6 +120,7 @@ __all__ = [
     "read_tape12_single_precision",
     "Record",
     "ReferenceWaterContinuum",
+    "resample_stellar_continuum",
     "resample_stellar_source",
     "robust_noise",
     "run_lblrtm",

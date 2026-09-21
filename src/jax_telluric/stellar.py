@@ -26,6 +26,16 @@ class StellarSpectrum:
     wavenumber_cm1: np.ndarray
     flux: np.ndarray
     meta: Mapping[str, str] = field(default_factory=dict)
+    continuum: np.ndarray | None = None
+    """The model's own continuum, in its own units, on the same grid.
+
+    ``flux`` is the spectrum already divided by this, so the continuum is not
+    needed to use the source and is carried only so a consumer can put the
+    stellar continuum back, or test it. It is the physical continuum and it can
+    have real structure the fitted Chebyshev cannot represent -- the hydrogen
+    bound-free edges are steps, and the Brackett edge at 1458.8 nm is a 0.19%
+    discontinuity in the Arcturus model, 300x any other single-sample step.
+    """
 
     def __post_init__(self) -> None:
         nu = np.asarray(self.wavenumber_cm1, dtype=float)
@@ -38,6 +48,13 @@ class StellarSpectrum:
             raise ValueError("stellar wavenumbers must be finite and strictly increasing")
         if np.any(~np.isfinite(flux)) or np.any(flux <= 0.0):
             raise ValueError("stellar flux must be finite and positive")
+        if self.continuum is not None:
+            continuum = np.asarray(self.continuum, dtype=float)
+            if continuum.shape != nu.shape:
+                raise ValueError("the stellar continuum must match its wavenumber grid")
+            if np.any(~np.isfinite(continuum)) or np.any(continuum <= 0.0):
+                raise ValueError("the stellar continuum must be finite and positive")
+            object.__setattr__(self, "continuum", continuum)
         object.__setattr__(self, "wavenumber_cm1", nu)
         object.__setattr__(self, "flux", flux)
 
@@ -72,11 +89,48 @@ class StellarSpectrum:
                 )
             else:
                 raise ValueError(f"{path} has neither {wavenumber_key} nor wavelength_vacuum_nm")
-            return cls(nu, values[flux_key], {"source": str(path)})
+            flux = values[flux_key]
+            return cls(nu, flux, {"source": str(path)},
+                       continuum=_oriented_continuum(values, flux, path))
 
     @property
     def velocity_step_kms(self) -> float:
         return float(np.median(np.diff(np.log(self.wavenumber_cm1))) * _C_KMS)
+
+
+def _oriented_continuum(values, flux, path) -> np.ndarray | None:
+    """``flux_continuum`` from an npz, put in the same order as ``flux``.
+
+    Payne Zero's writers reordered ``flux`` into ascending wavenumber and left
+    ``flux_total`` and ``flux_continuum`` in the synthesizer's own order, so in
+    the two committed models those two arrays are back to front. Rather than
+    hard-code a reversal, which would then corrupt a file written correctly,
+    this uses the identity the three arrays satisfy -- ``flux`` is
+    ``flux_total / flux_continuum`` -- and keeps whichever orientation
+    reproduces it. A file that satisfies neither gets no continuum rather than
+    a wrong one.
+    """
+
+    if "flux_continuum" not in values or "flux_total" not in values:
+        return None
+    flux = np.asarray(flux, dtype=float)
+    continuum = np.asarray(values["flux_continuum"], dtype=float)
+    total = np.asarray(values["flux_total"], dtype=float)
+    if continuum.shape != flux.shape or total.shape != flux.shape:
+        return None
+    best, error = None, np.inf
+    for candidate_continuum, candidate_total in ((continuum, total),
+                                                 (continuum[::-1], total[::-1])):
+        if np.any(candidate_continuum <= 0.0) or np.any(~np.isfinite(candidate_continuum)):
+            continue
+        residual = float(np.max(np.abs(flux - candidate_total / candidate_continuum)))
+        if residual < error:
+            best, error = candidate_continuum, residual
+    # A real match is at rounding level. Anything else means these arrays are
+    # not this spectrum's continuum and guessing would be worse than nothing.
+    if best is None or error > 1.0e-6:
+        return None
+    return np.ascontiguousarray(best)
 
 
 def resample_stellar_source(spectrum: StellarSpectrum, wavenumber_cm1: np.ndarray) -> np.ndarray:
@@ -112,6 +166,25 @@ def resample_stellar_source(spectrum: StellarSpectrum, wavenumber_cm1: np.ndarra
             f"than the model grid's {target_step:.4f} km/s; synthesize it at higher resolution"
         )
     return np.interp(target, source, spectrum.flux)
+
+
+def resample_stellar_continuum(
+    spectrum: StellarSpectrum, wavenumber_cm1: np.ndarray
+) -> np.ndarray | None:
+    """The model's own continuum on an arbitrary grid, or None if it has none.
+
+    Plain interpolation, with no broadening and no instrument profile: a
+    continuum is smooth on those scales by construction. The one exception is a
+    bound-free edge, which is a genuine step -- 0.19% at the Brackett limit for
+    the Arcturus model and 5.6% for the A0V one -- and interpolating a step onto
+    a coarser grid spreads it over a sample. That is a faithful description of
+    what a pixel sees; it is not a reason to treat the edge as resolved.
+    """
+
+    if spectrum.continuum is None:
+        return None
+    target = np.asarray(wavenumber_cm1, dtype=float)
+    return np.interp(target, spectrum.wavenumber_cm1, spectrum.continuum)
 
 
 def _rotation_kernel(velocity_kms: np.ndarray, vsini_kms: float, limb_darkening: float) -> np.ndarray:

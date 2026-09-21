@@ -38,6 +38,7 @@ from jax_telluric import (
     load_atmosphere_csv,
     prepare_stellar_source,
     read_arcturus_page,
+    resample_stellar_continuum,
 )
 
 MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
@@ -481,6 +482,9 @@ def main() -> None:
 
     (root / args.report).parent.mkdir(parents=True, exist_ok=True)
     (root / args.report).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    _stellar_continuum = (None if args.stellar == "flat"
+                          else resample_stellar_continuum(stellar,
+                                                          page.wavenumber_vacuum_cm1[::-1]))
     (root / args.diagnostic_npz).parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         root / args.diagnostic_npz,
@@ -499,6 +503,8 @@ def main() -> None:
         grid_transmission=exact_transmission,
         stellar_source=np.asarray(source),
         stellar_only_pixels=stellar_only_pixels,
+        # The model's own physical continuum, which the fitted Chebyshev is not.
+        **({} if _stellar_continuum is None else {"stellar_continuum": _stellar_continuum}),
     )
     print(json.dumps(report["residuals"], indent=2))
     print(f"wrote {args.report} and {args.diagnostic_npz}")

@@ -122,3 +122,58 @@ def test_resampling_still_refuses_a_genuinely_coarser_source():
     spectrum = StellarSpectrum(coarse, np.ones_like(coarse))
     with pytest.raises(ValueError, match="coarser than the model grid"):
         resample_stellar_source(spectrum, target)
+
+
+def test_from_npz_recovers_a_reversed_continuum(tmp_path):
+    """The Payne Zero writers left flux_total/flux_continuum in the opposite
+    order to flux, so the loader picks the orientation that satisfies
+    flux = flux_total / flux_continuum rather than assuming either one."""
+    import numpy as np
+
+    from jax_telluric import StellarSpectrum
+
+    nu = np.linspace(5000.0, 5100.0, 512)
+    continuum = 1.0e6 * (1.0 + 0.3 * (nu - nu[0]) / (nu[-1] - nu[0]))
+    # Off centre on purpose: a line at the midpoint makes flux symmetric, and
+    # then both orientations satisfy the identity and the test proves nothing.
+    flux = 1.0 - 0.4 * np.exp(-0.5 * ((nu - 5020.0) / 0.5) ** 2)
+    total = flux * continuum
+
+    right = tmp_path / "right.npz"
+    np.savez(right, wavenumber_cm1=nu, flux=flux, flux_total=total, flux_continuum=continuum)
+    assert np.allclose(StellarSpectrum.from_npz(right).continuum, continuum)
+
+    # The shipped models look like this one.
+    wrong = tmp_path / "reversed.npz"
+    np.savez(wrong, wavenumber_cm1=nu, flux=flux,
+             flux_total=total[::-1], flux_continuum=continuum[::-1])
+    assert np.allclose(StellarSpectrum.from_npz(wrong).continuum, continuum)
+
+
+def test_from_npz_refuses_a_continuum_that_is_not_one(tmp_path):
+    """Neither orientation satisfying the identity means these arrays do not
+    belong to this spectrum, and no continuum beats a wrong one."""
+    import numpy as np
+
+    from jax_telluric import StellarSpectrum
+
+    nu = np.linspace(5000.0, 5100.0, 512)
+    flux = 1.0 - 0.4 * np.exp(-0.5 * ((nu - 5050.0) / 0.5) ** 2)
+    path = tmp_path / "mismatched.npz"
+    np.savez(path, wavenumber_cm1=nu, flux=flux,
+             flux_total=np.ones_like(nu), flux_continuum=np.full_like(nu, 2.0))
+    assert StellarSpectrum.from_npz(path).continuum is None
+
+
+def test_resample_stellar_continuum_needs_a_continuum():
+    import numpy as np
+
+    from jax_telluric import StellarSpectrum, resample_stellar_continuum
+
+    nu = np.linspace(5000.0, 5100.0, 64)
+    assert resample_stellar_continuum(StellarSpectrum.flat(nu), nu[::2]) is None
+
+    continuum = 1.0e6 * (1.0 + 0.2 * (nu - nu[0]) / (nu[-1] - nu[0]))
+    spectrum = StellarSpectrum(nu, np.ones_like(nu), {}, continuum=continuum)
+    resampled = resample_stellar_continuum(spectrum, nu[::2])
+    assert np.allclose(resampled, continuum[::2])

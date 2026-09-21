@@ -70,7 +70,8 @@ wavelength and, for IGRINS, descending detector column.
 | `model_flux` | the full forward model: continuum x source x transmission, convolved |
 | `stellar_only` | the same model with the atmosphere removed |
 | `transmission` | unconvolved transmission, interpolated to the pixels — *diagnostic only*, see above; the usable version is the [fine-grid export](#if-you-want-the-atmosphere-not-our-spectrum) |
-| `continuum` | the fitted Chebyshev continuum |
+| `continuum` | the **fitted** Chebyshev — instrument and normalisation, *not* the star's continuum |
+| `stellar_continuum` | the stellar model's own physical continuum, where the model ships one |
 | `residual` | `observed - model_flux` |
 | `mask` | True where a pixel was fitted |
 | `reliable` | `mask` and transmission above 0.15 — **use this to select pixels** |
@@ -311,6 +312,42 @@ real, it is not the continuum degeneracy, and it is unexplained. Treat it as a
 floor on an absolute column from a single page; slopes and ratios across pages
 at similar blanketing are much safer. `--continuum-anchor` remains as an
 experiment flag, not a default.
+
+**Do not use `continuum` as the stellar continuum, and do not use it at all if you
+are measuring line strengths.** It is a free degree-3 Chebyshev fitted *jointly
+with* a source built from fixed Payne Zero oscillator strengths, so whatever
+those got wrong in a smooth way, the polynomial absorbed. Deriving gf values
+from anything divided by it is circular.
+
+`stellar_continuum` is the other half: the model's own physical continuum,
+interpolated to the pixels, a prediction rather than a free function. Its units
+are the model's, so only its shape means anything. Splitting the fitted tilt by
+it shows how little of the page-scale slope is actually stellar:
+
+| page | fitted tilt | stellar | remainder |
+|---|---|---|---|
+| ab6225_ | +3.3% | −0.6% | +3.8% |
+| ab6600_ | +25.1% | −0.2% | +25.3% |
+| ab5825_ | +1.9% | −1.8% | +3.8% |
+| ab8450_ | +0.1% | −0.5% | +0.6% |
+
+**`stellar_continuum` carries bound-free edges, which no fitted polynomial can
+represent.** The largest single-sample step in the Arcturus model sits at
+1458.8 nm, the Brackett limit, at 0.19% — three hundred times any other step in
+the array. In the A0V model the same edge is **5.6%**, because at 9500 K
+hydrogen bound-free is the continuum opacity. It falls inside the two bluest
+IGRINS H orders, and those two fit at a median 3.76 sigma against 1.79 for the
+other 25, with H26 alone at 5.44. That is confounded with the band edge, so it
+is a suspicion rather than a measurement — but it is the right place to be
+suspicious.
+
+**The correction itself does not carry our stellar model, though.** `corrected`
+is exactly `observed / effective_transmission` (verified to 2.2e-16), so the
+source enters only through the convolution weighting in
+`Conv[T x S] / Conv[S]`. Recomputing that with a flat source moves it by a
+median of 0.00016, p99 0.0031 and at worst 0.0097, against 0.0137 of pixel
+noise. So `corrected` is safe to derive line strengths from; it is the
+*continuum* that is not.
 
 **The Arcturus residual is dominated by the stellar model, not the atmosphere.**
 It is flat against transmission — 0.97 in deep absorption, 1.52 at the continuum
