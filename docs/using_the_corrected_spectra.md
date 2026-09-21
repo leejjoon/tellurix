@@ -11,9 +11,24 @@ Two datasets exist.
 |---|---|---|
 | what was fitted | Hinkle, Wallace & Livingston 1995, 598 page-epochs | 43 standards over 4 nights, 3 telescopes |
 | keyed on | `(page, epoch)` | `(frame, order)` |
-| record | `data/corrected/atlas/arcturus_atlas.h5` | `data/corrected/igrins/*/record.h5` |
-| arrays | `data/corrected/atlas/*.npz` | `data/corrected/igrins/*/*.npz` |
-| residual | 4.22 sigma median | 1.30-1.86 sigma median |
+| arrays | `data/corrected/atlas*/*.npz` | `data/corrected/igrins/*/*.npz` |
+
+**There are two Arcturus runs and they are not interchangeable.**
+
+| | trimmed (committed) | full coverage |
+|---|---|---|
+| record | `data/corrected/atlas/arcturus_atlas.h5` | `data/corrected/atlas_full/arcturus_atlas.h5` |
+| pages | tiled, no overlap | overlap by ~5 cm-1, as the atlas does |
+| pixels fitted | 636,444 | **822,928** |
+| reliable pixels | 590,763 | 760,325 |
+| residual, median | 4.22 sigma | 4.48 sigma |
+| any parameter at a bound | 21.6% | 19.4% |
+| `stellar_continuum` | no | yes |
+
+The full run is the one to use: it fits every pixel the atlas ships, and the
+0.26 sigma of extra residual is the page edges, which are genuinely harder. The
+trimmed record stays because it is what is committed and what earlier results
+were quoted from. IGRINS residuals are 1.30-1.86 sigma median.
 
 Three things can be handed to someone else, and which one you want depends
 entirely on what you are going to do with it:
@@ -100,11 +115,11 @@ spectra instead:
 
 ```bash
 uv run python scripts/export_spectra_hdf5.py \
-    --record data/corrected/atlas/arcturus_atlas.h5 \
-    --output data/corrected/arcturus_spectra.h5
+    --record data/corrected/atlas_full/arcturus_atlas.h5 \
+    --output data/corrected/arcturus_spectra_full.h5
 ```
 
-One HDF5, **12.4 MB for all 598 Arcturus page-epochs** against 45.6 MB of
+One HDF5, **16.1 MB for all 598 Arcturus page-epochs** against 57.8 MB of
 `.npz`, readable with nothing but `h5py`. Rows are padded to the longest
 spectrum with NaN, so every array is a plain 2-D `(row, pixel)` block. It
 carries the arrays below, the fitted parameters, the formal sigmas and
@@ -113,7 +128,7 @@ copied from the record, so it stands on its own.
 
 ```python
 import h5py
-with h5py.File("data/corrected/arcturus_spectra.h5") as f:
+with h5py.File("data/corrected/arcturus_spectra_full.h5") as f:
     i = list(f["key"].asstr()).index("ab5000_ summer")     # or "SDCH_20181220_0100 H10"
     good = f["reliable"][i]
     wavenumber = f["wavenumber_cm1"][i][good]
@@ -146,8 +161,8 @@ the lines are already undersampled before the interpolation runs.
 
 ```bash
 uv run python scripts/export_transmission_hdf5.py \
-    --record data/corrected/atlas/arcturus_atlas.h5 \
-    --output data/corrected/arcturus_transmission.h5 --check
+    --record data/corrected/atlas_full/arcturus_atlas.h5 \
+    --output data/corrected/arcturus_transmission_full.h5 --check
 
 # an IGRINS night works the same way
 uv run python scripts/export_transmission_hdf5.py \
@@ -157,13 +172,13 @@ uv run python scripts/export_transmission_hdf5.py \
 
 That writes T on the forward model's own grid -- 4.00 samples per resolution
 element at R = 100,000 (a 0.7494 km/s step), no interpolation anywhere in the
-path. **8.0 MB for all 598 Arcturus page-epochs, about 50 minutes on one GPU.**
+path. **9.4 MB for all 598 Arcturus page-epochs, about 50 minutes on one GPU.**
 Grids are shared, because both epochs of a page sit on one window, so the file
 holds 310 grids for 598 rows:
 
 ```python
 import h5py
-with h5py.File("data/corrected/arcturus_transmission.h5") as f:
+with h5py.File("data/corrected/arcturus_transmission_full.h5") as f:
     i = list(f["key"].asstr()).index("ab5000_ summer")
     g = f["grid_index"][i]
     n = f["grid_points"][g]
@@ -188,34 +203,62 @@ against the cached `transmission`:
 | Arcturus atlas | 2.2e-16 | same code path, machine precision |
 | IGRINS night | 3.1e-6 | the driver saves T from the refrozen linearized backend, this script evaluates the exact kernel; 1600x below the noise |
 
-### Stitching: the pixel products tile, the transmission grids overlap
+### Stitching: nothing tiles, and that is deliberate
 
-The raw atlas pages overlap each other by about 5 cm-1 -- 282 of 287 adjacent
-summer pages do. `page_windows()` trims 2.5 cm-1 off each end so the *fitted*
-windows tile instead: **0 of 287 overlap**, with a median gap of 0.02 cm-1,
-which is one atlas sample. Everything on the pixel grid inherits that, so the
-`.npz` arrays and the spectra export can be concatenated directly. The cost is
-2.64% of the raw union, lost at the outer edge of each of the atlas's ~38
-disconnected coverage blocks, not between pages.
+**Adjacent pages overlap, in every product. Do not concatenate them.**
 
-**The transmission export is the exception.** It is on the model grid, which
-`trim_wavenumber_grid` pads by 5 cm-1 on each side so line wings are present, so
-adjacent rows overlap by 9.99 cm-1 -- 282 of 287 pairs. Concatenating them
-double-counts. Cut each row to its own fitted window first, which `/parameters`
-carries:
+The raw atlas pages overlap by about 5 cm-1 -- 282 of 287 adjacent summer pages
+do. The run committed before this behaviour was configurable trimmed 2.5 cm-1
+off each end so the fitted windows tiled, which cost **22.7% of the atlas's
+pixels**. That trade is no longer made: `page_windows(..., trim_cm1=0.0)` is the
+default and every pixel the atlas ships is fitted.
+`fit_arcturus_batch.py --trim-overlap-cm1 2.5` restores the old behaviour and is
+only there for reproducing the old record.
+
+So a page now shares about 250 pixels with each neighbour, and those pixels were
+fitted twice, independently. Across the full run:
+
+| | summer | winter |
+|---|---|---|
+| overlapping pairs | 279 | 300 |
+| shared reliable pixels, median | 233 | 223 |
+| median \|observed_a - observed_b\| | 0.01277 | 0.01260 |
+| median rms(corrected_a - corrected_b) | 0.02045 | 0.01874 |
+| p90 rms | 0.10259 | 0.09704 |
+
+**The first of those rows is the one to understand.** The *data* differs between
+two pages over the same wavenumbers, by a median of 0.0128 against a nominal
+pixel sigma of 0.0045 -- nearly three times the noise. Each atlas page carries
+its own scalar normalisation, so the two copies are not the same measurement
+twice, they are two reductions of it. That is exactly why the original code
+trimmed the overlap away, and it is why averaging the two copies is wrong.
+
+What the duplication is good for is a **consistency check**. The corrected copies
+agree to an rms of about 0.020, which is the same size as a page's own residual
+(0.0199) -- so where two fits of identical photons disagree by much more than
+that, one of them is wrong, and the parameters say which. A worked case: over
+the 250 pixels `ab6225_` shares with `ab6250_`, the two differ by rms 0.027 with
+a derivative-shaped spike at every telluric core. Undoing their 0.0386 km/s
+velocity difference removes 2% of it. The cause is in the fit -- `ab6250_` landed
+on `lsf_sigma_kms` = 1.278 km/s against its neighbour's 0.110, with twice the
+residual. The overlap caught a bad ILS fit that nothing else in the products
+would have flagged.
+
+**The transmission export overlaps more**, because the model grid pads 5 cm-1
+beyond the window on each side for line wings: adjacent rows share 9.99 cm-1.
+Cut each row to its own fitted window, which `/parameters` carries:
 
 ```python
 v1, v2 = f["parameters"]["v1"][i], f["parameters"]["v2"][i]
-inside = (nu >= v1) & (nu <= v2)          # now the rows tile
+inside = (nu >= v1) & (nu <= v2)
 ```
 
-The margin is not junk -- it is the same atmosphere, extrapolated past the data
-that constrained it. Where one page is inside its window and its neighbour is in
-its margin, the two transmissions agree to a median of 0.0009 against 0.0059 of
-pixel noise. But the worst point in such an overlap is a median 0.027 across
-pairs, because a small difference in fitted column becomes a large difference in
-a line core. Use the margin for wings, never as a substitute for the neighbour's
-own fit.
+The margin is not junk -- it is the same atmosphere extrapolated past the data
+that constrained it, and where one page is inside its window while its neighbour
+is in its margin the two agree to a median of 0.0009. But the worst point in
+such an overlap is a median 0.027 across pairs, because a small difference in
+fitted column becomes a large one in a line core. Use the margin for wings,
+never as a substitute for the neighbour's own fit.
 
 Three things this does not solve. The columns were retrieved with our continuum
 and our source, so they carry whatever bias those imposed -- see the blanketing
@@ -234,7 +277,7 @@ what you should archive or ship.
 
 ```python
 from jax_telluric import read_record, parameters_from_row
-record = read_record("data/corrected/atlas/arcturus_atlas.h5")
+record = read_record("data/corrected/atlas_full/arcturus_atlas.h5")
 row = record.row("ab5000_", "summer")        # IGRINS: record.row(frame, order)
 row["residual_rms_over_noise"], row["median_transmission"]
 parameters = parameters_from_row(row, ["H2O", "CO2", "CH4"])
@@ -351,8 +394,8 @@ noise. So `corrected` is safe to derive line strengths from; it is the
 
 **The Arcturus residual is dominated by the stellar model, not the atmosphere.**
 It is flat against transmission — 0.97 in deep absorption, 1.52 at the continuum
-— which means the 4.22 sigma is a K1.5 III line-list limit. Do not read it as
-telluric accuracy.
+— which means the 4.22 sigma of the trimmed run, and the 4.48 of the full one,
+are a K1.5 III line-list limit. Do not read either as telluric accuracy.
 
 **The IGRINS well-mixed columns are good to about 3%**, set by night-to-night
 scatter rather than any single night's error bar. Slopes against airmass differ
@@ -373,7 +416,7 @@ Needs the AER line files and the MT_CKD file from `scripts/bootstrap_lblrtm.sh`,
 but not the LBLRTM binary.
 
 ```bash
-# Arcturus, the whole atlas
+# Arcturus, the whole atlas, on one GPU
 uv run python scripts/fit_arcturus_batch.py
 
 # IGRINS: fetch a night, build its atmosphere, fit it
@@ -389,6 +432,37 @@ Pass the whole night's frames in one command, not one at a time: the driver
 loops orders outside and frames inside, which shares the grid, the opacity and
 the XLA compilations and is worth about two thirds of the runtime. It also needs
 five frames to measure the instrument response.
+
+Sharded across four GPUs, each process writes a record holding only the pages
+it fitted, and they are joined afterwards:
+
+```bash
+for i in 0 1 2 3; do
+  CUDA_VISIBLE_DEVICES=$i uv run python scripts/fit_arcturus_batch.py \
+      --pages "$(cat shard$i.txt)" --output-dir data/corrected/atlas_full \
+      --summary data/corrected/atlas_full/summary$i.json \
+      --record  data/corrected/atlas_full/record_shard$i.h5 &
+done; wait
+
+uv run python scripts/merge_atlas_records.py \
+    data/corrected/atlas_full/record_shard*.h5 \
+    --output data/corrected/atlas_full/arcturus_atlas.h5 --check
+```
+
+The merge works on the HDF5 datasets rather than rebuilding rows through
+`write_record`, because the row dtype packs the column scales into
+`log_column_*` fields and unpacking them is where a merge would silently put a
+value in the wrong column. It refuses shards that disagree on the parameter
+names, the species, the key fields, the row dtype or any of `/config`,
+`/physics`, `/inputs`, and refuses duplicate keys. Splitting the committed
+598-row record three ways and merging it back reproduces it byte for byte.
+
+It does warn about one thing. `ils_velocity_kms` is **not** a per-run constant:
+`ils_fingerprint` sizes its grid from each page's own sinc first zero, which
+tracks that page's MOPD, and `write_record` keeps only the last page's. Shards
+disagreed by up to 0.76% of the span. A single-process run has the same flaw --
+every row's `ils_profile` is on its own page's grid while one grid is stored --
+so the merge keeps the first and says so rather than refusing.
 
 **For a new Arcturus run, fix the sinc globally.** The committed record measures
 the FTS path difference per page, and that measurement scatters +-12% about the
