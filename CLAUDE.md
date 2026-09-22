@@ -50,8 +50,14 @@ uv run --with nbformat python scripts/build_arcturus_notebook.py
 CUDA_VISIBLE_DEVICES=0 uv run --with nbformat --with nbconvert --with ipykernel \
     jupyter nbconvert --to notebook --execute --inplace \
         --ExecutePreprocessor.timeout=1800 docs/arcturus_walkthrough.ipynb
-quarto render docs/arcturus_walkthrough.ipynb --to html   # optional, for a standalone page
+quarto render docs/arcturus_walkthrough.ipynb --to html   # standalone page, gitignored
 ```
+
+Quarto reads the stored outputs rather than re-executing, so render it *after*
+`nbconvert --execute` or it will publish stale figures. Verified with Quarto
+1.10.18: 4.06 MB self-contained HTML, all 20 figures embedded with their
+`#| fig-cap:` captions, the table of contents and the MathJax equation intact,
+no warnings.
 
 It runs the real `fit_arcturus_page.py` on ab5000_ rather than reimplementing
 it, which is what makes it a test as well as a document: the live fit reproduces

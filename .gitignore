@@ -37,3 +37,9 @@ benchmarks/results/*.npz
 .jax-cache/
 .jax_cache/
 xla_gpu_per_fusion_autotune_cache_dir/
+
+# Quarto renders of the notebooks. The executed .ipynb is committed and is the
+# source of truth; the HTML is a build product and is 4 MB of embedded figures.
+docs/*.html
+docs/*_files/
+.quarto/
