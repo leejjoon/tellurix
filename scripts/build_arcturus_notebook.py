@@ -680,12 +680,25 @@ code(r"""
 #| fig-cap: "The forward model, one factor at a time. Transmission and star multiply on the fine grid, the instrument profile convolves that product, and only then does the fitted Chebyshev scale it onto the data."
 exact = model.precompute_opacity(fitted)
 trans_hi = np.asarray(exact.transmission(fitted, order.zenith_angle_deg))
-model_flux = np.asarray(exact.predict(order, fitted))
 
+# `predict` returns the order's own axis, which ascends in WAVELENGTH. Every
+# other array here ascends in wavenumber, so it has to be reindexed the same
+# way -- a mirrored model still looks like a spectrum (it correlates with the
+# data at -0.20 instead of +1.00) and will not announce itself.
 axis = np.argsort(1e7 / np.asarray(order.wavelength_vacuum_nm))
 nu_pix = (1e7 / np.asarray(order.wavelength_vacuum_nm))[axis]
+model_flux = np.asarray(exact.predict(order, fitted))[axis]
 x_cheb = np.linspace(-1.0, 1.0, len(order.wavelength_vacuum_nm))
 continuum_pix = np.asarray(chebyshev_continuum(fitted.continuum_coeffs, x_cheb))[axis]
+
+# And plot the page's own column, not `order.flux`: SpectralOrder must be finite
+# and positive everywhere, so it carries a placeholder of 1.0 at masked pixels,
+# which sits in the core of every saturated line and looks like emission.
+observed_pix = np.asarray(getattr(page, config["column"]))
+assert np.allclose(nu_pix, page.wavenumber_vacuum_cm1), "the page and the order disagree"
+masked_out = ~np.asarray(order.mask)[axis]
+print(f"{int(masked_out.sum())} of {masked_out.size} pixels are masked; "
+      "order.flux holds 1.0 there, the page's own column holds the data")
 
 fig, axes = plt.subplots(4, 1, figsize=(10, 8.4), sharex=True)
 detail = (grid >= V1 + 8) & (grid <= V1 + 14)
@@ -704,8 +717,10 @@ axes[2].plot(nu_pix[dpix], (model_flux / np.maximum(continuum_pix, 1e-12))[dpix]
 axes[2].set_ylabel("convolution")
 axes[2].legend(frameon=False, fontsize=8)
 
-axes[3].plot(nu_pix[dpix], np.asarray(order.flux)[axis][dpix], lw=0.9, color="#1c1a17",
-             label="observed")
+axes[3].plot(nu_pix[dpix], observed_pix[dpix], lw=0.9, color="#1c1a17", label="observed")
+if (masked_out & dpix).any():
+    axes[3].plot(nu_pix[masked_out & dpix], observed_pix[masked_out & dpix], ".",
+                 ms=3, color="#9a3b2c", label="masked (saturated)")
 axes[3].plot(nu_pix[dpix], model_flux[dpix], lw=1.0, color="#c0392b", label="model_flux")
 axes[3].plot(nu_pix[dpix], continuum_pix[dpix], lw=1.4, ls="--", color="#1e5f74",
              label="fitted continuum")
