@@ -404,10 +404,20 @@ code(r"""
 #| fig-cap: "Vertical optical depth per species at the profile's own abundances, summed over layers. H2O and CO2 dominate this window; the rest are present but negligible, which is what the min_optical_depth cut uses to decide what to fit."
 from tellurix import TelluricModel, TelluricParameters
 
-model = TelluricModel(profile, grid, opacity, continuum=continuum_backend,
-                      accuracy_mode=physics["accuracy_mode"],
-                      max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
-                      pixel_integration=physics["pixel_integration"])
+# No instrument yet: `transmission` reads only the column scales and the zenith
+# angle, so the atmosphere can be assembled before the instrument exists. The
+# complete model, with the FTS sinc, is built in section 8 -- do not copy this
+# construction and then call `predict` on it, or you will silently get the
+# built-in Gaussian instead.
+#
+# `pixel_integration` comes from the record rather than the constructor default,
+# and that matters: the default is "simpson", while this atlas needs "point".
+atmosphere = TelluricModel(profile, grid, opacity, continuum=continuum_backend,
+                           accuracy_mode=physics["accuracy_mode"],
+                           max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
+                           pixel_integration=physics["pixel_integration"])
+print(f'pixel_integration = {physics["pixel_integration"]!r}   '
+      f'(constructor default is "simpson")')
 
 pressure = np.asarray(profile.pressure_layer_bar)
 air = np.asarray(profile.air_column_cm2)
@@ -453,7 +463,7 @@ base = TelluricParameters(
     velocity_kms=0.0, wavelength_stretch=0.0, lsf_sigma_kms=0.1,
     continuum_coeffs=np.zeros(4), log_jitter=0.0)
 
-total = np.asarray(model.transmission(base, 0.0))
+total = np.asarray(atmosphere.transmission(base, 0.0))
 
 fig, ax = plt.subplots(figsize=(10, 4.0))
 ax.plot(grid, total, lw=0.7, color="#1c1a17", label="all species")
@@ -464,7 +474,7 @@ for name in ("H2O", "CO2"):
         log_column_scales={s: (0.0 if s == name else -40.0) for s in opacity.species},
         velocity_kms=0.0, wavelength_stretch=0.0, lsf_sigma_kms=0.1,
         continuum_coeffs=np.zeros(4), log_jitter=0.0)
-    ax.plot(grid, np.asarray(model.transmission(only, 0.0)), lw=0.8, alpha=0.75,
+    ax.plot(grid, np.asarray(atmosphere.transmission(only, 0.0)), lw=0.8, alpha=0.75,
             color=colours[name], label=name)
 ax.set_xlim(V1, V2); ax.set_ylim(0, 1.05)
 ax.set_xlabel("wavenumber (cm$^{-1}$)"); ax.set_ylabel("transmission")
@@ -536,14 +546,17 @@ continuum sits a few percent below the data's envelope.
 """)
 
 code(r"""
+# `prepare_stellar_source` reads only the model's grid and velocity step, so the
+# atmosphere-only model from section 5 is enough; the instrument does not enter
+# until the convolution.
 source = prepare_stellar_source(
-    stellar, model,
+    stellar, atmosphere,
     vsini_kms=float(physics["vsini_kms"]),
     limb_darkening=float(physics.get("limb_darkening", 0.6)),
     macroturbulence_kms=float(physics["macroturbulence_kms"]))
 
 unnormalised = prepare_stellar_source(
-    stellar, model,
+    stellar, atmosphere,
     vsini_kms=float(physics["vsini_kms"]),
     limb_darkening=float(physics.get("limb_darkening", 0.6)),
     macroturbulence_kms=float(physics["macroturbulence_kms"]),
@@ -595,6 +608,8 @@ mopd = float(row["mopd_cm"])
 instrument = BoxcarFTSInstrumentProfile(
     mopd_cm=mopd, wavenumber_center_cm1=float(0.5 * (V1 + V2)),
     max_residual_sigma_kms=float(physics["instrument_residual_sigma_kms"]))
+# The complete forward model: the same atmosphere, now with the FTS sinc. This
+# is the one to call `predict` on.
 model = TelluricModel(profile, grid, opacity, continuum=continuum_backend,
                       accuracy_mode=physics["accuracy_mode"],
                       max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
