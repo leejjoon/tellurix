@@ -18,7 +18,7 @@ from tellurix import (
     TelluricModel,
     TelluricParameters,
     fit_order,
-    igrins_wavenumber_grid,
+    constant_velocity_grid,
     trim_wavenumber_grid,
 )
 
@@ -37,7 +37,7 @@ def make_model():
 
 
 def test_igrins_grid_is_padded_and_oversampled():
-    grid = igrins_wavenumber_grid(2200.0, 2220.0)
+    grid = constant_velocity_grid(2200.0, 2220.0)
     assert grid[0] <= 1.0e7 / 2220.0 - 25.0
     assert grid[-1] >= 1.0e7 / 2200.0 + 25.0
     velocity_step = np.diff(np.log(grid)) * 299792.458
@@ -755,7 +755,7 @@ def test_shared_objective_rejects_a_different_model_or_order():
 
 def test_trimming_keeps_the_original_samples_and_covers_the_window():
     """Trimming must not move the samples, or it changes what is modelled."""
-    full = igrins_wavenumber_grid(2200.0, 2220.0, resolving_power=100_000.0,
+    full = constant_velocity_grid(2200.0, 2220.0, resolving_power=100_000.0,
                                   samples_per_resolution=4.0, margin_cm1=25.0)
     nu_min, nu_max = 1.0e7 / 2220.0, 1.0e7 / 2200.0
     trimmed = trim_wavenumber_grid(full, nu_min, nu_max, 2.0)
@@ -772,7 +772,7 @@ def test_trimming_keeps_the_original_samples_and_covers_the_window():
 
 
 def test_trimming_refuses_to_lose_the_window_or_the_grid():
-    full = igrins_wavenumber_grid(2200.0, 2220.0, margin_cm1=25.0)
+    full = constant_velocity_grid(2200.0, 2220.0, margin_cm1=25.0)
     nu_min, nu_max = 1.0e7 / 2220.0, 1.0e7 / 2200.0
     with pytest.raises(ValueError, match="does not cover"):
         trim_wavenumber_grid(full[: full.size // 2], nu_min, nu_max, 5.0)
@@ -787,7 +787,7 @@ def test_trimming_refuses_to_lose_the_window_or_the_grid():
 
 def test_a_trimmed_grid_predicts_what_the_untrimmed_one_did():
     """Only the line-wing margin is dropped, not anything the model reaches."""
-    full = igrins_wavenumber_grid(2200.0, 2220.0, resolving_power=100_000.0,
+    full = constant_velocity_grid(2200.0, 2220.0, resolving_power=100_000.0,
                                   samples_per_resolution=4.0, margin_cm1=25.0)
     nu_min, nu_max = 1.0e7 / 2220.0, 1.0e7 / 2200.0
     profile = AtmosphereProfile(

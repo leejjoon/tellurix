@@ -458,7 +458,7 @@ and sampling, which is what makes one grid spacing shared across the atlas.
 
 ### Two margins, not one
 
-`igrins_wavenumber_grid(..., margin_cm1=25)` pads so that outside lines
+`constant_velocity_grid(..., margin_cm1=25)` pads so that outside lines
 contribute their wings — a property of the *line list*. The grid only has to
 cover the window plus what the model reaches back for (LSF kernel, Doppler
 shifts, instrument edge padding), under 2 cm-1 anywhere in this atlas. Sharing
@@ -559,7 +559,7 @@ opt-in to keep the default numerically identical to ExoJAX.
   Follow that pattern rather than validating at call sites.
 - Atmosphere arrays are ordered top-to-bottom: pressure edges increase,
   altitude decreases. Wavenumber grids are strictly increasing and evenly
-  spaced in log wavenumber (constant velocity step) — `igrins_wavenumber_grid`
+  spaced in log wavenumber (constant velocity step) — `constant_velocity_grid`
   builds them with padding for line wings.
 - Units are in names: `_bar`, `_hpa`, `_cm1`, `_km`, `_kms`, `_k`, `cm2`.
 - Comments explain *why* (a numerical or LBLRTM-compatibility reason), not what.

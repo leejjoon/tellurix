@@ -28,7 +28,7 @@ bites hardest there; its residual rms improves slightly, from 6.5276 to 6.5261.
 
 ### The grid margin is not the line margin
 
-`igrins_wavenumber_grid` pads by 25 cm-1 so that lines outside a window still
+`constant_velocity_grid` pads by 25 cm-1 so that lines outside a window still
 contribute their wings. That is a property of the *line list*. The grid only has
 to cover the window plus what the forward model reaches back for -- the LSF
 kernel, the Doppler shifts, and the instrument profile's edge padding -- which

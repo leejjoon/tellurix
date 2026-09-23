@@ -75,7 +75,7 @@ def main() -> None:
         SpectralOrder,
         TelluricModel,
         TelluricParameters,
-        igrins_wavenumber_grid,
+        constant_velocity_grid,
         load_atmosphere_csv,
     )
 
@@ -84,7 +84,7 @@ def main() -> None:
     # A 20 cm-1 sub-order keeps Direct LPF practical on CPU while retaining
     # almost two thousand water lines after the required wing margin.
     limits = (5000.0, args.v2)
-    nu_grid = igrins_wavenumber_grid(1.0e7 / limits[1], 1.0e7 / limits[0])
+    nu_grid = constant_velocity_grid(1.0e7 / limits[1], 1.0e7 / limits[0])
     database = AERLineDatabase(
         root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule/01_H2O/01_H2O",
         "H2O",

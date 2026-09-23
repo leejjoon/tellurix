@@ -150,7 +150,7 @@ def run_one(window, epoch, args, root):
         ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum, TelluricModel,
         OrderObjective, TelluricParameters, arcturus_spectral_order, epoch_velocity_kms,
         fit_order,
-        igrins_wavenumber_grid, load_atmosphere_csv, prepare_stellar_source,
+        constant_velocity_grid, load_atmosphere_csv, prepare_stellar_source,
         read_arcturus_page, resample_stellar_continuum,
     )
 
@@ -168,7 +168,7 @@ def run_one(window, epoch, args, root):
     # wings; the grid only has to cover the window plus what the LSF, the
     # Doppler shifts and the instrument profile reach back for. Sharing one
     # margin between them put 70% of the grid where there is no data.
-    full_grid = igrins_wavenumber_grid(1.0e7 / v2, 1.0e7 / v1,
+    full_grid = constant_velocity_grid(1.0e7 / v2, 1.0e7 / v1,
                                        resolving_power=args.resolving_power,
                                        samples_per_resolution=args.samples_per_resolution,
                                        margin_cm1=args.margin_cm1)

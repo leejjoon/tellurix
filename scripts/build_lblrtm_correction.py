@@ -20,7 +20,7 @@ from tellurix import (
     TelluricModel,
     TelluricParameters,
     build_lblrtm_correction,
-    igrins_wavenumber_grid,
+    constant_velocity_grid,
     load_atmosphere_csv,
 )
 
@@ -52,7 +52,7 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     reference = root / "data/lblrtm"
     profile = load_atmosphere_csv(root / args.profile)
-    grid = igrins_wavenumber_grid(
+    grid = constant_velocity_grid(
         1.0e7 / args.v2,
         1.0e7 / args.v1,
         resolving_power=args.resolving_power,

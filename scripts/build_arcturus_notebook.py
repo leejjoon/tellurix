@@ -284,10 +284,10 @@ their spacing *and* their phase.
 """)
 
 code(r"""
-from tellurix import igrins_wavenumber_grid, trim_wavenumber_grid
+from tellurix import constant_velocity_grid, trim_wavenumber_grid
 
 config = record.config
-wide = igrins_wavenumber_grid(
+wide = constant_velocity_grid(
     1e7 / V2, 1e7 / V1,
     resolving_power=float(config["resolving_power"]),
     samples_per_resolution=float(config["samples_per_resolution"]),

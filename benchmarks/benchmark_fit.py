@@ -52,11 +52,11 @@ def main() -> None:
     from tellurix import (
         AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, OrderObjective,
         SpectralOrder, TelluricModel, TelluricParameters, fit_order,
-        igrins_wavenumber_grid, load_atmosphere_csv,
+        constant_velocity_grid, load_atmosphere_csv,
     )
 
     species = [name.strip().upper() for name in args.species.split(",") if name.strip()]
-    grid = igrins_wavenumber_grid(
+    grid = constant_velocity_grid(
         1.0e7 / args.v2, 1.0e7 / args.v1, resolving_power=args.resolving_power,
         samples_per_resolution=args.samples_per_resolution, margin_cm1=25.0,
     )

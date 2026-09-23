@@ -62,7 +62,7 @@ from .model import (
     BoxcarFTSInstrumentProfile,
     ReferenceWaterContinuum,
     TelluricModel,
-    igrins_wavenumber_grid,
+    constant_velocity_grid,
     trim_wavenumber_grid,
 )
 from .stellar import (
@@ -97,7 +97,7 @@ __all__ = [
     "FitResult",
     "hydrogen_series_um",
     "igrins_spectral_order",
-    "igrins_wavenumber_grid",
+    "constant_velocity_grid",
     "IGRINSObservation",
     "IGRINSOrder",
     "ils_fingerprint",

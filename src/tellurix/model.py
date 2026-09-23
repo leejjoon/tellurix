@@ -17,14 +17,26 @@ _C_KMS = 299792.458
 _BOXCAR_FWHM_CONSTANT = 1.20671
 
 
-def igrins_wavenumber_grid(
+def constant_velocity_grid(
     wavelength_min_nm: float,
     wavelength_max_nm: float,
     resolving_power: float = 45_000.0,
     samples_per_resolution: float = 4.0,
     margin_cm1: float = 25.0,
 ) -> np.ndarray:
-    """Create an ascending constant-velocity grid padded beyond one order."""
+    """An ascending wavenumber grid with a constant velocity step, padded.
+
+    Uniform in *log* wavenumber, which is what makes the step a constant
+    velocity and lets one grid spacing serve a whole atlas. Nothing here is
+    specific to an instrument: ``resolving_power`` and ``samples_per_resolution``
+    fully determine the spacing, and every pipeline caller passes both. The
+    45,000 default is IGRINS's resolving power and is a convenience for
+    benchmarks and tests, not a statement about the grid.
+
+    ``margin_cm1`` is the *line* margin -- padding so that lines outside the
+    window still contribute their wings. It is not the grid margin; see
+    :func:`trim_wavenumber_grid`, which cuts the result back down.
+    """
 
     if not 0.0 < wavelength_min_nm < wavelength_max_nm:
         raise ValueError("wavelength limits must be positive and increasing")

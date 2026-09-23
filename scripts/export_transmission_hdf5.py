@@ -70,7 +70,7 @@ def main() -> None:
 
     from tellurix import (
         AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, TelluricModel,
-        file_sha256, igrins_wavenumber_grid, load_atmosphere_csv, parameters_from_row,
+        file_sha256, constant_velocity_grid, load_atmosphere_csv, parameters_from_row,
         read_record, select_significant_lines, trim_wavenumber_grid,
     )
 
@@ -122,7 +122,7 @@ def main() -> None:
     for position, key in enumerate(ordered):
         v1, v2 = key
         grid = trim_wavenumber_grid(
-            igrins_wavenumber_grid(1.0e7 / v2, 1.0e7 / v1,
+            constant_velocity_grid(1.0e7 / v2, 1.0e7 / v1,
                                    resolving_power=float(config["resolving_power"]),
                                    samples_per_resolution=float(config["samples_per_resolution"]),
                                    margin_cm1=float(config["margin_cm1"])),
