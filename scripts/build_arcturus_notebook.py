@@ -73,6 +73,12 @@ outside the convolution.
 """)
 
 code(r"""
+import os
+# Before JAX is imported. Section 10 runs the real fitting driver as a
+# subprocess, so the kernel and that subprocess share one GPU; the default
+# preallocation takes 75% of the card and leaves the second process nothing.
+os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
+
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -92,6 +98,8 @@ plt.rcParams.update({
 ROOT = Path.cwd() if Path("pyproject.toml").exists() else Path.cwd().parent
 RECORD = ROOT / "data/corrected/atlas/arcturus_atlas.h5"
 record = read_record(RECORD)
+pages = record.pages
+ARRAYS_DIR = RECORD.parent
 
 PAGE, EPOCH = "ab5000_", "summer"
 row = record.row(PAGE, EPOCH)
@@ -691,6 +699,17 @@ model_flux = np.asarray(exact.predict(order, fitted))[axis]
 x_cheb = np.linspace(-1.0, 1.0, len(order.wavelength_vacuum_nm))
 continuum_pix = np.asarray(chebyshev_continuum(fitted.continuum_coeffs, x_cheb))[axis]
 
+# The same model with the atmosphere removed, which section 12 needs.
+from tellurix import ArrayOpacityBackend
+
+star_model = TelluricModel(
+    profile, grid,
+    ArrayOpacityBackend({sp: np.zeros((len(profile.temperature_k), grid.size))
+                         for sp in model.species}),
+    accuracy_mode="fast", max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
+    pixel_integration=physics["pixel_integration"], instrument=instrument)
+star_only_pix = np.asarray(star_model.predict(order, fitted))[axis]
+
 # And plot the page's own column, not `order.flux`: SpectralOrder must be finite
 # and positive everywhere, so it carries a placeholder of 1.0 at masked pixels,
 # which sits in the core of every saturated line and looks like emission.
@@ -922,9 +941,190 @@ print(f"page noise                    = {noise:.4f}")
 print(f"-> they differ by up to {d.max()/noise:.0f}x the noise")
 """)
 
+# ------------------------------------------------ against the atlas's own column
+md(r"""
+## 12. Checking against the atlas's own telluric column
+
+The atlas ships a `telluric` column: the authors' own transmission, which they
+divided by to make `ratioed`. It is an **independent** estimate of the sky --
+nothing in our fit has seen it -- so comparing against it is the closest thing
+to an external check this dataset offers.
+
+It is a floor rather than a truth test, and the reason is in the atlas
+documentation: the column is *a scaled transmission from a different
+observation*. A different observation means a different airmass and a different
+amount of water, so a systematic offset is expected and is not evidence that
+either side is wrong. What the comparison can show is whether the two disagree
+by more than that.
+""")
+
+code(r"""
+atlas_telluric = np.asarray(page.telluric)
+effective = model_flux / np.maximum(star_only_pix, 1e-12)
+
+# The authors' own restriction: where their column is between 0.2 and 1 it is a
+# transmission; outside that their division blew up.
+comparable = (np.asarray(order.mask)[axis] & np.isfinite(atlas_telluric)
+              & (atlas_telluric > 0.2) & (atlas_telluric <= 1.0))
+print(f"{int(comparable.sum())} of {atlas_telluric.size} pixels are comparable")
+""")
+
+code(r"""
+#| fig-cap: "Our fitted transmission against the atlas's own, and their difference. The two are independent: nothing in the fit has seen the atlas telluric column. Grey marks where the authors' own division diverged and their column leaves the range where it is a transmission; those pixels are excluded everywhere below."
+shown = np.where(comparable, atlas_telluric, np.nan)
+excluded = np.where(~comparable, atlas_telluric, np.nan)
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 5.6), sharex=True,
+                         gridspec_kw={"height_ratios": [2.2, 1.2]})
+axes[0].plot(nu_pix[dpix], excluded[dpix], lw=0.8, color="#b9b2a7",
+             label="atlas column, outside (0.2, 1]")
+axes[0].plot(nu_pix[dpix], shown[dpix], lw=1.0, color="#1c1a17",
+             label="atlas telluric column")
+axes[0].plot(nu_pix[dpix], effective[dpix], lw=1.0, color="#c0392b", alpha=0.85,
+             label="our effective transmission")
+axes[0].set_ylim(-0.05, 1.15)
+axes[0].set_ylabel("transmission"); axes[0].legend(frameon=False, fontsize=8, ncol=3)
+axes[0].set_title(f"{PAGE} {EPOCH}", loc="left")
+
+diff = np.where(comparable, effective - atlas_telluric, np.nan)
+axes[1].plot(nu_pix[dpix], diff[dpix], lw=0.9, color="#8a6212")
+axes[1].axhline(0, color="k", lw=0.7)
+axes[1].set_ylabel("ours - atlas"); axes[1].set_xlabel("wavenumber (cm$^{-1}$)")
+plt.tight_layout()
+""")
+
+md(r"""
+### Which of our arrays should it be compared to?
+
+Three candidates, and the ordering is not the one you would guess. The
+*effective* transmission is the operator the correction applies, but it is not a
+pure atmospheric transmission -- it carries the convolution weighted by the
+stellar spectrum. A transmission convolved with a **flat** source is the purer
+quantity. And the unconvolved transmission is at the wrong resolution entirely.
+""")
+
+code(r"""
+flat_source = np.ones_like(grid)
+order_flat = arcturus_spectral_order(
+    page, column=config["column"], source_flux_model_grid=flat_source,
+    saturation_floor=float(config["saturation_floor"]),
+    telluric_ceiling=float(config["telluric_ceiling"]),
+    zenith_angle_deg=float(config["zenith_angle_deg"]))
+convolved_T = np.asarray(exact.predict(order_flat, fitted))[axis] / np.maximum(continuum_pix, 1e-12)
+
+unconvolved = np.interp(nu_pix, grid, trans_hi)
+print(f"{'comparator':36s} {'median':>9} {'p99':>9}")
+for name, arr in (("unconvolved transmission", unconvolved),
+                  ("effective, model_flux / stellar_only", effective),
+                  ("Conv[T] with a flat source", convolved_T)):
+    d = np.abs(arr[comparable] - atlas_telluric[comparable])
+    print(f"  {name:34s} {np.median(d):9.4f} {np.percentile(d, 99):9.4f}")
+""")
+
+md(r"""
+All three agree to the same median, which is the headline: **our fit and the
+atlas's independent telluric column agree to about 1.6% in the median.** The
+tail is where the argument shows: the two convolved forms are better than the
+unconvolved one, as they should be, because the atlas column is itself observed
+at the atlas's resolution.
+
+The two convolved forms are indistinguishable from each other, which says the
+stellar weighting inside the effective transmission is a small effect here --
+consistent with the separate measurement that replacing the star with a flat
+source moves the correction by a median of 0.00016.
+
+### The systematic part is a scaling, and that is expected
+
+If the atlas column is the same atmosphere seen through a different air mass,
+the two should be related by a power: optical depths scale, so
+$T_{\text{atlas}} = T_{\text{ours}}^{\,k}$ with $k$ the ratio of the columns.
+""")
+
+code(r"""
+#| fig-cap: "The atlas column against ours, on a log-log optical-depth scale. A pure air-mass difference is a straight line through the origin, and the fitted slope says the atlas column carries about 9% less absorption than our fit."
+deep = comparable & (effective < 0.8)
+tau_ours = -np.log(np.maximum(effective[deep], 1e-6))
+tau_atlas = -np.log(np.maximum(atlas_telluric[deep], 1e-6))
+k_page = float(np.median(tau_atlas / tau_ours))
+
+fig, (ax, ax2) = plt.subplots(1, 2, figsize=(10, 3.6))
+ax.scatter(tau_ours, tau_atlas, s=6, alpha=0.4, color="#1e5f74")
+lim = np.array([0, np.percentile(tau_ours, 99)])
+ax.plot(lim, lim, color="k", lw=0.9, ls=":", label="equal")
+ax.plot(lim, k_page * lim, color="#c0392b", lw=1.2, label=f"$k$ = {k_page:.3f}")
+ax.set_xlabel(r"our optical depth $-\ln T$"); ax.set_ylabel(r"atlas $-\ln T$")
+ax.legend(frameon=False, fontsize=8)
+
+ax2.hist(tau_atlas / tau_ours, bins=50, color="#8a6212")
+ax2.axvline(1.0, color="k", lw=0.9, ls=":")
+ax2.axvline(k_page, color="#c0392b", lw=1.2)
+ax2.set_xlabel("$k$ per pixel"); ax2.set_ylabel("pixels")
+ax2.set_xlim(0, 2)
+plt.tight_layout()
+print(f"this page: k = {k_page:.3f}  ({100 * (1 - k_page):.0f}% less absorption in the atlas column)")
+""")
+
+code(r"""
+#| fig-cap: "The same comparison for every page. Agreement is 1.4% in the median, and the air-mass-like exponent sits below 1 in both epochs -- a systematic the atlas documentation predicts, since its telluric column comes from a different observation."
+compare_rows = []
+for i in range(len(pages)):
+    f = ARRAYS_DIR / f"{pages['page'][i].decode()}_{pages['epoch'][i].decode()}.npz"
+    if not f.exists():
+        continue
+    a = np.load(f)
+    at = a["atlas_telluric"]
+    eff = a["model_flux"] / np.maximum(a["stellar_only"], 1e-12)
+    g = a["reliable"] & np.isfinite(at) & (at > 0.2) & (at <= 1.0)
+    if g.sum() < 50:
+        continue
+    dp = g & (eff < 0.8)
+    kk = (float(np.median(np.log(np.maximum(at[dp], 1e-6))
+                          / np.log(np.maximum(eff[dp], 1e-6)))) if dp.sum() >= 30 else np.nan)
+    compare_rows.append((pages["epoch"][i].decode(), 0.5 * (pages["v1"][i] + pages["v2"][i]),
+                         float(np.median(np.abs(eff[g] - at[g]))), kk))
+
+ep_c = np.array([r[0] for r in compare_rows])
+nu_c = np.array([r[1] for r in compare_rows])
+med_c = np.array([r[2] for r in compare_rows])
+k_c = np.array([r[3] for r in compare_rows])
+
+fig, (ax, ax2) = plt.subplots(1, 2, figsize=(10, 3.6))
+for e, colour in (("summer", "#c0392b"), ("winter", "#1e5f74")):
+    m = ep_c == e
+    ax.scatter(nu_c[m], med_c[m], s=6, alpha=0.7, color=colour, label=e)
+ax.set_yscale("log"); ax.set_xlabel("wavenumber (cm$^{-1}$)")
+ax.set_ylabel("median |ours - atlas|"); ax.legend(frameon=False, fontsize=8)
+ax.set_title(f"{len(compare_rows)} pages, median {np.median(med_c):.4f}", loc="left")
+
+for e, colour in (("summer", "#c0392b"), ("winter", "#1e5f74")):
+    m = (ep_c == e) & np.isfinite(k_c)
+    ax2.hist(k_c[m], bins=40, range=(0.3, 1.6), alpha=0.6, color=colour, label=e)
+ax2.axvline(1.0, color="k", lw=1.0, ls=":")
+ax2.set_xlabel("exponent $k$ per page"); ax2.set_ylabel("pages")
+ax2.legend(frameon=False, fontsize=8)
+plt.tight_layout()
+
+for e in ("summer", "winter"):
+    m = (ep_c == e) & np.isfinite(k_c)
+    print(f"{e:7s} k median {np.median(k_c[m]):.3f}  p16-p84 "
+          f"{np.percentile(k_c[m], 16):.3f}-{np.percentile(k_c[m], 84):.3f}  (n={m.sum()})")
+""")
+
+md(r"""
+Both epochs land near $k \approx 0.91$, consistently. Read plainly: the atlas's
+own telluric column carries about **9% less absorption** than our fit of the
+same pages. That is a systematic, it is reproducible across 433 pages and both
+epochs, and it is the size of offset a modest air-mass or humidity difference
+between two observations produces. It is exactly what the atlas documentation
+says to expect, so it constrains the comparison rather than either fit -- but if
+you are using these products, it is the number that says how far an
+independently derived transmission sits from ours.
+""")
+
+
 # ---------------------------------------------------------------- batch
 md(r"""
-## 12. All 598 page-epochs
+## 13. All 598 page-epochs
 
 The batch driver repeats everything above for every page of both epochs. The
 product is one HDF5 **record** holding the fitted parameters and the identity of
@@ -937,7 +1137,6 @@ not.
 """)
 
 code(r"""
-pages = record.pages
 summer = pages["epoch"] == b"summer"
 nu_mid_all = 0.5 * (pages["v1"] + pages["v2"])
 
@@ -1062,14 +1261,13 @@ they do not, one of them is wrong, and the parameters usually say which.
 code(r"""
 import os
 
-ARRAYS = RECORD.parent
 rows = []
 for ep in ("summer", "winter"):
     k = np.flatnonzero(pages["epoch"] == ep.encode())
     k = k[np.argsort(pages["v1"][k])]
     for a, b in zip(k[:-1], k[1:]):
-        pa = ARRAYS / f"{pages['page'][a].decode()}_{ep}.npz"
-        pb = ARRAYS / f"{pages['page'][b].decode()}_{ep}.npz"
+        pa = ARRAYS_DIR / f"{pages['page'][a].decode()}_{ep}.npz"
+        pb = ARRAYS_DIR / f"{pages['page'][b].decode()}_{ep}.npz"
         if not (pa.exists() and pb.exists()):
             continue
         A, B = np.load(pa), np.load(pb)
@@ -1113,7 +1311,7 @@ plt.tight_layout()
 
 # ---------------------------------------------------------------- products
 md(r"""
-## 13. What comes out
+## 14. What comes out
 
 Three artefacts, and which one you want depends entirely on what you will do
 with it.
