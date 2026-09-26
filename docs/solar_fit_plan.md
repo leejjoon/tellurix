@@ -266,13 +266,18 @@ an FTS product, `measure_atlas_ils` applies to all of them unmodified, and the
 ftsspec header has already been caught stating a resolution 2-3.7x away from
 its own cut.
 
-For the disc-centre IR atlases, where FWHM = 0.01727 cm⁻¹ is measured:
+For the disc-centre IR atlases, where FWHM = 0.01727 cm⁻¹ is measured, this is
+`scripts/generate_payne_zero_solar.py --band {blue,mid,red}`:
 
-| band | cm⁻¹ | R at nu_max | r-grid | points |
-|---|---|---|---|---|
-| 1105-1500 nm | 6667-9050 | 524,000 | 2.1 M | ~640 k |
-| 1500-2600 nm | 3846-6667 | 386,000 | 1.6 M | ~850 k |
-| 2600-5320 nm | 1880-3846 | 223,000 | 0.9 M | ~640 k |
+| band | nm | cm⁻¹ | R at nu_max | r-grid | step | points |
+|---|---|---|---|---|---|---|
+| `blue` | 1100-1510 | 6623-9091 | 526,400 | 2,105,596 | 0.1424 km/s | 667 k |
+| `mid` | 1490-2610 | 3831-6711 | 388,600 | 1,554,467 | 0.1929 km/s | 871 k |
+| `red` | 2590-5330 | 1876-3861 | 223,600 | 894,269 | 0.3352 km/s | 645 k |
+
+2.18 M points in all. The bands overlap by 20 nm and together cover
+1100-5330 nm, containing ftsspec's usable 1105.0-5319.1 nm with margin, so a
+model grid reaching past its fit window never extrapolates off an edge.
 
 The blue atlases will be more demanding and their numbers are not yet
 measured: if `niratl` and `ftsspec_830626` share the same path difference, they
