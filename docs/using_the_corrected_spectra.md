@@ -342,76 +342,43 @@ good = f["reliable"][i] & (f["effective_transmission"][i] > 0.8)
 
 The floor the run used is on the dataset as `transmission_floor`.
 
-**The retrieved H2O column depends strongly on where in the spectrum it is
-measured.** One epoch is one sky, so a perfect model would return one number.
-It does not:
+**The 0.91-1.11 um pages need about 2.4x more water, and so do the other
+species.** Over the bulk of the atlas the retrieved columns are steady. Taking
+4000-9000 cm-1 (1.11-2.50 um), the p16-p84 spread of the fitted scale is:
 
-| band | summer | winter |
+| | summer | winter |
 |---|---|---|
-| 3.85-5.56 um | 0.839 | 0.436 |
-| 2.94-3.85 um | 1.317 | 0.758 |
-| 2.17-2.94 um | 1.191 | 0.391 |
-| 1.47-2.17 um | 1.181 | 0.400 |
-| 1.11-1.47 um | 1.266 | 0.360 |
-| 0.91-1.11 um | **2.965** | **0.872** |
+| H2O | 1.34x | 1.29x |
+| CO2 | 1.31x | 1.55x |
+| CH4 | 1.81x | 1.95x |
 
-That is a **3.5x spread in summer and 2.4x in winter**, and the 0.91-1.11 um
-band sits about 2.3x high in both. Within a band the scatter is far smaller
-(p16-p84 of roughly +-8%), so these are between-band offsets, not noise. This is
-the dominant systematic in the water column and it is unexplained; the far blue
-end has only weak water bands, so the column there is poorly leveraged and may
-be absorbing continuum error.
+Water is the *tightest* of the three there, which is the opposite of what a
+water-specific systematic would look like. Outside that range one region stands
+out: above 9000 cm-1 the water scale runs **2.4x (summer) and 2.3x (winter)**
+above the bulk value, reproducibly in both epochs, and CO2 and CH4 run
+1.3-1.7x high over the same pages.
 
-**Do not read this as a blanketing effect.** An earlier version of this guide
-attributed a 3-7% shift to how blanketed the star is over a page. The raw
-correlation does reproduce (-4.3% summer, -6.4% winter between the lightly and
-heavily blanketed halves), but it does not survive proper controls: blanketing,
-page width and wavenumber are mutually confounded -- each of the atlas's five
-page widths sits in its own spectral region -- and the partial correlation
-swings from -0.24 to +0.16 depending on which controls are used. That is
-instability, not a measurement. The continuum-source degeneracy was also tested
-directly and ruled out: `fit_arcturus_page.py --continuum-anchor 0.98` moves the
-retrieved H2O by a median of +0.4% and makes the residual 1.1% worse.
+It is not a weak-constraint artifact. Those pages have *more* absorption than
+the bulk (median transmission 0.950 against 0.981), a *tighter* formal error on
+the column (0.0059 against 0.0071) and a *better* residual (2.94 against 3.34
+sigma). They fit well and ask for the wrong amount of gas. The water bands there
+are weak overtones, where the AER line list and the MT_CKD continuum are far
+less validated than in the thermal infrared, and that is the obvious suspect --
+but it is a suspicion, not a result.
 
-Practically: an absolute water column from a single page carries a
-wavelength-dependent systematic of order tens of percent. Comparisons at similar
-wavelength are far safer than across the atlas.
+**Two attributions this is not.** It is not line blanketing: the raw split
+reproduces (-4.3% summer, -6.4% winter between the lightly and heavily blanketed
+halves) but blanketing, page width and wavenumber are mutually confounded -- each
+of the atlas's five page widths sits in its own spectral region -- and the
+partial correlation swings from -0.24 to +0.16 with the control set, which is
+instability rather than a measurement. And it is not the continuum-source
+degeneracy, which was tested directly: `fit_arcturus_page.py --continuum-anchor
+0.98` moves the retrieved H2O by a median of +0.4% and makes the residual 1.1%
+worse.
 
-**Do not use `continuum` as the stellar continuum, and do not use it at all if you
-are measuring line strengths.** It is a free degree-3 Chebyshev fitted *jointly
-with* a source built from fixed Payne Zero oscillator strengths, so whatever
-those got wrong in a smooth way, the polynomial absorbed. Deriving gf values
-from anything divided by it is circular.
-
-`stellar_continuum` is the other half: the model's own physical continuum,
-interpolated to the pixels, a prediction rather than a free function. Its units
-are the model's, so only its shape means anything. Splitting the fitted tilt by
-it shows how little of the page-scale slope is actually stellar:
-
-| page | fitted tilt | stellar | remainder |
-|---|---|---|---|
-| ab6225_ | +3.3% | −0.6% | +3.8% |
-| ab6600_ | +25.1% | −0.2% | +25.3% |
-| ab5825_ | +1.9% | −1.8% | +3.8% |
-| ab8450_ | +0.1% | −0.5% | +0.6% |
-
-**`stellar_continuum` carries bound-free edges, which no fitted polynomial can
-represent.** The largest single-sample step in the Arcturus model sits at
-1458.8 nm, the Brackett limit, at 0.19% — three hundred times any other step in
-the array. In the A0V model the same edge is **5.6%**, because at 9500 K
-hydrogen bound-free is the continuum opacity. It falls inside the two bluest
-IGRINS H orders, and those two fit at a median 3.76 sigma against 1.79 for the
-other 25, with H26 alone at 5.44. That is confounded with the band edge, so it
-is a suspicion rather than a measurement — but it is the right place to be
-suspicious.
-
-**The correction itself does not carry our stellar model, though.** `corrected`
-is exactly `observed / effective_transmission` (verified to 2.2e-16), so the
-source enters only through the convolution weighting in
-`Conv[T x S] / Conv[S]`. Recomputing that with a flat source moves it by a
-median of 0.00016, p99 0.0031 and at worst 0.0097, against 0.0137 of pixel
-noise. So `corrected` is safe to derive line strengths from; it is the
-*continuum* that is not.
+Practically: columns retrieved between 1.1 and 2.5 um agree to about 30%, and
+anything from the 0.91-1.11 um pages should be treated as carrying a factor
+of roughly two.
 
 **The Arcturus residual is dominated by the stellar model, not the atmosphere.**
 It is flat against transmission — 0.97 in deep absorption, 1.52 at the continuum
