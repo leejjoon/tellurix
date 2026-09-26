@@ -18,106 +18,18 @@ import re
 
 import numpy as np
 
+from tellurix.ils import (
+    BOXCAR_FWHM_CONSTANT as _BOXCAR_FWHM_CONSTANT,
+    interferogram_envelope,
+    measure_mopd,
+)
+
 
 ATLAS_ROOT = Path(
     "/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/arcturus/ir"
 )
 # Columns of the 89-character records; see the atlas table.doc.
 _EPOCH_OBSERVED_COLUMN = {"summer": 1, "winter": 4}
-# Full width at half maximum of sinc(x) = sin(x)/x, in units of 1/(2 L).
-_BOXCAR_FWHM_CONSTANT = 1.20671
-
-
-def _running_median(values: np.ndarray, width: int) -> np.ndarray:
-    half = width // 2
-    padded = np.pad(values, half, mode="edge")
-    return np.asarray(
-        [np.median(padded[index : index + width]) for index in range(len(values))]
-    )
-
-
-def interferogram_envelope(
-    wavenumber_cm1: np.ndarray, flux: np.ndarray
-) -> tuple[np.ndarray, np.ndarray]:
-    """Return optical path difference in cm and the interferogram envelope."""
-
-    spacing = float(np.median(np.diff(wavenumber_cm1)))
-    if not np.isfinite(spacing) or spacing <= 0.0:
-        raise ValueError("atlas wavenumbers must be increasing and evenly spaced")
-    # The mean is a delta at zero path difference and the window suppresses the
-    # leakage that would otherwise fill the region beyond the cut.
-    windowed = (flux - np.mean(flux)) * np.hanning(len(flux))
-    envelope = np.abs(np.fft.rfft(windowed))
-    return np.fft.rfftfreq(len(flux), d=spacing), envelope
-
-
-def measure_mopd(
-    path_difference_cm: np.ndarray, envelope: np.ndarray, smoothing: int = 5
-) -> dict:
-    """Locate the truncation of the interferogram and describe its sharpness.
-
-    The envelope does not fall to zero beyond the cut: the atlas stores five
-    significant digits, and that quantization leaves a floor near 1e-5 of the
-    peak. So the cut is found as the steepest sustained drop, not as the last
-    sample above a noise threshold -- a threshold detector locks onto the floor
-    and overestimates the MOPD by several centimetres.
-    """
-
-    peak = float(np.max(envelope))
-    if peak <= 0.0:
-        raise ValueError("degenerate interferogram envelope")
-    logarithmic = np.log10(np.maximum(_running_median(envelope, smoothing), 1e-30) / peak)
-    nyquist_cm = float(path_difference_cm[-1])
-    spacing_cm = float(path_difference_cm[1])
-
-    span = max(int(round(0.3 / spacing_cm)), 3)
-    searchable = np.flatnonzero(
-        (path_difference_cm > 2.0) & (path_difference_cm < nyquist_cm - 1.0)
-    )
-    searchable = searchable[searchable + span < len(logarithmic)]
-    if len(searchable) < 3:
-        raise ValueError("too few samples to locate a truncation")
-    drops = logarithmic[searchable] - logarithmic[searchable + span]
-    start = int(searchable[int(np.argmax(drops))])
-    drop_decades = float(drops[int(np.argmax(drops))])
-
-    in_band = float(
-        np.median(logarithmic[(path_difference_cm > 2.0) & (path_difference_cm < path_difference_cm[start])])
-    )
-    beyond = (path_difference_cm > path_difference_cm[start] + 0.5) & (
-        path_difference_cm < 0.95 * nyquist_cm
-    )
-    tail = float(np.median(logarithmic[beyond])) if np.any(beyond) else in_band - 3.0
-    threshold = 0.5 * (in_band + tail)
-
-    within = np.flatnonzero(
-        (logarithmic > threshold) & (path_difference_cm < path_difference_cm[start] + 0.5)
-    )
-    mopd_cm = float(path_difference_cm[within[-1]]) if len(within) else float("nan")
-
-    # An unapodized cut falls within a couple of samples. Norton-Beer tapers
-    # over roughly L/3, so the transition width separates the two.
-    taper = np.flatnonzero(
-        (logarithmic < in_band - 0.5)
-        & (logarithmic > tail + 0.5)
-        & (path_difference_cm > path_difference_cm[start] - 0.5)
-        & (path_difference_cm < path_difference_cm[start] + 1.0)
-    )
-    transition_cm = (
-        float(path_difference_cm[taper[-1]] - path_difference_cm[taper[0]])
-        if len(taper) > 1
-        else spacing_cm
-    )
-
-    return {
-        "mopd_cm": mopd_cm,
-        "drop_decades": drop_decades,
-        "in_band_log10": in_band,
-        "tail_log10": tail,
-        "transition_cm": transition_cm,
-        "path_difference_resolution_cm": spacing_cm,
-        "nyquist_path_difference_cm": nyquist_cm,
-    }
 
 
 def measure_page(path: Path, epoch: str) -> dict:

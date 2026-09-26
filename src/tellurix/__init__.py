@@ -27,6 +27,13 @@ from .atlas import (
     read_arcturus_page,
     robust_noise,
 )
+from .ils import (
+    BOXCAR_FWHM_CONSTANT,
+    MINIMUM_ENVELOPE_STEP_DECADES,
+    describe_truncation,
+    interferogram_envelope,
+    measure_mopd,
+)
 from .nso import (
     FTSSpectrum,
     PhotatlPage,
@@ -35,6 +42,7 @@ from .nso import (
     read_fts_spectrum,
     read_photatl_page,
     uniform_wavenumber_grid,
+    window_continuum_snr,
     zenith_angle_deg_for_airmass,
 )
 from .igrins import (
@@ -89,6 +97,7 @@ __all__ = [
     "ArcturusPage",
     "ArrayOpacityBackend",
     "AtmosphereProfile",
+    "BOXCAR_FWHM_CONSTANT",
     "BoxcarFTSInstrumentProfile",
     "ExoJAXOpacityBackend",
     "FTSSpectrum",
@@ -99,6 +108,7 @@ __all__ = [
     "LBLRTMRunConfig",
     "LBLRTMSpectrum",
     "LinearizedOpacityBackend",
+    "MINIMUM_ENVELOPE_STEP_DECADES",
     "MTCKDWaterContinuum",
     "OrderObjective",
     "PhotatlPage",
@@ -119,6 +129,7 @@ __all__ = [
     "continuum_level",
     "default_data_directory",
     "degrade_to_resolving_power",
+    "describe_truncation",
     "download_aer_lines",
     "download_mt_ckd",
     "epoch_velocity_kms",
@@ -128,9 +139,11 @@ __all__ = [
     "hydrogen_series_um",
     "igrins_spectral_order",
     "ils_fingerprint",
+    "interferogram_envelope",
     "leave_one_out_patterns",
     "load_atmosphere_csv",
     "load_mipas_profile",
+    "measure_mopd",
     "merge_records",
     "parameters_from_row",
     "photatl_spectral_order",
@@ -152,6 +165,7 @@ __all__ = [
     "surface_conditions",
     "trim_wavenumber_grid",
     "uniform_wavenumber_grid",
+    "window_continuum_snr",
     "write_record",
     "write_tape5",
     "zenith_angle_deg",

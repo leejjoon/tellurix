@@ -44,8 +44,8 @@ Starting on the raw FTS spectra rather than on `photatl` buys three things that
 | quantity | `ftsspec_901218_5` | `photatl` |
 |---|---|---|
 | sampling | 0.0095 cm⁻¹ | 0.0094771 cm⁻¹ |
-| MOPD | 34.24-34.64 cm | 34.93 cm (median of 258 pages) |
-| sinc FWHM | 0.01742-0.01762 cm⁻¹ | 0.01727 cm⁻¹ |
+| MOPD | 34.401, 34.339 cm | 34.414 cm (median of 257 pages) |
+| sinc FWHM | 0.01754, 0.01757 cm⁻¹ | 0.017532 cm⁻¹ |
 | apodization | transition/path-resolution ~71 | ~20.5 |
 
 Method: `measure_atlas_ils.measure_mopd` on the FFT envelope of the spectrum,
@@ -64,11 +64,20 @@ carry `photatl`'s missing air mass.
 
 ### The header's stated resolution is wrong, and the data is right
 
-The ftsspec header says `resolution= 0.053cm-1`, which would be a 9.43 cm MOPD
-read as `1/(2L)` or 18.87 cm read as `1/L`. The interferogram cut is at 34.4 cm.
 An FTS spectrum is the transform of a truncated interferogram, so the cut is a
-measurement of the truncation and the header is a label. Trust the cut.
-*(Phase 2)*
+measurement of the truncation and the header is a label. Measured per file:
+
+| file | header says | interferogram says | factor |
+|---|---|---|---|
+| `ftsspec_901218_4` | 0.053 cm⁻¹ | 0.01754 | **3.02** |
+| `ftsspec_901218_5` | 0.053 | 0.01757 | **3.02** |
+| `ftsspec_830626_2` | 0.051 | 0.04167 | 1.22 |
+| `ftsspec_830626_3` | 0.041 | 0.04102 | 1.00 |
+
+One header is exact, one is 22% off and two are out by almost exactly three.
+**The error is not consistent even within one observing programme**, so no
+conversion recovers the truth from the label; the cut has to be measured.
+`docs/solar_ils.md`
 
 ### `photatl` is a constant-MOPD atlas, where Arcturus is constant-R
 
@@ -76,12 +85,12 @@ Measured over all 258 pages with the Arcturus tool: *(Phase 2)*
 
 | | `photatl` | Arcturus, for scale |
 |---|---|---|
-| MOPD p16-p84 | 34.156-35.180 cm, spread **1.030** | 8.82-25.32 cm, spread 2.87 |
-| corr(MOPD, nu) | **-0.084** | -0.93 (the constant-R law) |
-| sinc FWHM | **0.01727 cm⁻¹, constant** | tracks 1/nu |
+| MOPD p16-p84 | 34.207-34.552 cm, spread **1.010** | 8.82-25.32 cm, spread 2.87 |
+| corr(MOPD, nu) | **-0.077** | -0.93 (the constant-R law) |
+| sinc FWHM | **0.017532 cm⁻¹, constant** | tracks 1/nu |
 | drop across the cut | 1.40 decades | 2.34 |
 
-So R runs **113,600 at 2000 cm⁻¹, 291,800 at 5000, 502,255 at 9000**, and the
+So R runs **114,075 at 2000 cm⁻¹, 285,188 at 5000, 513,338 at 9000**, and the
 `R ~ 300,000` quoted once for the series in Wallace et al. 1996 is a mid-band
 value rather than a constant. A handful of pages come back at 2.68 cm and are
 failures, not measurements; keep the `mopd_measurable` guard that leaves 598 of
@@ -140,7 +149,7 @@ take two values exactly one float32 ulp apart -- measured ratio 1.01-1.15 at
 quantization, not sampling. The jitter about a uniform grid grows with
 wavenumber:
 
-| page | residual | as a fraction of the 0.01727 cm-1 FWHM |
+| page | residual | as a fraction of the 0.017532 cm-1 FWHM |
 |---|---|---|
 | wn1850 | 6.1e-05 cm-1 | 0.4% |
 | wn5000 | 2.6e-04 | 1.5% |
@@ -293,14 +302,17 @@ an FTS product, `measure_atlas_ils` applies to all of them unmodified, and the
 ftsspec header has already been caught stating a resolution 2-3.7x away from
 its own cut.
 
-For the disc-centre IR atlases, where FWHM = 0.01727 cm⁻¹ is measured, this is
+For the disc-centre IR atlases, where FWHM = 0.017532 cm⁻¹ is measured, this is
 `scripts/generate_payne_zero_solar.py --band {blue,mid,red}`:
 
 | band | nm | cm⁻¹ | R at nu_max | r-grid | step | points |
 |---|---|---|---|---|---|---|
-| `blue` | 1100-1510 | 6623-9091 | 526,400 | 2,105,596 | 0.1424 km/s | 667 k |
-| `mid` | 1490-2610 | 3831-6711 | 388,600 | 1,554,467 | 0.1929 km/s | 871 k |
-| `red` | 2590-5330 | 1876-3861 | 223,600 | 894,269 | 0.3352 km/s | 645 k |
+| `blue` | 1100-1510 | 6623-9091 | 518,532 | 2,074,130 | 0.1445 km/s | 657 k |
+| `mid` | 1490-2610 | 3831-6711 | 382,809 | 1,531,237 | 0.1958 km/s | 858 k |
+| `red` | 2590-5330 | 1876-3861 | 220,226 | 880,905 | 0.3403 km/s | 636 k |
+
+The sources synthesized before the ILS was measured used 0.01727 cm⁻¹, which
+asks for a *finer* grid than the table and so remains valid.
 
 2.18 M points in all. The bands overlap by 20 nm and together cover
 1100-5330 nm, containing ftsspec's usable 1105.0-5319.1 nm with margin, so a
@@ -357,15 +369,18 @@ than fall back to the free-text comment's "EAST 3. AIRMASSES". And the header's
 they agree for the 1990 files at 831,488 and disagree for the 1983 pair, where
 the header says 745,472 and 1,048,576 against 540,672 rows on disk.
 
-**ILS.** Run the measurement per window, confirm 34.4 cm, then **pin one
-MOPD** rather than fitting per window. This is the `--sinc-resolving-power`
+**ILS -- measured**, `scripts/measure_solar_ils.py`, reported in
+`docs/photatl_ils.json`, `docs/solar_fts_ils.json` and `docs/solar_ils.md`. Pin
+**one** MOPD of 34.41 cm (FWHM 0.017532 cm⁻¹) rather than fitting per window:
+the page-to-page spread of 1.010 is inside the FFT bin, so a per-page value
+would be fitting noise. This is the `--sinc-resolving-power`
 lesson from Arcturus, on firmer ground here because the MOPD really is
 constant.
 
 **Grid spacing is per window, not shared.** This is the one architectural
 difference from Arcturus. There `velocity_step_kms` is a single number for the
 whole atlas because the resolving power is constant. Here the *resolution
-element* is constant, so set `resolving_power = nu_mid / 0.01727` per window
+element* is constant, so set `resolving_power = nu_mid / 0.017532` per window
 and let `constant_velocity_grid` follow. A single atlas-wide step would be set
 by 9050 cm⁻¹ and oversample 1880 cm⁻¹ by 4.5x.
 

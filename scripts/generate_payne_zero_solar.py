@@ -69,13 +69,16 @@ SOLAR_LABELS = {
 }
 SOLAR_LABEL_SOURCE = "IAU 2015 Resolution B3 nominal solar values; [M/H] and [alpha/M] zero by definition"
 
-# The sinc FWHM measured from the interferogram cut of photatl (258 pages) and
-# of ftsspec_901218_5, which agree at 0.0173 cm-1. It is constant across those
-# atlases -- they hold the path difference fixed, not the resolving power -- so
-# one number sizes the whole source. Measure it per atlas before reusing this
-# default anywhere else: the ftsspec header states 0.053 cm-1, which is 2-3.7x
-# away from its own cut, so the documentation is not a substitute.
-DEFAULT_FWHM_CM1 = 0.01727
+# The sinc FWHM measured from the interferogram cut of photatl (257 of 258
+# pages, 0.01753) and of both 1990 ftsspec spectra (0.01754, 0.01757). It is
+# constant across those atlases -- they hold the path difference fixed, not the
+# resolving power -- so one number sizes the whole source. Measure it per atlas
+# before reusing this default: the ftsspec headers state a resolution that is
+# 3.02x their own cut for the 1990 pair and 1.00-1.22x for the 1983 pair, so
+# the documentation is not a substitute and is not even self-consistent.
+# docs/solar_ils.md. (The sources synthesized before this was measured used
+# 0.01727, which asks for a *finer* grid and so remains valid.)
+DEFAULT_FWHM_CM1 = 0.01753
 
 # Bands exist because r_grid is set by the *bluest* wavenumber a band contains,
 # and one grid fine enough for 9050 cm-1 would oversample 1880 cm-1 by 4.5x.

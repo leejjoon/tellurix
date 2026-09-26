@@ -30,6 +30,7 @@ import re
 import numpy as np
 
 from .atlas import robust_noise
+from .ils import running_median as _running_median
 from .types import SpectralOrder
 
 
@@ -57,10 +58,11 @@ _MST_OFFSET_HOURS = 7
 # the strongest evidence that photatl is built from spectra like these.
 SAMPLING_CM1 = 0.0094771
 
-# The sinc FWHM measured from the interferogram cut; see docs/solar_fit_plan.md.
-# Constant across the atlas because these spectra hold the path difference
-# fixed, not the resolving power.
-MEASURED_FWHM_CM1 = 0.01727
+# The sinc FWHM measured from the interferogram cut over all 258 photatl pages
+# and both 1990 ftsspec spectra; see docs/solar_ils.md. Constant across the
+# atlas because these spectra hold the path difference fixed, not the resolving
+# power.
+MEASURED_FWHM_CM1 = 0.01753
 
 
 def zenith_angle_deg_for_airmass(airmass: float) -> float:
@@ -90,7 +92,7 @@ def uniform_wavenumber_grid(wavenumber_cm1: np.ndarray) -> tuple[np.ndarray, flo
     so.** ``photatl`` writes single-precision wavenumbers: the spacings in a
     page take two values one float32 ulp apart (measured ratio 1.01-1.15 at
     1850, 5000 and 8975 cm-1), and the jitter about a uniform grid grows with
-    wavenumber -- 0.4% of the 0.01727 cm-1 resolution element at 1850 cm-1,
+    wavenumber -- 0.3% of the 0.01753 cm-1 resolution element at 1850 cm-1,
     1.5% at 5000, **2.8% at 9000**. The ftsspec files store four decimals,
     which is a flat 0.3% everywhere.
 
@@ -478,13 +480,23 @@ def read_photatl_page(path: str | Path, *, reconstruct_grid: bool = True) -> Pho
 # ------------------------------------------------------------ to an order ----
 
 
-def _running_median(values: np.ndarray, width: int) -> np.ndarray:
-    if width <= 1:
-        return values
-    half = width // 2
-    padded = np.pad(values, half, mode="edge")
-    windows = np.lib.stride_tricks.sliding_window_view(padded, 2 * half + 1)
-    return np.median(windows, axis=-1)
+def window_continuum_snr(flux: np.ndarray) -> float:
+    """The window's continuum over its own noise.
+
+    This is what tells an absorbed window from a dead one. It is separated out
+    because a measurement of the instrument profile has to make the same call:
+    the interferogram of a window that passes no light is noise, and it yields
+    a confident-looking MOPD that means nothing.
+    """
+
+    values = np.asarray(flux, dtype=float)
+    finite = np.isfinite(values)
+    if not np.any(finite):
+        raise ValueError("no finite pixels in this window")
+    continuum = float(np.percentile(values[finite], 99.0))
+    if not np.isfinite(continuum) or continuum <= 0.0:
+        return 0.0
+    return continuum / robust_noise(values[finite])
 
 
 def _saturation_mask(
@@ -527,10 +539,10 @@ def _saturation_mask(
     continuum = float(np.percentile(flux[finite], 99.0))
     if not np.isfinite(continuum) or continuum <= 0.0:
         raise ValueError("this window has no positive continuum; it is opaque or off the filter")
-    noise = robust_noise(flux[finite])
-    if continuum < minimum_continuum_snr * noise:
+    snr = window_continuum_snr(flux)
+    if snr < minimum_continuum_snr:
         raise ValueError(
-            f"window continuum {continuum:.5g} is only {continuum / noise:.1f} sigma above "
+            f"window continuum {continuum:.5g} is only {snr:.1f} sigma above "
             f"zero (need {minimum_continuum_snr:g}); it is opaque or off the filter"
         )
     return finite & (_running_median(np.where(finite, flux, 0.0), smooth_pixels)
