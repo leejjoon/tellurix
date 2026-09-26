@@ -1165,7 +1165,7 @@ plt.tight_layout()
 """)
 
 code(r"""
-#| fig-cap: "The retrieved column scales across the atlas. Water varies by an order of magnitude between the two epochs, as it should; the well-mixed gases should be flat and mostly are."
+#| fig-cap: "The retrieved column scales across the atlas. Read these as `true column x air mass / profile column`, not as abundances: the run fits at the zenith, so the slant path has nowhere to go but the scale, and the atlas's pages were not all taken at the same air mass."
 fig, axes = plt.subplots(3, 1, figsize=(10, 7.2), sharex=True)
 for ax, species in zip(axes, ("H2O", "CO2", "CH4")):
     col = pages[f"log_column_{species}"]
@@ -1188,6 +1188,44 @@ for species in ("H2O", "CO2", "CH4"):
         s = np.exp(pages[f"log_column_{species}"][k])
         print(f"{species:4s} {label:7s} n={k.sum():3d}  median {np.median(s):6.3f}  "
               f"p16-p84 {np.percentile(s, 16):.3f}-{np.percentile(s, 84):.3f}")
+""")
+
+md(r"""
+### These scales are not comparable between pages
+
+The run sets `zenith_angle_deg = 0`, so `transmission` divides optical depth by
+$\cos 0 = 1$ and **the air mass ends up inside the fitted column scale**:
+
+$$
+\text{fitted scale} \;=\; \frac{\text{true vertical column}\;\times\;\text{air mass}}{\text{profile column}}
+$$
+
+Three factors, not separable from one page. And the atlas is not one exposure:
+its own abstract says Arcturus "was observed on two different dates selected to
+give large opposite heliocentric shifts", and 0.9-5.3 um at R = 100,000 cannot
+come from a single FTS scan -- the pages carry five distinct sampling intervals,
+each confined to its own spectral region, which is five instrument
+configurations at minimum.
+
+So a page at air mass 1.8 returns a scale 1.8x larger for *every* species, and
+the spread below bounds air mass **plus** model error together. It is not an
+accuracy. The air-mass-free quantity is the *ratio* of two species on the same
+page, which only exists where both are fitted.
+""")
+
+code(r"""
+edges = np.array([1800, 2600, 3400, 4600, 6800, 9000, 11000])
+print("pages with each species FREE, per band (summer)")
+print(f"{'band (cm-1)':16s} {'H2O':>5} {'CO2':>5} {'CH4':>5}")
+for a, b in zip(edges[:-1], edges[1:]):
+    m = summer & (nu_mid_all >= a) & (nu_mid_all < b) & pages["all_stages_converged"].astype(bool)
+    counts = [int((m & np.array([sp.encode() in f for f in pages["free_species"]])).sum())
+              for sp in ("H2O", "CO2", "CH4")]
+    print(f"{f'{a}-{b}':16s} {counts[0]:5d} {counts[1]:5d} {counts[2]:5d}")
+print()
+print("Above 9000 cm-1 neither CO2 nor CH4 has a measurable band, so there is no")
+print("second species sharing the path and no air-mass-free check in that region --")
+print("which is exactly where the water scale runs 2.3-2.4x above the rest.")
 """)
 
 md(r"""

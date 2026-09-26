@@ -621,6 +621,82 @@ And one caveat that applies even if it were wired in: the overlay was fitted
 against this same atlas, so an improvement in the H band would be partly
 refitting the same data, not an independent validation.
 
+## What the atlas is, and why column scales are not comparable across it
+
+This section exists because the same wrong conclusion was reached four times in
+one session. If you are about to interpret a fitted column scale, read it first.
+
+### The atlas is a compilation, not an exposure
+
+From `abstract.doc`: Arcturus "was observed on two different dates selected to
+give large opposite heliocentric shifts", covering 0.9-5.3 um at R = 100,000 on
+the Mayall 4 m FTS. Two *dates*, not two exposures -- that range cannot be
+covered in one scan, and the data agrees: the pages carry **five distinct
+sampling intervals** (0.01, 0.0125, 0.02, 0.033, 0.04 cm-1), each confined to
+its own spectral region, which is five instrument configurations at minimum.
+`mopd_cm` tracks them, which is also why it varies across the atlas.
+
+The `telluric` column is from further afield still: "telluric transmission
+spectra generated from **McMath-Pierce solar spectra or 4 meter lunar
+spectra**". A different telescope, a different object, a different air mass.
+That is the origin of the `k` = 0.91 scaling measured in the walkthrough's
+comparison against it, and it is why agreement with that column is a
+consistency floor rather than a test.
+
+### Air mass lives inside the fitted column scale
+
+The run sets `zenith_angle_deg = 0`, so `TelluricModel.transmission` divides
+optical depth by cos(0) = 1 and the slant path has nowhere to go but the fitted
+scale:
+
+```
+fitted scale  =  true vertical column  x  air mass  /  profile column
+```
+
+Three factors, not separable from one page. A page taken at air mass 1.8
+returns a scale 1.8x larger for *every* species. **Comparing absolute scales
+between pages is therefore meaningless**, and the p16-p84 spreads over
+4000-9000 cm-1 -- H2O 1.34x/1.29x, CO2 1.31x/1.55x, CH4 1.81x/1.95x
+(summer/winter) -- bound air mass *plus* model error together. They are not an
+accuracy.
+
+The ratio of two species on the *same* page is air-mass-free and is the right
+diagnostic. It only exists where two species are both fitted.
+
+### The one feature that survives, and the check that does not exist
+
+Above 9000 cm-1 (0.91-1.11 um) the water scale runs **2.4x (summer) and 2.3x
+(winter)** above the 4000-9000 cm-1 value, closely reproduced across the two
+dates. Those pages are not poorly constrained: median transmission 0.950
+against 0.981 for the bulk, formal sigma 0.0059 against 0.0071, residual 2.94
+against 3.34 sigma. They fit better than average and ask for twice the water.
+
+It cannot be attributed. **Neither CO2 nor CH4 has a measurable band above
+9000 cm-1** -- 0 pages of 29 have either free -- so no second species shares the
+path and air mass cannot be separated from a line-list or continuum error in the
+weak water overtone bands there. Reproducibility across two dates argues against
+pure air mass, but does not settle it.
+
+### Hypotheses already tested and rejected
+
+Do not spend time on these again.
+
+| hypothesis | test | result |
+|---|---|---|
+| line blanketing biases the water column | split the atlas at the median blanketing of the Payne Zero source | raw effect reproduces (-4.3% summer, -6.4% winter) but **does not survive controls**: blanketing, page width and wavenumber are mutually confounded -- each of the five page widths sits in its own spectral region -- and the partial correlation swings from -0.24 to +0.16 with the control set |
+| the continuum absorbs blanketing and the column pays for it | refit the twelve most blanketed page-epochs with `--continuum-anchor 0.98`, dropping the 38% of pixels where the source is below 0.98 | **rejected**: median H2O shift +0.4%, residual 1.1% worse |
+| the blue band is weakly constrained, so the column floats | compare median transmission, formal sigma and residual against the bulk | **rejected**: more absorption, tighter errors, better residual |
+| the well-mixed gases bound the model error there | look for CO2/CH4 on the same pages | **the check does not exist**: neither is fitted above 9000 cm-1 |
+
+### The methodological lesson
+
+Every wrong turn above came from reaching for a physical explanation before
+checking whether the quantity was comparable between the things being compared.
+The air-mass degeneracy was in `config["zenith_angle_deg"]` the whole time. When
+a fitted parameter varies across the atlas, establish first what else varies
+with it -- observing date, air mass, page width, sampling interval and
+wavenumber are all confounded here -- and only then look for physics.
+
 ## Still to do
 - Whether an LBLRTM-corrected template closes L3's CO₂ gap and L7's H₂O gap;
   both are the right size for the mt_ckd bias.
