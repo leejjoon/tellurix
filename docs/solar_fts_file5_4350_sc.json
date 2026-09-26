@@ -1,0 +1,160 @@
+{
+  "spectrum": {
+    "path": "/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso/telluric_near_ir/ftsspec_901218_5.txt",
+    "name": "ftsspec_901218_5.txt",
+    "sha256": "4b6533e95580196d94c965df79c9152eea9da73593961a995375c38235effbce",
+    "source_name": "CENT DISK E AUX",
+    "observed_utc": "1990-12-18T17:59:03+00:00",
+    "airmass_start": 2.17,
+    "airmass_stop": 1.8,
+    "airmass_mean": 1.9849999999999999,
+    "window_cm1": [
+      4350.0,
+      4380.0
+    ],
+    "pixels": 3165,
+    "masked": 0,
+    "spacing_cm1": 0.009477093873101694,
+    "grid_residual_cm1": 5.000023975298973e-05,
+    "uncertainty": 0.0013860658163616223,
+    "stated_resolution_cm1": 0.053
+  },
+  "grid": {
+    "resolving_power": 249001.71135196806,
+    "samples_per_resolution": 4.0,
+    "margin_cm1": 25.0,
+    "grid_margin_cm1": 5.0,
+    "points": 9129,
+    "velocity_step_kms": 0.3009932535465387
+  },
+  "physics": {
+    "accuracy_mode": "mt_ckd",
+    "continuum": "native MT_CKD 4.3",
+    "pressure_shift": true,
+    "mixed_precision": true,
+    "precomputed_opacity": "linear",
+    "pixel_integration": "point",
+    "instrument": "boxcar FTS sinc",
+    "fwhm_cm1": 0.01753,
+    "mopd_cm": 34.41842555618939,
+    "instrument_resolving_power": 249001.71135196806,
+    "profile": "data/profiles/kitt_peak_19901218_file5.csv",
+    "species": [
+      "CH4",
+      "H2O"
+    ],
+    "lines_per_species": {
+      "CH4": 8921,
+      "H2O": 1077
+    },
+    "species_without_lines": [],
+    "zenith_angle_deg": 59.74971078080449,
+    "airmass_used": 1.9849999999999999
+  },
+  "stellar": {
+    "source": "/home/jjlee/work/lblrtm/data/stellar/solar_payne_zero_mid.npz",
+    "vsini_kms": 0.0,
+    "macroturbulence_kms": 1.5,
+    "normalized": true,
+    "carries_stellar_continuum": true,
+    "emergent_quantity_note": "Payne Zero returns Eddington flux and has no mu option; this is a disc-centre observation, so the source mode is mismatched. See docs/solar_fit_plan.md."
+  },
+  "pinned": {},
+  "stages": [
+    {
+      "stage": "continuum",
+      "free": [
+        "continuum_0",
+        "continuum_1",
+        "continuum_2",
+        "continuum_3",
+        "log_jitter"
+      ],
+      "objective": -13061.075975652057,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "iterations": 23,
+      "seconds": 16.4
+    },
+    {
+      "stage": "velocity",
+      "free": [
+        "velocity_kms",
+        "lsf_sigma_kms",
+        "continuum_0",
+        "continuum_1",
+        "continuum_2",
+        "continuum_3",
+        "log_jitter"
+      ],
+      "objective": -13331.07568181811,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "iterations": 23,
+      "seconds": 0.12
+    },
+    {
+      "stage": "columns",
+      "free": [
+        "CH4",
+        "H2O",
+        "velocity_kms",
+        "lsf_sigma_kms",
+        "continuum_0",
+        "continuum_1",
+        "continuum_2",
+        "continuum_3",
+        "log_jitter"
+      ],
+      "objective": -13961.801684074238,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "iterations": 47,
+      "seconds": 0.27
+    },
+    {
+      "stage": "stellar",
+      "free": [
+        "CH4",
+        "H2O",
+        "velocity_kms",
+        "lsf_sigma_kms",
+        "continuum_0",
+        "continuum_1",
+        "continuum_2",
+        "continuum_3",
+        "log_jitter",
+        "stellar_velocity_kms"
+      ],
+      "objective": -13982.43562445025,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "iterations": 38,
+      "seconds": 0.26
+    }
+  ],
+  "at_bound": [],
+  "parameters": {
+    "CH4": 0.014600750410712378,
+    "H2O": -0.3807131745978261,
+    "velocity_kms": -0.10144593667514841,
+    "stellar_velocity_kms": 0.2295697314074019,
+    "lsf_sigma_kms": 0.40395270466218813,
+    "continuum_coeffs": [
+      -0.3433159819152849,
+      0.009967313580130565,
+      0.002700590841210777,
+      0.0028307468817271152
+    ],
+    "log_jitter": -4.936112315541478
+  },
+  "residuals": {
+    "reduced_chi2": 27.85210874073178,
+    "rms": 0.007314975804756005,
+    "percentile_99_absolute": 0.024400407436534998,
+    "jitter_over_uncertainty": 5.181909290444019
+  },
+  "runtime_seconds": 34.4,
+  "platform": "cuda:0",
+  "jax": "0.6.2"
+}

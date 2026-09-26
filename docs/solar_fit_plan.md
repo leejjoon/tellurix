@@ -488,12 +488,74 @@ programme can make that test, and it is a direct check on the
 air-mass-inside-the-column-scale caveat the Arcturus record has to carry as an
 untested assumption.
 
-Before any of it: `scripts/validate_fts_fit.py` on the
-`validate_arcturus_fit.py` L0-L2 synthetic pattern, and
-`scripts/rebuild_fts_window.py --check` reconstructing a window from the record
-alone. As with `rebuild_arcturus_page.py`, it must share no code with the
-driver -- an independent reconstruction is the evidence; calling one function
-twice is not.
+`scripts/validate_fts_fit.py` does this synthetically first, over
+6000-6020 cm-1 with H2O and CH4 at the measured 0.00046 noise
+(`docs/solar_fts_validation.json`). All four levels pass, and **L3 found that
+the prediction above is exact only for an unsaturated species**:
+
+| | at the header zenith | at zenith 0 |
+|---|---|---|
+| CH4 | recovered to +0.02% | **4.7305x truth against an air mass of 4.730** -- exact to 1 part in 10^4 |
+| H2O | recovered to -0.008% | 4.799x, i.e. **1.45% high** |
+| reduced chi2 | 1.06 | 1.66 |
+| rms/noise | 1.03 | 1.29 |
+
+`exp(-tau X)` is not `exp(-tau)^X` once a line saturates, so the fold is exact
+where the line is optically thin and not where it is not. H2O has saturated
+cores in this window and CH4 does not. Two consequences:
+
+- **Quote the ratio test on a well-mixed species, not on water.** CH4 and CO2
+  are the clean rungs; a 1.45% miss on H2O at X = 4.73 is the model behaving
+  correctly, not a failure.
+- **Fitting at zenith 0 is not a reparameterization, it is a worse fit** --
+  chi2 1.66 against 1.06 here. The Arcturus configuration is lossy in a way the
+  Arcturus data could never reveal, because it has no second air mass to
+  compare against.
+
+L0 recovers the injected columns to 0.07% and 0.02% with reduced chi2 0.978;
+L1 shows the grid converged, the full and double grids agreeing to 0.026%; L2
+prices the Gaussian at 4.9% of residual and under 1e-4 of column bias, much
+cheaper here than on Arcturus because this sinc is narrow against the fitted
+Gaussian.
+
+`scripts/rebuild_fts_window.py --check` reconstructs the window from the report
+alone and compares against the driver's own products. As with
+`rebuild_arcturus_page.py`, it shares no code with the driver -- an independent
+reconstruction is the evidence; calling one function twice is not. It rebuilds
+from the JSON report rather than an HDF5 record, because the record arrives
+with the batch driver in Phase 4; point it at the record once that exists.
+
+## What the first fits found
+
+Phase 3 is built and run; `docs/solar_fts_residual.md` is the record and
+`docs/solar_lblrtm_reference.json` the machine-readable companion. Five things
+change the plan below.
+
+**The window matters more than any parameter.** Same code, same night, same
+source: 67x noise at 6000-6030 cm-1 against 3.7x at 2030-2060. The residual
+tracks how much solar structure Payne Zero has to get right, so a batch run
+must choose windows on solar line content, not only on instrument response.
+
+**Per-window species lists are required.** A species with no signal in a window
+rails at a bound and absorbs model error rather than contributing nothing --
+CH4 and N2O at 2030-2060, CO2 at 4350-4380. `at_bound` is the detector.
+
+**A fitted water column is a column times a profile.** ERA5 against the
+analytic profile moves H2O by 12.2% and the residual by 1.5%. The well-mixed
+species move 1-2%.
+
+**The slant-path test works and gives a weaker bound than hoped.** The air-mass
+fold is exact to 0.01% on CO2 and CO within each file, and L3's predicted water
+deficit shows up at 1.14% against a predicted 1.45%. But the two files still
+disagree by 4.7% (CO2) and 9.6% (CO) at their own air masses, so **the honest
+slant-path bound is that 5-10%, not the 0.01% the fold reproduces.**
+
+**The residual is in the model, not the data.** corr(file 4, file 5) = +0.941,
+88% shared variance at two air masses two hours apart. The model's lines are
+too broad and too shallow; about half of that is the mt_ckd-against-LBLRTM
+offset and the rest is unexplained. Ruled out: velocity, LSF, column scale,
+solar model, instrument FWHM, continuum degree, vertical profile shape, and
+layer count -- the 12-layer `DEFAULT_EDGES_KM` is converged to 0.04%.
 
 ## Phase 4 -- the rest of the atlases
 
