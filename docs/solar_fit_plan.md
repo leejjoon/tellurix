@@ -132,6 +132,33 @@ the sibling project's own `coverage_report.json`: 5.8% over 1.11-1.67 um (120
 pages), 10.9% over 1.67-2.5 um (80), 30.7% over 2.5-4.0 um (40), 25.0% over
 4.0-5.4 um (18). Mean 23.5%, median 10.7%; 49 pages over half, 7 entirely.
 
+### Both formats store a uniform grid at reduced precision, and neither says so
+
+`photatl` writes **single-precision** wavenumbers. The spacings within a page
+take two values exactly one float32 ulp apart -- measured ratio 1.01-1.15 at
+1850, 5000 and 8975 cm-1 -- so the apparent 5% spacing modulation is
+quantization, not sampling. The jitter about a uniform grid grows with
+wavenumber:
+
+| page | residual | as a fraction of the 0.01727 cm-1 FWHM |
+|---|---|---|
+| wn1850 | 6.1e-05 cm-1 | 0.4% |
+| wn5000 | 2.6e-04 | 1.5% |
+| wn8975 | 4.8e-04 | **2.8%** |
+
+The ftsspec files store four decimals, which is a flat 5e-05 = 0.3% everywhere.
+
+Fitting all N samples averages the quantization down by sqrt(N), so a
+reconstructed grid is better than any stored sample and
+`nso.uniform_wavenumber_grid` does that. Taking the spacing from the two
+endpoints instead would inherit their quantization in full, and using the
+stored values leaves a jitter that aliases into a fitted velocity.
+
+**The fitted spacings agree to the eighth decimal**: 0.00947710 for every
+`photatl` page and 0.00947709 for `ftsspec_901218_5`, against the 0.0094771 the
+sibling project documents. That is the strongest single piece of evidence yet
+that the two products come from the same observations.
+
 ### The data is 5-10x better than Arcturus, and that is the hard part
 
 Robust noise in continuum units (`atlas.robust_noise` on 100 cm⁻¹ chunks):
@@ -287,7 +314,8 @@ band, at the r-grid that band's measured MOPD requires, and cache it.
 
 ## Phase 2 -- reader, ILS, site profile
 
-`src/tellurix/nso.py`, self-contained in the way `atlas.py` is:
+`src/tellurix/nso.py` -- **built**, with `tests/test_nso.py` -- self-contained
+in the way `atlas.py` is:
 
 - `read_fts_spectrum(path)` -- parse the 15-line header (source name, comment,
   MST date, Julian day, UT/sidereal/hour-angle/air-mass start and stop, the
@@ -301,6 +329,33 @@ band, at the r-grid that band's measured MOPD requires, and cache it.
 - `read_photatl_page` / `photatl_spectral_order` in the same module: drop the
   final row (the README says `dg` replaces the last point of `total`, so it is
   not data), carry `dg`, fit `total`, mask from the `atmospheric` column.
+
+**Refuse an opaque window rather than fit it to noise.** A relative
+saturation floor is not enough on its own: a window that passes no light has a
+continuum made of noise, and every pixel clears a fraction of it, so the
+relative test passes 99.9% of a dead window. The window's continuum over its
+own noise separates the cases with room to spare, measured on
+`ftsspec_901218_5`:
+
+| window (cm⁻¹) | continuum/noise | what it is |
+|---|---|---|
+| 6000-6030 | 2702 | clean, peak response |
+| 2200-2230 | 188 | real signal, heavily absorbed |
+| 3700-3730 | 11 | the 2.7 um hole |
+| 2340-2370 | 6 | the CO2 band core |
+| 1700-1730 | 5 | below the filter cut |
+
+`minimum_continuum_snr` defaults to 30 and raises. That is the
+`minimum_reliable` lesson from IGRINS: skip the order, do not write a NaN row.
+
+**Three header traps, all now covered by tests.** The clock components are
+right-justified, so a single-digit second arrives as `15:18: 9.0` -- with a
+space inside the token, which a `\S+` match drops silently and did.
+`ftsspec_830626_3` writes `?.??` for air mass, which must read as None rather
+than fall back to the free-text comment's "EAST 3. AIRMASSES". And the header's
+`number of samples` is the transform length, not the number of spectral points:
+they agree for the 1990 files at 831,488 and disagree for the 1983 pair, where
+the header says 745,472 and 1,048,576 against 540,672 rows on disk.
 
 **ILS.** Run the measurement per window, confirm 34.4 cm, then **pin one
 MOPD** rather than fitting per window. This is the `--sinc-resolving-power`
