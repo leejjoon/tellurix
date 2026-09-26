@@ -487,6 +487,11 @@ uv run --with aiohttp python scripts/era5_site_profile.py \
 
 ## What this does not do
 
+**There is no solar equivalent of these products yet.** The NSO solar atlases
+ship a telluric column at atlas resolution, which can only mask -- the same trap
+the transmission export exists to avoid. `docs/solar_atlases.md` surveys what
+the data is and what it would take.
+
 **Cite the atlas if you publish.** The Arcturus data is Hinkle, Wallace &
 Livingston 1995, *Infrared Atlas of the Arcturus Spectrum, 0.9-5.3 um*, ASP
 (ISBN 1-886733-04-X); PASP **107**, 1042,

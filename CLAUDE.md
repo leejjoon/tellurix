@@ -75,6 +75,34 @@ Both fit drivers default to `--precompute-opacity` (see *What a fit costs*);
 `--no-precompute-opacity` restores the exact-kernel-per-iteration path and is
 the control to reach for when a fitted value looks wrong.
 
+## The sibling project, and the solar work it is asking for
+
+`/home/jjlee/work/differentiable_stellar_spectroscopy` is where the observed
+spectra come from and where this package's output goes. Its
+`docs/solar_data_status.md` (2026-09-26) names **running this package on a solar
+atlas as "the single highest-value piece of data work available"**, for a reason
+that is this package's own result handed back: the NSO solar atlases ship a
+telluric column *at atlas resolution*, which can only mask, and cannot be
+multiplied inside a convolution. The deliverable would be the solar analogue of
+`data/corrected/arcturus_transmission.h5`.
+
+`docs/solar_atlases.md` here is the survey -- what the data is, the traps
+measured on disk, and which of their documents to read for detail. Do not
+duplicate their content into this repository; they are the authority. Four
+things to know before touching it: `photatl` (1.11-5.41 um, 87% overlap with the
+Arcturus pages already fitted) **interpolates pixels where the sky is opaque**;
+its **ILS is the weakest input in their programme** -- R = 300,000 quoted once
+for four atlases, no MOPD, no apodization; its **wavelength scale is +260 m/s**
+off two independent ACE atlases that agree with each other to 2 m/s; and the NSO
+telluric atlases have **no loader** anywhere. Their W4.1 also found that telluric
+lines can measure an instrument profile where stellar lines cannot, which is a
+lever on the `lsf_sigma_kms` railing documented above and has not been tried
+here.
+
+Their status document cites our export under a stale name
+(`arcturus_transmission_full.h5`); the file is `arcturus_transmission.h5` and
+comes from the promoted full-coverage record.
+
 The Arcturus atlas is **not fetched by this repository**. Runs read it from a
 sibling project (`differentiable_stellar_spectroscopy/data/atlases/arcturus/ir`)
 and the record pins it by that absolute path plus a per-page sha256 -- which

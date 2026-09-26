@@ -201,6 +201,14 @@ path plus a per-page sha256 -- so the hash will catch a changed file but not a
 moved directory. `docs/arcturus_fit.md` has the rest of the provenance and what
 the data's structure implies for interpreting a fit.
 
+### Solar atlases
+
+Not used yet. The NSO Kitt Peak FTS solar atlases live in the sibling project
+`differentiable_stellar_spectroscopy`, which is asking for a solar telluric
+retrieval from this package; `docs/solar_atlases.md` is the survey and points at
+their documentation. Any publication using those data must carry the NSO
+acknowledgement: *NSO/Kitt Peak FTS data used here were produced by NSF/NOAO.*
+
 ### IGRINS A0V standards
 
 From the RRISA reduced archive; `scripts/download_rrisa_standard.py` fetches
