@@ -487,6 +487,14 @@ uv run --with aiohttp python scripts/era5_site_profile.py \
 
 ## What this does not do
 
+**Cite the atlas if you publish.** The Arcturus data is Hinkle, Wallace &
+Livingston 1995, *Infrared Atlas of the Arcturus Spectrum, 0.9-5.3 um*, ASP
+(ISBN 1-886733-04-X); PASP **107**, 1042,
+doi [10.1086/133660](https://doi.org/10.1086/133660). The README shipped with
+the data asks for that citation explicitly. The README and the full provenance,
+including where to find the atlas now that the FTP URL in every paper is dead,
+are in `README.md` and `docs/arcturus_fit.md`.
+
 **It does not correct science targets.** Every fit here is of a telluric
 standard or of Arcturus. Taking a fitted atmosphere to a target observed at a
 different airmass and time is a step that does not exist yet. If that is what

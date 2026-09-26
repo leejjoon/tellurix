@@ -167,3 +167,41 @@ error against full LBLRTM from 0.0581 to 4.75e-5. The correction arrays have
 negligible overhead; the pressure-shifted GPU forward path costs about 2 ms
 more in the measured order. See [the corrected-mode guide](docs/lblrtm_corrected_mode.md)
 for usage, assumptions, and reproduction.
+
+## Observational data, and how to cite it
+
+The package downloads its own spectroscopy (AER line files, MT_CKD) but **not**
+the observed spectra it is validated against. Those come from elsewhere and
+carry their own terms.
+
+### The Arcturus infrared atlas
+
+Hinkle, K., Wallace, L., & Livingston, W. 1995, *Infrared Atlas of the Arcturus
+Spectrum, 0.9-5.3 um*, San Francisco: ASP (ISBN 1-886733-04-X). The accompanying
+paper is PASP **107**, 1042, doi
+[10.1086/133660](https://doi.org/10.1086/133660).
+
+Ken Hinkle's README that ships with the data asks:
+
+> We would appreciate a citation to the appropriate ASP atlas if this data is
+> used in a publication.
+
+**Where to get it.** The URL every paper cites,
+`ftp://ftp.noao.edu/catalogs/arcturusatlas/ir/`, **is dead** -- NOAO became
+NOIRLab and the FTP host no longer resolves. It is not in VizieR under an
+Arcturus title, and not on the NSO archive, which is solar-only. Start instead
+from NOIRLab's data-services page,
+<https://noirlab.edu/science/data-services/other> ("High resolution spectral
+atlas of Arcturus"); as retrieved on 2026-09-12 the files sat in the Google
+Drive folder `1m7Vstoh6uTMmPb7b5FcflDA_OqWf19M9`, subfolder `ir`. The `ir`
+volume is 282 files, 34 MB, one per page of the printed monograph.
+
+This repository has no downloader for it, and a run record pins it by absolute
+path plus a per-page sha256 -- so the hash will catch a changed file but not a
+moved directory. `docs/arcturus_fit.md` has the rest of the provenance and what
+the data's structure implies for interpreting a fit.
+
+### IGRINS A0V standards
+
+From the RRISA reduced archive; `scripts/download_rrisa_standard.py` fetches
+them and records each file's sha256. See `docs/igrins_a0v.md`.

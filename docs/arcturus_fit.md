@@ -626,6 +626,31 @@ refitting the same data, not an independent validation.
 This section exists because the same wrong conclusion was reached four times in
 one session. If you are about to interpret a fitted column scale, read it first.
 
+### Where the data came from
+
+Hinkle, K., Wallace, L., & Livingston, W. 1995, *Infrared Atlas of the Arcturus
+Spectrum, 0.9-5.3 um*, ASP (ISBN 1-886733-04-X); paper PASP **107**, 1042, doi
+[10.1086/133660](https://doi.org/10.1086/133660). The README shipped with the
+data asks for a citation to the ASP atlas in any publication using it.
+
+The URL every paper cites, `ftp://ftp.noao.edu/catalogs/arcturusatlas/ir/`, **is
+dead**: NOAO became NOIRLab and the host no longer resolves. It is not in VizieR
+under an Arcturus title and not on the NSO archive, which is solar-only. The
+1995 paper's own "available either on an AAS CD-ROM or as an ASP monograph" is
+thirty years stale. Start from
+<https://noirlab.edu/science/data-services/other> ("High resolution spectral
+atlas of Arcturus"); as retrieved on 2026-09-12 the files were in Google Drive
+folder `1m7Vstoh6uTMmPb7b5FcflDA_OqWf19M9`, subfolder `ir` -- 282 files, 34 MB,
+1866.0-10953.4 cm-1 (0.913-5.359 um).
+
+**This repository does not fetch it.** The runs read it from a sibling project
+(`differentiable_stellar_spectroscopy/data/atlases/arcturus/ir`, which holds the
+fuller `PROVENANCE.md` this summarises), and a record pins it by that absolute
+path plus a per-page sha256. The hash catches a changed file; it does not catch
+a moved directory. If the atlas has to be re-fetched, the NOIRLab page above is
+the starting point, and `page_sha256` in any existing record verifies the
+result.
+
 ### The atlas is a compilation, not an exposure
 
 From `abstract.doc`: Arcturus "was observed on two different dates selected to

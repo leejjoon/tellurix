@@ -75,6 +75,16 @@ Both fit drivers default to `--precompute-opacity` (see *What a fit costs*);
 `--no-precompute-opacity` restores the exact-kernel-per-iteration path and is
 the control to reach for when a fitted value looks wrong.
 
+The Arcturus atlas is **not fetched by this repository**. Runs read it from a
+sibling project (`differentiable_stellar_spectroscopy/data/atlases/arcturus/ir`)
+and the record pins it by that absolute path plus a per-page sha256 -- which
+catches a changed file, not a moved directory. It is Hinkle, Wallace &
+Livingston 1995 (ASP, ISBN 1-886733-04-X; PASP 107, 1042), whose README asks for
+a citation in any publication. The `ftp://ftp.noao.edu/catalogs/arcturusatlas/`
+URL every paper cites is dead; start from
+https://noirlab.edu/science/data-services/other. README.md and
+`docs/arcturus_fit.md` carry the full provenance.
+
 The committed Arcturus record is the **full-coverage** run: `page_windows`
 no longer trims the ~5 cm-1 the atlas pages overlap by, so every pixel the atlas
 ships is fitted (822,928 against 636,444) and adjacent pages overlap in every
