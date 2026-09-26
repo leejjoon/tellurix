@@ -186,7 +186,8 @@ class FTSSpectrum:
     wavenumber_vacuum_cm1: np.ndarray
     flux: np.ndarray
     grid_residual_cm1: float
-    observed_utc: _dt.datetime | None = field(default=None)
+    observed_utc_start: _dt.datetime | None = field(default=None)
+    observed_utc_stop: _dt.datetime | None = field(default=None)
 
     def __post_init__(self) -> None:
         nu = np.asarray(self.wavenumber_vacuum_cm1, dtype=float)
@@ -204,6 +205,18 @@ class FTSSpectrum:
     @property
     def spacing_cm1(self) -> float:
         return float(np.median(np.diff(self.wavenumber_vacuum_cm1)))
+
+    @property
+    def observed_utc_mid(self) -> _dt.datetime | None:
+        """Midpoint of the exposure, which is what an ERA5 lookup wants.
+
+        These scans run 40 to 80 minutes, so the start alone can sit an hour
+        from the atmosphere the spectrum actually saw.
+        """
+
+        if self.observed_utc_start is None or self.observed_utc_stop is None:
+            return None
+        return self.observed_utc_start + (self.observed_utc_stop - self.observed_utc_start) / 2
 
     @property
     def airmass_mean(self) -> float | None:
@@ -240,7 +253,8 @@ class FTSSpectrum:
             transform_samples=self.transform_samples, point_of_center=self.point_of_center,
             wavenumber_vacuum_cm1=self.wavenumber_vacuum_cm1[keep],
             flux=self.flux[keep], grid_residual_cm1=self.grid_residual_cm1,
-            observed_utc=self.observed_utc,
+            observed_utc_start=self.observed_utc_start,
+            observed_utc_stop=self.observed_utc_stop,
         )
 
 
@@ -309,9 +323,10 @@ def read_fts_spectrum(path: str | Path, *, reconstruct_grid: bool = True) -> FTS
 
     universal_time = pairs.get("universal_time", ("", ""))
     airmass = pairs.get("airmass", ("", ""))
-    observed = _observed_utc(header["date_mst"], universal_time[0])
-    if observed is not None:
-        _check_julian_day(observed, int(header["julian_day"]), path)
+    started = _observed_utc(header["date_mst"], universal_time[0])
+    stopped = _observed_utc(header["date_mst"], universal_time[1])
+    if started is not None:
+        _check_julian_day(started, int(header["julian_day"]), path)
 
     return FTSSpectrum(
         path=path,
@@ -330,7 +345,8 @@ def read_fts_spectrum(path: str | Path, *, reconstruct_grid: bool = True) -> FTS
         wavenumber_vacuum_cm1=wavenumber,
         flux=flux,
         grid_residual_cm1=residual,
-        observed_utc=observed,
+        observed_utc_start=started,
+        observed_utc_stop=stopped,
     )
 
 

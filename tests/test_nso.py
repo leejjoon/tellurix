@@ -37,7 +37,10 @@ def test_parses_a_clock_field_with_an_internal_space():
     # and silently -- which is what this guards.
     spectrum = read_fts_spectrum(FTS_FIXTURE)
 
-    assert spectrum.observed_utc == dt.datetime(1990, 12, 18, 15, 18, 9, tzinfo=dt.timezone.utc)
+    assert spectrum.observed_utc_start == dt.datetime(1990, 12, 18, 15, 18, 9, tzinfo=dt.timezone.utc)
+    assert spectrum.observed_utc_stop == dt.datetime(1990, 12, 18, 15, 57, 43, tzinfo=dt.timezone.utc)
+    # A 40-minute scan: the midpoint is what an ERA5 lookup should use.
+    assert spectrum.observed_utc_mid == dt.datetime(1990, 12, 18, 15, 37, 56, tzinfo=dt.timezone.utc)
 
 
 def test_refuses_a_date_its_own_julian_day_contradicts(tmp_path):

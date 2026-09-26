@@ -384,13 +384,50 @@ element* is constant, so set `resolving_power = nu_mid / 0.017532` per window
 and let `constant_velocity_grid` follow. A single atlas-wide step would be set
 by 9050 cm⁻¹ and oversample 1880 cm⁻¹ by 4.5x.
 
-**Site profile.** `make_site_profile.py` already defaults to Kitt Peak
-(2.096 km, 786 hPa), the same mountain as the Arcturus atlas. Add a `"1990"`
-entry to `EPOCH_DRY_VMR` (CO2 ~354 ppm against the 1994 column's 357) and write
-`data/profiles/kitt_peak_1990_12_18.csv`. Then a real profile:
-`era5_site_profile.py` currently takes `--spec` IGRINS FITS frames, so add an
-entry point taking position and time directly -- 31.9583 N, 111.5967 W,
-1990-12-18, 17:19-18:39 UT.
+**Site profile -- built.** `make_site_profile.py` gained a `"1990"` epoch (NOAA
+GML global annual means: CO2 354.4 ppm, CH4 1.714, N2O 0.3085, against the 1994
+column's 357/1.72/0.310) and `era5_site_profile.py` gained two more ways to say
+where and when: `--fts`, which reads an NSO spectrum and takes the **midpoint**
+of its exposure, and `--latitude/--longitude/--altitude-km/--time`. Only
+`--spec` could ever supply a station pressure from a header, so these anchor on
+ERA5's own geopotential, which is what `station_pressure_from_era5` is for.
+
+ERA5 for 1990-12-18 at Kitt Peak:
+
+| | file 4, 16:00 UT | file 5, 18:00 UT |
+|---|---|---|
+| station pressure | 788.7 hPa | 789.1 hPa |
+| precipitable water | 3.19 mm | 3.11 mm |
+| lapse over the first 3 km | 3.60 K/km | 3.54 K/km |
+
+Three things follow.
+
+**The slant-path test's premise holds, and this is an independent check on it.**
+The two exposures are 2h20m apart, and the whole design assumes they look
+through the same atmosphere. ERA5 says the water column moved by **2.5%** and
+the surface pressure by 0.05% between them; the well-mixed species are
+identical by construction. So a disagreement in the fitted columns larger than
+a few percent is the model's, not the sky's.
+
+**The assumed lapse rate is nearly a factor of two wrong here.** 3.5-3.6 K/km
+against the analytic profile's 6.5 -- a colder-than-standard winter morning
+inversion, and further off than the 4.5-8.3 K/km the IGRINS nights showed.
+
+**The distribution is what ERA5 buys, not the total.** Holding the column fixed
+at 3.11 mm and comparing the analytic profile against ERA5 layer by layer, the
+analytic one is up to 8 K too cold between 3 and 6 km, up to 7 K too warm above
+10 km, and puts **2-4x too much water in the upper troposphere** while putting
+12% too little near the ground. A fit has one free scale per species, which
+absorbs an error in the total and not in the shape, and line strength depends
+on the pressure and temperature where the absorption happens.
+
+The ERA5 cell's orography is 955 m against the telescope's 2096 m, which does
+not matter for the reason the script's docstring gives: the column is anchored
+at the site pressure and integrated upward.
+
+Written: `data/profiles/kitt_peak_19901218_file4.csv`,
+`kitt_peak_19901218_file5.csv`, and `kitt_peak_1990_analytic.csv` as the
+control.
 
 ## Phase 3 -- fit file 5, and make the slant-path measurement
 

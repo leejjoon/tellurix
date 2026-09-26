@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Build a layer profile for one IGRINS night from ERA5 instead of a lapse rate.
+"""Build a layer profile from ERA5 instead of a lapse rate.
 
 `make_site_profile.py` assumes a constant 6.5 K/km lapse rate and an exponential
 water profile with a 2 km scale height. The fit gives each species one free
@@ -16,6 +16,16 @@ and in nothing else.
     uv run --with aiohttp python scripts/era5_site_profile.py \\
         --spec data/igrins/20181220_*/SDCH_*.spec.fits \\
         --output data/profiles/dct_2018_era5.csv
+
+Three ways to say where and when. ``--spec`` reads IGRINS frames, ``--fts``
+reads a raw NSO FTS spectrum, and ``--latitude/--longitude/--altitude-km/--time``
+takes it directly. Only the first can supply a station pressure from a header;
+the other two anchor on ERA5's own geopotential, which is what
+``station_pressure_from_era5`` exists for.
+
+    uv run --with aiohttp python scripts/era5_site_profile.py --epoch 1990 \\
+        --fts .../telluric_near_ir/ftsspec_901218_5.txt \\
+        --output data/profiles/kitt_peak_19901218_1800.csv
 
 Data comes from ARCO-ERA5 on Google Cloud, which is public and needs no
 credentials, unlike the Copernicus CDS API. One hourly timestep of one variable
@@ -56,6 +66,21 @@ SITE_COORDINATES = {
     "Lowell Discovery Telescope": (34.7444, -111.4223),
     "Gemini South": (-30.2408, -70.7367),
 }
+
+
+def _named_sites():
+    """Sites addressable by name with no instrument header to read.
+
+    Kitt Peak is here because the NSO solar spectra date and time themselves
+    but carry no weather card at all, so every number but the position has to
+    come from ERA5.
+    """
+
+    from tellurix.nso import (
+        KITT_PEAK_ALTITUDE_KM, KITT_PEAK_LATITUDE_DEG, KITT_PEAK_LONGITUDE_DEG,
+    )
+
+    return {"Kitt Peak": (KITT_PEAK_LATITUDE_DEG, KITT_PEAK_LONGITUDE_DEG, KITT_PEAK_ALTITUDE_KM)}
 
 
 def _gravity(altitude_km):
@@ -180,9 +205,17 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--spec", type=Path, required=True, nargs="+",
+    parser.add_argument("--spec", type=Path, nargs="+",
                         help="the night's PLP .spec.fits files; the site, the time and the "
                              "station pressure all come from their headers")
+    parser.add_argument("--fts", type=Path, nargs="+",
+                        help="raw NSO ftsspec_*.txt spectra; the site is Kitt Peak and the "
+                             "time is the midpoint of the exposure")
+    parser.add_argument("--site", default=None, help="a name from _named_sites()")
+    parser.add_argument("--latitude", type=float, default=None)
+    parser.add_argument("--longitude", type=float, default=None)
+    parser.add_argument("--altitude-km", type=float, default=None)
+    parser.add_argument("--time", default=None, help="ISO 8601 UTC, e.g. 1990-12-18T18:00")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--epoch", default="2020", choices=sorted(EPOCH_DRY_VMR))
     parser.add_argument("--anchor", choices=("header", "era5", "auto"), default="auto",
@@ -191,29 +224,68 @@ def main() -> None:
                              "South frame from 2020 needs.")
     args = parser.parse_args()
 
-    from tellurix import read_igrins_observation
+    chosen = [name for name, value in
+              (("--spec", args.spec), ("--fts", args.fts), ("--time", args.time)) if value]
+    if len(chosen) != 1:
+        raise SystemExit("give exactly one of --spec, --fts or --time; got " + (", ".join(chosen) or "none"))
 
-    sites, pressures, times = set(), [], []
-    for path in args.spec:
-        observation = read_igrins_observation(path)
-        surface = observation.surface
-        sites.add((surface["site"], surface["altitude_km"]))
-        if surface["pressure_hpa"] is not None:
-            pressures.append(surface["pressure_hpa"])
-        times.append(datetime.strptime(observation.date_obs[:19], "%Y-%m-%dT%H:%M:%S")
-                     .replace(tzinfo=timezone.utc))
-    if len(sites) != 1:
-        raise SystemExit(f"these frames are from more than one site: {sorted(sites)}")
-    site, altitude = sites.pop()
-    if site not in SITE_COORDINATES:
-        raise SystemExit(f"no coordinates for {site}; add them to SITE_COORDINATES")
-    latitude, longitude = SITE_COORDINATES[site]
+    pressures: list[float] = []
+    if args.spec:
+        from tellurix import read_igrins_observation
+
+        sites, times = set(), []
+        for path in args.spec:
+            observation = read_igrins_observation(path)
+            surface = observation.surface
+            sites.add((surface["site"], surface["altitude_km"]))
+            if surface["pressure_hpa"] is not None:
+                pressures.append(surface["pressure_hpa"])
+            times.append(datetime.strptime(observation.date_obs[:19], "%Y-%m-%dT%H:%M:%S")
+                         .replace(tzinfo=timezone.utc))
+        if len(sites) != 1:
+            raise SystemExit(f"these frames are from more than one site: {sorted(sites)}")
+        site, altitude = sites.pop()
+        if site not in SITE_COORDINATES:
+            raise SystemExit(f"no coordinates for {site}; add them to SITE_COORDINATES")
+        latitude, longitude = SITE_COORDINATES[site]
+        span = f"{len(args.spec)} frames spanning {min(times):%H:%M}-{max(times):%H:%M} UT"
+    elif args.fts:
+        from tellurix import read_fts_spectrum
+
+        site = args.site or "Kitt Peak"
+        named = _named_sites()
+        if site not in named:
+            raise SystemExit(f"no coordinates for {site}; add them to _named_sites()")
+        latitude, longitude, altitude = named[site]
+        times = []
+        for path in args.fts:
+            # The exposure midpoint, not the start: these scans run 40-80
+            # minutes and the air mass moves a long way inside one of them.
+            spectrum = read_fts_spectrum(path)
+            if spectrum.observed_utc_mid is None:
+                raise SystemExit(f"{path} has no usable time in its header")
+            times.append(spectrum.observed_utc_mid)
+        span = (f"{len(args.fts)} spectra centred "
+                f"{min(times):%H:%M}-{max(times):%H:%M} UT")
+    else:
+        if args.latitude is None or args.longitude is None or args.altitude_km is None:
+            named = _named_sites()
+            if args.site not in named:
+                raise SystemExit("--time needs --latitude/--longitude/--altitude-km, or a "
+                                 f"--site from {sorted(named)}")
+            latitude, longitude, altitude = named[args.site]
+        else:
+            latitude, longitude, altitude = args.latitude, args.longitude, args.altitude_km
+        site = args.site or f"({latitude:+.4f}, {longitude:+.4f})"
+        stamp = datetime.fromisoformat(args.time)
+        times = [stamp if stamp.tzinfo else stamp.replace(tzinfo=timezone.utc)]
+        span = f"the time given, {times[0]:%H:%M} UT"
+
     middle = min(times) + (max(times) - min(times)) / 2
     when = (middle + timedelta(minutes=30)).replace(minute=0, second=0, microsecond=0)
 
     print(f"{site} ({latitude:+.4f}, {longitude:+.4f}) at {altitude:.3f} km")
-    print(f"  {len(args.spec)} frames spanning {min(times):%H:%M}-{max(times):%H:%M} UT; "
-          f"ERA5 at {when:%Y-%m-%d %H:00} UT")
+    print(f"  {span}; ERA5 at {when:%Y-%m-%d %H:00} UT")
     column = fetch_column(latitude, longitude, when)
 
     from_era5 = station_pressure_from_era5(column, altitude)

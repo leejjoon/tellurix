@@ -26,6 +26,10 @@ _SEA_LEVEL_GRAVITY = 9.80665
 # Dry-air volume mixing ratios. The 1993-94 column is the epoch of the Hinkle,
 # Wallace & Livingston Arcturus atlas; see docs/arcturus_fit.md.
 EPOCH_DRY_VMR = {
+    # 1990-12 is the epoch of the ftsspec solar spectra and of photatl, which
+    # Wallace et al. 1996 says was built from spectra taken that December.
+    # NOAA GML global annual means.
+    "1990": {"CO2": 354.4e-6, "CH4": 1.714e-6, "N2O": 0.3085e-6, "CO": 0.10e-6, "O2": 0.2095},
     "1994": {"CO2": 357.0e-6, "CH4": 1.72e-6, "N2O": 0.310e-6, "CO": 0.10e-6, "O2": 0.2095},
     "2020": {"CO2": 414.0e-6, "CH4": 1.87e-6, "N2O": 0.333e-6, "CO": 0.10e-6, "O2": 0.2095},
 }
