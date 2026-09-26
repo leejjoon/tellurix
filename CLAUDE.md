@@ -347,23 +347,25 @@ where the star is blanketed. Measured over 1500-1540 nm: mean depth 0.0278 for
 own `flux_continuum` -- but renormalizing that same source by its median gives
 0.0304, so most of the gap is the zero point and only about 9% of it is anything
 the continuum absorbed. The visible consequence is that ~16% of
-`corrected / continuum` pixels sit above 1.02 at 1.5 um. Separately, the **0.91-1.11 um pages ask for about 2.4x more water**, and so do
-the other species. Over 4000-9000 cm-1 the p16-p84 spread of the fitted scale is
-1.34x/1.29x for H2O, 1.31x/1.55x for CO2 and 1.81x/1.95x for CH4 (summer/winter)
--- water is the *tightest* of the three, so this is not water-specific. Above
-9000 cm-1 the water scale runs 2.4x and 2.3x above that bulk value in the two
-epochs, with CO2 and CH4 1.3-1.7x high on the same pages. It is not a
-weak-constraint artifact: those pages have more absorption (median transmission
-0.950 against 0.981), a tighter formal error (0.0059 against 0.0071) and a
-better residual (2.94 against 3.34 sigma) than the bulk. The weak water overtone
-bands there are outside where AER and MT_CKD are well validated, which is the
-suspect but not a result. Do **not** attribute any of this to line blanketing,
-as earlier notes did: the raw split reproduces (-4.3%/-6.4%) but blanketing,
-page width and wavenumber are mutually confounded -- each of the five atlas page
-widths sits in its own spectral region -- and the partial correlation swings
-from -0.24 to +0.16 with the control set. The continuum-source degeneracy is
-separately ruled out by `--continuum-anchor 0.98` (median H2O shift +0.4%,
-residual 1.1% worse).
+`corrected / continuum` pixels sit above 1.02 at 1.5 um. Separately, **fitted column scales are not comparable between pages.** The
+atlas runs with `zenith_angle_deg = 0`, so air mass is absorbed wholly into the
+column scale, and the atlas is not one exposure -- 0.92-5.36 um at R = 100,000
+comes from at least five FTS configurations (five distinct sampling intervals,
+each in its own spectral region) and its two epochs are two dates. A fitted
+scale is `true column x air mass / profile column` and a single page cannot
+separate them. The p16-p84 spread over 4000-9000 cm-1 is 1.34x/1.29x for H2O,
+1.31x/1.55x for CO2, 1.81x/1.95x for CH4 (summer/winter); those bound air mass
+*plus* model error and are not an accuracy. One feature survives: above
+9000 cm-1 the water scale runs 2.4x/2.3x above the bulk in both epochs, on pages
+that are better constrained than the bulk (median transmission 0.950 vs 0.981,
+formal sigma 0.0059 vs 0.0071, residual 2.94 vs 3.34 sigma) -- but **CO2 and CH4
+have no measurable band above 9000 cm-1**, so no second species shares the path
+and air mass cannot be ruled out there. Do **not** attribute any of this to line
+blanketing, as earlier notes did: the raw split reproduces (-4.3%/-6.4%) but
+blanketing, page width and wavenumber are mutually confounded and the partial
+correlation swings from -0.24 to +0.16 with the control set. The
+continuum-source degeneracy is separately ruled out by `--continuum-anchor 0.98`
+(median H2O shift +0.4%, residual 1.1% worse).
 
 `scripts/generate_payne_zero_arcturus.py` makes the stellar source and does **not**
 run in this environment: Payne Zero needs Python >= 3.11 while this package is pinned

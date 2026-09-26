@@ -342,9 +342,20 @@ good = f["reliable"][i] & (f["effective_transmission"][i] > 0.8)
 
 The floor the run used is on the dataset as `transmission_floor`.
 
-**The 0.91-1.11 um pages need about 2.4x more water, and so do the other
-species.** Over the bulk of the atlas the retrieved columns are steady. Taking
-4000-9000 cm-1 (1.11-2.50 um), the p16-p84 spread of the fitted scale is:
+**Do not compare fitted column scales between pages.** The atlas was fitted
+with `zenith_angle_deg = 0`, so the model divides optical depth by
+cos(0) = 1 and **every bit of air mass ends up inside the fitted column scale**.
+A page observed at air mass 1.8 returns a scale 1.8x larger than the same sky at
+the zenith. The atlas is also not one exposure: it is 0.92-5.36 um at
+R = 100,000 from an FTS, assembled from at least five instrument configurations
+(the data carries five distinct sampling intervals, each confined to its own
+spectral region), and its two epochs are two *dates* chosen for opposite
+heliocentric shifts, not two exposures. So pages differ in air mass, and in the
+case of water in the actual amount of water overhead.
+
+A fitted scale is therefore `true vertical column x air mass / profile column`,
+and the three factors are not separable from a single page. Measured p16-p84
+spread over 4000-9000 cm-1 (1.11-2.50 um):
 
 | | summer | winter |
 |---|---|---|
@@ -352,33 +363,28 @@ species.** Over the bulk of the atlas the retrieved columns are steady. Taking
 | CO2 | 1.31x | 1.55x |
 | CH4 | 1.81x | 1.95x |
 
-Water is the *tightest* of the three there, which is the opposite of what a
-water-specific systematic would look like. Outside that range one region stands
-out: above 9000 cm-1 the water scale runs **2.4x (summer) and 2.3x (winter)**
-above the bulk value, reproducibly in both epochs, and CO2 and CH4 run
-1.3-1.7x high over the same pages.
+Those numbers bound air mass plus model error together. They do not isolate
+either, and **none of them should be read as an accuracy**.
 
-It is not a weak-constraint artifact. Those pages have *more* absorption than
-the bulk (median transmission 0.950 against 0.981), a *tighter* formal error on
-the column (0.0059 against 0.0071) and a *better* residual (2.94 against 3.34
-sigma). They fit well and ask for the wrong amount of gas. The water bands there
-are weak overtones, where the AER line list and the MT_CKD continuum are far
-less validated than in the thermal infrared, and that is the obvious suspect --
-but it is a suspicion, not a result.
+**One feature does survive that caveat.** Above 9000 cm-1 (0.91-1.11 um) the
+water scale runs 2.4x (summer) and 2.3x (winter) above the 4000-9000 cm-1
+value, closely reproduced in both epochs. Those pages are not poorly
+constrained -- they carry more absorption than the bulk (median transmission
+0.950 against 0.981), a tighter formal error (0.0059 against 0.0071) and a
+better residual (2.94 against 3.34 sigma). What cannot be checked there is
+whether it is air mass: **CO2 and CH4 have no measurable band above 9000 cm-1**,
+so no second species shares the path and the airmass-free cross-check does not
+exist in that region. Treat water from the 0.91-1.11 um pages as carrying a
+factor of about two of unexplained scale, of which an unknown part is air mass.
 
-**Two attributions this is not.** It is not line blanketing: the raw split
-reproduces (-4.3% summer, -6.4% winter between the lightly and heavily blanketed
-halves) but blanketing, page width and wavenumber are mutually confounded -- each
-of the atlas's five page widths sits in its own spectral region -- and the
-partial correlation swings from -0.24 to +0.16 with the control set, which is
-instability rather than a measurement. And it is not the continuum-source
-degeneracy, which was tested directly: `fit_arcturus_page.py --continuum-anchor
-0.98` moves the retrieved H2O by a median of +0.4% and makes the residual 1.1%
-worse.
-
-Practically: columns retrieved between 1.1 and 2.5 um agree to about 30%, and
-anything from the 0.91-1.11 um pages should be treated as carrying a factor
-of roughly two.
+**Two attributions this is not.** Not line blanketing: the raw split reproduces
+(-4.3% summer, -6.4% winter) but blanketing, page width and wavenumber are
+mutually confounded -- each of the atlas's five page widths sits in its own
+spectral region -- and the partial correlation swings from -0.24 to +0.16 with
+the control set, which is instability rather than a measurement. And not the
+continuum-source degeneracy, tested directly: `fit_arcturus_page.py
+--continuum-anchor 0.98` moves the retrieved H2O by a median of +0.4% and makes
+the residual 1.1% worse.
 
 **The Arcturus residual is dominated by the stellar model, not the atmosphere.**
 It is flat against transmission — 0.97 in deep absorption, 1.52 at the continuum
