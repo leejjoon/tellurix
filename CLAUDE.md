@@ -347,11 +347,19 @@ where the star is blanketed. Measured over 1500-1540 nm: mean depth 0.0278 for
 own `flux_continuum` -- but renormalizing that same source by its median gives
 0.0304, so most of the gap is the zero point and only about 9% of it is anything
 the continuum absorbed. The visible consequence is that ~16% of
-`corrected / continuum` pixels sit above 1.02 at 1.5 um. Separately and still
-unexplained: heavily blanketed pages retrieve 3-7% less water than lightly
-blanketed ones, which survives a wavelength control (partial r = -0.19 summer,
--0.11 winter) but is **not** fixed by `--continuum-anchor 0.98` (median H2O shift
-+0.4%, residual 1.1% worse), so the continuum-source degeneracy is not the cause.
+`corrected / continuum` pixels sit above 1.02 at 1.5 um. Separately, the retrieved water column carries a large
+**wavelength-dependent** systematic: one epoch is one sky, yet the median column
+scale runs 0.84 / 1.32 / 1.19 / 1.18 / 1.27 / 2.97 across the six bands from
+5.6 um to 0.91 um in summer, a 3.5x spread (2.4x in winter), with the
+0.91-1.11 um band ~2.3x high in both. Within a band the p16-p84 spread is only
+about +-8%, so these are offsets rather than noise. It is unexplained.
+Do **not** attribute it to line blanketing, as an earlier version of these notes
+did: the raw split reproduces (-4.3% summer, -6.4% winter) but blanketing, page
+width and wavenumber are mutually confounded -- each of the five atlas page
+widths sits in its own spectral region -- and the partial correlation swings
+from -0.24 to +0.16 with the control set. The continuum-source degeneracy is
+separately ruled out by `--continuum-anchor 0.98` (median H2O shift +0.4%,
+residual 1.1% worse).
 
 `scripts/generate_payne_zero_arcturus.py` makes the stellar source and does **not**
 run in this environment: Payne Zero needs Python >= 3.11 while this package is pinned

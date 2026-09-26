@@ -342,24 +342,40 @@ good = f["reliable"][i] & (f["effective_transmission"][i] > 0.8)
 
 The floor the run used is on the dataset as `transmission_floor`.
 
-**The retrieved H2O column depends on how blanketed the page is.** Splitting the
-atlas at the median blanketing of the Payne Zero source over each page window,
-the heavily blanketed half retrieves 3.1% (summer) and 7.1% (winter) less water
-than the lightly blanketed half. Blanketing is confounded with wavelength
-(r = -0.31), but the effect survives removing it: within eight narrow wavenumber
-bands the partial correlation is still -0.19 (summer) and -0.11 (winter).
+**The retrieved H2O column depends strongly on where in the spectrum it is
+measured.** One epoch is one sky, so a perfect model would return one number.
+It does not:
 
-The sign is what a continuum-source degeneracy predicts -- `continuum x source
-x T` lets a continuum placed too low be paid for by a transmission too high --
-but that mechanism has been tested and does not account for it. Refitting the
-twelve most blanketed page-epochs with `fit_arcturus_page.py --continuum-anchor
-0.98`, which drops the 38% of pixels where the source model sits below 0.98 so
-the Chebyshev is anchored only on near-continuum pixels, moves the retrieved
-H2O by a median of +0.4% and makes the residual 1.1% worse. So the effect is
-real, it is not the continuum degeneracy, and it is unexplained. Treat it as a
-floor on an absolute column from a single page; slopes and ratios across pages
-at similar blanketing are much safer. `--continuum-anchor` remains as an
-experiment flag, not a default.
+| band | summer | winter |
+|---|---|---|
+| 3.85-5.56 um | 0.839 | 0.436 |
+| 2.94-3.85 um | 1.317 | 0.758 |
+| 2.17-2.94 um | 1.191 | 0.391 |
+| 1.47-2.17 um | 1.181 | 0.400 |
+| 1.11-1.47 um | 1.266 | 0.360 |
+| 0.91-1.11 um | **2.965** | **0.872** |
+
+That is a **3.5x spread in summer and 2.4x in winter**, and the 0.91-1.11 um
+band sits about 2.3x high in both. Within a band the scatter is far smaller
+(p16-p84 of roughly +-8%), so these are between-band offsets, not noise. This is
+the dominant systematic in the water column and it is unexplained; the far blue
+end has only weak water bands, so the column there is poorly leveraged and may
+be absorbing continuum error.
+
+**Do not read this as a blanketing effect.** An earlier version of this guide
+attributed a 3-7% shift to how blanketed the star is over a page. The raw
+correlation does reproduce (-4.3% summer, -6.4% winter between the lightly and
+heavily blanketed halves), but it does not survive proper controls: blanketing,
+page width and wavenumber are mutually confounded -- each of the atlas's five
+page widths sits in its own spectral region -- and the partial correlation
+swings from -0.24 to +0.16 depending on which controls are used. That is
+instability, not a measurement. The continuum-source degeneracy was also tested
+directly and ruled out: `fit_arcturus_page.py --continuum-anchor 0.98` moves the
+retrieved H2O by a median of +0.4% and makes the residual 1.1% worse.
+
+Practically: an absolute water column from a single page carries a
+wavelength-dependent systematic of order tens of percent. Comparisons at similar
+wavelength are far safer than across the atlas.
 
 **Do not use `continuum` as the stellar continuum, and do not use it at all if you
 are measuring line strengths.** It is a free degree-3 Chebyshev fitted *jointly
