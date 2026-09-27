@@ -42,6 +42,7 @@ import jax
 import numpy as np
 
 from tellurix import (
+    AER_MOLECULE_IDS,
     AERLineDatabase,
     ArrayOpacityBackend,
     BoxcarFTSInstrumentProfile,
@@ -65,7 +66,11 @@ from tellurix import (
 )
 from tellurix.nso import MEASURED_FWHM_CM1
 
-MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
+# Every molecule AER ships, from the package rather than a local copy: keeping
+# a second list here is what let O3 be 'unknown' after OCS had been added, and
+# what let OCS be unreachable for as long as it was. Which species are worth
+# fitting is a per-window question, answered by --species and by `at_bound`.
+MOLECULE_IDS = AER_MOLECULE_IDS
 NSO_ROOT = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso")
 DEFAULT_SPECTRUM = NSO_ROOT / "telluric_near_ir/ftsspec_901218_5.txt"
 # Stages are cumulative: each frees more parameters starting from the last fit.

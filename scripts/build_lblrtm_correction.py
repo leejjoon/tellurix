@@ -13,6 +13,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from tellurix import (
+    AER_MOLECULE_IDS,
     AERLineDatabase,
     trim_wavenumber_grid,
     ExoJAXOpacityBackend,
@@ -26,7 +27,11 @@ from tellurix import (
 )
 
 
-MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
+# Every molecule AER ships, from the package rather than a local copy: keeping
+# a second list here is what let O3 be 'unknown' after OCS had been added, and
+# what let OCS be unreachable for as long as it was. Which species are worth
+# fitting is a per-window question, answered by --species and by `at_bound`.
+MOLECULE_IDS = AER_MOLECULE_IDS
 
 
 def main() -> None:
@@ -59,6 +64,14 @@ def main() -> None:
                              "depth rather than a residual. That is coherent, but it means the "
                              "fit sees every profile species and an unconstrained one will rail "
                              "-- watch `at_bound`.")
+    # The line file is not universal: LNFL builds it for one wavenumber range
+    # and one set of molecules, and the bootstrapped run_lnfl_igrins covers
+    # 4000-6750 cm-1 with molecules 1-7 only. Pointing a 2030-2060 window at it
+    # gives LBLRTM no lines at all, and the failure surfaces as a missed
+    # acceptance threshold rather than as anything that names the cause.
+    parser.add_argument("--tape3", type=Path, default=Path("run_lnfl_igrins/TAPE3"),
+                        help="LNFL line file, relative to data/lblrtm; it must cover the "
+                             "window and carry every molecule being fitted")
     parser.add_argument("--run-dir", default="run_corrections",
                         help="working directory under data/lblrtm for this build")
     # The wing matrix is dense in lines x grid, and vmap over the layer axis
@@ -114,7 +127,7 @@ def main() -> None:
         grid,
         opacity,
         reference / "LBLRTM/lblrtm_v12.17_linux_gnu_sgl",
-        reference / "run_lnfl_igrins/TAPE3",
+        reference / args.tape3,
         reference / "LBLRTM/data/absco-ref_wv-mt-ckd.nc",
     )
     output = root / args.output
@@ -174,7 +187,7 @@ def main() -> None:
         raise RuntimeError("LBLRTM correction did not improve median agreement")
 
     executable = reference / "LBLRTM/lblrtm_v12.17_linux_gnu_sgl"
-    tape3 = reference / "run_lnfl_igrins/TAPE3"
+    tape3 = reference / args.tape3
     mt_ckd_data = reference / "LBLRTM/data/absco-ref_wv-mt-ckd.nc"
 
     def reference_error(run_profile, parameters, name, zenith_angle_deg=0.0):

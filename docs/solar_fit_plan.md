@@ -550,12 +550,18 @@ deficit shows up at 1.14% against a predicted 1.45%. But the two files still
 disagree by 4.7% (CO2) and 9.6% (CO) at their own air masses, so **the honest
 slant-path bound is that 5-10%, not the 0.01% the fold reproduces.**
 
-**The residual is in the model, not the data.** corr(file 4, file 5) = +0.941,
-88% shared variance at two air masses two hours apart. The model's lines are
-too broad and too shallow; about half of that is the mt_ckd-against-LBLRTM
-offset and the rest is unexplained. Ruled out: velocity, LSF, column scale,
-solar model, instrument FWHM, continuum degree, vertical profile shape, and
-layer count -- the 12-layer `DEFAULT_EDGES_KM` is converged to 0.04%.
+**The residual was two missing species.** At 2030-2060 cm-1, adding OCS (nu3
+at 2062) and O3 (nu1+nu3 at 2110) takes the fit from 3.75x to **1.47x** noise,
+reduced chi2 14.0 to 2.2, at 392 pptv and 341 DU -- both ordinary. OCS came
+from Wallace's own empirical line list for these spectra; O3 from ranking every
+molecule AER ships. **Rank a species by its path-weighted column, not its
+surface abundance**: ranking ozone tropospherically understated it 17x.
+
+Nine things were eliminated before this -- velocity, LSF, column scale, solar
+model, instrument FWHM, continuum degree, vertical profile shape, layer count
+and line physics -- and every one of those tests was sound and beside the
+point, because they all assumed the species list was right. A batch run must
+scan for missing absorbers per window before trusting any residual.
 
 ## Phase 4 -- the rest of the atlases
 
@@ -582,7 +588,84 @@ document.
 
 Note the trap `record.py` already carries: an order's parameter vector is not
 the run's when the species present depend on the window, so remap each row's
-sigma and correlation into the union.
+sigma and correlation into the union. That trap is now the normal case rather
+than an edge case -- see below.
+
+### 4a. The species list is computed, not chosen
+
+**This is the change the OCS and O3 result forces.** The batch driver cannot
+take a hand-written species list, because a hand-written list is what hid two
+absorbers worth a factor of 2.5 in residual, and no amount of residual analysis
+found them -- nine other explanations were eliminated first, each test sound
+and each beside the point.
+
+`scripts/scan_window_species.py`, run per window before any fit:
+
+1. For every molecule in `tellurix.AER_MOLECULE_IDS`, select lines over the
+   window plus the wing margin. Molecules with no lines drop out.
+2. For each, compute the **peak vertical optical depth from the profile's own
+   column**, not from a nominal mixing ratio. This is the step that has to be
+   got right: ranking ozone by its surface abundance understated it by 17x,
+   because its column is stratospheric. The profile carries the column; use it.
+3. Emit every species above a threshold in peak optical depth -- 1e-3 is a
+   reasonable starting cut, roughly a tenth of this data's noise -- together
+   with the ranked list of what was rejected and by how much.
+4. The window's fit uses that list. The rejected list is recorded, so a
+   surprising residual can be checked against what was nearly included.
+
+Two properties this must have. It is **cheap**, because it needs line
+selection and a single optical-depth evaluation, not a fit. And it is
+**per window**: at 2030-2060 the answer is H2O, CO2, CO, OCS, O3, while at
+6000-6030 O2 has no lines at all and CH4 dominates.
+
+### 4b. The profile has to carry the species before the scan can rank them
+
+`make_site_profile.py` currently emits six gases. A scan can only rank what the
+profile knows about, so the generator needs a full trace-gas set with
+**vertical distributions, not single mixing ratios**:
+
+- well mixed through the troposphere and falling above it: CO2, CH4, N2O, CO,
+  OCS
+- **stratospheric**: O3 above all, and the species whose columns sit above the
+  tropopause
+- constant: O2, N2
+
+The AFGL standard atmospheres that LBLRTM ships are the obvious source, scaled
+to the epoch for the gases that have trended. Until that exists, a scan will
+silently rank a missing species at zero -- which is exactly the failure being
+designed out, so **4b blocks 4a**.
+
+### 4c. Windows are chosen, and the choice matters more than any parameter
+
+Same code, same night, same source: 67x noise at 6000-6030 cm-1 against 1.47x
+at 2030-2060. Choose on three measured quantities, all already available:
+
+- `nso.window_continuum_snr` above 30 -- is there light at all
+- the Payne Zero source's mean line depth over the window -- the residual
+  tracks how much solar structure the stellar model has to get right
+- the scan's rejected list -- how close the next unmodelled species came
+
+### 4d. Acceptance, per window
+
+A row is only written if:
+
+- the scan's strongest rejected species is well below the cut
+- no fitted parameter is `at_bound` -- a species with no signal does not
+  contribute nothing, it absorbs model error and rails, which is how CH4, N2O
+  and CO2 were each caught in the wrong window
+- `jitter_over_uncertainty` is near 1; at 2030-2060 it went 3.61 -> 1.08 as the
+  species list was completed, and it is the cleanest single indicator that the
+  model no longer needs excess variance
+
+Rows that fail are kept with their flags rather than dropped, as the IGRINS
+`minimum_reliable` rule does -- but they must not be quoted as measurements.
+
+### 4e. Re-measure what was measured without the missing species
+
+The slant-path result and the inter-file column comparison were both taken with
+H2O, CO2 and CO only. CO moved 10% when OCS was added, so **the 5-10%
+disagreement between files 4 and 5 is not a result** until it is redone with a
+scanned species list on both.
 
 ## One decision left before writing code
 

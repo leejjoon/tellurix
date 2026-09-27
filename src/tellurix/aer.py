@@ -13,7 +13,63 @@ import numpy as np
 from .types import AtmosphereProfile
 
 
-_MOLECULE_IDS = {"H2O": 1, "CO2": 2, "O3": 3, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
+# HITRAN molecule numbers, which are also AER's per-molecule file names. The
+# set is not the seven principal absorbers by design -- it is whatever has been
+# needed, and adding one costs nothing beyond checking that HAPI's TIPS-2017
+# tables cover it, since that is the only per-molecule input here. OCS was
+# added when Wallace's empirical telluric list showed its nu3 P-branch running
+# through 2048-2060 cm-1 with nothing in the model to absorb it.
+AER_MOLECULE_IDS = {
+    "H2O": 1,
+    "CO2": 2,
+    "O3": 3,
+    "N2O": 4,
+    "CO": 5,
+    "CH4": 6,
+    "O2": 7,
+    "NO": 8,
+    "SO2": 9,
+    "NO2": 10,
+    "NH3": 11,
+    "HNO3": 12,
+    "OH": 13,
+    "HF": 14,
+    "HCL": 15,
+    "HBR": 16,
+    "HI": 17,
+    "CLO": 18,
+    "OCS": 19,
+    "H2CO": 20,
+    "HOCL": 21,
+    "N2": 22,
+    "HCN": 23,
+    "CH3CL": 24,
+    "H2O2": 25,
+    "C2H2": 26,
+    "C2H6": 27,
+    "PH3": 28,
+    "COF2": 29,
+    "SF6": 30,
+    "H2S": 31,
+    "HCOOH": 32,
+    "HO2": 33,
+    "CLONO2": 35,
+    "NO+": 36,
+    "HOBR": 37,
+    "C2H4": 38,
+    "CH3OH": 39,
+    "CH3BR": 40,
+    "CH3CN": 41,
+    "CF4": 42,
+    "C4H2": 43,
+    "HC3N": 44,
+    "H2": 45,
+    "CS": 46,
+    "SO3": 47,
+}
+# Atomic oxygen, HITRAN 34, is the one molecule AER ships that HAPI's TIPS-2017
+# tables do not cover, and the partition function is the only per-molecule
+# input here, so it is the one that cannot be supported.
 _MEAN_MOLAR_MASS = {
     "H2O": 18.01528,
     "CO2": 44.0095,
@@ -22,6 +78,45 @@ _MEAN_MOLAR_MASS = {
     "CO": 28.0101,
     "CH4": 16.0425,
     "O2": 31.9988,
+    "NO": 30.0061,
+    "SO2": 64.0638,
+    "NO2": 46.0055,
+    "NH3": 17.03052,
+    "HNO3": 63.0128,
+    "OH": 17.00734,
+    "HF": 20.00634,
+    "HCL": 36.46094,
+    "HBR": 80.91194,
+    "HI": 127.91241,
+    "CLO": 51.4521,
+    "OCS": 60.0751,
+    "H2CO": 30.02598,
+    "HOCL": 52.46,
+    "N2": 28.0134,
+    "HCN": 27.02534,
+    "CH3CL": 50.48752,
+    "H2O2": 34.01468,
+    "C2H2": 26.03728,
+    "C2H6": 30.06904,
+    "PH3": 33.99758,
+    "COF2": 66.0069,
+    "SF6": 146.05541,
+    "H2S": 34.08088,
+    "HCOOH": 46.02538,
+    "HO2": 33.00674,
+    "CLONO2": 97.4579,
+    "NO+": 30.0061,
+    "HOBR": 96.91134,
+    "C2H4": 28.05316,
+    "CH3OH": 32.04186,
+    "CH3BR": 94.93877,
+    "CH3CN": 41.05192,
+    "CF4": 88.00431,
+    "C4H2": 50.05942,
+    "HC3N": 51.04718,
+    "H2": 2.01588,
+    "CS": 44.0757,
+    "SO3": 80.0632,
 }
 
 
@@ -127,7 +222,7 @@ class AERLineDatabase:
         strength_cutoff: float = 0.0,
     ) -> None:
         molecule = molecule.upper()
-        if molecule not in _MOLECULE_IDS:
+        if molecule not in AER_MOLECULE_IDS:
             raise ValueError(f"unsupported AER molecule: {molecule}")
         lower, upper = wavenumber_range_cm1
         if not 0.0 < lower < upper or margin_cm1 < 0.0 or strength_cutoff < 0.0:
@@ -143,9 +238,9 @@ class AERLineDatabase:
             raw, offsets, identifier, wavenumber = index
             # Reject only what is certainly out: an unrecognised field leaves
             # NaN or -1 here, and neither comparison is true, so it survives.
-            keep = ~((identifier == _MOLECULE_IDS[molecule])
+            keep = ~((identifier == AER_MOLECULE_IDS[molecule])
                      & ((wavenumber < lower - margin_cm1) | (wavenumber > upper + margin_cm1)))
-            keep &= (identifier == _MOLECULE_IDS[molecule]) | (identifier == -1)
+            keep &= (identifier == AER_MOLECULE_IDS[molecule]) | (identifier == -1)
             candidates = offsets[keep]
         if candidates is not None:
             # Each candidate is decoded on its own; every field lies in the
@@ -166,7 +261,7 @@ class AERLineDatabase:
                 strength = _fortran_float(line[15:25])
             except ValueError:
                 continue
-            if molecule_id != _MOLECULE_IDS[molecule] or not (lower - margin_cm1 <= nu <= upper + margin_cm1):
+            if molecule_id != AER_MOLECULE_IDS[molecule] or not (lower - margin_cm1 <= nu <= upper + margin_cm1):
                 continue
             if strength < strength_cutoff:
                 continue
@@ -187,7 +282,7 @@ class AERLineDatabase:
             raise ValueError(f"no {molecule} lines found in the requested range")
         values = np.asarray(records)
         self.simple_molecule_name = molecule
-        self.molecid = _MOLECULE_IDS[molecule]
+        self.molecid = AER_MOLECULE_IDS[molecule]
         self.isoid = values[:, 0].astype(int)
         self.uniqiso = np.unique(self.isoid)
         self.nu_lines = values[:, 1]

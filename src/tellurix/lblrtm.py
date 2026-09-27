@@ -13,7 +13,16 @@ from .reference import LBLRTMSpectrum, read_tape12_single_precision
 from .types import AtmosphereProfile
 
 
-_LBLRTM_SPECIES = ("H2O", "CO2", "O3", "N2O", "CO", "CH4", "O2")
+# HITRAN molecule order, which is what record 3.6 is positional in: there is no
+# way to give LBLRTM a subset, so reaching OCS at number 19 means declaring all
+# nineteen and leaving the ones we have no profile for at zero. The list stops
+# at OCS because that is the highest molecule this package models; extending it
+# further is adding names, not logic.
+_LBLRTM_SPECIES = ("H2O", "CO2", "O3", "N2O", "CO", "CH4", "O2", "NO", "SO2",
+                   "NO2", "NH3", "HNO3", "OH", "HF", "HCL", "HBR", "HI", "CLO", "OCS")
+# Record 3.6 is read as (8E15.8) because record 3.5 sets JLONG, so the
+# abundances wrap every eight molecules.
+_ABUNDANCE_PER_LINE = 8
 _GAS_CONSTANT_J_MOL_K = 8.314462618
 
 
@@ -159,9 +168,12 @@ def write_tape5(
         lines.append("".join(f"{z:10.3f}" for z in boundaries[start : start + 8]))
     nlevels = nlayers + 1
     lines.append(f"{nlevels:5d}{' tellurix profile':24s}")
+    jchar = "A" * len(_LBLRTM_SPECIES)
     for z_km, pressure, temp, abundances in zip(altitude, pressure_hpa, temperature, abundance_ppmv):
-        lines.append(f"{z_km:10.3E}{pressure:10.3E}{temp:10.3E}     AA L AAAAAAA")
-        lines.append("".join(f"{value:15.8E}" for value in abundances))
+        lines.append(f"{z_km:10.3E}{pressure:10.3E}{temp:10.3E}     AA L {jchar}")
+        for start in range(0, len(abundances), _ABUNDANCE_PER_LINE):
+            lines.append("".join(f"{value:15.8E}"
+                                 for value in abundances[start : start + _ABUNDANCE_PER_LINE]))
     lines.extend((f"{-1.0:4.1f}", f"{-1.0:4.1f}", "%"))
     Path(path).write_text("\n".join(lines) + "\n", encoding="ascii")
 

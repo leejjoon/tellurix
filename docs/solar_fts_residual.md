@@ -58,62 +58,109 @@ pixels, i.e. 88% shared variance, at air masses 4.730 and 1.985 two hours
 apart. Detector noise, fringing and anything belonging to one scan are ruled
 out. This is the same test `leave_one_out_patterns` applies to an IGRINS night.
 
-## What it is
+## What it was: two missing species
 
-**The model's lines are too broad and too shallow.** Signed residual by
-distance from the nearest line core:
+**The residual was unmodelled opacity, not a defect in the physics.** Adding
+two absorbers that were never in the species list:
 
-| file | region | mean (data - model) | fraction data > model |
-|---|---|---|---|
-| file 5 | core (<=2 px) | -0.00114 | 0.542 |
-| file 5 | outer wing (9-25 px) | **+0.00578** | **0.696** |
-| file 4 | inner wing (3-8 px) | **+0.00927** | **0.684** |
-| file 4 | core (<=2 px) | -0.00133 | 0.494 |
+| model | rms | x noise | reduced chi2 | jitter/sigma |
+|---|---|---|---|---|
+| H2O, CO2, CO | 0.004740 | 3.75 | 14.04 | 3.61 |
+| + **OCS** | 0.002674 | 2.11 | 4.47 | 1.86 |
+| + **O3** | **0.001863** | **1.47** | **2.17** | **1.08** |
 
-Positive means the data is *less* absorbed than the model. The model
-over-absorbs in the wings and under-absorbs in cores, in both files
-independently and worse at the higher air mass -- overestimated pressure
-broadening at fixed line strength. It also drives fitted columns low, which is
-what the inter-file disagreement below shows.
+2.5x end to end. Both come back at ordinary abundances -- 392 pptv of OCS
+against a ~500 assumption, and 341 DU of ozone against a 300 DU profile --
+nothing rails, the other columns move by under 3%, and the fitted jitter
+converges onto the photon noise.
 
-The residual grows sub-linearly with air mass: rms ratio 1.708 and regression
-slope 1.607 against an optical-depth ratio of 2.383, which is what a
-transmission-space error does once lines saturate.
+### OCS, found from Wallace's own line list
 
-**About half of it is the mt_ckd-against-LBLRTM offset.** LBLRTM 12.17 over
-4350-4380 cm-1 on the same Kitt Peak profile, the same zenith angle and every
-column at 1.0 (`docs/solar_lblrtm_reference.json`, 30,293 monochromatic
-points):
+`telluric_near_ir/linelist_TOTAL.txt` is an empirical catalogue of telluric
+lines measured from these very spectra. Over 2030-2060 it identifies 45 lines:
+22 CO2, 6 H2O, and **17 OCS** -- a species the model did not carry at all. The
+nu3 fundamental at 2062 cm-1 puts its P-branch through 2048-2060.
 
-| | Kitt Peak profile | midlatitude, LBLRTM's own layers |
+The residual before adding it, binned by what lies within 0.03 cm-1:
+
+| | pixels | rms |
 |---|---|---|
-| median absolute | **0.00294** | 0.00393 |
-| rms | **0.00318** | 0.00524 |
-| p99 | 0.00709 | 0.01556 |
-| mean signed | **-0.00291** | -0.00438 |
+| an OCS line | 102 | **0.0813** |
+| a CO2 or H2O line | 87 | 0.0137 |
+| no catalogued line | 2763 | 0.0188 |
 
-The second column is the same comparison run before the TAPE5 fix below, when
-LBLRTM chose its own layering; the agreement is 1.6x better once both codes
-integrate the same layers, which is most of the reason to make that fix.
+Six times worse at the OCS lines, mean residual **-0.0735** with **98% of
+pixels negative** -- the data more absorbed than the model, at exactly those
+wavenumbers. The window's high/low-wavenumber residual asymmetry, 2.16 before,
+falls to 1.21 after: the OCS lines all lie above 2048.
 
-The sign is uniform -- **this package transmits less than LBLRTM everywhere**:
+### O3, found by scanning every molecule AER ships
 
-| region | mean (tellurix - LBLRTM) |
-|---|---|
-| core | -0.00190 |
-| inner wing | -0.00228 |
-| outer wing | -0.00309 |
-| between lines | -0.00306 |
+Ranking all 46 AER molecules over 2030-2060 by peak line strength times a
+nominal abundance puts H2O, CO2, CO and OCS on top -- the four now modelled --
+and **O3 fifth with 20,143 lines**, from the nu1+nu3 band at 2110 cm-1.
 
-Adopting LBLRTM's physics would raise our model flux by these amounts, so the
-outer-wing excess against the data falls from +0.00578 to +0.0027 -- **about
-half** -- while the core residual moves the wrong way, -0.00114 to -0.0030. So
-the line treatment explains roughly half the systematic wing excess and none of
-the core/wing sign reversal.
+**The first ranking missed it by 17x** because it used a tropospheric mixing
+ratio. Ozone's column is stratospheric: the path-weighted effective VMR is
+about 1e-6, not the 3e-8 at the surface. Ranking a species by its surface
+abundance is wrong for anything that lives above the tropopause.
 
-**Do not compare these rms against rms.** That conflates a systematic offset
-with line-to-line scatter; done that way the line physics looks 6.5x too small
-to matter, which is wrong.
+The next candidate below O3, N2O, is four orders of magnitude weaker, so this
+window is likely complete at this level.
+
+### What this revises
+
+Several conclusions recorded here before the species were found rested on this
+residual and were wrong:
+
+- **"The model's lines are too broad and too shallow."** That came from binning
+  the residual by distance from the nearest *modelled* line core. Seventeen
+  unmodelled deep features sit mid-flank of nothing, and a missing line binned
+  that way is indistinguishable from an over-broad neighbour. The signature was
+  an artefact of the binning.
+- **"The line physics does not explain it."** True of the physics and wrong as
+  a conclusion: LBLRTM ran from the same profile with the same species, so it
+  was missing OCS and O3 too, and the comparison was blind to this by
+  construction.
+- **The 5-10% inter-file column disagreement** was measured without these
+  species; CO alone moved 10% when OCS was added. It needs re-measuring.
+
+What survives unchanged is that the residual was **88% shared** between two air
+masses -- now explained rather than merely observed, since both files look
+through the same OCS and ozone.
+
+### The species list was three lists
+
+OCS was unreachable for longer than it should have been because the molecule
+table existed in four places: `aer.py` whitelisted seven molecules, and
+`fit_fts_window.py`, `rebuild_fts_window.py` and `build_lblrtm_correction.py`
+each kept their own copy. Adding OCS to one left O3 "unknown species" in
+another.
+
+`aer.py` now carries **every molecule AER ships** -- 46 of the 47, all but
+atomic oxygen, which is the only one HAPI's TIPS-2017 tables do not cover, and
+the partition function is the only per-molecule input. It is exported as
+`tellurix.AER_MOLECULE_IDS` and the scripts use it. Which species are worth
+fitting stays a per-window question answered by `--species` and `at_bound`;
+*considering* one is no longer a code change.
+
+### What is left, and it is not the solar model
+
+At 1.47x noise the remaining residual correlates only weakly with the source:
+
+| basis | corr | variance |
+|---|---|---|
+| 1 - solar source, signed | -0.324 | 10.5% |
+| \|1 - solar source\| vs \|residual\| | +0.211 | 4.4% |
+| **Payne Zero - ACE** (the model's measured error) | **+0.132** | **1.7%** |
+| 1 - transmission | +0.023 | 0.1% |
+| d(source)/dnu (solar velocity) | -0.009 | 0.0% |
+
+The sharpest of these is the third, because ACE-FTS is an observation of the
+same Sun: if the stellar model were driving the residual it would track the
+measured model-minus-truth difference, and it barely does. For contrast the
+same absolute test at 6000-6030 cm-1, where the solar model *does* dominate,
+gives **+0.760**.
 
 ## Air mass: the model is right, the two files still disagree
 
@@ -279,7 +326,16 @@ So `lblrtm_corrected` is worth its cost for column *accuracy*, not for
 residual reduction -- and the cost is an LBLRTM build per window and per
 profile.
 
-### Three things in the LBLRTM path that had never been exercised
+Repeated at 2030-2060 with OCS included and a line file that covers the window,
+the answer is the same: **+2.0% in rms**, 2.11x to 2.07x noise, and the residual
+at the OCS lines moves 0.0171 to 0.0164. OCS was the one place the two codes
+might have diverged, since its broadening parameters are less well determined
+than water's; they do not. Read the column scales before trusting that number,
+though -- the OCS scale shifts 36% between the two modes while the residual
+agrees to 2%, and `lsf_sigma_kms` rails, so the two fits are exploring a flat
+direction in a species constrained by 102 of 3,166 pixels.
+
+### Five things in the LBLRTM path that had never been exercised
 
 All three were found by running `lblrtm_corrected` on a real fit for the first
 time; the machinery had only ever been used on its own defaults.
@@ -297,6 +353,17 @@ time; the machinery had only ever been used on its own defaults.
    `--resolving-power` produces a 25-minute build that passes its own
    acceptance test and is then rejected at fit time. The builder takes
    `--fwhm-cm1` and derives the resolving power exactly as the fit driver does.
+4. **Every script hardcoded `run_lnfl_igrins/TAPE3`**, which LNFL built for
+   4000-6750 cm-1 with molecules 1-7. Pointing a 2030-2060 window at it gives
+   LBLRTM no lines at all, and the failure surfaces as a missed acceptance
+   threshold rather than as anything naming the cause. `--tape3` selects the
+   line file; `data/lblrtm/run_lnfl_solar` covers 2005-2085 with molecules
+   1-7 plus OCS (58,267 lines, of which 7,583 are OCS -- matching what
+   `AERLineDatabase` reads independently).
+5. **`write_tape5` declared seven molecules.** Record 3.6 is positional, so
+   reaching OCS at 19 means declaring all nineteen with the ones we have no
+   profile for at zero, and the abundances then wrap eight to a line because
+   record 3.5 sets JLONG and 3.6 is read as (8E15.8).
 
 One usage note: the template's species are the **profile's**, not the
 `--species` subset, which restricts only the JAX side of the difference. A

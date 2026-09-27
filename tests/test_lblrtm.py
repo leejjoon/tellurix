@@ -31,7 +31,10 @@ def test_tape5_writer_uses_requested_range_profile_and_continuum(tmp_path):
     # 8 values per line, so its length depends on the layer count.
     header = next(i for i, line in enumerate(lines) if "tellurix profile" in line)
     level_count = int(lines[header][:5])
-    level_records = lines[header + 1 : header + 1 + 2 * level_count : 2]
+    # One record 3.5 per level, then its abundances wrapped eight to a line.
+    from tellurix.lblrtm import _ABUNDANCE_PER_LINE, _LBLRTM_SPECIES
+    stride = 1 + -(-len(_LBLRTM_SPECIES) // _ABUNDANCE_PER_LINE)
+    level_records = lines[header + 1 : header + 1 + stride * level_count : stride]
     pressures_hpa = np.asarray([float(line[10:20]) for line in level_records])
     assert level_count == len(profile.temperature_k) + 1
     np.testing.assert_allclose(pressures_hpa[[0, -1]], [800.0, 10.0])
@@ -45,9 +48,13 @@ def test_tape5_converts_wet_air_vmr_to_lblrtm_dry_air_abundance(tmp_path):
     output = tmp_path / "TAPE5"
     write_tape5(output, profile, LBLRTMRunConfig(5000.0, 5001.0))
     lines = output.read_text().splitlines()
-    abundances = np.asarray([float(value) for value in lines[9].split()])
+    header = next(i for i, line in enumerate(lines) if "tellurix profile" in line)
+    abundances = np.asarray([float(value) for value in lines[header + 2].split()])
     np.testing.assert_allclose(abundances[0], 0.1 / 0.9 * 1.0e6)
     np.testing.assert_allclose(abundances[1], 4.0e-4 / 0.9 * 1.0e6)
+    # Molecules with no profile entry are declared and left at zero: record 3.6
+    # is positional, so OCS at 19 cannot be reached without the eighteen below.
+    np.testing.assert_allclose(abundances[2:], 0.0)
 
 
 def test_degrade_and_compare_reference_spectrum():

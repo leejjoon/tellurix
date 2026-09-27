@@ -141,7 +141,7 @@ def test_maximum_column_scale_only_raises_the_bound(tmp_path):
 
 def test_reader_agrees_with_a_plain_line_by_line_scan(tmp_path):
     """The fast index may only narrow the work, never make a decision."""
-    from tellurix.aer import _MOLECULE_IDS, _fortran_float
+    from tellurix.aer import AER_MOLECULE_IDS, _fortran_float
 
     rng = np.random.default_rng(11)
     nu = np.sort(rng.uniform(4990.0, 5010.0, 500))
@@ -161,7 +161,7 @@ def test_reader_agrees_with_a_plain_line_by_line_scan(tmp_path):
                 value = _fortran_float(line[3:15])
             except ValueError:
                 continue
-            if identifier != _MOLECULE_IDS["CO"] or not (lower - margin <= value <= upper + margin):
+            if identifier != AER_MOLECULE_IDS["CO"] or not (lower - margin <= value <= upper + margin):
                 continue
             kept.append(value)
         return np.asarray(kept)

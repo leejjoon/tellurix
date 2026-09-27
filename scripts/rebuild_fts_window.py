@@ -24,6 +24,7 @@ from pathlib import Path
 import numpy as np
 
 from tellurix import (
+    AER_MOLECULE_IDS,
     AERLineDatabase,
     BoxcarFTSInstrumentProfile,
     ExoJAXOpacityBackend,
@@ -39,7 +40,11 @@ from tellurix import (
     trim_wavenumber_grid,
 )
 
-MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
+# Every molecule AER ships, from the package rather than a local copy: keeping
+# a second list here is what let O3 be 'unknown' after OCS had been added, and
+# what let OCS be unreachable for as long as it was. Which species are worth
+# fitting is a per-window question, answered by --species and by `at_bound`.
+MOLECULE_IDS = AER_MOLECULE_IDS
 
 
 def main() -> None:

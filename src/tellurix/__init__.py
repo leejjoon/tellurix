@@ -16,6 +16,7 @@ from .record import (
 )
 from .corrections import LBLRTMOpticalDepthCorrection, build_lblrtm_correction
 from .aer import (
+    AER_MOLECULE_IDS,
     AERLineDatabase,
     line_optical_depth_bound,
     select_significant_lines,
@@ -94,6 +95,7 @@ from .types import AtmosphereProfile, SpectralOrder, TelluricParameters
 
 __all__ = [
     "AERLineDatabase",
+    "AER_MOLECULE_IDS",
     "ArcturusPage",
     "ArrayOpacityBackend",
     "AtmosphereProfile",
