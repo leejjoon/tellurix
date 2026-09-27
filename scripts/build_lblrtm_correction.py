@@ -14,6 +14,7 @@ import numpy as np
 
 from tellurix import (
     AERLineDatabase,
+    trim_wavenumber_grid,
     ExoJAXOpacityBackend,
     LBLRTMOpticalDepthCorrection,
     read_tape12_single_precision,
@@ -37,8 +38,27 @@ def main() -> None:
     # The template is only valid on the grid it was built for, so the grid has
     # to be selectable: the R=45,000 x 4 default is coarser than an FTS pixel.
     parser.add_argument("--resolving-power", type=float, default=45_000.0)
+    # The template is rejected unless its grid matches the model's to rtol
+    # 1e-12, so transcribing a rounded resolving power silently produces an
+    # unusable template. This derives it exactly as fit_fts_window.py does,
+    # from the window centre and the measured instrument width.
+    parser.add_argument("--fwhm-cm1", type=float, default=None,
+                        help="derive the resolving power as v_centre / fwhm, as the FTS "
+                             "driver does; overrides --resolving-power")
     parser.add_argument("--samples-per-resolution", type=float, default=4.0)
     parser.add_argument("--margin-cm1", type=float, default=25.0)
+    # The template is only valid on the grid it was built for, so this has to
+    # match the fit driver's own trim or the two grids differ.
+    parser.add_argument("--grid-margin-cm1", type=float, default=None,
+                        help="trim the grid to the window plus this, as fit_fts_window.py does")
+    parser.add_argument("--species", default=None,
+                        help="comma-separated subset of the molecules given a *line database*, "
+                             "i.e. the JAX side of the difference. It does not restrict the "
+                             "template, whose species are the profile's: a molecule left out "
+                             "here still gets a correction, carrying LBLRTM's whole optical "
+                             "depth rather than a residual. That is coherent, but it means the "
+                             "fit sees every profile species and an unconstrained one will rail "
+                             "-- watch `at_bound`.")
     parser.add_argument("--run-dir", default="run_corrections",
                         help="working directory under data/lblrtm for this build")
     # The wing matrix is dense in lines x grid, and vmap over the layer axis
@@ -52,16 +72,24 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     reference = root / "data/lblrtm"
     profile = load_atmosphere_csv(root / args.profile)
+    resolving_power = (args.resolving_power if args.fwhm_cm1 is None
+                       else 0.5 * (args.v1 + args.v2) / args.fwhm_cm1)
     grid = constant_velocity_grid(
         1.0e7 / args.v2,
         1.0e7 / args.v1,
-        resolving_power=args.resolving_power,
+        resolving_power=resolving_power,
         samples_per_resolution=args.samples_per_resolution,
         margin_cm1=args.margin_cm1,
     )
+    if args.grid_margin_cm1 is not None:
+        grid = trim_wavenumber_grid(grid, args.v1, args.v2, args.grid_margin_cm1)
     line_root = reference / "AER_Line_File/aer_v_3.9/line_files_By_Molecule"
     databases = {}
+    wanted = (set(MOLECULE_IDS) if args.species is None
+              else {n.strip().upper() for n in args.species.split(",")})
     for species, molecule_id in MOLECULE_IDS.items():
+        if species not in wanted:
+            continue
         name = f"{molecule_id:02d}_{species}"
         try:
             databases[species] = AERLineDatabase(

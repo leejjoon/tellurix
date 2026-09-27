@@ -237,6 +237,73 @@ layering. Regenerating them changes committed reference numbers that
 `tests/test_lblrtm.py` asserts on, so it is a deliberate act and has not been
 done here.
 
+## Replacing the line physics does not move the residual
+
+With the TAPE5 fix above, `accuracy_mode="lblrtm_corrected"` can be run on a
+real site profile for the first time. Over 4350-4380 cm-1, against the
+otherwise identical `mt_ckd` fit -- same window, species, stages, source,
+grid and instrument, with the template built on the profile *pre-scaled to the
+mt_ckd fit's own columns* so the correction is evaluated where it was derived:
+
+| | `mt_ckd` | `lblrtm_corrected` |
+|---|---|---|
+| rms | 0.007315 | 0.007170 |
+| x noise | 5.28 | **5.17** |
+| p99 absolute | 0.02440 | 0.02445 |
+| H2O scale | 0.6834 | 1.0212 |
+| CH4 scale | 1.0147 | 0.9976 |
+
+**The chain validates.** The corrected fit returns scales at 1.02 and 1.00 on
+the pre-scaled profile, so the template is being applied where it was built;
+multiplying through gives the same atmosphere to 2% (H2O 0.698 against 0.683).
+
+**The residual moves 2%, and its structure not at all:**
+
+| | core | inner wing | outer wing | between |
+|---|---|---|---|---|
+| `mt_ckd` | +0.00077 | -0.00627 | -0.00111 | +0.00076 |
+| `lblrtm_corrected` | +0.00107 | -0.00620 | -0.00110 | +0.00075 |
+
+Feature for feature the two residuals are the same spectrum with a small
+scaling, not a residual that improved.
+
+**Why, and it corrects the inference above.** A smooth, depth-dependent opacity
+offset is close to degenerate with a free column scale, so the fit absorbs it
+rather than the residual doing so. Converting the 0.003 transmission
+difference into an expected residual improvement -- as an earlier revision of
+this document did -- treats it as orthogonal to the fitted parameters, and it
+is not. **The mt_ckd-against-LBLRTM difference biases the retrieved columns
+(2% in water here) and does not set the residual floor.**
+
+So `lblrtm_corrected` is worth its cost for column *accuracy*, not for
+residual reduction -- and the cost is an LBLRTM build per window and per
+profile.
+
+### Three things in the LBLRTM path that had never been exercised
+
+All three were found by running `lblrtm_corrected` on a real fit for the first
+time; the machinery had only ever been used on its own defaults.
+
+1. **`write_tape5` left `IBMAX = 0`**, so LBLRTM generated its own layering with
+   AUTLAY -- which crashes on any 12-layer profile and, where it succeeds,
+   makes the two codes integrate different atmospheres. It now supplies the
+   boundaries on record 3.3B. Agreement with LBLRTM improves 1.6x from that
+   alone (rms 0.00524 -> 0.00318).
+2. **`build_lblrtm_correction` asked LBLRTM for exactly `[nu[0], nu[-1]]`** and
+   then required strict coverage. LBLRTM lays its grid inside the request, so
+   it returned a span 9.4e-05 cm-1 short and the build failed. The request is
+   now padded by 0.5 cm-1.
+3. **The template's grid must match the model's to `rtol=1e-12`**, so a rounded
+   `--resolving-power` produces a 25-minute build that passes its own
+   acceptance test and is then rejected at fit time. The builder takes
+   `--fwhm-cm1` and derives the resolving power exactly as the fit driver does.
+
+One usage note: the template's species are the **profile's**, not the
+`--species` subset, which restricts only the JAX side of the difference. A
+molecule left out still gets a correction carrying LBLRTM's whole optical
+depth. That is coherent, but the fit then sees every profile species and an
+unconstrained one rails -- CO2 did here. `at_bound` is the detector.
+
 ## Reproduce
 
 ```bash

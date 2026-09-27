@@ -46,6 +46,7 @@ from tellurix import (
     ArrayOpacityBackend,
     BoxcarFTSInstrumentProfile,
     ExoJAXOpacityBackend,
+    LBLRTMOpticalDepthCorrection,
     MTCKDWaterContinuum,
     OrderObjective,
     StellarSpectrum,
@@ -175,6 +176,13 @@ def main() -> None:
     parser.add_argument("--zenith-angle-deg", type=float, default=None,
                         help="default is the header's mean air mass; 0 folds it into the "
                              "column scales, which is the diagnostic half of the slant-path test")
+    parser.add_argument("--accuracy-mode", choices=("mt_ckd", "lblrtm_corrected"), default="mt_ckd",
+                        help="'lblrtm_corrected' replaces the runtime MT_CKD continuum with an "
+                             "LBLRTM correction template built by build_lblrtm_correction.py. "
+                             "The template is valid only for the profile and grid it was built "
+                             "for, so --profile, --v1/--v2 and the grid options must match it.")
+    parser.add_argument("--correction", type=Path, default=None,
+                        help="the template npz; required by --accuracy-mode lblrtm_corrected")
     parser.add_argument("--gaussian-ils", action="store_true")
     parser.add_argument("--vectorize-layers", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--mixed-precision", action=argparse.BooleanOptionalAction, default=True)
@@ -236,14 +244,24 @@ def main() -> None:
         pressure_shift=True,
         layer_chunk_size=args.layer_chunk_size or None,
     )
-    continuum = MTCKDWaterContinuum.from_netcdf(
-        root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc", grid)
+    # The two modes are exclusive by construction: lblrtm_corrected carries the
+    # continua inside its template and TelluricModel rejects a separate one.
+    if args.accuracy_mode == "lblrtm_corrected":
+        if args.correction is None:
+            raise SystemExit("--accuracy-mode lblrtm_corrected needs --correction")
+        correction = LBLRTMOpticalDepthCorrection.load(root / args.correction)
+        continuum = None
+    else:
+        correction = None
+        continuum = MTCKDWaterContinuum.from_netcdf(
+            root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc", grid)
 
     mopd_cm = None if args.gaussian_ils else 1.20671 / (2.0 * args.fwhm_cm1)
     instrument = None if args.gaussian_ils else BoxcarFTSInstrumentProfile(
         mopd_cm=mopd_cm, wavenumber_center_cm1=centre, max_residual_sigma_kms=4.0)
     model = TelluricModel(
-        profile, grid, opacity, continuum=continuum, accuracy_mode="mt_ckd",
+        profile, grid, opacity, continuum=continuum, correction=correction,
+        accuracy_mode=args.accuracy_mode,
         max_lsf_sigma_kms=4.0,
         # The FTS point-samples; it does not integrate over a pixel the way a
         # grating spectrograph's detector does.
@@ -408,7 +426,9 @@ def main() -> None:
         },
         "physics": {
             "accuracy_mode": model.accuracy_mode,
-            "continuum": "native MT_CKD 4.3",
+            "continuum": ("LBLRTM correction template" if correction is not None
+                          else "native MT_CKD 4.3"),
+            "correction": None if args.correction is None else str(args.correction),
             "pressure_shift": True,
             "mixed_precision": args.mixed_precision,
             "precomputed_opacity": (args.self_broadening if args.precompute_opacity else None),
