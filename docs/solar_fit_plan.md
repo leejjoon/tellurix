@@ -591,6 +591,34 @@ the run's when the species present depend on the window, so remap each row's
 sigma and correlation into the union. That trap is now the normal case rather
 than an edge case -- see below.
 
+### 4a and 4b -- built
+
+`scripts/extract_afgl_profiles.py` reads the six AFGL standard atmospheres out
+of LBLRTM's own `src/lblatm.f90` -- 47 molecules, 50 levels, 0-120 km -- so the
+abundances come from the same source LBLRTM uses. `make_site_profile.py
+--afgl-model` interpolates them onto the site's layers in the log, scaling the
+trended gases to the epoch by their surface ratio and leaving water to the
+site's own precipitable-water argument.
+
+`scripts/scan_window_species.py` then ranks every molecule by peak vertical
+optical depth from the profile's own column. Over 2030-2060 cm-1 it returns
+
+    fit:      H2O, CO2, CO, O3, OCS
+    strongest rejected: NO2 at 1.72e-05, 58x below the cut
+
+which is the list that took a day of elimination and a hand cross-match against
+Wallace's line list to find. There are **four orders of magnitude** between the
+last species in (OCS, 1.21e-01) and the first out, so the threshold is not a
+close call. `docs/solar_scan_2030.json` is the record.
+
+Two costs to fix before a batch run. The scan compiles once per species per
+window and needs `--layer-chunk-size 1` for a line-rich species like O3
+(38,011 lines within the 25 cm-1 margin), so it is slow; one reused evaluator
+across species, as `OrderObjective` does across stages, is the fix. And
+`DEFAULT_EDGES_KM` stops at 30 km above the site while **ozone peaks at 38
+km** -- the AFGL profile knows this and our layer grid truncates it, so the
+fitted O3 scale is partly compensating for a column we do not integrate.
+
 ### 4a. The species list is computed, not chosen
 
 **This is the change the OCS and O3 result forces.** The batch driver cannot
