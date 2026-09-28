@@ -42,7 +42,12 @@ import os
 import time
 from pathlib import Path
 
-MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
+# Which molecules to build line lists for comes from the **record**, not from a
+# table here. A private species list in this file would be a third copy of the
+# mistake that hid OCS and O3 for as long as it did: a solar record carries
+# whatever its per-window scan found, and a hardcoded six would silently drop
+# the rest. Iterating the record's own species is also faster than iterating all
+# 46 AER molecules, which is what a naive fix would do.
 
 
 def main() -> None:
@@ -69,7 +74,7 @@ def main() -> None:
     import numpy as np
 
     from tellurix import (
-        AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, TelluricModel,
+        AER_MOLECULE_IDS, AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, TelluricModel,
         file_sha256, constant_velocity_grid, load_atmosphere_csv, parameters_from_row,
         read_record, select_significant_lines, trim_wavenumber_grid,
     )
@@ -129,8 +134,8 @@ def main() -> None:
             v1, v2, float(config["grid_margin_cm1"]))
 
         databases = {}
-        for name, molecule_id in sorted(MOLECULE_IDS.items()):
-            stem = f"{molecule_id:02d}_{name}"
+        for name in sorted(species_all):
+            stem = f"{AER_MOLECULE_IDS[name]:02d}_{name}"
             try:
                 databases[name] = AERLineDatabase(
                     verified(f"aer_{name}", line_root / stem / stem), name, (v1, v2),
