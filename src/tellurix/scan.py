@@ -23,6 +23,11 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+# Layer counts to try when a window is too line-rich to evaluate whole. None is
+# "no chunking", which is what every window that fits should use; the rest are
+# the fallback, and each costs another compile.
+_CHUNK_LADDER = (None, 8, 4, 2, 1)
+
 __all__ = ["ScanIdentity", "cached_scan", "load_scan", "read_scan",
            "save_scan", "scan_window", "species_above"]
 
@@ -188,26 +193,51 @@ def scan_window(profile, line_root: Path, identity: ScanIdentity, *,
         full = int(database.nu_lines.size)
         database = select_significant_lines(database, profile, name,
                                             optical_depth_budget=identity.line_budget)
-        opacity = ExoJAXOpacityBackend.prepare(
-            {name: database}, grid, methods="direct_sparse",
-            temperature_range_k=(float(np.min(profile.temperature_k)),
-                                 float(np.max(profile.temperature_k))),
-            maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
-            vectorize_layers=True, mixed_precision=True, pressure_shift=True,
-            layer_chunk_size=layer_chunk_size or None)
         # Never call this eagerly. An uncompiled kernel dispatches operation by
         # operation and materialises the dense line-by-grid offset matrix, which
         # asks for 16 GB on a 20,000-line species like O3; jit fuses it away.
-        # The backend takes the self-broadening partial pressure per species,
-        # keyed like the cross sections it returns.
+        #
+        # jit is not always enough here. Unlike a fit, a scan asks for the
+        # per-layer cross sections rather than the summed optical depth, and on
+        # a line-rich window XLA keeps the whole (layer, line, grid) intermediate
+        # -- 25 GiB on 1966-1996 cm-1, where O3 and the water lines overlap. So
+        # back off through layer chunks rather than fail: the scan has to survive
+        # every window in the atlas, and the windows it would die on are exactly
+        # the ones whose species list is least guessable.
         pressure = np.asarray(profile.pressure_layer_bar)
-        evaluate = jax.jit(lambda t, p_, s: opacity.cross_sections(t, p_, {name: s})[name])
-        cross_section = np.asarray(evaluate(
-            np.asarray(profile.temperature_k), pressure,
-            pressure * np.asarray(profile.vmr[name])))
+        cross_section = None
+        for chunk in _CHUNK_LADDER if not layer_chunk_size else (layer_chunk_size,):
+            opacity = ExoJAXOpacityBackend.prepare(
+                {name: database}, grid, methods="direct_sparse",
+                temperature_range_k=(float(np.min(profile.temperature_k)),
+                                     float(np.max(profile.temperature_k))),
+                maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
+                vectorize_layers=True, mixed_precision=True, pressure_shift=True,
+                layer_chunk_size=chunk)
+            # The backend takes the self-broadening partial pressure per species,
+            # keyed like the cross sections it returns.
+            evaluate = jax.jit(lambda t, p_, s: opacity.cross_sections(t, p_, {name: s})[name])
+            try:
+                cross_section = np.asarray(evaluate(
+                    np.asarray(profile.temperature_k), pressure,
+                    pressure * np.asarray(profile.vmr[name])))
+                break
+            except Exception as exc:
+                if "RESOURCE_EXHAUSTED" not in str(exc) or chunk == _CHUNK_LADDER[-1]:
+                    raise
+                say(f"  {name:8s} out of memory at layer chunk {chunk}; backing off")
+        if cross_section is None:  # pragma: no cover - the ladder always ends in a raise
+            raise RuntimeError(f"{name} could not be evaluated at any layer chunk size")
         # Optical depth is the cross section times the species column, summed
         # over layers -- the profile's own column, which is the whole point.
         tau = np.sum(cross_section * (np.asarray(profile.vmr[name]) * column)[:, None], axis=0)
+        # Drop this species' calculator and its compiled executable before the
+        # next one is built. Every species has its own line count and so its own
+        # shape, meaning nothing is ever reused and the cache is pure retention;
+        # left in place it made a scan that ran fine alone die of a 25 GiB
+        # allocation three windows into a batch.
+        del opacity, evaluate, cross_section
+        jax.clear_caches()
         found.append({"species": name, "molecule": molecule_id,
                       "lines": full, "lines_kept": int(database.nu_lines.size),
                       "peak_optical_depth": float(np.max(tau) * secant),
