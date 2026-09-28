@@ -405,6 +405,12 @@ def main() -> None:
                 status = f"FAILED: {exc}"
         results.append(row)
         done[key] = row
+        # Every window has its own grid size and species set, so nothing XLA
+        # compiled for the last one can be reused for the next; left in place it
+        # is retention, and it is what killed the scan pass three windows in.
+        import jax
+
+        jax.clear_caches()
         print(f"[{index}/{len(jobs)}] {entry['v1']:7.1f}-{entry['v2']:7.1f}  {status}   "
               f"({(time.time() - started)/60:.1f} min elapsed)", flush=True)
         args.summary.parent.mkdir(parents=True, exist_ok=True)
