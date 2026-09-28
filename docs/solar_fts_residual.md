@@ -237,7 +237,46 @@ the deficit grows with air mass -- 0.39% at X = 1.985 and 1.14% at 4.730. The
 synthetic L3 check predicted 1.45% at X = 4.73 before any of this was fitted.
 **Quote a slant-path result on CO or CO2, never on water.**
 
-**But the columns do not agree between files**, and they must:
+**Re-measured with the scanned five-species list** (`docs/solar_slant_*.json`,
+2030-2060 cm-1, ERA5 temperature and water with the AFGL trace set), the fold
+is exact on four species at both air masses:
+
+| | file 5, X=1.985 | file 4, X=4.730 |
+|---|---|---|
+| CO | -0.00% | -0.01% |
+| CO2 | -0.00% | -0.01% |
+| O3 | +0.04% | +0.02% |
+| OCS | -0.02% | -0.05% |
+| H2O | -0.40% | **-1.18%** |
+
+Water's deficit grows with air mass as saturation requires, and L3 predicted
+1.45% at X = 4.73 before any real data was fitted.
+
+**The files still disagree, and the missing species were not the reason.**
+
+| | file 5 | file 4 | disagreement |
+|---|---|---|---|
+| OCS | 0.9160 | 0.8816 | -3.8% |
+| CO2 | 1.0179 | 0.9777 | -3.9% |
+| CO | 0.9696 | 0.8962 | -7.6% |
+| O3 | 0.9255 | 0.8439 | -8.8% |
+| H2O | 0.6751 | 0.4995 | -26.0% |
+
+against -4.7% and -9.6% for CO2 and CO before OCS and O3 were added. The fit is
+2.5x better, the species list is verified, and the disagreement barely moved.
+Every species is low in file 4 while file 4's own fold is exact, so this is not
+the slant path being mishandled -- it is file 4's **effective air mass being
+below its header mean**, which is the scan average: 5.88 to 3.58 within one
+40-minute exposure, biasing every column the same way. Predicted at 1-2% from
+the header alone; measured at 4% on the well-mixed species.
+
+**So the slant-path bound from this pair is ~4%**, and it is attributable
+rather than mysterious. Note O3 and CO disagree by twice as much as CO2 and
+OCS; a scalar air-mass error would move every species alike, so there is
+structure there that is not understood and none of these should be quoted as a
+column until it is.
+
+### Superseded: the same comparison before the species were found
 
 | | file 5 | file 4 | file 4 / file 5 |
 |---|---|---|---|
