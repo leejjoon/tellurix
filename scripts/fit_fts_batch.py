@@ -339,6 +339,11 @@ def main() -> None:
     parser.add_argument("--scan-samples-per-resolution", type=float, default=2.0)
     parser.add_argument("--verbose-scan", action="store_true")
     parser.add_argument("--stride", type=int, default=1, help="take every Nth window")
+    parser.add_argument("--shard", default=None, metavar="I/N",
+                        help="take every Nth window starting at I, for one GPU of N. "
+                             "Interleaved rather than split by range, because the scan's "
+                             "cost is concentrated in the line-rich red end and a "
+                             "contiguous split would leave one worker idle for hours.")
     parser.add_argument("--limit", type=int, default=0, help="stop after this many windows")
     parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/solar")
     parser.add_argument("--summary", type=Path, default=None,
@@ -368,6 +373,9 @@ def main() -> None:
         airmass = float(spectrum.airmass_mean)
     jobs = window_edges(spectrum, args.v1, args.v2, args.window_cm1, args.minimum_snr)
     jobs = jobs[:: args.stride]
+    if args.shard:
+        index, _, count = args.shard.partition("/")
+        jobs = jobs[int(index):: int(count)]
     if args.limit:
         jobs = jobs[: args.limit]
 

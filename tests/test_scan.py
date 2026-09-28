@@ -220,3 +220,25 @@ def test_a_cut_below_what_the_scan_evaluated_is_refused(tmp_path):
     assert species_above(report, 1e-3, airmass=4.73)
     with pytest.raises(ValueError, match="rejected on its bound"):
         species_above(report, 1e-3, airmass=10.0)
+
+
+def test_a_freshly_computed_scan_is_as_self_describing_as_a_cached_one(tmp_path,
+                                                                      monkeypatch):
+    """The bug this caught: `cached_scan` returned the raw computation on a miss
+    and the stored copy on a hit, so `species_above` worked on every cache hit
+    and failed on every cold window -- which is a whole scan pass, and exactly
+    the half that is not exercised while developing against a warm cache."""
+    import tellurix.scan as scan
+
+    from tellurix import cached_scan, species_above
+
+    identity = _identity(tmp_path)
+    computed = {"species": ["H2O"], "identity": identity.as_dict(),
+                "fit": [{"species": "H2O", "peak_optical_depth": 1.0}], "rejected": []}
+    monkeypatch.setattr(scan, "scan_window", lambda *a, **k: computed)
+
+    cache = tmp_path / "scans"
+    fresh = cached_scan(cache, identity, None, tmp_path)
+    warm = cached_scan(cache, identity, None, tmp_path)
+    assert species_above(fresh, 1e-3) == species_above(warm, 1e-3) == ["H2O"]
+    assert fresh["identity"] == warm["identity"] == identity.as_dict()

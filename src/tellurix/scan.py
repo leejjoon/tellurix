@@ -220,6 +220,12 @@ def scan_window(profile, line_root: Path, identity: ScanIdentity, *,
     reject = [row for row in found if row["peak_optical_depth"] < identity.threshold]
     reject_by_bound.sort(key=lambda row: -row["optical_depth_bound"])
     return {
+        # Carried on every return path, not only on the stored copy: a caller
+        # that re-thresholds a scan needs to know what floor it was evaluated
+        # to, and a freshly computed report is exactly as much a scan as a
+        # cached one. Leaving it off cost a whole scan pass, because every
+        # consumer had been exercised against cache hits.
+        "identity": identity.as_dict(),
         "window_cm1": [v1, v2],
         "zenith_angle_deg": zenith_angle_deg,
         "threshold_peak_optical_depth": identity.threshold,
