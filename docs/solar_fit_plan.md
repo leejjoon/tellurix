@@ -748,6 +748,64 @@ H2O, CO2 and CO only. CO moved 10% when OCS was added, so **the 5-10%
 disagreement between files 4 and 5 is not a result** until it is redone with a
 scanned species list on both.
 
+### 4f. The batch driver, and what one window actually costs
+
+`scripts/fit_fts_batch.py` chains scan -> fit -> record. It **calls**
+`fit_fts_window.py`'s `fit_window` rather than reimplementing it, which is the
+one place this driver deliberately departs from `fit_arcturus_batch.py`: a
+second copy of the fit was affordable there because the species list was a
+six-molecule constant, and it is not affordable here, where the list is a
+per-window result and a second implementation would be free to compute it
+differently. `fit_fts_window.py` was split into a callable plus a CLI to make
+that possible; the split reproduces the committed 4350 fit to 4e-10 in reduced
+chi-squared, which is the GPU's own run-to-run scatter.
+
+**The record is assembled from disk, not from memory.** Each window's `.npz`
+carries its own `sigma`, `correlation` and ILS fingerprint, and `record_row`
+reads them back at the end. So a run that is interrupted and resumed still
+writes a record covering every window -- verified byte-identical across a
+resume. `fit_arcturus_batch.py` does not have this property: it pops the record
+block out of each row before writing the summary, so a resumed run writes a
+record covering only its final pass. Worth fixing there.
+
+**Measured costs**, on one RTX 5000 Ada:
+
+| | per window |
+|---|---|
+| scan, 1876-2206 cm-1 (O3 carries 20,000+ lines) | 1.45 min |
+| scan, whole band, average | 1.26 min |
+| fit, including both XLA compilations | ~20 s |
+
+224 windows at 30 cm-1 cover 1876-9091 cm-1, the range both the FTS filters and
+the Payne Zero bands reach. That is about 2h20m of scanning per shard, ~2 hours
+wall clock across the two GPUs, paid **once** for both files; then about 75
+minutes of fitting per file.
+
+An earlier estimate of ~22 hours in this document's history was wrong by an
+order of magnitude. It extrapolated from a single 5m50s measurement of the
+2030-2060 window, which was taken while the process was under memory pressure
+and rematerializing heavily. Do not extrapolate a GPU cost from one sample.
+
+**Two bugs this shook out, both about the difference between a warm cache and a
+cold one, and both worth remembering:**
+
+- `cached_scan` returned the raw computation on a miss and the stored copy on a
+  hit, and only the stored copy carried the identity block. Every consumer
+  therefore worked on every cache hit and failed on every cold window -- which
+  is the entire first pass over the atlas. Developing against a warm cache hides
+  exactly the half that has to work unattended.
+- The scan accumulated compiled executables across windows and died of a 25 GiB
+  allocation three windows into a batch, on a window that ran fine alone. Every
+  species has its own line count and so its own shape, so nothing is ever reused
+  and the JAX cache was pure retention; `jax.clear_caches()` after each species
+  fixes it. A layer-chunk back-off ladder is kept as insurance and has not yet
+  had to fire.
+
+**What the scan finds that no hand-written list would.** N2 is a fitted species
+at 2146-2206 cm-1; O3 and OCS run through the whole 4-5 um region; CH4 appears
+and disappears across 30 cm-1 steps. The species list changes from window to
+window, which is the thing 4a exists to capture.
+
 ## One decision left before writing code
 
 **How much of file 4 to salvage.** The scan-average bias is analytic for a
