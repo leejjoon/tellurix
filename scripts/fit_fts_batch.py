@@ -400,7 +400,12 @@ def main() -> None:
                 status = ("negligible telluric" if row["negligible_telluric"] else
                           f"rms/noise {row['residual_rms_over_noise']:5.2f}  "
                           f"{'+'.join(row['species'])}")
-            except Exception as exc:  # a bad window must not stop the run
+            # SystemExit as well as Exception: `fit_window` came from a CLI and
+            # reports a user error by raising SystemExit, which is a
+            # BaseException and would otherwise take the whole run down. The
+            # first window does exactly that -- 1876-1906 cm-1 reaches 5330.5 nm
+            # and the reddest Payne Zero band stops at 5330.0.
+            except (Exception, SystemExit) as exc:  # a bad window must not stop the run
                 row = {**entry, "error": str(exc), "traceback": traceback.format_exc()[-1500:]}
                 status = f"FAILED: {exc}"
         results.append(row)
