@@ -666,7 +666,13 @@ designed out, so **4b blocks 4a**.
 ### 4c. Windows are chosen, and the choice matters more than any parameter
 
 Same code, same night, same source: 67x noise at 6000-6030 cm-1 against 1.47x
-at 2030-2060. Choose on three measured quantities, all already available:
+at 2030-2060. Measured across three windows, the stellar model's share of the
+residual variance runs 4% at 4.9 um, 25% at 2.3 um and 58% at 1.7 um -- **the
+windows best for measuring the atmosphere are the ones worst for the stellar
+model.** Choosing on instrument response alone would pick the opposite ones,
+since the ftsspec response peaks at 6100 cm-1.
+
+Choose on three measured quantities, all already available:
 
 - `nso.window_continuum_snr` above 30 -- is there light at all
 - the Payne Zero source's mean line depth over the window -- the residual

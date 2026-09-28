@@ -144,6 +144,59 @@ the partition function is the only per-molecule input. It is exported as
 fitting stays a per-window question answered by `--species` and `at_bound`;
 *considering* one is no longer a code change.
 
+### The scan, checked on three windows
+
+`scripts/scan_window_species.py` derives the species list from the profile's
+own columns. Run on the three windows fitted by hand
+(`docs/solar_scan_{2030,4350,6000}.json`):
+
+| window | scan says | hand-picked | verdict |
+|---|---|---|---|
+| 2030-2060 | H2O, CO2, CO, **O3**, **OCS** | H2O, CO2, CO | two missing, worth **2.5x** |
+| 4350-4380 | CH4, H2O, **N2O** | H2O, CH4 | one missing, worth **1.4%** |
+| 6000-6030 | CH4, H2O, CO2 | CH4, H2O, CO2 | hand list was right |
+
+So hand-picking got one window right and two wrong, and the cost of being
+wrong ranged from a factor of 2.5 to almost nothing. The scan is the gate
+because a guess cannot be distinguished from a check after the fact -- not
+because every window hides an absorber.
+
+Two calibration points. At 4350-4380 **N2O returns 0.915** of its AFGL 1990
+abundance, an ordinary value, confirming the species is real even though it
+only buys 1.4% -- its peak optical depth is 0.025 against CH4's 2.23. And O3
+sits **1.4x below the cut** there, the closest call the scan has produced;
+adding it rails at a bound and changes the residual by nothing, so the 1e-3
+threshold is about right and the `headroom` field correctly flagged it as
+worth one test rather than worth including.
+
+**A correction.** When the 4350-4380 scan first came back this was recorded as
+"not a measurement of anything, a fit missing an absorber, exactly like
+2030-2060". That was too strong: adding N2O moves 5.28 to 5.20x noise. The
+species list there was incomplete, not badly wrong.
+
+### The stellar model dominates where the atmosphere is quiet
+
+Decomposing each window's residual against the solar source and against
+telluric depth:
+
+| window | residual | \|1-source\| vs \|residual\| | \|1-transmission\| vs \|residual\| |
+|---|---|---|---|
+| 2030-2060 (4.9 um) | **1.47x** | 0.211 (4.4%) | 0.023 (0.1%) |
+| 4350-4380 (2.3 um) | 5.20x | **0.503 (25.3%)** | 0.245 (6.0%) |
+| 6000-6030 (1.7 um) | 67x | **0.760 (58%)** | -- |
+
+The further into the near-infrared, the more Payne Zero dominates: the Sun has
+more structure there and the atmosphere has less. **The windows best for
+measuring the atmosphere are the ones worst for the stellar model**, and
+4.9 um is where this data is most informative about tellurics -- which is why
+the two missing species showed up there and nowhere else.
+
+At 4350-4380 the residual is also **-0.0066 in the inner line wing with 22% of
+pixels positive**, against near-zero in cores and between lines. Concentrated
+in wings with a consistent sign is a shape error, and the scan says nothing is
+missing, so that window's 5.2x is line shape plus the stellar model rather
+than opacity that was left out.
+
 ### What is left, and it is not the solar model
 
 At 1.47x noise the remaining residual correlates only weakly with the source:
