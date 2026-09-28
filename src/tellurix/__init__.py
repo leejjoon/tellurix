@@ -67,6 +67,7 @@ from .download import default_data_directory, download_aer_lines, download_mt_ck
 from .io import load_atmosphere_csv, load_mipas_profile
 from .lblrtm import LBLRTMRunConfig, run_lblrtm, write_tape5
 from .mt_ckd import MTCKDWaterContinuum
+from .scan import ScanIdentity, load_scan, read_scan, save_scan
 from .reference import (
     LBLRTMSpectrum,
     ValidationMetrics,
@@ -143,6 +144,10 @@ __all__ = [
     "ils_fingerprint",
     "interferogram_envelope",
     "leave_one_out_patterns",
+    "ScanIdentity",
+    "load_scan",
+    "read_scan",
+    "save_scan",
     "load_atmosphere_csv",
     "load_mipas_profile",
     "measure_mopd",

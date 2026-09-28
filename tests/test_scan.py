@@ -85,3 +85,87 @@ def test_the_line_budget_cannot_move_a_species_across_the_threshold():
     budget = float(source.split('"--line-budget", type=float, default=')[1].split(",")[0])
     threshold = float(source.split('"--threshold", type=float, default=')[1].split(",")[0])
     assert budget <= threshold / 100.0
+
+
+# The cache. A scan costs about six minutes and depends on the window and the
+# atmosphere alone, so it is stored rather than repeated -- which is only safe
+# if a stale entry cannot be mistaken for a fresh one.
+
+def _identity(tmp_path, text="a,b\n1,2\n", window=(2030.0, 2060.0)):
+    from tellurix import ScanIdentity
+
+    profile = tmp_path / "profile.csv"
+    profile.write_text(text)
+    return ScanIdentity.for_profile(
+        profile, window, threshold=1e-3, line_budget=1e-5,
+        margin_cm1=25.0, fwhm_cm1=0.01753, samples_per_resolution=2.0)
+
+
+def test_scan_identity_follows_the_profile_contents_not_its_name(tmp_path):
+    """The failure this prevents: a profile rebuilt with a different AFGL model
+    keeps its filename, and would otherwise reuse a ranking built for the old
+    atmosphere -- exactly the kind of silent reuse that hid OCS."""
+    original = _identity(tmp_path)
+    rebuilt = _identity(tmp_path, text="a,b\n1,3\n")
+
+    assert rebuilt.digest != original.digest
+
+    moved = tmp_path / "elsewhere.csv"
+    moved.write_text("a,b\n1,2\n")
+    from tellurix import ScanIdentity
+    renamed = ScanIdentity.for_profile(
+        moved, (2030.0, 2060.0), threshold=1e-3, line_budget=1e-5,
+        margin_cm1=25.0, fwhm_cm1=0.01753, samples_per_resolution=2.0)
+    assert renamed.digest == original.digest
+
+
+@pytest.mark.parametrize("field,value", [
+    ("threshold", 1e-4),
+    ("line_budget", 1e-6),
+    ("margin_cm1", 30.0),
+    ("fwhm_cm1", 0.02),
+    ("samples_per_resolution", 4.0),
+    ("line_files", "aer_v_4.0"),
+])
+def test_every_setting_that_can_change_the_ranking_changes_the_digest(
+        tmp_path, field, value):
+    import dataclasses
+
+    identity = _identity(tmp_path)
+    assert dataclasses.replace(identity, **{field: value}).digest != identity.digest
+
+
+def test_a_saved_scan_reads_back(tmp_path):
+    from tellurix import load_scan, save_scan
+
+    identity = _identity(tmp_path)
+    cache = tmp_path / "scans"
+    assert load_scan(cache, identity) is None
+
+    path = save_scan(cache, identity, {"species": ["H2O", "CO2"], "fit": []})
+    assert path.name.startswith("scan_2030_2060_")
+    assert load_scan(cache, identity)["species"] == ["H2O", "CO2"]
+    assert not list(cache.glob("*.partial"))
+
+
+def test_an_entry_filed_under_the_wrong_name_is_refused(tmp_path):
+    from tellurix import read_scan, save_scan
+
+    identity = _identity(tmp_path)
+    path = save_scan(tmp_path / "scans", identity, {"species": []})
+    copied = path.with_name("scan_2030_2060_deadbeefcafe.json")
+    copied.write_text(path.read_text())
+
+    with pytest.raises(ValueError, match="identity does not produce"):
+        read_scan(copied)
+
+
+def test_a_scan_written_before_identities_is_refused(tmp_path):
+    import json
+
+    from tellurix import read_scan
+
+    path = tmp_path / "scan_2030_2060_000000000000.json"
+    path.write_text(json.dumps({"species": ["H2O"]}))
+    with pytest.raises(ValueError, match="predates cache identities"):
+        read_scan(path)

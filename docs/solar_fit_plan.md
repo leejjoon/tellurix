@@ -641,10 +641,47 @@ and each beside the point.
 4. The window's fit uses that list. The rejected list is recorded, so a
    surprising residual can be checked against what was nearly included.
 
-Two properties this must have. It is **cheap**, because it needs line
-selection and a single optical-depth evaluation, not a fit. And it is
-**per window**: at 2030-2060 the answer is H2O, CO2, CO, OCS, O3, while at
-6000-6030 O2 has no lines at all and CH4 dominates.
+It is **per window**: at 2030-2060 the answer is H2O, CO2, CO, OCS, O3, while
+at 6000-6030 O2 has no lines at all and CH4 dominates.
+
+**It is not cheap, and it does not have to be.** This was planned as cheap on
+the grounds that it needs one optical-depth evaluation rather than a fit;
+measured, a 30 cm-1 window costs 5m50s, nearly all of it in the two line-rich
+species (O3 ships 38,011 lines in that window, CO2 10,694). A bound-based
+pre-filter now rejects 16 of the 23 candidates without evaluating them at all
+and leaves the verdict unchanged, but the cost lives in the species it cannot
+reject, so it stays.
+
+Three cheaper schemes were measured and rejected, and each failed for a reason
+worth keeping:
+
+- **Rank by `line_optical_depth_bound` alone**, skipping the evaluation. The
+  bound's conservatism spans 1.3x to 1.05e8x across species, so it reorders O3
+  and CO at 2030-2060. It is sound as a *reject* test against a threshold --
+  which is what it is used for -- and useless as a ranking.
+- **Coarsen the grid.** `constant_velocity_grid` refuses fewer than 2 samples
+  per resolution element, which is the Nyquist guard, and the scan is already
+  at 2.
+- **Lower the resolving power instead.** Stratospheric lines are Doppler-limited
+  at about 0.002 cm-1 against an 0.0175 cm-1 instrument element, so a coarser
+  grid preferentially loses exactly the species whose column is stratospheric.
+  That is O3 -- the species this whole section exists because of.
+
+What makes the cost affordable is that **a scan is a cacheable artefact**. It is
+a function of the window and the atmosphere alone: no spectrum, no observation
+date, no fitted parameter enters it. One entry therefore serves file 4 and file
+5, every refit, and any later re-analysis. `tellurix.ScanIdentity` keys an entry
+on the window, the profile's *contents* (a sha256, not its path -- a profile
+rebuilt with a different AFGL model keeps its filename), the threshold, the line
+budget, the wing margin, the ILS width, the sampling and the line-file version;
+`save_scan` / `load_scan` store them under `data/scans/`, and `read_scan`
+re-checks the recorded identity against the filename so a hand-copied or
+hand-edited entry is refused rather than trusted. Entries are committed: 4.5 kB
+each, six minutes each to regenerate. Measured on 2040-2042: 1m15s cold, 1.0s
+warm.
+
+At about six minutes a window, 220 windows is ~22 hours, or ~11 across the two
+GPUs -- paid once for the whole atlas, not once per fit.
 
 ### 4b. The profile has to carry the species before the scan can rank them
 
