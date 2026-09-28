@@ -806,6 +806,49 @@ at 2146-2206 cm-1; O3 and OCS run through the whole 4-5 um region; CH4 appears
 and disappears across 30 cm-1 steps. The species list changes from window to
 window, which is the thing 4a exists to capture.
 
+### 4g. The first full run, and the bound that made a fifth of it meaningless
+
+Both files fitted in one pass each, 224 windows, ~40 s a window, about two
+hours wall clock on the two GPUs with the scans already cached. The first run's
+numbers are kept here because what it found is more useful than the numbers
+were.
+
+**The FTS spectra are not normalized and the fitted continuum's constant term
+is a log flux.** Its bound is +-2. The instrument's filters put the raw flux at
+0.98 near 6000 cm-1 and **0.017 at 9060**, whose log is -4.07, so across the
+whole 8656-9076 cm-1 edge the continuum railed at exp(-2) and the fit was
+meaningless -- 14 windows of 224 in file 5, 15 in file 4. Measured on
+9046-9076: rms/noise **293.30 -> 2.00** once the window is normalized, with
+`continuum_0` off the rail at -0.118 and H2O and the velocity off their bounds
+as well. It turns the worst windows in the run into some of the better ones.
+
+This is the same failure `igrins_spectral_order` already normalizes away, for
+the same reason and with the same fix -- `fts_spectral_order(normalize=True)`
+divides by `fts_continuum_level`, a scalar exactly degenerate with the
+continuum's constant term, so the fit stays scale free everywhere the bound was
+not binding. Verified: windows near 6000 cm-1, where the raw flux is 0.985,
+are unchanged.
+
+**The lesson is about where to look.** Nine explanations were eliminated before
+the missing species were found, and the residual at the blue edge would have
+supported another nine. `at_bound` named it immediately: `continuum_0` at
+exactly -2.000 in 14 windows, all adjacent, all at one end of the band. Read
+the bound report before the residual.
+
+Two other things the first run showed, both still open:
+
+- `lsf_sigma_kms` is at a bound in 36% of file 5's windows and 50% of file 4's,
+  overwhelmingly at the 0.05 km/s floor and concentrated in 6700-9100 cm-1
+  (45/79 and 63/79). The ILS here is a measured sinc and this Gaussian is an
+  addition to it, so railing at zero means the sinc alone already accounts for
+  the width -- the same reading as the earlier 0.05-against-0.093 result. A
+  dozen windows per file rail at the 4.0 km/s *ceiling* instead, and those are
+  worth looking at.
+- The residual's wavelength trend is the one already measured and it survives
+  the continuum fix elsewhere in the band: about 2x the noise at 4.0-5.3 um,
+  4-8x at 2.0-4.0, and 25-36x at 1.5-2.0 um. The windows best for the
+  atmosphere remain the worst for the stellar model.
+
 ## One decision left before writing code
 
 **How much of file 4 to salvage.** The scan-average bias is analytic for a

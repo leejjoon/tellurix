@@ -38,6 +38,7 @@ from .ils import (
 from .nso import (
     FTSSpectrum,
     PhotatlPage,
+    fts_continuum_level,
     fts_spectral_order,
     photatl_spectral_order,
     read_fts_spectrum,
@@ -146,6 +147,7 @@ __all__ = [
     "epoch_velocity_kms",
     "file_sha256",
     "fit_order",
+    "fts_continuum_level",
     "fts_spectral_order",
     "hydrogen_series_um",
     "igrins_spectral_order",

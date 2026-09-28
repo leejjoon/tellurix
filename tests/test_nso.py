@@ -181,3 +181,36 @@ def test_selecting_a_range_keeps_the_provenance():
     assert window.flux.size < spectrum.flux.size
     with pytest.raises(ValueError):
         spectrum.select(5002.0, 5001.0)
+
+
+def test_a_window_is_normalized_before_it_is_fitted():
+    """The failure this prevents: the fitted continuum's constant term is a log
+    flux against a bound of +-2, and these spectra are not normalized -- the raw
+    flux falls to 0.017 at the blue edge of the transform, whose log is -4.07.
+    Fourteen of 224 windows per file were fitted with the continuum pinned at
+    exp(-2); 9046-9076 went from 293 times the noise to 2.0 once normalized."""
+    import numpy as np
+
+    from tellurix import fts_continuum_level
+
+    faint = np.full(512, 0.017)
+    faint[::7] = 0.010
+    assert fts_continuum_level(faint) == pytest.approx(0.017, rel=1e-6)
+
+    # The level is a scale, so scaling the data scales it by the same factor:
+    # that is what makes dividing by it exactly degenerate with the continuum.
+    assert fts_continuum_level(faint * 58.8) == pytest.approx(
+        fts_continuum_level(faint) * 58.8, rel=1e-9)
+
+
+def test_a_continuum_level_needs_positive_finite_pixels():
+    import numpy as np
+
+    from tellurix import fts_continuum_level
+
+    with pytest.raises(ValueError, match="too few finite pixels"):
+        fts_continuum_level(np.full(4, np.nan))
+    with pytest.raises(ValueError, match="no positive continuum level"):
+        fts_continuum_level(np.full(64, -1.0))
+    with pytest.raises(ValueError, match="percentile"):
+        fts_continuum_level(np.ones(64), percentile=0.0)

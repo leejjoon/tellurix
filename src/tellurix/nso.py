@@ -565,6 +565,29 @@ def _saturation_mask(
                      >= saturation_floor * continuum)
 
 
+def fts_continuum_level(flux: np.ndarray, percentile: float = 99.0) -> float:
+    """A robust flux scale for one window, in the atlas's own units.
+
+    These spectra are not normalized and their scale follows the instrument's
+    filters: the median flux runs from 0.98 at 6000 cm-1 to 0.017 at 9060, the
+    blue edge of the transform. A high percentile sits on the continuum, above
+    the absorption that fills the lower part of the distribution, and is stable
+    against the few bad pixels a maximum would catch. It is the same statistic
+    :func:`window_continuum_snr` divides by.
+    """
+
+    if not 0.0 < percentile <= 100.0:
+        raise ValueError("percentile must be in (0, 100]")
+    values = np.asarray(flux, dtype=float)
+    finite = np.isfinite(values)
+    if np.count_nonzero(finite) < 8:
+        raise ValueError("too few finite pixels to set a continuum level")
+    level = float(np.percentile(values[finite], percentile))
+    if not np.isfinite(level) or level <= 0.0:
+        raise ValueError("no positive continuum level in this window")
+    return level
+
+
 def _to_order(
     wavenumber_cm1: np.ndarray,
     flux: np.ndarray,
@@ -575,10 +598,20 @@ def _to_order(
     minimum_continuum_snr: float,
     zenith_angle_deg: float,
     source_flux_model_grid,
+    normalize: bool = True,
 ) -> SpectralOrder:
     order = np.argsort(1.0e7 / wavenumber_cm1)
     wavelength_nm = (1.0e7 / wavenumber_cm1)[order]
     values = np.asarray(flux, dtype=float)[order]
+    # A scalar exactly degenerate with the fitted continuum's constant term, so
+    # the fit is scale free -- except at its bound, which is where this matters.
+    # That coefficient is a *log* flux, and at the blue edge of the transform
+    # the data sit at 0.017, whose log is -4.07 against a bound of +-2. The
+    # continuum rails, and 14 of 224 windows per file were fitted with a
+    # continuum pinned at exp(-2). Recover the original units with
+    # `fts_continuum_level`. This is the same failure `igrins_spectral_order`
+    # normalizes away, for the same reason.
+    values = values / (fts_continuum_level(values) if normalize else 1.0)
 
     mask = _saturation_mask(values, saturation_floor, smooth_pixels, minimum_continuum_snr)
     if not np.any(mask):
@@ -611,8 +644,14 @@ def fts_spectral_order(
     minimum_continuum_snr: float = 30.0,
     zenith_angle_deg: float | None = None,
     source_flux_model_grid: np.ndarray | None = None,
+    normalize: bool = True,
 ) -> SpectralOrder:
     """Convert a window of a raw FTS spectrum into a fittable order.
+
+    ``normalize`` divides by :func:`fts_continuum_level`. The scalar is exactly
+    degenerate with the fitted continuum's constant term, so it changes nothing
+    a fit measures -- until that coefficient hits its bound, which it does
+    across the whole 8656-9076 cm-1 edge where the raw flux falls to 0.017.
 
     ``zenith_angle_deg`` defaults to the header's mean air mass through
     :func:`zenith_angle_deg_for_airmass`. Pass 0.0 to fold the air mass into
@@ -635,7 +674,7 @@ def fts_spectral_order(
         spectrum.wavenumber_vacuum_cm1, spectrum.flux, uncertainty=uncertainty,
         saturation_floor=saturation_floor, smooth_pixels=smooth_pixels,
         minimum_continuum_snr=minimum_continuum_snr, zenith_angle_deg=zenith_angle_deg,
-        source_flux_model_grid=source_flux_model_grid,
+        source_flux_model_grid=source_flux_model_grid, normalize=normalize,
     )
 
 
