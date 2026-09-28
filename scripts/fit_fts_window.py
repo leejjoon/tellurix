@@ -57,6 +57,7 @@ from tellurix import (
     constant_velocity_grid,
     fit_order,
     fts_spectral_order,
+    ils_fingerprint,
     load_atmosphere_csv,
     prepare_stellar_source,
     read_fts_spectrum,
@@ -198,8 +199,28 @@ def main() -> None:
     parser.add_argument("--diagnostic-npz", type=Path,
                         default=Path("benchmarks/results/solar_fts_window.npz"))
     args = parser.parse_args()
-
     root = Path(__file__).resolve().parents[1]
+
+    report, arrays = fit_window(args, root)
+
+    (root / args.report).parent.mkdir(parents=True, exist_ok=True)
+    (root / args.report).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    (root / args.diagnostic_npz).parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(root / args.diagnostic_npz, **arrays)
+    print(json.dumps(report["residuals"], indent=2))
+    print(f"wrote {args.report} and {args.diagnostic_npz}")
+
+
+def fit_window(args, root: Path):
+    """Fit one window and return its report and its diagnostic arrays.
+
+    `args` is anything carrying the CLI's attributes -- an argparse Namespace
+    from `main`, or one the batch driver builds per window. Both paths run this
+    function rather than two descriptions of the same fit, because a batch
+    product assembled by a second implementation is not the thing the recorded
+    single-window fits validated.
+    """
+
     started = time.time()
 
     spectrum = read_fts_spectrum(args.spectrum)
@@ -476,18 +497,30 @@ def main() -> None:
             "jitter_over_uncertainty": float(
                 np.exp(result.parameters.log_jitter) / np.median(order.uncertainty)),
         },
+        "median_transmission": float(np.median(transmission_pixels[mask])),
+        "condition_number": float(result.condition_number or 0.0),
+        "all_stages_converged": all(s["success"] for s in stage_reports),
         "runtime_seconds": round(time.time() - started, 1),
         "platform": str(jax.devices()[0]),
         "jax": jax.__version__,
     }
 
-    (root / args.report).parent.mkdir(parents=True, exist_ok=True)
-    (root / args.report).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     _stellar_continuum = (None if source_path is None else
                           resample_stellar_continuum(stellar, window.wavenumber_vacuum_cm1[::-1]))
-    (root / args.diagnostic_npz).parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(
-        root / args.diagnostic_npz,
+    names = list(shared.codec.names)
+    deviation = (np.sqrt(np.clip(np.diag(result.covariance), 0.0, None))
+                 if result.covariance is not None else np.zeros(len(names)))
+    correlation = (result.correlation if result.correlation is not None
+                   else np.zeros((len(names), len(names))))
+    ils_velocity, ils_profile = ils_fingerprint(
+        instrument, float(result.parameters.lsf_sigma_kms), model.velocity_step_kms)
+    arrays = dict(
+        # The record's per-parameter block. Built here, in the fit's own
+        # parameter order, because that order depends on which species this
+        # window has -- and a batch that reconstructed it from the outside
+        # would be free to get it wrong.
+        parameter_names=np.asarray(names), sigma=deviation, correlation=correlation,
+        ils_velocity_kms=ils_velocity, ils_profile=ils_profile,
         wavelength_vacuum_nm=np.asarray(order.wavelength_vacuum_nm),
         wavenumber_cm1=window.wavenumber_vacuum_cm1[::-1],
         flux=np.asarray(order.flux), uncertainty=np.asarray(order.uncertainty), mask=mask,
@@ -504,8 +537,7 @@ def main() -> None:
         stellar_only_pixels=stellar_only_pixels,
         **({} if _stellar_continuum is None else {"stellar_continuum": _stellar_continuum}),
     )
-    print(json.dumps(report["residuals"], indent=2))
-    print(f"wrote {args.report} and {args.diagnostic_npz}")
+    return report, arrays
 
 
 if __name__ == "__main__":

@@ -42,10 +42,15 @@ def main() -> None:
     parser.add_argument("--samples-per-resolution", type=float, default=2.0,
                         help="coarser than a fit needs: this ranks, it does not fit")
     parser.add_argument("--margin-cm1", type=float, default=25.0)
-    parser.add_argument("--threshold", type=float, default=1.0e-3,
-                        help="peak optical depth below which a species is not worth "
-                             "fitting. 1e-3 is about a tenth of the NSO FTS noise.")
-    parser.add_argument("--line-budget", type=float, default=1.0e-5,
+    parser.add_argument("--threshold", type=float, default=2.0e-4,
+                        help="the floor this evaluates down to, on the VERTICAL column. "
+                             "It is not the cut a fit applies: that one is on the slant "
+                             "column and belongs to the observation, so `species_above` "
+                             "re-thresholds a stored scan per file. Keep this below the "
+                             "fit's cut divided by the largest air mass any file will "
+                             "ask for -- rejecting on the bound is the one cut a scan "
+                             "cannot undo. 1e-3 at air mass 4.73 needs 2.1e-4.")
+    parser.add_argument("--line-budget", type=float, default=1.0e-6,
                         help="optical depth discarded by dropping weak lines; must stay "
                              "well below --threshold so it cannot move a species across it")
     parser.add_argument("--layer-chunk-size", type=int, default=0,

@@ -169,3 +169,54 @@ def test_a_scan_written_before_identities_is_refused(tmp_path):
     path.write_text(json.dumps({"species": ["H2O"]}))
     with pytest.raises(ValueError, match="predates cache identities"):
         read_scan(path)
+
+
+# Re-thresholding. A scan ranks the vertical column; what a spectrum measures is
+# the slant one, and Kitt Peak's two files differ by 2.4x in air mass.
+
+def _report(tmp_path, floor=1e-4):
+    identity = _identity(tmp_path)
+    import dataclasses
+    identity = dataclasses.replace(identity, threshold=floor)
+    return {
+        "identity": identity.as_dict(),
+        "fit": [{"species": "H2O", "peak_optical_depth": 2.0e1},
+                {"species": "CO2", "peak_optical_depth": 5.0e-3}],
+        "rejected": [{"species": "OCS", "peak_optical_depth": 4.0e-4},
+                     {"species": "NO2", "peak_optical_depth": 1.5e-4}],
+    }
+
+
+def test_a_slant_path_promotes_a_species_the_vertical_column_rejects(tmp_path):
+    """The failure this prevents: file 4 sits at air mass 4.73, where a species
+    at 4e-4 vertical reaches 1.9e-3 along the path and is measurable."""
+    from tellurix import species_above
+
+    report = _report(tmp_path)
+    assert species_above(report, 1e-3, airmass=1.0) == ["H2O", "CO2"]
+    assert species_above(report, 1e-3, airmass=4.73) == ["H2O", "CO2", "OCS"]
+    # 1.5e-4 * 4.73 = 7.1e-4, so NO2 clears a looser cut at the same air mass.
+    assert species_above(report, 7.0e-4, airmass=4.73) == ["H2O", "CO2", "OCS", "NO2"]
+
+
+def test_species_are_returned_strongest_first(tmp_path):
+    from tellurix import species_above
+
+    depths = {"H2O": 2.0e1, "CO2": 5.0e-3, "OCS": 4.0e-4, "NO2": 1.5e-4}
+    got = species_above(_report(tmp_path), 7.0e-4, airmass=4.73)
+    assert got == sorted(got, key=lambda s: -depths[s])
+
+
+def test_a_cut_below_what_the_scan_evaluated_is_refused(tmp_path):
+    """Rejecting on the bound is the one cut a scan cannot undo, so asking for a
+    threshold the scan never reached has to fail rather than quietly under-report."""
+    from tellurix import species_above
+
+    report = _report(tmp_path, floor=2e-4)
+    with pytest.raises(ValueError, match="rejected on its bound"):
+        species_above(report, 1e-4, airmass=1.0)
+    # 1e-3 at air mass 4.73 asks about 2.11e-4 vertical, just inside the floor:
+    # that is what the default 2e-4 floor is chosen to cover.
+    assert species_above(report, 1e-3, airmass=4.73)
+    with pytest.raises(ValueError, match="rejected on its bound"):
+        species_above(report, 1e-3, airmass=10.0)

@@ -21,10 +21,10 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 __all__ = ["ScanIdentity", "cached_scan", "load_scan", "read_scan",
-           "save_scan", "scan_window"]
+           "save_scan", "scan_window", "species_above"]
 
 
 @dataclass(frozen=True)
@@ -253,3 +253,31 @@ def cached_scan(cache_dir: Path, identity: ScanIdentity, profile, line_root: Pat
     report = scan_window(profile, line_root, identity, **kwargs)
     save_scan(cache_dir, identity, report)
     return report
+
+
+def species_above(report: Mapping, threshold: float, *, airmass: float = 1.0) -> list[str]:
+    """The species a fit should free, re-thresholded for this observation.
+
+    A scan ranks the **vertical** column, but what a spectrum can measure is the
+    slant one, and a secant multiplies every species alike: at Kitt Peak's air
+    mass 4.73 a species at 3e-4 vertical reaches 1.4e-3 along the path. So the
+    stored threshold is a floor for *evaluation*, and the cut a fit applies is
+    this function's, applied per file.
+
+    That is what keeps one scan serving both files. The bound pre-filter is the
+    only irreversible cut a scan makes, so `identity.threshold` must be set
+    below anything any consumer will ask for -- a species rejected on its bound
+    is not in `rejected` and cannot be recovered by lowering the cut here.
+    """
+    floor = float(report["identity"]["threshold"])
+    # The cut is on the slant column and the scan's floor is on the vertical
+    # one, so the comparison has to be made in the same place.
+    if threshold / airmass < floor:
+        raise ValueError(
+            f"this scan evaluated down to {floor:.2e} vertical; a cut at {threshold:.2e} "
+            f"at air mass {airmass:.2f} asks about {threshold / airmass:.2e} vertical and "
+            "would silently miss whatever was rejected on its bound. Re-scan with a lower "
+            "--threshold.")
+    ranked = [*report.get("fit", []), *report.get("rejected", [])]
+    above = [row for row in ranked if row["peak_optical_depth"] * airmass >= threshold]
+    return [row["species"] for row in sorted(above, key=lambda r: -r["peak_optical_depth"])]

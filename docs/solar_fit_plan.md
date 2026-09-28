@@ -635,11 +635,18 @@ and each beside the point.
    column**, not from a nominal mixing ratio. This is the step that has to be
    got right: ranking ozone by its surface abundance understated it by 17x,
    because its column is stratospheric. The profile carries the column; use it.
-3. Emit every species above a threshold in peak optical depth -- 1e-3 is a
-   reasonable starting cut, roughly a tenth of this data's noise -- together
-   with the ranked list of what was rejected and by how much.
-4. The window's fit uses that list. The rejected list is recorded, so a
-   surprising residual can be checked against what was nearly included.
+3. Emit every species down to an evaluation floor, together with the ranked
+   list of what was rejected and by how much.
+4. The window's fit re-thresholds that list for **its own air mass**. The cut
+   is 1e-3, roughly a tenth of this data's noise, on the *slant* column; the
+   scan ranks the *vertical* one, and a secant multiplies every species alike.
+   This is what lets one scan serve file 4 at air mass 4.73 and file 5 at 1.99,
+   and it is not cosmetic: at 6270-6300 file 5 fits CO2 and H2O while file 4
+   additionally clears CO and N2O. The floor must therefore sit below the cut
+   divided by the largest air mass asked for -- 2e-4 covers air mass 5 --
+   because rejecting on the bound is the one cut a scan cannot undo. The
+   rejected list is recorded, so a surprising residual can be checked against
+   what was nearly included.
 
 It is **per window**: at 2030-2060 the answer is H2O, CO2, CO, OCS, O3, while
 at 6000-6030 O2 has no lines at all and CH4 dominates.

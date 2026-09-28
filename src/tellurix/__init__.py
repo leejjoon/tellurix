@@ -74,6 +74,7 @@ from .scan import (
     read_scan,
     save_scan,
     scan_window,
+    species_above,
 )
 from .reference import (
     LBLRTMSpectrum,
@@ -154,6 +155,7 @@ __all__ = [
     "ScanIdentity",
     "cached_scan",
     "scan_window",
+    "species_above",
     "load_scan",
     "read_scan",
     "save_scan",
