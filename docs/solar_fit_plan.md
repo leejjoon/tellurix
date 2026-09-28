@@ -678,7 +678,10 @@ budget, the wing margin, the ILS width, the sampling and the line-file version;
 re-checks the recorded identity against the filename so a hand-copied or
 hand-edited entry is refused rather than trusted. Entries are committed: 4.5 kB
 each, six minutes each to regenerate. Measured on 2040-2042: 1m15s cold, 1.0s
-warm.
+warm. An entry is not *byte*-reproducible -- the GPU kernel's reduction order
+varies run to run and moves an optical depth in its last ulp -- but at 1e-16
+against a 1e-3 threshold the verdict is, so two entries differing in a final
+digit mean nothing changed.
 
 At about six minutes a window, 220 windows is ~22 hours, or ~11 across the two
 GPUs -- paid once for the whole atlas, not once per fit.

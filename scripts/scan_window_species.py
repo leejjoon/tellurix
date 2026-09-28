@@ -25,22 +25,7 @@ import argparse
 import json
 from pathlib import Path
 
-import jax
-import numpy as np
-
-from tellurix import (
-    AER_MOLECULE_IDS,
-    AERLineDatabase,
-    ExoJAXOpacityBackend,
-    constant_velocity_grid,
-    line_optical_depth_bound,
-    ScanIdentity,
-    load_atmosphere_csv,
-    load_scan,
-    save_scan,
-    select_significant_lines,
-    trim_wavenumber_grid,
-)
+from tellurix import ScanIdentity, load_atmosphere_csv, load_scan, save_scan, scan_window
 from tellurix.nso import MEASURED_FWHM_CM1
 
 
@@ -104,105 +89,17 @@ def main() -> None:
         deliver(cached)
         return
 
-    centre = 0.5 * (args.v1 + args.v2)
-    grid = constant_velocity_grid(
-        1.0e7 / args.v2, 1.0e7 / args.v1,
-        resolving_power=centre / args.fwhm_cm1,
-        samples_per_resolution=args.samples_per_resolution,
-        margin_cm1=args.margin_cm1)
-    grid = trim_wavenumber_grid(grid, args.v1, args.v2, 5.0)
-    column = np.asarray(profile.air_column_cm2)
-    secant = 1.0 / np.cos(np.radians(args.zenith_angle_deg))
-
-    line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
-    found, absent, missing, reject_by_bound = [], [], [], []
-    for name, molecule_id in sorted(AER_MOLECULE_IDS.items(), key=lambda kv: kv[1]):
-        directory = next((d for d in line_root.glob(f"{molecule_id:02d}_*") if d.is_dir()), None)
-        if directory is None:
-            continue
-        if name not in profile.vmr:
-            missing.append(name)
-            continue
-        try:
-            database = AERLineDatabase(directory / directory.name, name,
-                                       (args.v1, args.v2), margin_cm1=args.margin_cm1)
-        except ValueError as exc:
-            if str(exc).startswith(f"no {name} lines found"):
-                absent.append(name)
-                continue
-            raise
-        # Reject analytically before touching the kernel. The sum of the
-        # per-line bounds is an upper bound on the peak optical depth anywhere
-        # -- it assumes every line peaks at the same wavenumber, which they do
-        # not -- so a species whose bound is below the threshold provably
-        # cannot reach it. This is numpy, not XLA: it costs nothing next to a
-        # compile, and it removes most of the periodic table from every window.
-        bound = float(np.sum(line_optical_depth_bound(database, profile, name)))
-        if bound < args.threshold:
-            reject_by_bound.append({"species": name, "molecule": molecule_id,
-                                    "lines": int(database.nu_lines.size),
-                                    "optical_depth_bound": bound})
-            print(f"  {name:8s} {database.nu_lines.size:7d} lines  "
-                  f"bound {bound:.3e}  -- below threshold, not evaluated", flush=True)
-            continue
-
-        # A ranking does not need every line, and some species carry tens of
-        # thousands: O3 has 20,143 here, whose dense line-by-grid intermediates
-        # ask for 31 GB. select_significant_lines bounds the optical-depth error
-        # by its budget, which is two orders below the threshold being tested,
-        # so it cannot change which side of the cut a species falls on.
-        full = int(database.nu_lines.size)
-        database = select_significant_lines(database, profile, name,
-                                            optical_depth_budget=args.line_budget)
-        opacity = ExoJAXOpacityBackend.prepare(
-            {name: database}, grid, methods="direct_sparse",
-            temperature_range_k=(float(np.min(profile.temperature_k)),
-                                 float(np.max(profile.temperature_k))),
-            maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
-            vectorize_layers=True, mixed_precision=True, pressure_shift=True,
-            layer_chunk_size=args.layer_chunk_size or None)
-        # Never call this eagerly. An uncompiled kernel dispatches operation by
-        # operation and materialises the dense line-by-grid offset matrix, which
-        # asks for 16 GB on a 20,000-line species like O3; jit fuses it away.
-        # The backend takes the self-broadening partial pressure per species,
-        # keyed like the cross sections it returns.
-        pressure = np.asarray(profile.pressure_layer_bar)
-        evaluate = jax.jit(lambda t, p_, s: opacity.cross_sections(t, p_, {name: s})[name])
-        cross_section = np.asarray(evaluate(
-            np.asarray(profile.temperature_k), pressure,
-            pressure * np.asarray(profile.vmr[name])))
-        # Optical depth is the cross section times the species column, summed
-        # over layers -- the profile's own column, which is the whole point.
-        tau = np.sum(cross_section * (np.asarray(profile.vmr[name]) * column)[:, None], axis=0)
-        found.append({"species": name, "molecule": molecule_id,
-                      "lines": full, "lines_kept": int(database.nu_lines.size),
-                      "peak_optical_depth": float(np.max(tau) * secant),
-                      "median_optical_depth": float(np.median(tau) * secant)})
-        print(f"  {name:8s} {full:7d} lines ({database.nu_lines.size:6d} kept)  "
-              f"peak tau {found[-1]['peak_optical_depth']:.3e}", flush=True)
-
-    found.sort(key=lambda row: -row["peak_optical_depth"])
-    keep = [row for row in found if row["peak_optical_depth"] >= args.threshold]
-    reject = [row for row in found if row["peak_optical_depth"] < args.threshold]
-    reject_by_bound.sort(key=lambda row: -row["optical_depth_bound"])
-    report = {
-        "window_cm1": [args.v1, args.v2],
-        "profile": str(args.profile),
-        "zenith_angle_deg": args.zenith_angle_deg,
-        "threshold_peak_optical_depth": args.threshold,
-        "species": [row["species"] for row in keep],
-        "fit": keep,
-        "rejected": reject,
-        "rejected_by_bound": reject_by_bound,
-        "no_lines_in_window": absent,
-        "not_in_profile": missing,
-        "evaluated": len(found),
-        "rejected_without_evaluating": len(reject_by_bound),
-        "headroom": (None if not reject else
-                     args.threshold / reject[0]["peak_optical_depth"]),
-    }
+    report = scan_window(
+        profile, root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule",
+        identity, zenith_angle_deg=args.zenith_angle_deg,
+        layer_chunk_size=args.layer_chunk_size,
+        progress=lambda line: print(line, flush=True))
+    report["profile"] = str(args.profile)
+    reject = report["rejected"]
+    missing = report["not_in_profile"]
     print()
-    print(f"evaluated {len(found)} species; {len(reject_by_bound)} rejected on their bound")
+    print(f"evaluated {report['evaluated']} species; "
+          f"{report['rejected_without_evaluating']} rejected on their bound")
     print("fit:      " + ", ".join(report["species"]))
     if reject:
         print(f"strongest rejected: {reject[0]['species']} at "
