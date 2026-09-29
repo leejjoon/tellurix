@@ -88,7 +88,9 @@ DEFAULT_FWHM_CM1 = 0.01753
 BANDS = {
     "blue": (1100.0, 1510.0),   # 6623-9091 cm-1
     "mid": (1490.0, 2610.0),    # 3831-6711 cm-1
-    "red": (2590.0, 5330.0),    # 1876-3861 cm-1
+    # 5340 rather than 5330: the first fitted window, 1876-1906 cm-1, reaches
+    # 5330.5 nm and was failing outright for want of half a nanometre.
+    "red": (2590.0, 5340.0),    # 1872-3861 cm-1
 }
 
 

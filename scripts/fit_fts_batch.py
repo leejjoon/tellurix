@@ -201,6 +201,12 @@ def run_one(entry, args, root, profile, airmass: float) -> dict:
     continuum = arrays["continuum"]
     transmission = arrays["transmission_pixels"]
     reliable = mask & (transmission >= args.min_transmission)
+    # No pixel with usable transmission means the continuum and the columns are
+    # exactly degenerate: their product still fits the data, the residual looks
+    # ordinary, and `continuum_0` runs to its bound. Ten windows of 445 are like
+    # this. They stay in the summary and the review bundle, where the flag is
+    # worth seeing, and out of the HDF5 record, which is what a consumer reads.
+    opaque = not bool(reliable.any())
     corrected = (observed / np.maximum(model_flux, 1e-6)) * star
     # Where the correction's level ends up. The fitted continuum cancels out of
     # that ratio, so on a window with no telluric-free pixel the continuum and
@@ -225,6 +231,7 @@ def run_one(entry, args, root, profile, airmass: float) -> dict:
         **entry, **scan,
         "npz": npz.name,
         "negligible_telluric": False,
+        "opaque": opaque,
         "pixels": report["spectrum"]["pixels"],
         "masked": report["spectrum"]["masked"],
         "reliable": int(reliable.sum()),
@@ -329,10 +336,15 @@ def main() -> None:
                              "air mass any file will ask for (4.73 for ftsspec_901218_4), "
                              "because rejecting on the bound is the one cut a scan cannot "
                              "undo. Lowering it makes scans slower, not wrong.")
-    parser.add_argument("--species-threshold", type=float, default=1.0e-3,
+    parser.add_argument("--species-threshold", type=float, default=1.0e-2,
                         help="peak optical depth ALONG THIS FILE'S PATH below which a "
-                             "species is not worth a free parameter. About a tenth of the "
-                             "NSO FTS noise.")
+                             "species is not worth a free parameter. Raised from 1e-3 "
+                             "after measuring what a barely-detectable species does: "
+                             "below tau 3e-3 a species rails at a column bound 38% of the "
+                             "time, and a free parameter the data cannot constrain absorbs "
+                             "error from elsewhere -- at 5926-5956 CO2 and N2O both went to "
+                             "their minimum soaking up a solar-model mismatch. The rate "
+                             "falls to 3% above tau 0.1 and to zero above 1.")
     parser.add_argument("--scan-line-budget", type=float, default=1.0e-6,
                         help="optical depth discarded by dropping weak lines; two orders "
                              "below --scan-threshold so it cannot move a species across it")
@@ -438,16 +450,17 @@ def main() -> None:
             indent=2) + "\n", encoding="utf-8")
 
     fitted = [r for r in results if r.get("npz")]
-    if fitted and not args.scan_only:
+    usable = [r for r in fitted if not r.get("opaque")]
+    if usable and not args.scan_only:
         from tellurix import write_record
         from tellurix.fit import _ParameterCodec
 
-        species = sorted({s for r in fitted for s in r["species"]})
+        species = sorted({s for r in usable for s in r["species"]})
         codec = _ParameterCodec(species, args.continuum_degree + 1,
                                 include_stellar_velocity=True)
         position = {name: index for index, name in enumerate(codec.names)}
         rows = []
-        for row in sorted(fitted, key=lambda r: r["v1"]):
+        for row in sorted(usable, key=lambda r: r["v1"]):
             entry = record_row(row, args.output_dir, spectrum.sha256)
             # A window's parameter vector is not the run's: which species are
             # present depends on the window, so each row's sigma and correlation
@@ -488,8 +501,13 @@ def main() -> None:
 
     ok = [r for r in results if "error" not in r]
     print(f"\n{len(ok)} of {len(results)} succeeded; wrote {args.summary}")
-    if fitted:
-        rms = np.array([r["residual_rms_over_noise"] for r in fitted])
+    opaque_rows = [r for r in fitted if r.get("opaque")]
+    if opaque_rows:
+        print(f"{len(opaque_rows)} windows have no pixel above the transmission floor and "
+              f"are kept out of the record: "
+              + ", ".join(f"{r['v1']:.0f}" for r in opaque_rows))
+    if usable:
+        rms = np.array([r["residual_rms_over_noise"] for r in usable])
         print(f"residual rms / noise: median {np.median(rms):.2f}, "
               f"worst {rms.max():.2f}, best {rms.min():.2f}")
 
