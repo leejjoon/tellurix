@@ -37,6 +37,7 @@ import argparse
 import json
 from pathlib import Path
 import time
+from types import SimpleNamespace
 
 import jax
 import numpy as np
@@ -211,14 +212,14 @@ def main() -> None:
     print(f"wrote {args.report} and {args.diagnostic_npz}")
 
 
-def fit_window(args, root: Path):
-    """Fit one window and return its report and its diagnostic arrays.
+def prepare_window(args, root: Path):
+    """Everything a window needs before anything is fitted.
 
-    `args` is anything carrying the CLI's attributes -- an argparse Namespace
-    from `main`, or one the batch driver builds per window. Both paths run this
-    function rather than two descriptions of the same fit, because a batch
-    product assembled by a second implementation is not the thing the recorded
-    single-window fits validated.
+    Split out so that a consumer which only wants the *fitted* model back --
+    the review export, say -- rebuilds it through this function rather than
+    through a second description of the same grid, line selection, instrument
+    and source. A decomposition shown next to the observed spectrum has to come
+    from the model that produced the fit, not from one that resembles it.
     """
 
     started = time.time()
@@ -337,6 +338,46 @@ def fit_window(args, root: Path):
         log_jitter=float(np.log(np.median(order.uncertainty))),
         stellar_velocity_kms=0.0,
     )
+
+    return SimpleNamespace(
+        spectrum=spectrum, window=window, profile=profile, grid=grid, centre=centre,
+        resolving_power=resolving_power, databases=databases, skipped=skipped,
+        lines_per_species=lines_per_species, opacity=opacity, correction=correction,
+        continuum=continuum, mopd_cm=mopd_cm, instrument=instrument, model=model,
+        stellar=stellar, source=source, source_path=source_path, zenith=zenith,
+        order=order, fit_model=fit_model, parameters=parameters, started=started,
+    )
+
+
+def fit_window(args, root: Path):
+    """Fit one window and return its report and its diagnostic arrays.
+
+    `args` is anything carrying the CLI's attributes -- an argparse Namespace
+    from `main`, or one the batch driver builds per window. Both paths run this
+    function rather than two descriptions of the same fit, because a batch
+    product assembled by a second implementation is not the thing the recorded
+    single-window fits validated.
+    """
+
+    prepared = prepare_window(args, root)
+    spectrum = prepared.spectrum
+    window = prepared.window
+    profile = prepared.profile
+    grid = prepared.grid
+    resolving_power = prepared.resolving_power
+    lines_per_species = prepared.lines_per_species
+    skipped = prepared.skipped
+    correction = prepared.correction
+    mopd_cm = prepared.mopd_cm
+    instrument = prepared.instrument
+    model = prepared.model
+    stellar = prepared.stellar
+    source = prepared.source
+    source_path = prepared.source_path
+    order = prepared.order
+    fit_model = prepared.fit_model
+    parameters = prepared.parameters
+    started = prepared.started
 
     pinned = {}
     for entry in args.pin:
