@@ -939,6 +939,10 @@ night.
 
 ## What is not done yet
 
+- **Science frames.** Whether a night's standards can set the telluric model of
+  a frame they do not include is measured in `docs/igrins_transfer.md`: yes,
+  with one velocity shift and one water scale fitted on the frame. Not yet on a
+  target with lines of its own.
 - **What is left of the per-night systematic.** ERA5 removes the CO2 half of
   it; CH4's inconsistent slopes survive a real temperature and water profile, so
   they are not the atmosphere's vertical structure.

@@ -286,6 +286,24 @@ sigma, at the floor the rest of the band reaches. Use `--stellar flat` when the
 point is to measure the atmosphere, since it depends on no stellar model at all;
 use the A0V model to recover the 22% of H-band pixels the hydrogen mask discards.
 
+**A science frame's telluric model can come from the night's standards, but not
+by interpolation alone** (`scripts/validate_igrins_transfer.py`,
+`docs/igrins_transfer.md`). Held out one at a time over five night-bands, a
+standard given the others' per-order columns and LSF, and water linear in time,
+fits within 2-9% of its own full fit in the median, but absorbing orders are
+40-90% worse at the 90th percentile and the correction is off by 1.2-1.8x the
+noise: water moves on timescales the standards do not sample (13% between
+standards 42 and 78 minutes apart). Adding **one velocity shift and one water
+scale per frame** -- the median over orders -- recovers nearly all of it: under 2%
+in the median, 0.3-0.8x the noise in absorbing orders. The water error is the
+frame's, not the order's (0.04-0.08 in log column before the frame shift,
+0.009-0.014 after), and H and K measure the same shift independently at
+r = +0.95-0.97, so it can be measured in whichever band the target's lines spoil
+less. Not yet tested on a target with lines of its own. Separately, the
+per-order `stellar_velocity_kms` rails at +-60 in 42% of the *full* fits'
+order-frames and scatters 25-37 km/s between orders of one frame: it should be
+one parameter per frame.
+
 `scripts/export_transmission_hdf5.py` writes the unconvolved transmission on the
 model's own grid -- 4 samples per resolution element, no interpolation -- for a
 consumer who wants the atmosphere as a multiplicand inside *their* synthesis
