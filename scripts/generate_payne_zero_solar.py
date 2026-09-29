@@ -88,9 +88,11 @@ DEFAULT_FWHM_CM1 = 0.01753
 BANDS = {
     "blue": (1100.0, 1510.0),   # 6623-9091 cm-1
     "mid": (1490.0, 2610.0),    # 3831-6711 cm-1
-    # 5340 rather than 5330: the first fitted window, 1876-1906 cm-1, reaches
-    # 5330.5 nm and was failing outright for want of half a nanometre.
-    "red": (2590.0, 5340.0),    # 1872-3861 cm-1
+    # 5355 rather than 5330. The first fitted window, 1876-1906 cm-1, reaches
+    # 5330.5 nm, but what has to be covered is the model *grid*, which carries
+    # the wing margin: 1870.998 cm-1 = 5344.8 nm. Sizing this from the window
+    # instead of the grid is why the first attempt still failed.
+    "red": (2590.0, 5355.0),    # 1867-3861 cm-1
 }
 
 
