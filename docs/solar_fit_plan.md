@@ -849,6 +849,48 @@ Two other things the first run showed, both still open:
   4-8x at 2.0-4.0, and 25-36x at 1.5-2.0 um. The windows best for the
   atmosphere remain the worst for the stellar model.
 
+### 4h. The corrected run, and which windows to throw away
+
+Both files refitted with the window normalized. 223 and 222 windows, one failure
+each (1876-1906 cm-1, no solar source). Median residual over the noise:
+
+| band | file 5 (X = 1.99) | file 4 (X = 4.73) |
+|---|---|---|
+| 4.0-5.3 um | 2.03 | 1.78 |
+| 2.8-4.0 | 5.28 | 4.04 |
+| 2.0-2.8 | 8.26 | 6.85 |
+| 1.5-2.0 | 36.02 | 25.27 |
+| 1.1-1.5 | **11.95** (was 15.73) | **8.86** (was 10.66) |
+| all | 10.29 (was 12.31) | 7.55 (was 8.63) |
+
+88% and 86% of windows are identical to the unnormalized run to 1e-6, which is
+the degeneracy holding; the whole gain is at the blue edge, where the continuum
+had been railed.
+
+**Do not use a window with `reliable == 0`.** Two in file 5 and eight in file 4
+have no pixel whose modelled transmission exceeds 0.15 -- no telluric-free flux
+anywhere -- so the continuum and the column are exactly degenerate and the
+continuum runs up until `continuum_0` hits +2. Every railed window is one of
+these; the rail is the symptom and `reliable` is the cause, so filter on
+`reliable`, which is in the record. Widening the bound (the IGRINS driver uses
+5.0 for its continuum coefficients) would hide this rather than fix it: e^5 is
+148, and no bound recovers information the data do not contain.
+
+**A separate bug these windows exposed, which is not confined to them.** At
+5326-5356 cm-1 *zero* of 3166 pixels are masked, yet 1772 have modelled
+transmission below 0.01 and an observed flux sitting on a flat pedestal at
+0.066 of the window's continuum. That is not solar and not atmospheric -- an
+additive instrumental floor, origin not identified. `_saturation_mask` misses
+it because it tests flux against a **local** continuum estimate, and where
+almost everything is saturated that estimate collapses onto the pedestal, so
+"above 2% of continuum" passes. `minimum_continuum_snr = 30`, added for exactly
+this family of failure, does not catch it either: the window's SNR is 140. A
+mask test against the *model's* transmission would. **This biases any window
+with deep saturated cores, not only the opaque ones**, and it is not yet fixed.
+
+Other quality flags in the record: a stage failed to converge in 12 windows of
+file 5 and 16 of file 4, and 4 and 7 rows carry no covariance at all.
+
 ## One decision left before writing code
 
 **How much of file 4 to salvage.** The scan-average bias is analytic for a
