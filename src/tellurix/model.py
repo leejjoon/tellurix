@@ -557,6 +557,58 @@ class TelluricModel:
         mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
         return jnp.exp(-jnp.sum(tau, axis=0) / mu)
 
+    def species_transmission(
+        self, parameters: TelluricParameters, zenith_angle_deg: float = 0.0
+    ) -> dict[str, jnp.ndarray]:
+        """Each absorber's own transmission, and the continuum's, separately.
+
+        Optical depth is additive, so ``transmission`` is the product of these
+        by construction and the two cannot drift apart -- which is the only
+        reason a decomposition like this is safe to show anyone. A species'
+        cross section depends on its *own* partial pressure through
+        self-broadening and on no other species', so the split is exact rather
+        than a linearization.
+
+        The continuum is returned under ``"continuum"`` and is kept apart from
+        H2O deliberately: it is not a line species, and it is a standing suspect
+        in this package's residuals.
+        """
+
+        pressure = jnp.asarray(self.profile.pressure_layer_bar)
+        vmr_scaled = {
+            species: jnp.asarray(vmr)
+            * jnp.exp(jnp.asarray(parameters.log_column_scales.get(species, 0.0)))
+            for species, vmr in self.profile.vmr.items()
+        }
+        partial_pressure = {
+            species: pressure * vmr_scaled[species] for species in self.opacity.species
+        }
+        xs = self.opacity.cross_sections(
+            jnp.asarray(self.profile.temperature_k), pressure, partial_pressure)
+        air_column = jnp.asarray(self.profile.air_column_cm2)
+        mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
+
+        def collapse(tau: jnp.ndarray) -> jnp.ndarray:
+            return jnp.exp(-jnp.sum(tau, axis=0) / mu)
+
+        pieces = {
+            species: collapse(xs[species] * (air_column * vmr_scaled[species])[:, None])
+            for species in self.opacity.species
+        }
+        background = jnp.zeros((air_column.size, self.wavenumber_cm1.size))
+        if self.continuum is not None:
+            background = background + self.continuum.optical_depth(self.profile, vmr_scaled)
+        if self.correction is not None:
+            if self.accuracy_mode == "mt_ckd":
+                background = background + self.correction.mt_ckd_optical_depth(
+                    self.profile, vmr_scaled)
+            else:
+                background = background + self.correction.optical_depth(
+                    self.profile, vmr_scaled)
+        if self.continuum is not None or self.correction is not None:
+            pieces["continuum"] = collapse(background)
+        return pieces
+
     def _convolve_lsf(self, spectrum: jnp.ndarray, sigma_kms: jnp.ndarray) -> jnp.ndarray:
         return _gaussian_convolve(spectrum, sigma_kms, self.velocity_step_kms, self.kernel_half_width)
 
