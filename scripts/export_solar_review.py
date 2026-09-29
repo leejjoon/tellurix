@@ -35,7 +35,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from tellurix import TelluricParameters, read_scan  # noqa: E402
+from tellurix import TelluricParameters, read_fts_spectrum, read_scan  # noqa: E402
 from tellurix.nso import MEASURED_FWHM_CM1  # noqa: E402
 
 from fit_fts_window import prepare_window  # noqa: E402
@@ -70,7 +70,11 @@ def settings_for(row, spectrum_path: Path, args) -> SimpleNamespace:
         continuum_degree=args.continuum_degree, stages="continuum", pin=[],
         zenith_angle_deg=None, accuracy_mode="mt_ckd", correction=None,
         gaussian_ils=False, vectorize_layers=True, mixed_precision=True,
-        precompute_opacity=True, self_broadening="linear", layer_chunk_size=0,
+        # False on purpose: prepare_window would otherwise precompute the
+        # opacity for a fit that never happens here, and this script refreezes
+        # at the *fitted* parameters a moment later. That discarded evaluation
+        # was 2.3 s of every 6.6 s window.
+        precompute_opacity=False, self_broadening="linear", layer_chunk_size=0,
         report=None, diagnostic_npz=None,
     )
 
@@ -168,6 +172,7 @@ def main() -> None:
         jobs = jobs[: args.limit]
 
     args.output.mkdir(parents=True, exist_ok=True)
+    spectra: dict[str, object] = {}
     manifest, failures = [], []
     chunk, chunk_bytes, chunk_index = [], 0, 0
     started = time.time()
@@ -184,7 +189,11 @@ def main() -> None:
         try:
             import jax
 
-            prepared = prepare_window(settings_for(row, spectrum_path, args), root)
+            key = str(spectrum_path)
+            if key not in spectra:
+                spectra[key] = read_fts_spectrum(spectrum_path)
+            prepared = prepare_window(settings_for(row, spectrum_path, args), root,
+                                      spectrum=spectra[key])
             model, order = prepared.model, prepared.order
             parameters = parameters_for(row, model.species)
             exact = model.precompute_opacity(parameters)

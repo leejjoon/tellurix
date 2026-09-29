@@ -212,7 +212,7 @@ def main() -> None:
     print(f"wrote {args.report} and {args.diagnostic_npz}")
 
 
-def prepare_window(args, root: Path):
+def prepare_window(args, root: Path, *, spectrum=None):
     """Everything a window needs before anything is fitted.
 
     Split out so that a consumer which only wants the *fitted* model back --
@@ -224,7 +224,10 @@ def prepare_window(args, root: Path):
 
     started = time.time()
 
-    spectrum = read_fts_spectrum(args.spectrum)
+    # Re-reading the file per window costs 1.3 s to take a 3,166-pixel slice out
+    # of 831,488 lines. A caller that walks many windows of one file passes the
+    # spectrum in; it is immutable, so sharing it is safe.
+    spectrum = read_fts_spectrum(args.spectrum) if spectrum is None else spectrum
     window = spectrum.select(args.v1, args.v2)
     profile = load_atmosphere_csv(root / args.profile)
 
