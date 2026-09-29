@@ -19,6 +19,7 @@
     --telluric: #0e7c8c;
     --solar: #c07b12;
     --continuum: #6f5bb5;
+    --corrected: #a83f6b;
 
     --good: #2c7f56;
     --warn: #a86a12;
@@ -42,6 +43,7 @@
       --telluric: #4bc3d4;
       --solar: #e8a33c;
       --continuum: #a48ff0;
+      --corrected: #f18cb4;
 
       --good: #4cb583;
       --warn: #d69a3a;
@@ -65,6 +67,7 @@
     --telluric: #4bc3d4;
     --solar: #e8a33c;
     --continuum: #a48ff0;
+    --corrected: #f18cb4;
 
     --good: #4cb583;
     --warn: #d69a3a;
@@ -297,6 +300,9 @@
   <main>
     <div class="plotwrap main">
       <div class="plot-legend" id="legend"></div>
+      <div class="hint" id="corrected-note" hidden>telluric-corrected = observed &divide; model &times; stellar model,
+        blanked where the modelled transmission falls below 0.15. Compare it with the stellar model:
+        what is left is the solar model&rsquo;s own error.</div>
       <div id="plot" style="flex:1 1 auto; min-height:0;"></div>
       <div class="readout mono" id="readout"></div>
     </div>
@@ -333,8 +339,19 @@
     { key: "observed",   label: "observed",         token: "--observed",  width: 1.1 },
     { key: "model",      label: "fitted model",     token: "--telluric",  width: 1.2 },
     { key: "stellar",    label: "stellar model",    token: "--solar",     width: 1.1 },
-    { key: "continuum",  label: "fitted continuum", token: "--continuum", width: 1.6, dash: [6, 4] }
+    { key: "continuum",  label: "fitted continuum", token: "--continuum", width: 1.6, dash: [6, 4] },
+    // observed / model x stellar -- the atmosphere divided out. It is the
+    // pipeline's own correction operator, not a re-derivation: the fitted
+    // continuum cancels, so what is left should be the Sun through the
+    // instrument. Off by default; against the stellar model it shows the
+    // solar model's error directly.
+    { key: "corrected",  label: "telluric-corrected", token: "--corrected", width: 1.1 }
   ];
+
+  // Below this modelled transmission the correction divides by a small number
+  // and amplifies everything, noise and quantization alike. It is the same cut
+  // the batch driver uses for its `reliable` column.
+  var MINIMUM_TRANSMISSION = 0.15;
 
   // Stable per molecule, so a species keeps its colour as you step through
   // windows. Ordered by how often the scan lists one across the band.
@@ -350,7 +367,8 @@
   var STATE = {
     manifest: null, index: [], byV1: new Map(), chunks: new Map(), pending: new Map(),
     v1: null, file: "5", compare: true, logy: false,
-    traces: { observed: true, model: true, stellar: true, continuum: true },
+    traces: { observed: true, model: true, stellar: true, continuum: true,
+              corrected: false },
     seriesIndex: {}, plotWindow: null,
     species: new Set(), filter: "all", marks: { 5: {}, 4: {} },
     plot: null, rplot: null, db: null, writing: Promise.resolve()
@@ -410,6 +428,16 @@
       for (var i = 0; i < entry.n; i++) {
         if (!pack.mask[i]) { observed[i] = NaN; residual[i] = NaN; }
       }
+      // The corrected spectrum, computed here rather than shipped: it is
+      // exactly observed / model x stellar, so it adds nothing to the bundle.
+      var corrected = new Float64Array(entry.n);
+      var model = pack.series.model, stellar = pack.series.stellar,
+          trans = pack.series.transmission;
+      for (var j = 0; j < entry.n; j++) {
+        corrected[j] = (pack.mask[j] && trans[j] >= MINIMUM_TRANSMISSION)
+          ? observed[j] / Math.max(model[j], 1e-6) * stellar[j] : NaN;
+      }
+      pack.series.corrected = corrected;
       return pack;
     });
   }
@@ -749,6 +777,7 @@
   }
 
   function renderLegend() {
+    $("corrected-note").hidden = !STATE.traces.corrected;
     $("legend").innerHTML = TRACES.map(function (t) {
       return '<button type="button" class="trace" data-trace="' + t.key + '" style="color:var(' + t.token + ')"' +
         ' aria-pressed="' + STATE.traces[t.key] + '">' +
@@ -777,6 +806,7 @@
       var on = !STATE.traces[key];
       STATE.traces[key] = on;
       b.setAttribute("aria-pressed", String(on));
+      $("corrected-note").hidden = !STATE.traces.corrected;
       // Rebuild rather than toggle in place. uPlot's setSeries flips the
       // flag, but its commit only repaints when a scale or the size actually
       // changed -- and hiding one trace here moves neither, because the others
