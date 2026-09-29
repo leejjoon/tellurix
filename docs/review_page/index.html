@@ -2,7 +2,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/uPlot/1.6.31/uPlot.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.iife.min.js"></script>
 
 <style>
   :root {
@@ -225,7 +225,7 @@
 
   /* ---- uPlot --------------------------------------------------------- */
   .uplot, .uplot *, .uplot *::before, .uplot *::after { box-sizing: border-box; }
-  .uplot { width: max-content; font-family: "IBM Plex Mono", ui-monospace, monospace; line-height: 1.5; }
+  .uplot { width: min-content; font-family: "IBM Plex Mono", ui-monospace, monospace; line-height: 1.5; }
   .u-wrap { position: relative; user-select: none; }
   .u-over, .u-under, .u-axis { position: absolute; }
   .u-under { overflow: hidden; }
@@ -234,8 +234,12 @@
   .u-cursor-x, .u-cursor-y { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; z-index: 100; }
   .u-hz .u-cursor-x, .u-vt .u-cursor-y { height: 100%; border-right: 1px dashed var(--faint); }
   .u-hz .u-cursor-y, .u-vt .u-cursor-x { width: 100%; border-bottom: 1px dashed var(--faint); }
-  .u-cursor-pt { position: absolute; top: 0; left: 0; border-radius: 50%; border: 1px solid; pointer-events: none; will-change: transform; z-index: 100; }
-  .u-select.u-off, .u-cursor-x.u-off, .u-cursor-y.u-off, .u-cursor-pt.u-off { display: none; }
+  .u-cursor-pt { position: absolute; top: 0; left: 0; border-radius: 50%; border: 0 solid;
+    pointer-events: none; will-change: transform; z-index: 100;
+    /* uPlot sets `background` inline as a shorthand, so this must win. */
+    background-clip: padding-box !important; }
+  .u-axis.u-off, .u-select.u-off, .u-cursor-x.u-off, .u-cursor-y.u-off,
+  .u-cursor-pt.u-off { display: none; }
   .u-legend { display: none; }
 
   .readout {
@@ -471,6 +475,14 @@
   // ---- plotting --------------------------------------------------------
   function buildPlots(pack, other) {
     var el = $("plot"), rel = $("rplot");
+    if (typeof uPlot === "undefined") {
+      el.innerHTML = '<div style="padding:28px 8px;color:var(--muted);font-size:13px">' +
+        'The chart library did not load, so the spectra cannot be drawn. ' +
+        'Everything else on this page is live. It is fetched from ' +
+        '<span class="mono">cdn.jsdelivr.net</span> — a blocked or offline ' +
+        'connection is the usual cause.</div>';
+      return;
+    }
     if (STATE.plot) { STATE.plot.destroy(); STATE.plot = null; }
     if (STATE.rplot) { STATE.rplot.destroy(); STATE.rplot = null; }
 
