@@ -876,20 +876,67 @@ these; the rail is the symptom and `reliable` is the cause, so filter on
 5.0 for its continuum coefficients) would hide this rather than fix it: e^5 is
 148, and no bound recovers information the data do not contain.
 
-**A separate bug these windows exposed, which is not confined to them.** At
-5326-5356 cm-1 *zero* of 3166 pixels are masked, yet 1772 have modelled
-transmission below 0.01 and an observed flux sitting on a flat pedestal at
-0.066 of the window's continuum. That is not solar and not atmospheric -- an
-additive instrumental floor, origin not identified. `_saturation_mask` misses
-it because it tests flux against a **local** continuum estimate, and where
-almost everything is saturated that estimate collapses onto the pedestal, so
-"above 2% of continuum" passes. `minimum_continuum_snr = 30`, added for exactly
-this family of failure, does not catch it either: the window's SNR is 140. A
-mask test against the *model's* transmission would. **This biases any window
-with deep saturated cores, not only the opaque ones**, and it is not yet fixed.
+**One window also exposed a floor in its saturated cores.** At 5326-5356 cm-1
+*zero* of 3166 pixels are masked, yet 1772 have modelled transmission below
+0.01 and an observed flux sitting at 0.066 of the window's continuum.
+`_saturation_mask` misses it because it tests flux against a **local**
+continuum estimate, and where almost everything is saturated that estimate
+collapses onto the floor itself, so "above 2% of continuum" passes;
+`minimum_continuum_snr = 30` does not catch it either, the window's SNR being
+140. Section 4i measures how general this is -- the answer is that it is not,
+and that this window is an outlier by a factor of 40.
 
 Other quality flags in the record: a stage failed to converge in 12 windows of
 file 5 and 16 of file 4, and 4 and 7 rows carry no covariance at all.
+
+### 4i. The floor in saturated cores is instrumental contrast, not a baseline
+
+A line core the model says is opaque should read zero, and it does not. The
+question is whether to subtract that floor or to refuse to quote those pixels.
+Measured over the 100 windows that have at least 60 deeply saturated pixels
+(modelled transmission below 0.005), as a fraction of each window's own
+continuum:
+
+| | |
+|---|---|
+| observed floor | 0.282% |
+| what the model's own sinc puts there | 0.012% |
+| unexplained leftover | **+0.158%** (p16 -0.04%, p84 +0.33%) |
+
+So the unapodized sinc filling the core from neighbouring continuum -- a real
+effect this model already carries -- accounts for almost none of it.
+
+**It is not an additive baseline.** The floor is 0.286% of the continuum in the
+faint half of the band and 0.282% in the bright half: identical, so it scales
+with the light rather than sitting at a fixed level, and a detector or
+transform zero-point would do the opposite. It is also **negative in 11 of 100
+windows**.
+
+**Fitting it as veiling buys nothing.** If a fraction `eps` of the continuum
+leaks into every pixel then `observed - model = eps * (continuum - model)`,
+which is a one-parameter model that can simply be fitted. Over the 221 windows
+with enough deep lines to constrain it:
+
+- `eps` median **4.0e-4**, p16 **-4.1e-4**, p84 **+1.3e-3**
+- **negative in 63 of 221 windows** -- a veiling fraction cannot be
+- residual 7.0 -> 7.0 sigma, median improvement **1.00x**; exactly one window
+  improves by more than 1.2x
+
+A term whose fitted amplitude changes sign between neighbouring windows and
+improves nothing is not a correction, it is noise being absorbed. And the bias
+it would remove is small where it matters least: under veiling the apparent
+line depth is `(1 - eps)` times the true one, so `eps` = 4e-4 biases every
+column low by 0.04%, against 3-8% of file-to-file scatter.
+
+**So: mask, do not correct.** Where the floor does matter is the *corrected*
+spectrum, which divides by a modelled transmission heading to zero -- and that
+is handled by declining to quote those pixels (`reliable`, and the review
+page's transmission cut), not by a correction.
+
+**The exception is 5326-5356 cm-1**, whose floor is 6.6% -- forty times the
+median -- and whose mask keeps 100% of its opaque pixels. That is not
+instrumental contrast, it is something specific to that window, and it is
+already flagged `reliable == 0`.
 
 ## One decision left before writing code
 
