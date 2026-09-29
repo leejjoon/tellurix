@@ -43,3 +43,9 @@ xla_gpu_per_fusion_autotune_cache_dir/
 docs/*.html
 docs/*_files/
 .quarto/
+
+# The review bundle: 31 MB of per-window arrays, rebuilt by
+# scripts/export_solar_review.py + scripts/merge_review_bundle.py.
+# The page itself is docs/review_page/index.html and is committed.
+data/review/
+data/review_[0-9]/
