@@ -473,6 +473,31 @@ def fit_window(args, root: Path):
         np.asarray(order.wavelength_vacuum_nm),
         (1.0e7 / np.asarray(model.wavenumber_cm1))[::-1], exact_transmission[::-1])
 
+    # Each absorber's own transmission, taken here rather than rebuilt later.
+    # Anything downstream that wants the split -- the review page does -- would
+    # otherwise reconstruct this exact model from scratch: same grid, same line
+    # lists, same precomputed opacity, to call one more method on a model that
+    # existed here and was discarded. Optical depth is additive, so these
+    # multiply back to `exact_transmission` (checked in tests/test_model.py),
+    # and taking them from the fitted model is what makes them the fit's own
+    # numbers rather than a later approximation of them.
+    species_on_grid = {name: np.asarray(values) for name, values
+                       in exact_model.species_transmission(
+                           result.parameters, order.zenith_angle_deg).items()}
+    # Optical depth is additive, so on the model grid the pieces multiply back
+    # to the whole exactly. Check it here, where that is true. Once each piece
+    # is interpolated to the pixels separately the identity no longer holds --
+    # interpolation does not commute with multiplication -- so a check made
+    # after interpolation would be testing the interpolation, not the split.
+    _product = np.ones_like(exact_transmission)
+    for _values in species_on_grid.values():
+        _product = _product * _values
+    species_split_drift = float(np.max(np.abs(_product - exact_transmission)))
+    species_transmission = {
+        name: np.interp(np.asarray(order.wavelength_vacuum_nm),
+                        (1.0e7 / np.asarray(model.wavenumber_cm1))[::-1], values[::-1])
+        for name, values in species_on_grid.items()}
+
     report = {
         "spectrum": {
             "path": str(args.spectrum), "name": args.spectrum.name, "sha256": spectrum.sha256,
@@ -542,6 +567,8 @@ def fit_window(args, root: Path):
                 np.exp(result.parameters.log_jitter) / np.median(order.uncertainty)),
         },
         "median_transmission": float(np.median(transmission_pixels[mask])),
+        # How far the per-species split sits from the total, on the model grid.
+        "species_split_drift": species_split_drift,
         "condition_number": float(result.condition_number or 0.0),
         "all_stages_converged": all(s["success"] for s in stage_reports),
         "runtime_seconds": round(time.time() - started, 1),
@@ -580,6 +607,8 @@ def fit_window(args, root: Path):
         stellar_source=np.asarray(source),
         stellar_only_pixels=stellar_only_pixels,
         **({} if _stellar_continuum is None else {"stellar_continuum": _stellar_continuum}),
+        **{"species_transmission_" + name: values
+           for name, values in species_transmission.items()},
     )
     return report, arrays
 

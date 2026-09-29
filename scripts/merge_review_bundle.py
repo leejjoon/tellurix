@@ -45,7 +45,7 @@ def compact(entry: dict, global_states: set[str]) -> dict:
                       "at_bound": info["at_bound"]}
                for name, info in entry["species"].items()}
     trimmed = {k: v for k, v in entry.items()
-               if k not in ("scan", "quality", "species", "product_drift")}
+               if k not in ("scan", "quality", "species")}
     trimmed["scan"] = scan
     trimmed["quality"] = quality
     trimmed["species"] = species

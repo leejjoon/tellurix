@@ -187,27 +187,56 @@ def main() -> None:
 
     for number, (label, spectrum_path, blob, row) in enumerate(jobs, 1):
         try:
-            import jax
+            with np.load(args.npz_dir / row["npz"]) as probe:
+                saved = sorted(k for k in probe.files if k.startswith("species_transmission_"))
+                pieces = {k[len("species_transmission_"):]: np.asarray(probe[k])[::-1]
+                          for k in saved}
+                total = np.asarray(probe["transmission_pixels"])[::-1]
+            drift = row.get("species_split_drift")
+            if pieces:
+                # The fit already split this window; rebuilding its model to ask
+                # again would be the same arithmetic on the same numbers.
+                rebuilt = False
+            else:
+                rebuilt = True
+                import jax
 
-            key = str(spectrum_path)
-            if key not in spectra:
-                spectra[key] = read_fts_spectrum(spectrum_path)
-            prepared = prepare_window(settings_for(row, spectrum_path, args), root,
-                                      spectrum=spectra[key])
-            model, order = prepared.model, prepared.order
-            parameters = parameters_for(row, model.species)
-            exact = model.precompute_opacity(parameters)
-            zenith = order.zenith_angle_deg
-            pieces = {name: np.asarray(values) for name, values
-                      in exact.species_transmission(parameters, zenith).items()}
-            total = np.asarray(exact.transmission(parameters, zenith))
+                key = str(spectrum_path)
+                if key not in spectra:
+                    spectra[key] = read_fts_spectrum(spectrum_path)
+                prepared = prepare_window(settings_for(row, spectrum_path, args), root,
+                                          spectrum=spectra[key])
+                model, order = prepared.model, prepared.order
+                parameters = parameters_for(row, model.species)
+                exact = model.precompute_opacity(parameters)
+                zenith = order.zenith_angle_deg
+                grid_nm = (1.0e7 / np.asarray(model.wavenumber_cm1))[::-1]
+                wavelength = np.asarray(order.wavelength_vacuum_nm)
+                grid_pieces = {name: np.asarray(values) for name, values in
+                               exact.species_transmission(parameters, zenith).items()}
+                grid_total = np.asarray(exact.transmission(parameters, zenith))
+                pieces = {name: np.interp(wavelength, grid_nm, values[::-1])[::-1]
+                          for name, values in grid_pieces.items()}
+                total = grid_total
+                grid_product = np.ones_like(grid_total)
+                for values in grid_pieces.values():
+                    grid_product = grid_product * values
+                drift = float(np.max(np.abs(grid_product - grid_total)))
+                if drift > args.tolerance:
+                    raise ValueError(
+                        f"species do not multiply back to the total: {drift:.2e}")
+                total = np.interp(wavelength, grid_nm, total[::-1])[::-1]
 
+            # On the pixels the identity no longer holds exactly, because each
+            # species is interpolated on its own and interpolation does not
+            # commute with multiplication. This is a *display* figure, not the
+            # correctness test -- that one runs on the model grid, above or in
+            # the fit -- and it is carried into the manifest so the page can say
+            # how far the drawn curves are from the drawn total.
             product = np.ones_like(total)
             for values in pieces.values():
                 product = product * values
-            drift = float(np.max(np.abs(product - total)))
-            if drift > args.tolerance:
-                raise ValueError(f"species do not multiply back to the total: {drift:.2e}")
+            pixel_drift = float(np.max(np.abs(product - total)))
 
             with np.load(args.npz_dir / row["npz"]) as stored:
                 flip = slice(None, None, -1)
@@ -226,11 +255,8 @@ def main() -> None:
             sigma = float(row["pixel_sigma"])
             arrays["residual"] = np.where(mask, residual / sigma, np.nan)
 
-            # Each species on the pixels, by the same interpolation the fit used
-            # for the total; the grid is in ascending wavelength, so reverse.
-            grid_nm = (1.0e7 / np.asarray(model.wavenumber_cm1))[::-1]
             for name, values in pieces.items():
-                arrays[f"species:{name}"] = np.interp(wavelength, grid_nm, values[::-1])
+                arrays[f"species:{name}"] = values
 
             entry = {
                 "file": label, "v1": row["v1"], "v2": row["v2"],
@@ -241,16 +267,18 @@ def main() -> None:
                 "mask_offset": None,
                 "species": {name: {
                     "log_scale": float(row["parameters"][name]),
-                    "at_bound": name in row["at_bound"]} for name in model.species},
+                    "at_bound": name in row["at_bound"]}
+                    for name in row["species"]},
                 "scan": scan_rows(row["scan"], root, float(row["airmass"]),
-                                  set(model.species)),
+                                  set(row["species"])),
                 "quality": {k: row[k] for k in (
                     "residual_rms_over_noise", "reduced_chi2", "jitter_over_uncertainty",
                     "median_transmission", "reliable", "pixels", "masked",
                     "continuum_level", "condition_number", "all_stages_converged")},
                 "at_bound": row["at_bound"],
                 "opaque": row["reliable"] == 0,
-                "product_drift": drift,
+                "species_split_drift": drift,
+                "pixel_product_drift": pixel_drift,
             }
             for name, values in arrays.items():
                 payload, lo, hi = quantize(values)
@@ -262,11 +290,15 @@ def main() -> None:
             chunk.append(packed)
             chunk_bytes += len(packed)
             manifest.append(entry)
-            status = (f"{len(pieces)} species, drift {drift:.1e}, "
-                      f"{chunk_bytes / 1e3:.0f} kB in chunk {chunk_index}")
+            status = (f"{len(pieces)} species{' (rebuilt)' if rebuilt else ''}, "
+                      f"split {drift:.1e}" if drift is not None else
+                      f"{len(pieces)} species, split unrecorded")
+            status += (f", pixel {pixel_drift:.1e}, "
+                       f"{chunk_bytes / 1e3:.0f} kB in chunk {chunk_index}")
             if chunk_bytes >= CHUNK_BYTES:
                 flush()
-            jax.clear_caches()
+            if rebuilt:
+                jax.clear_caches()
         except Exception as exc:  # one window must not stop the export
             failures.append({"file": label, "v1": row["v1"], "error": str(exc),
                              "traceback": traceback.format_exc()[-1200:]})
