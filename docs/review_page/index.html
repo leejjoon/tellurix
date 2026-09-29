@@ -351,6 +351,7 @@
     manifest: null, index: [], byV1: new Map(), chunks: new Map(), pending: new Map(),
     v1: null, file: "5", compare: true, logy: false,
     traces: { observed: true, model: true, stellar: true, continuum: true },
+    seriesIndex: {}, plotWindow: null,
     species: new Set(), filter: "all", marks: { 5: {}, 4: {} },
     plot: null, rplot: null, db: null, writing: Promise.resolve()
   };
@@ -475,6 +476,13 @@
   // ---- plotting --------------------------------------------------------
   function buildPlots(pack, other) {
     var el = $("plot"), rel = $("rplot");
+    // Read the zoom off the chart that is about to be destroyed, rather than
+    // tracking it in a hook. A range is only meaningful within one window.
+    var keep = null;
+    if (STATE.plot && STATE.plotWindow === STATE.v1) {
+      var sx = STATE.plot.scales.x;
+      if (sx.min != null && sx.max != null) keep = [sx.min, sx.max];
+    }
     if (typeof uPlot === "undefined") {
       el.innerHTML = '<div style="padding:28px 8px;color:var(--muted);font-size:13px">' +
         'The chart library did not load, so the spectra cannot be drawn. ' +
@@ -493,11 +501,13 @@
 
     TRACES.forEach(function (t) {
       data.push(pack.series[t.key]);
-      series.push({
-        label: t.label, stroke: css(t.color) || t.color, width: t.width,
-        dash: t.dash || null, scale: "f", spanGaps: false, points: { show: false },
+      var spec = {
+        label: t.label, stroke: css(t.token), width: t.width,
+        scale: "f", spanGaps: false, points: { show: false },
         show: STATE.traces[t.key]
-      });
+      };
+      if (t.dash) spec.dash = t.dash;
+      series.push(spec);
     });
 
     if (other && STATE.compare) {
@@ -559,11 +569,17 @@
       }
     }, data, el);
 
+    // Which uPlot series each legend button drives, so a toggle can call
+    // setSeries instead of rebuilding the chart and discarding the zoom.
+    STATE.seriesIndex = {};
+    TRACES.forEach(function (t2, i) { STATE.seriesIndex[t2.key] = i + 1; });
+
     // residual strip, x-linked to the main plot
     var band = new Float64Array(pack.x.length).fill(1);
     var nband = new Float64Array(pack.x.length).fill(-1);
     STATE.rplot = new uPlot({
-      width: width, height: 118, scales: { x: { time: false } },
+      width: width, height: 118,
+      scales: { x: { time: false } },
       legend: { show: false },
       cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
       series: [
@@ -579,6 +595,16 @@
         { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", size: 52 }
       ]
     }, [pack.x, band, nband, pack.series.residual], rel);
+
+    // Restore the zoom AFTER construction. Handing the range to uPlot as
+    // `scales.x.range` instead looks equivalent and is not: a static range on
+    // the x scale left the chart drawing its grid and axes and none of its
+    // series. Measured, with everything else held fixed.
+    if (keep) {
+      STATE.plot.setScale("x", { min: keep[0], max: keep[1] });
+      STATE.rplot.setScale("x", { min: keep[0], max: keep[1] });
+    }
+    STATE.plotWindow = STATE.v1;
   }
 
   // ---- species panel ---------------------------------------------------
@@ -747,8 +773,20 @@
     });
     $("legend").addEventListener("click", function (e) {
       var b = e.target.closest(".trace"); if (!b) return;
-      STATE.traces[b.dataset.trace] = !STATE.traces[b.dataset.trace];
-      renderLegend(); show(STATE.v1);
+      var key = b.dataset.trace;
+      var on = !STATE.traces[key];
+      STATE.traces[key] = on;
+      b.setAttribute("aria-pressed", String(on));
+      // Rebuild rather than toggle in place. uPlot's setSeries flips the
+      // flag, but its commit only repaints when a scale or the size actually
+      // changed -- and hiding one trace here moves neither, because the others
+      // pin the flux scale. setData(data) does commit but re-ranges x and
+      // throws the zoom away; setData(data, false) keeps the scales and skips
+      // the commit entirely. Measured: setSeries, redraw() and both setData
+      // forms each left the canvas pixel-identical. Constructing the chart
+      // afresh honours `show`, costs a few milliseconds, and buildPlots carries
+      // the reader's zoom across.
+      show(STATE.v1);
     });
     $("species").addEventListener("click", function (e) {
       var b = e.target.closest(".sp.active"); if (!b) return;
