@@ -13,22 +13,22 @@
   "band": "red",
   "wavelength_nm": [
     2590.0,
-    5330.0
+    5355.0
   ],
   "instrument_fwhm_cm1": 0.01753,
   "samples_per_resolution": 4.0,
   "r_grid": 881005,
   "r_grid_required": 881005,
-  "points": 635816,
+  "points": 639938,
   "velocity_step_kms": 0.34028443417893695,
   "velocity_step_required_kms": 0.340284675820915,
   "normalized_flux_range": [
     0.5995391727426338,
-    0.9999999848619194
+    0.9999999496099824
   ],
   "initializer_family": "five_label",
   "atmosphere_converged": false,
   "atmosphere_closure_required": true,
-  "seconds": 2065.6617029802874,
-  "sha256": "77041f4d57a7bf0b5933854cc69ecc629dc0e8b1ecd90e5201525f69ce322887"
+  "seconds": 2436.33602572605,
+  "sha256": "fbc77304f7eadb8ecd47047edd2f32a16322614b286dbe1ff5c7c0653aee1804"
 }
