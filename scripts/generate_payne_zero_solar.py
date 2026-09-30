@@ -14,6 +14,7 @@ environment. It runs in Payne Zero's own environment and writes an npz that
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band mid
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band blue
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band red_edge
+    .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band nir --fwhm-cm1 0.01859
 
 The spectrum is a *fixed* input: the stellar labels are held at literature
 values and are not fitted. See docs/solar_fit_plan.md for where it is used.
@@ -100,6 +101,12 @@ BANDS = {
     # fitted; solar_source_for takes the first band in sorted order that
     # covers a window, and "red" sorts first wherever both do.
     "red_edge": (5300.0, 5445.0),   # 1837-1887 cm-1
+    # niratl, 8900-13600 cm-1 plus its grid margin. Generate it with niratl's
+    # own sinc, --fwhm-cm1 0.01859 (docs/niratl_ils.json): 6% wider than
+    # photatl's, and this band's sampling is set by its 725 nm end. It sorts
+    # after "mid" and before "red", so where it overlaps "blue" (1100-1110 nm)
+    # "blue" still wins and no ftsspec window changes source.
+    "nir": (725.0, 1110.0),     # 9009-13793 cm-1
 }
 
 

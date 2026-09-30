@@ -98,7 +98,12 @@ the authors' zero level, which zeroes saturated cores and measurably improves
 the fit only across 5298-5402 cm-1, whose four pages the product therefore takes from
 a fit of photatl itself (`--patch`, `docs/solar_fit_plan.md` §4j). The telluric
 lines also put the wavelength scale +141 m/s red, against the +260 m/s solar
-lines gave them. The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
+lines gave them. **`niratl`** (8900-13600 cm-1) is independent data and is fitted
+page by page: air mass 1.10 from the O2 A-band, its own sinc (FWHM 0.01859, not
+photatl's 0.01753 -- pass `--fwhm-cm1`), the June 1983 profile and the `nir`
+Payne Zero band; products `niratl_corrected.h5` and `niratl_transmission.h5`
+(§4k). Its residual reads ~76 sigma only because its noise is 5x lower than
+file 5's; in flux units the fit is as good. The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
 Arcturus pages already fitted) **interpolates pixels where the sky is opaque**;
 its **ILS is the weakest input in their programme** -- R = 300,000 quoted once
 for four atlases, no MOPD, no apodization; its **wavelength scale is +260 m/s**

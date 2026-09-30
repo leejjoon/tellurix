@@ -8,6 +8,7 @@ from tellurix import (
     photatl_as_fts_spectrum,
     photatl_spectral_order,
     read_fts_spectrum,
+    read_niratl_page,
     read_photatl_page,
     read_solar_spectrum,
     uniform_wavenumber_grid,
@@ -17,6 +18,8 @@ from tellurix import (
 
 FTS_FIXTURE = "tests/data/nso_ftsspec_sample.txt"
 PHOTATL_FIXTURE = "tests/data/nso_photatl_sample"
+# 200 rows of ph08900 around its first -1.0 fill in the solar column.
+NIRATL_FIXTURE = "tests/data/nso_niratl_sample"
 SAMPLING_CM1 = 0.0094771
 
 
@@ -245,3 +248,38 @@ def test_a_continuum_level_needs_positive_finite_pixels():
         fts_continuum_level(np.full(64, -1.0))
     with pytest.raises(ValueError, match="percentile"):
         fts_continuum_level(np.ones(64), percentile=0.0)
+
+
+def test_niratl_keeps_the_header_as_continuum_levels():
+    page = read_niratl_page(NIRATL_FIXTURE)
+
+    # The first line is three continuum levels, not a sample; reading it as
+    # one would put a spurious point at the start of the grid.
+    assert len(page.continuum_levels) == 3
+    assert page.observed.size == 200
+    # 4096 samples over 30 cm-1. The printed steps are 7 or 8 float32 quanta
+    # (0.006836 and 0.007812 at 8900 cm-1), and their median is the larger --
+    # the true step is only recovered by the grid reconstruction.
+    np.testing.assert_allclose(page.spacing_cm1, 30.0 / 4095, rtol=2e-3)
+
+
+def test_niratl_fill_is_in_the_components_never_in_the_observed_column():
+    page = read_niratl_page(NIRATL_FIXTURE)
+
+    assert page.filled.any()
+    assert np.all(page.observed[page.filled] != -1.0)
+
+
+def test_a_niratl_page_goes_through_the_fts_path_with_no_air_mass(tmp_path):
+    page_path = tmp_path / "ph08900"
+    page_path.write_bytes(open(NIRATL_FIXTURE, "rb").read())
+
+    spectrum = read_solar_spectrum(page_path)
+    np.testing.assert_array_equal(spectrum.flux, read_niratl_page(page_path).observed)
+    # The README says 1.0 and the O2 A-band says 1.06-1.10; neither may become
+    # a silent default.
+    assert spectrum.airmass_mean is None
+    with pytest.raises(ValueError, match="no air mass"):
+        fts_spectral_order(spectrum)
+    order = fts_spectral_order(spectrum, zenith_angle_deg=0.0)
+    assert np.all(np.diff(order.wavelength_vacuum_nm) > 0.0)

@@ -947,10 +947,14 @@ residual, the air-mass pilot, and the paired test page by page.
 gain * ftsspec_5 + offset` with one gain and one offset per page, on the same
 samples to 1.58e-5 cm-1 (photatl's single precision). What the two numbers
 leave is at most **0.0625 sigma** of file 5's own noise, median 0.0155; a scale
-alone leaves a median 0.218 and up to 4.9. Wallace et al. 1996 say photatl "is
-based on three spectra obtained by Livingston in 1990 December", which is true,
-but over 1848-9002 cm-1 it is one of them. The lineage §"same instrument
-configuration" called very likely is exact.
+alone leaves a median 0.218 and up to 4.9. **This is the documented method, not a
+discovery**: `telluric_near_ir/README.pdf` (NSO TR 2014-01, §2) says the
+1840-8600 cm-1 telluric spectrum came from ratioing 1990/12/18 #4 against #5,
+"rescaled to fit the telluric component in the observed 2 airmass spectrum which
+was then divided out", and ships both as "the 1.16-5.43 um center-of-disk
+unratioed solar spectra". That README was not read before the pilot, which is
+why the pilot found it the hard way. What the measurement adds is the per-page
+gain and offset, and the demonstration that nothing else was changed.
 
 It was found by the air-mass pilot this section was meant to be. photatl records
 no air mass, so 13 pages were fitted at zenith 0 and each well-mixed species'
@@ -1056,6 +1060,75 @@ columns at no cost to the fit -- on wn4950 removing it moves the transmission
 by 2.8 sigma while the residual changes by 0.2%. The data cannot choose between
 those answers, so a refit would be different, not better. The four pages carry
 2,308 of the product's 670,608 reliable pixels (0.34%).
+
+### 4k. niratl: 188 pages at air mass 1.10, and a fit as good as file 5's
+
+niratl (Wallace, Hinkle & Livingston 1993, 8900-13600 cm-1) is independent
+data, not a copy of a raw spectrum: smoothed to the 1983 June files' resolution
+it misses both by 23-58% of the signal wherever there are telluric lines. What
+its documentation says, and what was measured before fitting, is in
+`docs/solar_atlases.md`. Inputs:
+
+- **Reader** `read_niratl_page`: a line of continuum levels, then 4096 rows;
+  -1.0 fill only in the `solar` and `atmospheric` columns; the grid
+  reconstructed (step 0.0073265 cm-1 on every page).
+- **ILS** an unapodized sinc, **FWHM 0.01859 cm-1** constant (MOPD 32.46 cm),
+  from the 61 pages with a sharp interferogram cut. `docs/niratl_ils.json`,
+  whose `sharp_cut` block is the number used; its headline `all` block mixes in
+  the soft-cut failures and reads 0.0191.
+- **Profile** `kitt_peak_19830626_era5_afgl.csv`: ERA5 at 1983-06-26 19:00 UT
+  (4.69 mm of water, 7.24 K/km over the first 3 km), AFGL midlatitude-summer
+  trace gases, a new `"1983"` epoch (CO2 from NOAA; CH4 and N2O extrapolated,
+  stated in `make_site_profile.py`). The observation's date is "1983 June" and
+  its time is not recorded; noon is where an air mass of 1.1 puts it.
+- **Source** a new Payne Zero band `nir`, 725-1110 nm, 69 minutes to generate.
+
+**Air mass 1.10, from the O2 A-band.** O2's mixing ratio is known, so fitted
+at zenith 0 its column scale is the air mass. The eight A-band pages with
+100-3000 clean O2 pixels give **1.080-1.121, median 1.10**; the README's "1.0"
+is rounded. The 1.07 um a1-Delta band was expected to give a second, independent
+value and does not: its lines are 2-3% deep, and under the solar residual its
+O2 scale wanders from 0.93 to 2.05, as does the A-band's on its weak outer pages.
+
+**The fit.** 188 of 188 pages ran; 164 fitted and 24 had every species below
+the cut. The species present are few -- H2O on 148 pages, O2 on 19, CO2 on 2,
+CH4 on 1 -- against photatl's 19. The residual is a median **76 sigma**, and
+that is the noise, not the fit:
+
+| | noise | rms residual | telluric lines | solar lines | clean continuum | reliable |
+|---|---|---|---|---|---|---|
+| niratl, 164 pages | **0.018%** | 1.20% | 1.04% | 3.82% | 0.46% | 97.5% |
+| ftsspec_5, 222 windows | 0.097% | 1.03% | 0.84% | 4.69% | 0.48% | 84.0% |
+
+The same ~1% floor, set by the solar model (the residual follows stellar depth
+at r = -0.45 to -0.73 and telluric depth at r ~ 0), against five times less
+noise. The noise estimate is sound: the power spectrum is flat from the MOPD to
+Nyquist, so the pages were not resampled, though 4096 = 2^12 per page invited
+the suspicion.
+
+**The species cut stays at 1e-2, measured rather than assumed.** 48 pages had a
+species below the cut at slant optical depth above 1e-3 -- up to 21 sigma at the
+90th percentile, 112 at worst, at niratl's noise. Refitted at 2e-3 (about 10
+sigma): the residual ratio is a median 1.000 (best 0.979), and **21 of the 42
+species it added rail at a bound** (H2O 12 of 20, O2 6 of 9). It is the §4g
+result again: the detection limit is the solar model's, not the noise's, so five
+times less noise does not move it. The 24 pages the cut leaves unfitted carry
+unfitted absorption up to optical depth 9.9e-3, and are exported as **not
+corrected** rather than as clean.
+
+**Products.** `data/corrected/solar/niratl/niratl.h5` and `niratl_summary.json`
+are the record. `niratl_transmission.h5` (7.7 MB, 164 windows, `--check`
+exactly 0) is the unconvolved transmission on the model grid;
+`niratl_corrected.h5` (8.2 MB, 188 pages, 85.1% of pixels reliable, each page
+reproducing its own fit to 3.0e-16) is the corrected spectrum, written by the
+new `scripts/export_atlas_corrected.py` in `photatl_corrected.h5`'s layout.
+
+**A provenance bug this run found.** The batch driver recorded
+`physics["fwhm_cm1"]` from a constant, not from `--fwhm-cm1`, so niratl's first
+record named photatl's 0.01753 and `export_transmission_hdf5.py` rebuilt every
+window on the wrong grid (9130 points against at most 8610). Every earlier run
+used the default, which is why nothing showed. The driver now records what it
+ran, and niratl's record and summary were rewritten from the saved fits.
 
 ## One decision left before writing code
 

@@ -493,6 +493,103 @@ def read_photatl_page(path: str | Path, *, reconstruct_grid: bool = True) -> Pho
     )
 
 
+@dataclass(frozen=True)
+class NiratlPage:
+    """One ``phXXXXX`` page of Wallace, Hinkle & Livingston (1993), ascending.
+
+    ``observed`` is the column to fit. The README calls it "the observed 1.0 air
+    mass spectrum", and spot1atl's README uses the same phrase for its 2.3, so
+    it states the air mass of an observation rather than a rescaling. Measured
+    against the 1983 June raw spectra it is a real observation: its O2 A-band
+    is weaker than ftsspec_830626_3's (air mass 3.0) by a ratio that puts it at
+    1.06-1.10. So the air mass is *near* one, and is left for the fit to say --
+    see ``niratl_as_fts_spectrum``.
+
+    Unlike photatl, intensity is continuous from page to page, and the first
+    line holds approximate continuum levels, kept as ``continuum_levels``.
+    ``solar`` and ``atmospheric`` are filled with -1.0 where the authors could
+    not separate them (39 pages); ``observed`` never is.
+    """
+
+    path: Path
+    sha256: str
+    continuum_levels: tuple[float, float, float]
+    wavenumber_vacuum_cm1: np.ndarray
+    solar: np.ndarray
+    atmospheric: np.ndarray
+    observed: np.ndarray
+    grid_residual_cm1: float
+
+    def __post_init__(self) -> None:
+        nu = np.asarray(self.wavenumber_vacuum_cm1, dtype=float)
+        if nu.ndim != 1 or nu.size < 8:
+            raise ValueError("an atlas page needs at least eight samples")
+        if np.any(~np.isfinite(nu)) or np.any(np.diff(nu) <= 0.0):
+            raise ValueError("atlas wavenumbers must be finite and strictly increasing")
+        for name in ("solar", "atmospheric", "observed"):
+            column = np.asarray(getattr(self, name), dtype=float)
+            if column.shape != nu.shape:
+                raise ValueError(f"the {name} column must match the wavenumber grid")
+            object.__setattr__(self, name, column)
+        object.__setattr__(self, "wavenumber_vacuum_cm1", nu)
+        object.__setattr__(self, "path", Path(self.path))
+
+    @property
+    def spacing_cm1(self) -> float:
+        return float(np.median(np.diff(self.wavenumber_vacuum_cm1)))
+
+    @property
+    def filled(self) -> np.ndarray:
+        """True where the authors filled the solar and atmospheric columns with -1.0."""
+
+        return (self.solar == -1.0) | (self.atmospheric == -1.0)
+
+
+def read_niratl_page(path: str | Path, *, reconstruct_grid: bool = True) -> NiratlPage:
+    """Read one ``phXXXXX`` page: a line of continuum levels, then 4096 rows.
+
+    Wavenumbers are printed to six decimals of a single-precision value, which
+    at 13600 cm-1 is +-5e-4 cm-1 of jitter on an exactly uniform grid, so the
+    grid is reconstructed by default, as for the other two formats.
+    """
+
+    path = Path(path)
+    content = path.read_bytes()
+    lines = content.decode().splitlines()
+    levels = tuple(float(v) for v in lines[0].split())
+    if len(levels) != 3:
+        raise ValueError(f"{path} does not start with three continuum levels")
+    values = np.loadtxt(lines[1:])
+    if values.ndim != 2 or values.shape[1] != 4:
+        raise ValueError(f"{path} is not a four-column niratl page")
+    grid, residual = uniform_wavenumber_grid(values[:, 0])
+    return NiratlPage(
+        path=path, sha256=hashlib.sha256(content).hexdigest(), continuum_levels=levels,
+        wavenumber_vacuum_cm1=grid if reconstruct_grid else values[:, 0],
+        solar=values[:, 1], atmospheric=values[:, 2], observed=values[:, 3],
+        grid_residual_cm1=residual,
+    )
+
+
+def niratl_as_fts_spectrum(page: NiratlPage) -> FTSSpectrum:
+    """A page's observed column in the shape the FTS fitting path reads.
+
+    The air mass is left empty although the README says 1.0: the O2 A-band says
+    1.06-1.10, and a default the fit silently used would decide every column
+    scale. A caller passes it, as for photatl.
+    """
+
+    return FTSSpectrum(
+        path=page.path, sha256=page.sha256, source_name=f"niratl {page.path.name}",
+        comment="Wallace, Hinkle & Livingston 1993, NSO TR 93-001: observed column",
+        date_mst="", julian_day=0, universal_time_start="", universal_time_stop="",
+        airmass_start=None, airmass_stop=None,
+        stated_resolution_cm1=None, transform_samples=0, point_of_center=0,
+        wavenumber_vacuum_cm1=page.wavenumber_vacuum_cm1, flux=page.observed,
+        grid_residual_cm1=page.grid_residual_cm1,
+    )
+
+
 def photatl_as_fts_spectrum(page: PhotatlPage) -> FTSSpectrum:
     """A page's ``total`` column in the shape the FTS fitting path reads.
 
@@ -524,11 +621,25 @@ def is_photatl_page(path: str | Path) -> bool:
     return re.fullmatch(r"wn\d{4}", Path(path).name) is not None
 
 
+def is_niratl_page(path: str | Path) -> bool:
+    """niratl pages are named ``phNNNNN``, with no extension."""
+
+    return re.fullmatch(r"ph\d{5}", Path(path).name) is not None
+
+
+def is_atlas_page(path: str | Path) -> bool:
+    """A page of either atlas, which the batch driver tiles one window per page."""
+
+    return is_photatl_page(path) or is_niratl_page(path)
+
+
 def read_solar_spectrum(path: str | Path) -> FTSSpectrum:
-    """Read either a raw FTS spectrum or one photatl page, by file name."""
+    """Read a raw FTS spectrum, a photatl page or a niratl page, by file name."""
 
     if is_photatl_page(path):
         return photatl_as_fts_spectrum(read_photatl_page(path))
+    if is_niratl_page(path):
+        return niratl_as_fts_spectrum(read_niratl_page(path))
     return read_fts_spectrum(path)
 
 

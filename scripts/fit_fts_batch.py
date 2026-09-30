@@ -33,7 +33,8 @@ window fit: pass the directory of ``wnNNNN`` pages as ``--spectrum`` and each
 page becomes one window, its own 29 cm-1 with the 4 cm-1 its neighbours share.
 The overlaps are kept, as in the full-coverage Arcturus record, and are a
 consistency check rather than duplicates to average. The atlas records no air
-mass, so ``--airmass`` or ``--zenith-angle-deg`` is required.
+mass, so ``--airmass`` or ``--zenith-angle-deg`` is required. **niratl** pages
+(``phNNNNN``) run the same way.
 
     UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
         --spectrum .../nso/photatl --airmass 2.0
@@ -63,7 +64,7 @@ from tellurix import (  # noqa: E402
     read_solar_spectrum,
     species_above,
 )
-from tellurix.nso import MEASURED_FWHM_CM1, is_photatl_page, window_continuum_snr  # noqa: E402
+from tellurix.nso import MEASURED_FWHM_CM1, is_atlas_page, window_continuum_snr  # noqa: E402
 
 from fit_fts_window import fit_window  # noqa: E402
 
@@ -130,7 +131,7 @@ def window_edges(spectrum, v1: float, v2: float, width_cm1: float,
     return windows
 
 
-def photatl_pages(directory: Path, v1: float | None, v2: float | None,
+def atlas_pages(directory: Path, v1: float | None, v2: float | None,
                   minimum_snr: float, names=None) -> tuple[list[dict], dict]:
     """One window per page, spanning the whole page.
 
@@ -138,14 +139,15 @@ def photatl_pages(directory: Path, v1: float | None, v2: float | None,
     handed the spectrum rather than re-reading it.
     """
 
-    paths = sorted((p for p in directory.iterdir() if is_photatl_page(p)),
+    # wnNNNN (photatl) or phNNNNN (niratl); both prefixes are two letters.
+    paths = sorted((p for p in directory.iterdir() if is_atlas_page(p)),
                    key=lambda p: int(p.name[2:]))
     if not paths:
-        raise SystemExit(f"no photatl pages (wnNNNN) under {directory}")
+        raise SystemExit(f"no atlas pages (wnNNNN or phNNNNN) under {directory}")
     if names:
         missing = set(names) - {p.name for p in paths}
         if missing:
-            raise SystemExit(f"no such photatl pages: {', '.join(sorted(missing))}")
+            raise SystemExit(f"no such pages: {', '.join(sorted(missing))}")
         paths = [p for p in paths if p.name in set(names)]
     jobs, spectra = [], {}
     for path in paths:
@@ -200,7 +202,7 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
     return entries
 
 
-def physics_record(root: Path) -> dict:
+def physics_record(root: Path, fwhm_cm1: float) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     Both drivers' hashes, because this one delegates the fit to the other and a
@@ -215,6 +217,10 @@ def physics_record(root: Path) -> dict:
     fitter = driver.with_name("fit_fts_window.py")
     return {
         **PHYSICS,
+        # What this run used, not the photatl default PHYSICS carries: niratl
+        # runs at 0.01859, and a record that named 0.01753 would rebuild every
+        # window on the wrong grid (export_transmission_hdf5 reads this).
+        "fwhm_cm1": float(fwhm_cm1),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "fitter": fitter.name,
@@ -398,10 +404,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--spectrum", type=Path, required=True,
-                        help="a raw FTS spectrum, or a directory of photatl pages")
+                        help="a raw FTS spectrum, or a directory of photatl or niratl pages")
     parser.add_argument("--v1", type=float, default=None,
                         help="default: 1876, the blue edge of the reddest solar source, for "
-                             "a raw spectrum; every page for photatl")
+                             "a raw spectrum; every page for an atlas")
     parser.add_argument("--v2", type=float, default=None, help="default: 9091")
     parser.add_argument("--window-cm1", type=float, default=30.0)
     parser.add_argument("--minimum-snr", type=float, default=30.0,
@@ -412,7 +418,7 @@ def main() -> None:
                         help="default: the air mass in the file's own header")
     parser.add_argument("--airmass", type=float, default=None,
                         help="the same as --zenith-angle-deg, stated as an air mass; "
-                             "photatl records none, so it needs one or the other")
+                             "atlas pages record none, so they need one or the other")
     parser.add_argument("--fwhm-cm1", type=float, default=MEASURED_FWHM_CM1)
     parser.add_argument("--samples-per-resolution", type=float, default=4.0)
     parser.add_argument("--margin-cm1", type=float, default=25.0)
@@ -451,7 +457,7 @@ def main() -> None:
                              "contiguous split would leave one worker idle for hours.")
     parser.add_argument("--limit", type=int, default=0, help="stop after this many windows")
     parser.add_argument("--pages", default=None, metavar="wnNNNN,...",
-                        help="photatl only: fit just these pages")
+                        help="atlas pages only (photatl, niratl): fit just these pages")
     parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/solar")
     parser.add_argument("--summary", type=Path, default=None,
                         help="default: <output-dir>/<spectrum stem>_summary.json")
@@ -478,11 +484,11 @@ def main() -> None:
         args.zenith_angle_deg = float(np.degrees(np.arccos(1.0 / args.airmass)))
     profile = load_atmosphere_csv(root / args.profile)
     if args.spectrum.is_dir():
-        jobs, spectra = photatl_pages(args.spectrum, args.v1, args.v2, args.minimum_snr,
+        jobs, spectra = atlas_pages(args.spectrum, args.v1, args.v2, args.minimum_snr,
                                       names=args.pages.split(",") if args.pages else None)
         spectrum = run_identity(spectra)
         if args.zenith_angle_deg is None:
-            raise SystemExit("photatl records no air mass; pass --airmass or --zenith-angle-deg")
+            raise SystemExit("an atlas page records no air mass; pass --airmass or --zenith-angle-deg")
     else:
         spectrum = read_solar_spectrum(args.spectrum)
         spectra = {str(args.spectrum): spectrum}
@@ -544,7 +550,7 @@ def main() -> None:
             {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
              "spectrum": str(args.spectrum), "spectrum_sha256": spectrum.sha256,
              "profile": str(args.profile),
-             "physics": physics_record(root),
+             "physics": physics_record(root, args.fwhm_cm1),
              "settings": {"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,
@@ -586,7 +592,7 @@ def main() -> None:
         write_record(
             args.record,
             run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                 **{k: v for k, v in physics_record(root).items()
+                 **{k: v for k, v in physics_record(root, args.fwhm_cm1).items()
                     if k in ("driver", "driver_sha256", "fitter", "fitter_sha256", "tellurix")}},
             config={"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                     "samples_per_resolution": args.samples_per_resolution,
@@ -596,7 +602,7 @@ def main() -> None:
                     "scan_threshold": args.scan_threshold,
                     "species_threshold": args.species_threshold,
                     "scan_line_budget": args.scan_line_budget, "airmass": airmass},
-            physics=physics_record(root),
+            physics=physics_record(root, args.fwhm_cm1),
             inputs=input_hashes(root, args, spectrum, species),
             parameter_names=codec.names, species=species, pages=rows,
             continuum_degree=args.continuum_degree,

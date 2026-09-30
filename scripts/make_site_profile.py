@@ -31,6 +31,12 @@ _SEA_LEVEL_GRAVITY = 9.80665
 # Wallace & Livingston Arcturus atlas; 1990-12 is the epoch of the NSO solar
 # spectra. NOAA GML global annual means.
 EPOCH_SURFACE_VMR = {
+    # For niratl and ftsspec_830626_{2,3}, 1983 June. CO2 is NOAA GML's global
+    # annual mean (342.53 ppm). Its global CH4 starts in 1984 (1644.84 ppb) and
+    # is taken back one year at the mid-1980s growth of ~13 ppb/yr; N2O is the
+    # 1990 value below taken back seven years at ~0.7 ppb/yr. Every column is
+    # fitted, so these seed the fit and the scan's ranking and nothing else.
+    "1983": {"CO2": 342.5e-6, "CH4": 1.632e-6, "N2O": 0.3035e-6},
     "1990": {"CO2": 354.4e-6, "CH4": 1.714e-6, "N2O": 0.3085e-6},
     "1994": {"CO2": 357.0e-6, "CH4": 1.72e-6, "N2O": 0.310e-6},
     "2020": {"CO2": 414.0e-6, "CH4": 1.87e-6, "N2O": 0.333e-6},

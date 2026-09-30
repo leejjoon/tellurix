@@ -36,6 +36,7 @@ from tellurix import (
     BOXCAR_FWHM_CONSTANT,
     describe_truncation,
     read_fts_spectrum,
+    read_niratl_page,
     read_photatl_page,
     window_continuum_snr,
 )
@@ -48,6 +49,7 @@ NSO_ROOT = Path(
 # noise, and the MOPD it reports is meaningless. Calibrated in
 # docs/solar_fit_plan.md: live windows reach 188-2702, dead ones 5-11.
 MINIMUM_CONTINUUM_SNR = 30.0
+SHARP_CUT_RATIO = 3.0
 
 
 def measure_photatl(root: Path) -> list[dict]:
@@ -64,6 +66,34 @@ def measure_photatl(root: Path) -> list[dict]:
             if snr < MINIMUM_CONTINUUM_SNR:
                 raise ValueError(f"opaque page: continuum only {snr:.1f} sigma above zero")
             entry = describe_truncation(page.wavenumber_vacuum_cm1, page.total)
+            entry.update({"page": path.name, "continuum_snr": float(snr),
+                          "grid_residual_cm1": page.grid_residual_cm1})
+        except (ValueError, IndexError) as exc:
+            entry = {"page": path.name, "error": str(exc), "mopd_measurable": False}
+        measurements.append(entry)
+    return measurements
+
+
+def measure_niratl(root: Path) -> list[dict]:
+    """One measurement per page, on the observed column.
+
+    Wallace et al. 1996 say niratl combines five 1983 June spectra. If the
+    observed column were itself a co-add of scans with different path
+    differences, the cut would not be one sharp edge, which this measurement
+    would show as a spread in MOPD or a soft transition.
+    """
+
+    pages = sorted(p for p in root.iterdir() if re.match(r"^ph\d+$", p.name))
+    if not pages:
+        raise SystemExit(f"no niratl pages found under {root}")
+    measurements = []
+    for path in pages:
+        try:
+            page = read_niratl_page(path)
+            snr = window_continuum_snr(page.observed)
+            if snr < MINIMUM_CONTINUUM_SNR:
+                raise ValueError(f"opaque page: continuum only {snr:.1f} sigma above zero")
+            entry = describe_truncation(page.wavenumber_vacuum_cm1, page.observed)
             entry.update({"page": path.name, "continuum_snr": float(snr),
                           "grid_residual_cm1": page.grid_residual_cm1})
         except (ValueError, IndexError) as exc:
@@ -123,6 +153,16 @@ def summarize(measurements: list[dict], group_key: str | None) -> dict:
         if m.get("mopd_measurable") and np.isfinite(m.get("mopd_cm", np.nan))
     ]
     summary: dict = {"measured": len(usable), "attempted": len(measurements)}
+    # A truncated interferogram falls off within about one path-difference
+    # resolution. Where the transition is tens of times wider there is no cut
+    # to find, and the steepest-slope search returns anything: on niratl 119 of
+    # 180 pages spread from 2 to 28 cm with transitions ~41x the resolution,
+    # while the other 61 agree to 1.7%. "sharp_cut" is the number to use.
+    sharp = [m for m in usable
+             if m["transition_cm"] / m["path_difference_resolution_cm"] < SHARP_CUT_RATIO]
+    if sharp and len(sharp) < len(usable):
+        summary["sharp_cut"] = summarize(sharp, None)["all"]
+        summary["sharp_cut"]["transition_over_resolution_below"] = SHARP_CUT_RATIO
     groups = sorted({m[group_key] for m in usable}) if (usable and group_key) else []
     for name in ["all"] + groups:
         rows = usable if name == "all" else [m for m in usable if m[group_key] == name]
@@ -167,7 +207,7 @@ def summarize(measurements: list[dict], group_key: str | None) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--format", choices=("photatl", "ftsspec"), required=True)
+    parser.add_argument("--format", choices=("photatl", "niratl", "ftsspec"), required=True)
     parser.add_argument("--root", type=Path, default=None)
     parser.add_argument("--window-cm1", type=float, default=100.0,
                         help="ftsspec only: the span transformed at a time")
@@ -179,6 +219,11 @@ def main() -> None:
         measurements = measure_photatl(root)
         summary = summarize(measurements, None)
         output = args.output or Path("docs/photatl_ils.json")
+    elif args.format == "niratl":
+        root = args.root or NSO_ROOT / "niratl"
+        measurements = measure_niratl(root)
+        summary = summarize(measurements, None)
+        output = args.output or Path("docs/niratl_ils.json")
     else:
         root = args.root or NSO_ROOT / "telluric_near_ir"
         measurements = measure_ftsspec(root, args.window_cm1)

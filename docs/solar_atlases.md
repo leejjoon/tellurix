@@ -75,6 +75,57 @@ points each.
 - **The NSO telluric atlases have no loader** -- about 190 MB the sibling project
   lists as unreachable from code.
 
+### What the atlases' own documentation says
+
+Read too late -- the photatl pilot rediscovered the first point below. The
+READMEs in each directory, the two README PDFs, and Wallace, Livingston, Hinkle
+& Bernath 1996 (ApJS 106, 165, the refereed summary of atlases 1-4):
+
+- **Every `atmospheric` column is an empirical ratio.** With spectrum 2 at twice
+  the air mass of spectrum 1, `Sol = Sp(1) Sp(1)/Sp(2)` and `Tell = Sp(2)/Sp(1)`,
+  with effective air masses "adjusted" for compromise fits because water varies
+  by up to 2x over a run (Wallace et al. 1996 §2). `total` is one of the observed
+  spectra: for photatl, 1990/12/18 #5 (`telluric_near_ir/README.pdf` §2).
+- **`telluric_mid_ir/spec*.txt` are not solar spectra.** They are the ratio of
+  1982/03/07 #2 (5.3 air masses) to #4 (2.0), about 3 air masses of atmosphere
+  over 740-1230 cm-1, with an observed spectrum (#3, 3.1) spliced in, unmarked,
+  where the ratio falls below 0.2. The authors call it "a road map" rather than
+  a reduction tool; there is nothing here to telluric-correct.
+- **`ftsspec_830626_2` is at 5.0 air masses and `_3` at 3.0.** `_3`'s header
+  reads `?.??`, but its comment line and the README both say 3.0. The README also
+  warns of "a shift in the wavenumber scale between these two spectra".
+- **niratl "combine[s] five spectra obtained by M. Brown for G. Stokes in 1983
+  June"** -- the campaign `ftsspec_830626_{2,3}` came from -- and its fourth
+  column is "the observed 1.0 air mass spectrum". spot1atl's README uses the same
+  phrase for its 2.3 (and is "derived from two umbral spectra obtained by
+  Livingston in 1991 July"), so this is the air mass of an observation.
+
+### niratl, measured
+
+- **It is not either 1983 file.** Smoothed to their resolution and shifted,
+  niratl misses both by 23-58% of the signal wherever there are telluric lines,
+  and matches both at r = 0.998 where there are almost none (ph11500): the same
+  Sun and instrument, a thinner sky.
+- **Its air mass is near one, from O2.** The slope of niratl's line depths
+  against `_3`'s puts it at **1.06-1.10** on the A-band pages, where the same
+  method recovers `_2`/`_3` = 1.66-1.70 against the headers' 5/3. Water pages give
+  1.27-1.40 and fail that check (1.79-1.81), because the water column changed in
+  the 40 minutes between the 1983 scans. Crude; the fit is what measures it.
+- **Its ILS is an unapodized sinc with MOPD 32.46 cm, constant**: p16-p84
+  32.16-32.70 cm, corr(MOPD, nu) = +0.03, all four quarter-bands 32.3-32.5. So a
+  constant FWHM of **0.01859 cm-1**, 6% wider than photatl's, and R = 484,000 at
+  9000 cm-1, 699,000 at 13000. Measured on the 61 pages whose interferogram shows
+  a sharp cut; on most of the rest the cut is soft (transition 41x the
+  path-difference resolution against 1.0), where the measurement returns
+  anything from 2 to 28 cm, and those are rejected as failures rather than
+  read as a second instrument. `docs/niratl_ils.json`.
+- **Its grid is uniform**: 4096 samples over 30 cm-1, a step of 0.0073265 cm-1
+  on every page to 5e-9. The printed steps are 7 or 8 float32 quanta, and their
+  median is the larger, so a median of differences reports 0.007812; only the
+  grid reconstruction recovers the step.
+- **The -1.0 fill is in `solar` and `atmospheric` only** (39 pages); the
+  observed column is never filled.
+
 ### One thing worth a second look
 
 `telluric_near_ir/` carries raw FTS solar spectra with **air mass in the
