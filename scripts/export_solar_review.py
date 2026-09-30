@@ -35,8 +35,10 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from tellurix import TelluricParameters, read_scan, read_solar_spectrum  # noqa: E402
-from tellurix.nso import MEASURED_FWHM_CM1  # noqa: E402
+from tellurix import (  # noqa: E402
+    TelluricParameters, read_niratl_page, read_photatl_page, read_scan, read_solar_spectrum,
+)
+from tellurix.nso import MEASURED_FWHM_CM1, is_niratl_page, is_photatl_page  # noqa: E402
 
 from fit_fts_window import prepare_window  # noqa: E402
 
@@ -46,7 +48,15 @@ from tellurix import AER_MOLECULE_IDS  # noqa: E402
 CHUNK_BYTES = 1_500_000
 
 
-def quantize(values: np.ndarray) -> tuple[bytes, float, float]:
+# Arrays whose NaNs mean something the mask does not carry -- the atlas
+# authors' fill -- keep them: finite values use codes 0-65534 and NaN is 65535.
+# Everything else writes NaN as code 0, which is safe only because the page
+# blanks masked pixels itself.
+NAN_CODE = 65535
+NAN_ARRAYS = ("authors_atmospheric", "authors_solar")
+
+
+def quantize(values: np.ndarray, keep_nan: bool = False) -> tuple[bytes, float, float]:
     """uint16 with a per-array scale, and the scale needed to read it back."""
     finite = np.asarray(values, dtype=float)
     good = np.isfinite(finite)
@@ -54,17 +64,27 @@ def quantize(values: np.ndarray) -> tuple[bytes, float, float]:
     hi = float(np.max(finite[good])) if good.any() else 1.0
     if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
         hi = lo + 1.0e-12
+    top = NAN_CODE - 1 if keep_nan else 65535
     scaled = np.where(good, (finite - lo) / (hi - lo), 0.0)
-    return np.clip(np.round(scaled * 65535.0), 0, 65535).astype("<u2").tobytes(), lo, hi
+    codes = np.clip(np.round(scaled * top), 0, top).astype("<u2")
+    if keep_nan:
+        codes[~good] = NAN_CODE
+    return codes.tobytes(), lo, hi
 
 
-def settings_for(row, spectrum_path: Path, args) -> SimpleNamespace:
-    """The fit's own configuration, read back from what the run recorded."""
+def settings_for(row, spectrum_path: Path, args, blob) -> SimpleNamespace:
+    """The fit's own configuration, read back from what the run recorded.
+
+    The FWHM and the profile come from the run, not from defaults: niratl runs
+    at 0.01859 cm-1 on the June 1983 atmosphere, and a rebuild on photatl's
+    would draw a different model than the one that was fitted.
+    """
     return SimpleNamespace(
         spectrum=spectrum_path, v1=row["v1"], v2=row["v2"],
         margin_cm1=args.margin_cm1, grid_margin_cm1=args.grid_margin_cm1,
-        samples_per_resolution=args.samples_per_resolution, fwhm_cm1=MEASURED_FWHM_CM1,
-        profile=args.profile, species=",".join(row["species"]),
+        samples_per_resolution=args.samples_per_resolution,
+        fwhm_cm1=float(blob.get("physics", {}).get("fwhm_cm1", MEASURED_FWHM_CM1)),
+        profile=Path(blob.get("profile") or args.profile), species=",".join(row["species"]),
         stellar="auto", vsini_kms=0.0, macroturbulence_kms=1.5,
         source_continuum=False, normalize_source=False,
         continuum_degree=args.continuum_degree, stages="continuum", pin=[],
@@ -90,6 +110,29 @@ def parameters_for(row, species) -> TelluricParameters:
         log_jitter=float(p["log_jitter"]),
         stellar_velocity_kms=float(p["stellar_velocity_kms"]),
     )
+
+
+def authors_columns(path: Path, nu: np.ndarray) -> dict:
+    """The atlas authors' own telluric and solar estimates, on these pixels.
+
+    For comparison only: both are at atlas resolution and ratio-based (Wallace
+    et al. 1996 §2). niratl fills them with -1.0 where it could not separate
+    them, and photatl's solar column is interpolated where the sky is opaque;
+    both become NaN rather than being drawn as data.
+    """
+    if is_niratl_page(path):
+        page = read_niratl_page(path)
+        solar = np.where(page.solar == -1.0, np.nan, page.solar)
+        atmospheric = np.where(page.atmospheric == -1.0, np.nan, page.atmospheric)
+    elif is_photatl_page(path):
+        page = read_photatl_page(path)
+        solar = np.where(page.interpolated, np.nan, page.solar)
+        atmospheric = page.atmospheric
+    else:
+        return {}
+    if not np.allclose(page.wavenumber_vacuum_cm1, nu, atol=1e-4, rtol=0):
+        raise ValueError(f"{path.name}: the authors' columns are not on the fitted pixels")
+    return {"authors_atmospheric": atmospheric, "authors_solar": solar}
 
 
 def scan_rows(scan_name: str, root: Path, airmass: float, fitted) -> list[dict]:
@@ -159,11 +202,11 @@ def main() -> None:
     jobs = []
     for path in summaries:
         blob = json.loads(Path(path).read_text())
-        spectrum_path = Path(blob["spectrum"])
-        label = spectrum_path.stem.rsplit("_", 1)[-1]
+        label = Path(blob["spectrum"]).stem.rsplit("_", 1)[-1]
         for row in blob["results"]:
             if row.get("npz"):
-                jobs.append((label, spectrum_path, blob, row))
+                # An atlas run has one file per page; a raw spectrum, one file.
+                jobs.append((label, Path(row.get("file") or blob["spectrum"]), blob, row))
     jobs.sort(key=lambda j: (j[3]["v1"], j[0]))
     if args.shard:
         index, _, count = args.shard.partition("/")
@@ -204,7 +247,7 @@ def main() -> None:
                 key = str(spectrum_path)
                 if key not in spectra:
                     spectra[key] = read_solar_spectrum(spectrum_path)
-                prepared = prepare_window(settings_for(row, spectrum_path, args), root,
+                prepared = prepare_window(settings_for(row, spectrum_path, args, blob), root,
                                           spectrum=spectra[key])
                 model, order = prepared.model, prepared.order
                 parameters = parameters_for(row, model.species)
@@ -254,12 +297,13 @@ def main() -> None:
                 mask = np.asarray(stored["mask"])[flip].astype(bool)
             sigma = float(row["pixel_sigma"])
             arrays["residual"] = np.where(mask, residual / sigma, np.nan)
+            arrays.update(authors_columns(spectrum_path, nu))
 
             for name, values in pieces.items():
                 arrays[f"species:{name}"] = values
 
             entry = {
-                "file": label, "v1": row["v1"], "v2": row["v2"],
+                "file": label, "page": spectrum_path.name, "v1": row["v1"], "v2": row["v2"],
                 "airmass": row["airmass"], "zenith_angle_deg": row["zenith_angle_deg"],
                 "n": int(nu.size), "nu0": float(nu[0]),
                 "dnu": float((nu[-1] - nu[0]) / (nu.size - 1)),
@@ -272,7 +316,8 @@ def main() -> None:
                 "scan": scan_rows(row["scan"], root, float(row["airmass"]),
                                   set(row["species"])),
                 "quality": {k: row[k] for k in (
-                    "residual_rms_over_noise", "reduced_chi2", "jitter_over_uncertainty",
+                    "residual_rms_over_noise", "residual_rms", "pixel_sigma",
+                    "reduced_chi2", "jitter_over_uncertainty",
                     "median_transmission", "reliable", "pixels", "masked",
                     "continuum_level", "condition_number", "all_stages_converged")},
                 "at_bound": row["at_bound"],
@@ -281,8 +326,11 @@ def main() -> None:
                 "pixel_product_drift": pixel_drift,
             }
             for name, values in arrays.items():
-                payload, lo, hi = quantize(values)
+                keep = name in NAN_ARRAYS
+                payload, lo, hi = quantize(values, keep_nan=keep)
                 entry["arrays"][name] = {"offset": chunk_bytes, "lo": lo, "hi": hi}
+                if keep:
+                    entry["arrays"][name]["nan_code"] = NAN_CODE
                 chunk.append(payload)
                 chunk_bytes += len(payload)
             packed = np.packbits(mask).tobytes()
