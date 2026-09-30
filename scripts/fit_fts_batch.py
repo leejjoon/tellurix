@@ -251,6 +251,10 @@ def run_one(entry, args, root, profile, airmass: float) -> dict:
         "reduced_chi2": report["residuals"]["reduced_chi2"],
         "jitter_over_uncertainty": report["residuals"]["jitter_over_uncertainty"],
         "median_transmission": report["median_transmission"],
+        # The exact check, made on the model grid where the identity holds. The
+        # export carries a pixel-level figure too, but that one measures the
+        # interpolation, not the split.
+        "species_split_drift": report["species_split_drift"],
         "continuum_level": None if level != level else round(level, 4),
         "continuum_level_pixels": int(clean.sum()),
         "stages": report["stages"],
