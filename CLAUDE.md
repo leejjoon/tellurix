@@ -134,8 +134,11 @@ science fit refits **one velocity shift and one water scale per frame**, the
 median over orders, and never keeps per-order water, which chases a target's
 lines. Held-out standards of DCT 2018 fit at 0.9-1.1 sigma that way. The
 check that matters is **H against K**: both bands measure the same water, so
-their frame shifts must agree -- to 0.009 for standards and 0.022 for six line-
-rich targets -- and a disagreement past 0.04 is flagged. It caught the zenith-
+their frame shifts must agree -- to 0.005-0.006 rms on held-out standards
+once the K airmass is right (the 0.018-0.021 first measured was mostly the
+header defect), 0.009 at worst for four more standards, and 0.022 for the
+worst of six line-rich targets, an M dwarf -- and a disagreement past 0.02 is
+flagged. It caught the zenith-
 angle header defect below before anything else did, because a fit absorbs a
 slant-path error into the columns and its residual does not move.
 `validate_igrins_transfer.py` builds its calibration through the same class,
@@ -225,11 +228,14 @@ column.
 Three nights are fitted: DCT 2018-12-20 (~2 mm PWV), McDonald 2017-04-20
 (~10 mm, and the only one that exercises the degF/inHg branch end to end) and
 DCT 2016-12-08 (~7 mm). **Quote a slant-path bound from the scatter between
-nights, not from one night's error bar**: the three give CH4 slopes of +0.013,
-+0.027 and -0.030 per unit airmass, chi-squared 7.1 on 2 dof, so the 2.5 sigma
-one night showed was a per-night systematic. CO2 does the same. On DCT 2016 both
-show a 4-sigma dependence on *time of night*, which neither can physically have.
-The honest bound is the ~3% night-to-night scatter. Separately, the response
+nights, not from one night's error bar**: the three give CH4 slopes of +0.010,
++0.046 and -0.027 per unit airmass, chi-squared 7.7 on 2 dof, so the 2 sigma
+one night shows is a per-night systematic. CO2 does the same (8.2). On DCT 2016
+both show a 3.5-sigma dependence on *time of night*, which neither can
+physically have. The honest bound is the 3-4% night-to-night scatter. These are
+the numbers after the zenith-angle header fix, which halved the within-night
+CO2 scatter on DCT 2018 but left the between-night disagreement in place (7.1
+and 6.8 before) -- the defect was not the systematic. Separately, the response
 pattern **is** stable: DCT 2016 and 2018 agree at median r = +0.943 across 26
 orders, their difference only 34% of the pattern, so nine tenths of it belongs
 to the instrument rather than the night. The
@@ -254,8 +260,9 @@ change. It anchors at the **station pressure from the frame's own header** and
 integrates upward, which is why the 0.25-degree cell's orography (1844 m where
 DCT is at 2360 m) does not matter. Measured: ERA5's water column agrees with the
 fitted one to 0.4% and 4.5% on the two DCT nights, and the real lapse rate is
-4.5-8.3 K/km against the assumed 6.5. It **halves CO2's inter-night
-inconsistency** (chi-squared 6.8 to 3.4 on 2 dof) but does not fix CH4 and does
+4.5-8.3 K/km against the assumed 6.5. It **reduces CO2's inter-night
+inconsistency to borderline** (chi-squared 8.2 to 5.7 on 2 dof, p 0.02 to 0.06;
+it read 6.8 to 3.4 before the zenith-angle fix) but does not fix CH4 and does
 not improve the residual at all. The strongest reason to use it is coverage: 31%
 of the archive (Gemini South from 2020) carries no weather cards, and ERA5 needs
 only a position and a time. Two backends -- ARCO-ERA5 on Google Cloud needs no

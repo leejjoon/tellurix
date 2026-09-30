@@ -22,7 +22,7 @@ and did nothing in K, where the CO blends and a weak-line forest never cross
 the threshold.
 
 When both bands of an exposure are fitted, their water shifts are compared.
-Clean, they agree to about 0.02 in log column; a line-rich target biased them in
+Clean, they agree to about 0.005 in log column; a line-rich target biased them in
 opposite directions, about 3% apart. A large disagreement is reported, not
 resolved: it says the stellar lines are in the water scale.
 
@@ -49,9 +49,10 @@ from pathlib import Path
 
 import numpy as np
 
-# Clean H and K agree on the frame's water shift to 0.018-0.021 rms; a K giant's
-# lines pushed them 0.033 apart. Twice the clean scatter separates the two.
-BAND_DISAGREEMENT = 0.04
+# Clean H and K agree on the frame's water shift to 0.005-0.006 rms (0.018-0.021
+# before the zenith-angle fix, which was most of it); an injected K giant's lines
+# pushed them 0.033 apart. 0.02 is 3-4 times the clean scatter and well under that.
+BAND_DISAGREEMENT = 0.02
 
 
 def load_driver(root: Path):

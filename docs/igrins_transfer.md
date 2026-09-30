@@ -52,14 +52,15 @@ user inherits.
 
 Five night-bands, 1,282 held-out order-frames. Median / 90th percentile of
 the residual ratio, then the median correction difference in units of the
-noise. All orders:
+noise. The K rows were rerun on 2026-09-30 after the zenith-angle header fix
+(CLAUDE.md), which corrected one DCT 2018 and one McDonald standard. All orders:
 
 | night | standards | full fit | L0 | L1 | L2 | S1 | S2 |
 |---|---|---|---|---|---|---|---|
 | DCT 2018 H | 10 | 1.33 | 1.018 / 1.24 / 0.39 | 1.010 / 1.15 / 0.31 | 1.002 / 1.03 / 0.16 | 1.011 / 1.15 / 0.33 | 1.005 / 1.04 / 0.18 |
-| DCT 2018 K | 10 | 1.31 | 1.066 / 1.35 / 0.60 | 1.025 / 1.15 / 0.40 | 1.007 / 1.04 / 0.21 | 1.029 / 1.15 / 0.43 | 1.010 / 1.05 / 0.27 |
+| DCT 2018 K | 10 | 1.31 | 1.062 / 1.35 / 0.53 | 1.021 / 1.15 / 0.37 | 1.006 / 1.04 / 0.19 | 1.024 / 1.15 / 0.39 | 1.009 / 1.04 / 0.23 |
 | McDonald 2017 H | 8 | 1.78 | 1.047 / 1.41 / 0.78 | 1.026 / 1.38 / 0.66 | 1.003 / 1.06 / 0.24 | 1.030 / 1.39 / 0.68 | 1.010 / 1.06 / 0.36 |
-| McDonald 2017 K | 8 | 2.38 | 1.085 / 1.38 / 1.34 | 1.041 / 1.28 / 0.96 | 1.009 / 1.05 / 0.43 | 1.043 / 1.28 / 0.98 | 1.016 / 1.06 / 0.56 |
+| McDonald 2017 K | 8 | 2.38 | 1.110 / 1.41 / 1.37 | 1.052 / 1.34 / 1.19 | 1.012 / 1.09 / 0.52 | 1.056 / 1.34 / 1.19 | 1.020 / 1.11 / 0.62 |
 | Gemini S. 2021 H | 14 | 1.76 | 1.018 / 1.25 / 0.47 | 1.005 / 1.13 / 0.25 | 1.001 / 1.00 / 0.09 | 1.006 / 1.13 / 0.26 | 1.003 / 1.01 / 0.16 |
 
 Orders with median transmission below 0.9, where the correction matters:
@@ -67,16 +68,16 @@ Orders with median transmission below 0.9, where the correction matters:
 | night | order-frames | full fit | L0 | L2 | S2 |
 |---|---|---|---|---|---|
 | DCT 2018 H | 52 | 2.04 | 1.053 / 1.52 / 1.18 | 1.002 / 1.04 / 0.30 | 1.011 / 1.05 / 0.41 |
-| DCT 2018 K | 94 | 1.53 | 1.127 / 1.47 / 1.33 | 1.005 / 1.05 / 0.24 | 1.012 / 1.07 / 0.45 |
+| DCT 2018 K | 94 | 1.49 | 1.124 / 1.47 / 1.26 | 1.005 / 1.04 / 0.21 | 1.012 / 1.06 / 0.38 |
 | McDonald 2017 H | 62 | 2.62 | 1.050 / 1.89 / 1.74 | 1.000 / 1.02 / 0.26 | 1.007 / 1.03 / 0.49 |
-| McDonald 2017 K | 95 | 2.90 | 1.096 / 1.42 / 1.82 | 1.008 / 1.09 / 0.56 | 1.020 / 1.10 / 0.76 |
+| McDonald 2017 K | 95 | 2.90 | 1.120 / 1.47 / 1.86 | 1.013 / 1.15 / 0.75 | 1.024 / 1.16 / 0.95 |
 | Gemini S. 2021 H | 98 | 2.32 | 1.051 / 1.38 / 1.47 | 1.000 / 1.01 / 0.13 | 1.004 / 1.02 / 0.33 |
 
 ### Interpolating water is not enough
 
 Pure transfer (L0) is close in the median and bad in the tail: in absorbing
 orders the 90th percentile is 40-90% worse than the full fit and the correction
-is off by 1.2-1.8 times the noise. The cause is water. Interpolated in time
+is off by 1.2-1.9 times the noise. The cause is water. Interpolated in time
 between standards, the per-order water column is off from the full fit by a
 robust rms of 0.04-0.08 in log, which is what a leave-one-out interpolation of
 the frame medians showed before any of this ran. Water moves on timescales the
@@ -92,28 +93,36 @@ rest.
 ### One water scale per frame is enough
 
 S2 recovers nearly all of what per-order water freedom (L2) does: within 1% of
-the full fit's residual in the median (1.6% on the wet McDonald K), 1-10% at
+the full fit's residual in the median (2% on the wet McDonald K), 1-11% at
 the 90th percentile, and a correction within 0.3-0.5 of the noise in absorbing
-orders. It works because the water error is a property of the frame, not the
+orders everywhere but McDonald K. It works because the water error is a property of the frame, not the
 order: after subtracting the frame's shift, what remains of the per-order
 refit is a robust rms of **0.009-0.014** in log column, against 0.04-0.08
 before.
 
-The one place the per-order remainder shows is McDonald K -- the wettest night
-in the band with the most water -- where S2 leaves 0.76 of the noise in
-absorbing orders against L2's 0.56. That is still under the noise, and less
-than half of what interpolation alone leaves.
+**McDonald K is the exception, and it is not water.** S2 leaves 0.95 of the
+noise in absorbing orders there, and almost all of it is two frames: the two
+highest, k Tau at airmass 2.96 (2.00 of the noise) and HD 53205 at 2.48
+(1.56), where every other K frame of the night is under 0.8. H at the same
+airmass transfers at 0.57, so it is a K-band effect -- K is where CO2 and CH4
+absorb -- and the night's dry-gas columns rise with airmass at 2 sigma
+(`igrins_a0v.md`). A water scale and a velocity cannot absorb a dry-gas
+slant-path error. Before the header fix k Tau's K airmass read 3.16 instead of
+2.96 and its transfer looked fine (0.58): the wrong airmass was supplying the
+missing dry column. A per-frame dry-gas scale is the obvious thing to try.
 
 Two cross-checks that the frame shift is the atmosphere and not a fitting
 artefact:
 
 - **H and K agree.** The two bands are different detectors and different
   lines, fitted independently, and their per-frame water shifts correlate at
-  r = +0.951 on DCT 2018 and +0.969 on McDonald 2017, differing by 0.018 and
-  0.021 rms against a spread of about 0.06. A science frame's water can
-  therefore be measured in whichever band its star contaminates less, and
-  applied to both.
-- **Velocity is also per-frame**, less cleanly: H and K correlate at r = +0.82
+  r = +0.997 on DCT 2018 and +0.998 on McDonald 2017, differing by 0.005 and
+  0.006 rms against a spread of 0.06-0.09. Before the header fix this read
+  r = +0.95 and +0.97 with 0.018 and 0.021 of difference: most of the apparent
+  disagreement between the bands was the K airmass being wrong. A science
+  frame's water can therefore be measured in whichever band its star
+  contaminates less, and applied to both.
+- **Velocity is also per-frame**, less cleanly: H and K correlate at r = +0.81
   and +0.96 and differ by 0.13 and 0.11 km/s, which is the two detectors' own
   zero points. S1 is as good as L1 on every night, so one shift per band per
   frame is enough.
@@ -134,14 +143,14 @@ Correction difference from the full fit, over the noise, absorbing orders
 | | clean S2 | injected: L0 | S1 | L2 | S2 | S2c |
 |---|---|---|---|---|---|---|
 | H | 0.41 | 1.18 | 1.08 | 0.71 | 0.58 | **0.45** |
-| K | 0.45 | 1.32 | 0.80 | 0.74 | 0.64 | **0.61** |
+| K | 0.38 | 1.25 | 0.74 | 0.72 | 0.62 | **0.57** |
 
 and the per-frame shifts against the clean run's:
 
 | | water, S2 | water, S2c | velocity, S2 | velocity, S2c |
 |---|---|---|---|---|
 | H | -0.015 (rms 0.017) | **-0.006 (0.008)** | +0.010 (0.017) km/s | +0.027 (0.032) |
-| K | +0.018 (0.019) | +0.019 (0.021) | -0.040 (0.050) | **+0.003 (0.015)** |
+| K | +0.018 (0.019) | +0.019 (0.020) | -0.041 (0.050) | **+0.003 (0.014)** |
 
 Three conclusions.
 
@@ -150,8 +159,8 @@ Three conclusions.
   science frame must not free water per order.
 - **One water scale per frame survives, with a floor of about 2%.** The stellar
   lines bias it by -1.5% in H and +1.8% in K -- same size, opposite sign, so a
-  line-rich target makes the two bands disagree by about 3%, and that
-  disagreement is a warning sign worth computing. Against the full fit's own
+  line-rich target makes the two bands disagree by about 3%, six times the
+  0.5% they disagree by on a clean frame -- a warning sign worth computing. Against the full fit's own
   water it is still 1.7-1.9% rms, where time interpolation alone is 4-8%. The
   bias does not come from weak-water orders: restricting the median to orders
   with median transmission below 0.9 or 0.8 leaves it at 1.3-1.9%.

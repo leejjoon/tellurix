@@ -19,9 +19,9 @@ from pathlib import Path
 
 import numpy as np
 
-# The science driver's threshold: twice the 0.018-0.021 rms by which clean H
-# and K water shifts agree.
-BAND_DISAGREEMENT = 0.04
+# The science driver's threshold, 3-4 times the 0.005-0.006 rms by which clean
+# H and K water shifts agree; see fit_igrins_science.py.
+BAND_DISAGREEMENT = 0.02
 
 
 def main() -> None:

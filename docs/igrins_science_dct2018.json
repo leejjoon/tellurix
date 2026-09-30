@@ -15,7 +15,7 @@
    "exposures": 6,
    "median_abs_difference": 0.00749,
    "max_abs_difference": 0.02219,
-   "flagged": 0
+   "flagged": 1
   }
  },
  "exposures": {
@@ -289,7 +289,7 @@
     "H": -0.00225,
     "K": 0.01994,
     "difference": -0.02219,
-    "flag": false
+    "flag": true
    }
   },
   "20181220_0114": {

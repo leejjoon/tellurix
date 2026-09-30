@@ -28,8 +28,10 @@ the *convolved* effective transmission, `model_flux / stellar_only`.
 
 When both bands of an exposure are fitted, their water shifts are compared.
 They measure the same atmosphere with different detectors and lines, so a
-disagreement beyond 0.04 in log column -- twice the clean scatter -- says one
-band's water scale is absorbing something that is not water. The report
+disagreement beyond 0.02 in log column -- 3-4 times the 0.005-0.006 by which
+the bands agree on held-out standards (`igrins_transfer.md`), and under the
+0.033 an injected K giant produced -- says one band's water scale is absorbing
+something that is not water. The report
 recomputes the comparison from each band's own summary, so bands fitted in
 separate runs are still compared.
 
@@ -65,7 +67,12 @@ bands agreeing on the frame's water to 0.009 or better.
 
 The residuals are the targets' own lines, which a flat source leaves in; they
 are not a measure of the correction. What measures it is the band agreement:
-median 0.007, worst 0.022, none flagged. Clipping removes 1-4% of pixels and
+median 0.007, and one target flagged -- GJ 281, an M dwarf, at 0.022, just past
+the threshold and at the size the injection test gives for a line-rich star.
+Its K band wants 2% more water than its H band. That is where an M dwarf's own
+water would put it, but it is not shown to be the cause; what it says for use
+is that GJ 281's water, and so its deepest corrected lines, are good to about
+2%, not 0.5%. Clipping removes 1-4% of pixels and
 moves the water shift by 0.018 at most and the velocity by 0.063 km/s.
 
 **YY Gem is the case for the frame's own water scale.** Observed 2.5 hours
@@ -82,17 +89,20 @@ into water. The reader now refuses end cards the sidereal rate could not have
 produced (`zenith_angle_deg`); 9 of 111 archive files, all K, are affected,
 including calibrating standard 94 of this night, whose columns moved by +0.038
 -- exactly ln(1.365/1.314) -- with its residual unchanged at 1.33. With the fix
-GJ 281's bands agree to 0.022.
+GJ 281's bands differ by 0.022, a quarter as much.
 
 A residual cannot see this: the fit puts a slant-path error into the columns
-and fits as well as before. A second band measuring the same water can.
+and fits as well as before. A second band measuring the same water can. The
+same fix is why the threshold is 0.02 and not the 0.04 first chosen: the clean
+agreement it was set from (0.018-0.021) was itself mostly this defect, and is
+0.005-0.006 without it.
 
 ## Not yet done
 
-- The other K runs -- DCT 2016, McDonald 2017, Gemini South 2021, their ERA5
-  variants, and DCT 2018's flat-source run -- predate the zenith fix and carry
-  affected frames, among them McDonald's airmass-3 point. Their records, the
-  airmass-ladder reports and `igrins_transfer_*_k.json` are stale until rerun.
+- High-airmass K frames on a night whose dry-gas columns drift with airmass --
+  McDonald 2017 above airmass 2.4 -- transfer at 1.6-2.0 of the noise, because
+  a water scale cannot absorb a CO2/CH4 slant-path error. A per-frame dry-gas
+  scale is untested.
 - A night with fewer than five standards, which needs the master pattern.
 - A target model in the source slot, which the injection test says removes the
   line-rich floor; `--stellar` accepts one but it is untested here.
