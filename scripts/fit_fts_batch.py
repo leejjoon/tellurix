@@ -45,6 +45,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tellurix import (  # noqa: E402
+    AER_MOLECULE_IDS,
     ScanIdentity,
     cached_scan,
     file_sha256,
@@ -70,6 +71,9 @@ PHYSICS = {
     "pixel_integration": "point",
     "instrument": "boxcar FTS sinc",
     "fwhm_cm1": MEASURED_FWHM_CM1,
+    # Recorded because anything rebuilding this model needs it, and a default
+    # supplied downstream would be a guess about what was fitted.
+    "max_lsf_sigma_kms": 4.0,
     "vsini_kms": 0.0,
     "macroturbulence_kms": 1.5,
     "stages": "continuum,velocity,columns,stellar",
@@ -114,6 +118,34 @@ def window_edges(spectrum, v1: float, v2: float, width_cm1: float,
             continue
         windows.append({"v1": float(lo), "v2": float(hi), "continuum_snr": round(snr, 1)})
     return windows
+
+
+def input_hashes(root: Path, args, spectrum, species) -> dict:
+    """Identify the files a run consumed, not just where they were.
+
+    A silently changed line list or profile is exactly what a record exists to
+    catch, and a path cannot catch it. The solar record's first version carried
+    only the spectrum and the profile, which left the line lists -- the input
+    most likely to move underneath a run -- unrecorded.
+    """
+
+    line_root = root / LINE_ROOT
+    entries = {
+        "spectrum": str(args.spectrum), "spectrum_sha256": spectrum.sha256,
+        "profile": str(root / args.profile),
+        "profile_sha256": file_sha256(root / args.profile),
+        "mt_ckd": str(root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc"),
+        "aer_line_root": str(line_root), "aer_version": "3.9",
+        "scan_cache": str(args.scan_cache),
+    }
+    if Path(entries["mt_ckd"]).exists():
+        entries["mt_ckd_sha256"] = file_sha256(Path(entries["mt_ckd"]))
+    for name in sorted(species):
+        stem = f"{AER_MOLECULE_IDS[name]:02d}_{name}"
+        candidate = line_root / stem / stem
+        if candidate.exists():
+            entries[f"aer_{name}_sha256"] = file_sha256(candidate)
+    return entries
 
 
 def physics_record(root: Path) -> dict:
@@ -492,10 +524,7 @@ def main() -> None:
                     "species_threshold": args.species_threshold,
                     "scan_line_budget": args.scan_line_budget, "airmass": airmass},
             physics=physics_record(root),
-            inputs={"spectrum": str(args.spectrum), "spectrum_sha256": spectrum.sha256,
-                    "profile": str(args.profile),
-                    "profile_sha256": file_sha256(root / args.profile),
-                    "scan_cache": str(args.scan_cache)},
+            inputs=input_hashes(root, args, spectrum, species),
             parameter_names=codec.names, species=species, pages=rows,
             continuum_degree=args.continuum_degree,
             key_fields=("file", "window"),

@@ -92,12 +92,26 @@ def main() -> None:
         return path
 
     profile = load_atmosphere_csv(verified("profile", Path(inputs["profile"])))
-    line_root = Path(inputs["aer_line_root"])
+    line_root = Path(inputs.get("aer_line_root")
+                     or root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
 
     # The atlas fits everything at the zenith and carries one angle in the
     # config; an IGRINS night carries the frame's own angle per row, 18.7 to
     # 67.3 degrees on one night. Take the row's when it has one, so the saved T
     # is the slant transmission that frame actually saw.
+    # The atlas and IGRINS hold a resolving power fixed for the whole run; the
+    # NSO FTS spectra hold the interferogram truncation fixed instead, so the
+    # resolution element is constant in WAVENUMBER and R rises across the band
+    # -- 114,075 at 2000 cm-1 to 513,338 at 9000. Those records carry the FWHM
+    # rather than an R, and each window's grid is sized from its own centre.
+    fwhm_cm1 = physics.get("fwhm_cm1")
+    if "resolving_power" in config:
+        resolving_power_for = lambda v1, v2: float(config["resolving_power"])
+    elif fwhm_cm1:
+        resolving_power_for = lambda v1, v2: 0.5 * (v1 + v2) / float(fwhm_cm1)
+    else:
+        raise SystemExit("this record carries neither a resolving power nor an ILS width")
+
     per_row_zenith = "zenith_angle_deg" in pages.dtype.names
     if not per_row_zenith and "zenith_angle_deg" not in config:
         raise SystemExit("this record carries no zenith angle, per row or in its config")
@@ -128,7 +142,7 @@ def main() -> None:
         v1, v2 = key
         grid = trim_wavenumber_grid(
             constant_velocity_grid(1.0e7 / v2, 1.0e7 / v1,
-                                   resolving_power=float(config["resolving_power"]),
+                                   resolving_power=resolving_power_for(v1, v2),
                                    samples_per_resolution=float(config["samples_per_resolution"]),
                                    margin_cm1=float(config["margin_cm1"])),
             v1, v2, float(config["grid_margin_cm1"]))
@@ -158,7 +172,8 @@ def main() -> None:
             mixed_precision=bool(physics["mixed_precision"]),
             pressure_shift=bool(physics["pressure_shift"]))
         continuum = MTCKDWaterContinuum.from_netcdf(
-            verified("mt_ckd", Path(inputs["mt_ckd"])), grid)
+            verified("mt_ckd", Path(inputs.get("mt_ckd")
+                     or root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc")), grid)
         model = TelluricModel(profile, grid, opacity, continuum=continuum,
                               accuracy_mode=physics["accuracy_mode"],
                               max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
@@ -230,7 +245,11 @@ def main() -> None:
             "so that is the slant transmission along the line of sight.")
         handle.attrs["format"] = "tellurix transmission 1"
         handle.attrs["record"] = str(args.record)
-        handle.attrs["resolving_power"] = float(config["resolving_power"])
+        if "resolving_power" in config:
+            handle.attrs["resolving_power"] = float(config["resolving_power"])
+        else:
+            # Constant in wavenumber, not in R: quote what is actually fixed.
+            handle.attrs["fwhm_cm1"] = float(fwhm_cm1)
         handle.attrs["samples_per_resolution"] = float(config["samples_per_resolution"])
         for key, value in record.run.items():
             handle.attrs[key] = "" if value is None else value
