@@ -183,9 +183,9 @@ learned from the frames themselves. Neither is tried here.
 The per-order stellar velocity is mostly not measuring the star. In the full
 A0V fits it rails at its +-60 km/s bound in 42% of order-frames (113 of 270 on
 DCT 2018 H, 157 of 378 on Gemini South), and the pattern belongs to the order,
-not the star: on DCT 2018 H, orders 2 and 10 rail on the same side for all ten
-frames of five stars, and one frame of k Tau reads +7.8 km/s from Br10 (H05),
-+42.7 from Br12 (H11) and -60 from Br14 (H15), each at 1.5 sigma. H11 is the
+not the star: on DCT 2018 H, orders H100 and H108 rail on the same side for all ten
+frames of five stars, and one frame of k Tau reads +7.8 km/s from Br10 (H103),
++42.7 from Br12 (H109) and -60 from Br14 (H113), each at 1.5 sigma. H109 is the
 exception that does track the star -- chi Cap +58.8 and +57.6, k Tau +42.7 and
 +43.8, HD 53205 +10.0 and +7.3 -- and is where the per-star check in
 `igrins_a0v.md` comes from. The Brackett lines are hundreds of km/s wide, the

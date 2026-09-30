@@ -268,6 +268,24 @@ peak, on the *smoothed* flux, is ours and is asymmetric because the blaze
 roll-off is. `reduced_log.csv`'s `AM` column writes `-1` for missing and carries
 impossible values -- the airmass comes from the header.
 
+**An IGRINS order is named by its physical echelle order, never its row.**
+`H109`, `K71`; `order(109)`; `--orders 109`; the record's `order_number`. Row
+position means nothing across files: K ships 24, 25 or 26 rows depending on the
+reduction, the PLP's `invert_order` reverses rows for wavelength-ascending
+output, and a custom extraction range drops the WAT cards altogether.
+`identify_orders` takes the order from each WAT2 `specN` entry's `beam` field,
+matching entries to rows **by wavelength, not position**, checks every match
+against `IGRINS_ORDER_CENTRES_UM` (centres repeat to 0.15 nm across 2014-2021;
+neighbours are 11 nm or more apart), and falls back to that table alone when
+the cards are missing or describe other rows -- which is not hypothetical: the
+test fixture was cut from a 28-order frame, kept its WAT, and so read as orders
+98-99 when its rows are 100 and 109. `order_source` records which path named
+the rows. Products written before this named orders by row (`H05`,
+`order_index`); `scripts/migrate_igrins_order_names.py` relabels them from each
+frame's own header, checks every renamed npz against the order's wavelength,
+and is idempotent. The PLP's own reader and writer for these cards are in the
+untracked `igrins_aux/`, for reference only.
+
 What the two bands can measure, from the peak vertical optical depth reached
 anywhere in an exposure: H2O and CO2 and CH4 yes; CO and N2O peak at 0.115 and
 0.125, just under the 0.15 the ladder analysis requires; **O2 is exactly zero in
@@ -306,7 +324,7 @@ and +1.8% in K, so the bands disagreeing by ~3% is the warning sign. Clipping
 pixels 3 sigma below the model (`--clip-sigma`) fixes H and not K, whose CO
 blends and weak-line forest never cross the threshold. Separately, the
 per-order `stellar_velocity_kms` rails at +-60 in 42% of the *full* fits'
-order-frames in a pattern set by the order, not the star; only H11 (Br12)
+order-frames in a pattern set by the order, not the star; only H109 (Br12)
 tracks the star. It should be one parameter per frame.
 
 `scripts/export_transmission_hdf5.py` writes the unconvolved transmission on the

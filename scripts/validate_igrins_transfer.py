@@ -72,10 +72,11 @@ def load_driver(root: Path):
     return module
 
 
-def read_run(run_dir: Path):
+def read_run(run_dir: Path, record: Path | None = None):
     import h5py
 
-    with h5py.File(run_dir / "record.h5", "r") as handle:
+    record = record or run_dir / "record.h5"
+    with h5py.File(record, "r") as handle:
         pages = handle["pages"][:]
         attrs = lambda group: {k: (v.decode() if isinstance(v, bytes) else v)  # noqa: E731
                                for k, v in handle[group].attrs.items()}
@@ -84,7 +85,10 @@ def read_run(run_dir: Path):
     text = lambda value: value.decode() if isinstance(value, bytes) else str(value)  # noqa: E731
     rows = {}
     for page in pages:
-        rows[(text(page["frame"]), int(page["order_index"]))] = page
+        if "order_number" not in page.dtype.names:
+            raise SystemExit(f"{record} names orders by row position; run "
+                             "scripts/migrate_igrins_order_names.py on it first")
+        rows[(text(page["frame"]), int(page["order_number"]))] = page
     return rows, inputs, config, physics, species
 
 
@@ -214,13 +218,13 @@ def write_report(path: Path, report: dict) -> None:
         "[\n" + ",\n".join(json.dumps(rounded(r), separators=(",", ":")) for r in rows) + "\n]\n")
 
 
-def resummarize(path: Path, run_dir: Path) -> None:
+def resummarize(path: Path, run_dir: Path, record: Path | None = None) -> None:
     """Rewrite a finished report's summaries without refitting anything."""
 
     report = json.loads(path.read_text())
     if "rows" not in report:
         report["rows"] = json.loads(rows_path(path).read_text())
-    rows, *_ = read_run(run_dir)
+    rows, *_ = read_run(run_dir, record)
     for entry in report["rows"]:
         page = rows[(entry["frame"], entry["order"])]
         entry["full"]["median_transmission"] = float(page["median_transmission"])
@@ -239,11 +243,16 @@ def main() -> None:
     parser.add_argument("--run-dir", type=Path, required=True,
                         help="a fit_igrins_standard.py output: record.h5 plus the per-order npz "
                              "cache, which holds the response pattern each frame was given")
+    parser.add_argument("--record", type=Path, default=None,
+                        help="the run's record, when it is not RUN_DIR/record.h5 -- e.g. a "
+                             "committed record beside a cache that lives in another checkout")
     parser.add_argument("--data-root", type=Path, default=root,
                         help="where the record's relative frame and stellar paths resolve")
     parser.add_argument("--profile", type=Path, default=None,
                         help="default: the record's own")
-    parser.add_argument("--orders", default=None)
+    parser.add_argument("--orders", default=None,
+                        help="comma-separated physical echelle orders; default every order "
+                             "in the record")
     parser.add_argument("--frames", default=None, help="comma-separated held-out frames")
     parser.add_argument("--inject", type=Path, default=None,
                         help="a stellar npz whose normalized spectrum is multiplied into every "
@@ -265,7 +274,7 @@ def main() -> None:
     parser.add_argument("--platform", choices=("cpu", "gpu"), default="gpu")
     args = parser.parse_args()
     if args.resummarize:
-        resummarize(args.output, args.run_dir)
+        resummarize(args.output, args.run_dir, args.record)
         return
 
     os.environ["JAX_PLATFORMS"] = "cuda" if args.platform == "gpu" else "cpu"
@@ -283,7 +292,7 @@ def main() -> None:
         read_igrins_observation,
     )
 
-    rows, inputs, config, physics, run_species = read_run(args.run_dir)
+    rows, inputs, config, physics, run_species = read_run(args.run_dir, args.record)
     for key in ("continuum_bound", "continuum_percentile", "saturation_floor",
                 "throughput_floor", "mask_hydrogen_kms", "minimum_pixels", "minimum_reliable"):
         if key in config:
@@ -404,13 +413,13 @@ def main() -> None:
     results = []
     retained = {}
     started = time.time()
-    for index in orders:
+    for number in orders:
         first = observations[frames[0]]
         try:
-            context = driver.build_order_context(first, index, context_args, args.data_root, profile,
+            context = driver.build_order_context(first, number, context_args, args.data_root, profile,
                                                  stellar)
         except (RuntimeError, ValueError) as exc:
-            print(f"order {index}: skipped ({exc})")
+            print(f"order {number}: skipped ({exc})")
             continue
         model = context["model"]
         star_model = TelluricModel(
@@ -422,14 +431,14 @@ def main() -> None:
         objective = None
         water_free = "H2O" in context["free_species"]
         for name in held:
-            if (name, index) not in rows:
+            if (name, number) not in rows:
                 continue
-            reference = rows[(name, index)]
-            cal = calibration(rows, model.species, index, name, frames, mjd)
+            reference = rows[(name, number)]
+            cal = calibration(rows, model.species, number, name, frames, mjd)
             if cal is None:
                 continue
             observation = observations[name]
-            extracted = observation.order(index)
+            extracted = observation.order(number)
             order, cached = order_for(context, observation, name, extracted,
                                       inject_sigma_kms=cal["lsf_sigma_kms"])
             if objective is None:
@@ -448,7 +457,7 @@ def main() -> None:
                 stellar_velocity_kms=float(reference["stellar_velocity_kms"]))
 
             entry = {
-                "frame": name, "order": index,
+                "frame": name, "order": number,
                 "hours": round(24.0 * (mjd[name] - mjd[frames[0]]), 3),
                 "water_free": water_free,
                 "free_species": context["free_species"],
@@ -473,9 +482,9 @@ def main() -> None:
                 current, entry["levels"][level] = fit(
                     context, objective, order, current, frees[level], star_model, cached)
             results.append(entry)
-            retained[(name, index)] = (order, cached, parameters)
+            retained[(name, number)] = (order, cached, parameters)
             L = entry["levels"]
-            print(f"  {name}  order {index:2d}  "
+            print(f"  {name}  order {number:3d}  "
                   f"full {entry['full']['residual_rms_over_noise']:5.2f}  "
                   + "  ".join(f"{k} {L[k]['residual_rms_over_noise']:5.2f}" for k in LEVELS)
                   + f"  dT(L2) {L['L2']['transmission_rms_difference']:.4f}", flush=True)
@@ -484,7 +493,7 @@ def main() -> None:
         # they run as a second pass over this order once the frame-level
         # numbers exist -- which they do not yet. Keep the context instead of
         # rebuilding it: see below.
-        retained[("context", index)] = (context, star_model, objective)
+        retained[("context", number)] = (context, star_model, objective)
 
     def frame_shifts(level):
         """Median over a frame's orders of how far ``level`` moved each from its calibration."""
@@ -514,15 +523,15 @@ def main() -> None:
     shared = frame_shifts("L2")
     fitted_s2 = {}
     for entry in results:
-        name, index = entry["frame"], entry["order"]
-        context, star_model, objective = retained[("context", index)]
-        order, cached, parameters = retained[(name, index)]
+        name, number = entry["frame"], entry["order"]
+        context, star_model, objective = retained[("context", number)]
+        order, cached, parameters = retained[(name, number)]
         objective = objective.rebind(order)
         velocity_only = dict(shared[name], log_column_H2O=0.0)
         _, entry["levels"]["S1"] = fit(context, objective, order,
                                        shifted(parameters, velocity_only, False), set(),
                                        star_model, cached)
-        fitted_s2[(name, index)], entry["levels"]["S2"] = fit(
+        fitted_s2[(name, number)], entry["levels"]["S2"] = fit(
             context, objective, order, shifted(parameters, shared[name], entry["water_free"]),
             set(), star_model, cached)
 
@@ -531,10 +540,10 @@ def main() -> None:
         clipped_orders = {}
         width = 2 * args.clip_pixels + 1
         for entry in results:
-            name, index = entry["frame"], entry["order"]
-            context, star_model, objective = retained[("context", index)]
-            order, cached, parameters = retained[(name, index)]
-            best = fitted_s2[(name, index)]
+            name, number = entry["frame"], entry["order"]
+            context, star_model, objective = retained[("context", number)]
+            order, cached, parameters = retained[(name, number)]
+            best = fitted_s2[(name, number)]
             prediction = np.asarray(context["fit_model"].predict(order, best))
             sigma = np.sqrt(np.asarray(order.uncertainty) ** 2
                             + np.exp(2.0 * float(best.log_jitter)))
@@ -547,7 +556,7 @@ def main() -> None:
                 source_flux_model_grid=order.source_flux_model_grid)
             entry["clipped_fraction"] = float(np.count_nonzero(mask & reach)
                                               / max(np.count_nonzero(mask), 1))
-            clipped_orders[(name, index)] = clipped
+            clipped_orders[(name, number)] = clipped
             objective = objective.rebind(clipped)
             # From S2's answer, not the calibration: the point is to re-measure
             # the frame on cleaner pixels, starting where it already stands.
@@ -556,10 +565,10 @@ def main() -> None:
                                             star_model, cached)
         clipped_shared = frame_shifts("L2c")
         for entry in results:
-            name, index = entry["frame"], entry["order"]
-            context, star_model, objective = retained[("context", index)]
-            order, cached, parameters = retained[(name, index)]
-            clipped = clipped_orders[(name, index)]
+            name, number = entry["frame"], entry["order"]
+            context, star_model, objective = retained[("context", number)]
+            order, cached, parameters = retained[(name, number)]
+            clipped = clipped_orders[(name, number)]
             objective = objective.rebind(clipped)
             _, entry["levels"]["S2c"] = fit(
                 context, objective, clipped,

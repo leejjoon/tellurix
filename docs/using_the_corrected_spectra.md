@@ -132,7 +132,7 @@ copied from the record, so it stands on its own.
 ```python
 import h5py
 with h5py.File("data/corrected/arcturus_spectra.h5") as f:
-    i = list(f["key"].asstr()).index("ab5000_ summer")     # or "SDCH_20181220_0100 H10"
+    i = list(f["key"].asstr()).index("ab5000_ summer")     # or "SDCH_20181220_0100 H108"
     good = f["reliable"][i]
     wavenumber = f["wavenumber_cm1"][i][good]
     spectrum = f["corrected"][i][good]
@@ -383,7 +383,7 @@ represent.** The largest single-sample step in the Arcturus model sits at
 the array. In the A0V model the same edge is **5.6%**, because at 9500 K
 hydrogen bound-free is the continuum opacity. It falls inside the two bluest
 IGRINS H orders, and those two fit at a median 3.76 sigma against 1.79 for the
-other 25, with H26 alone at 5.44. That is confounded with the band edge, so it
+other 25, with H124 alone at 5.44. That is confounded with the band edge, so it
 is a suspicion rather than a measurement — but it is the right place to be
 suspicious.
 
@@ -409,7 +409,7 @@ in *sign* between nights, so do not quote a trend from one night.
 real absorption; it is a template, not a per-observation retrieval. It is kept
 for comparison, not validation.
 
-**Two IGRINS order-frames are pathological** — H09 and H06 of the DCT 2018 run,
+**Two IGRINS order-frames are pathological** — H107 and H104 of the DCT 2018 run,
 at 115 and 33 sigma out of 516 — and are unexplained. Cut on
 `residual_rms_over_noise` if you pool statistics.
 

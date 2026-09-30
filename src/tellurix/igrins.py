@@ -54,6 +54,172 @@ _HECTOPASCAL_PER_INCH_HG = 33.863886
 # off by 35% at DCT.
 _PRESSURE_TOLERANCE = 0.08
 
+# Centre wavelength, vacuum microns at pixel 1023.5, of every IGRINS echelle
+# order, keyed by band and *physical* order number. Measured from the 93 RRISA
+# frames of 2014-2021 whose WAT cards name their orders: each repeats to
+# 0.15 nm or better across seven years and three telescopes, while adjacent
+# orders sit 11 nm apart or more, so a row's centre names its order even when
+# the header does not. The grating relation m * lambda ~ const cannot: it
+# scatters by +-0.7 um against the ~1.6 um step to the next order.
+IGRINS_ORDER_CENTRES_UM = {
+    "H": {98: 1.82272, 99: 1.80477, 100: 1.78719, 101: 1.76996, 102: 1.75308,
+          103: 1.73652, 104: 1.72029, 105: 1.70437, 106: 1.68876, 107: 1.67344,
+          108: 1.65841, 109: 1.64366, 110: 1.62918, 111: 1.61497, 112: 1.60102,
+          113: 1.58731, 114: 1.57385, 115: 1.56063, 116: 1.54764, 117: 1.53488,
+          118: 1.52234, 119: 1.51001, 120: 1.49789, 121: 1.48597, 122: 1.47426,
+          123: 1.46274, 124: 1.45140, 125: 1.44026},
+    "K": {71: 2.50274, 72: 2.46843, 73: 2.43507, 74: 2.40261, 75: 2.37103,
+          76: 2.34028, 77: 2.31034, 78: 2.28118, 79: 2.25276, 80: 2.22505,
+          81: 2.19804, 82: 2.17169, 83: 2.14599, 84: 2.12090, 85: 2.09640,
+          86: 2.07248, 87: 2.04912, 88: 2.02629, 89: 2.00398, 90: 1.98217,
+          91: 1.96085, 92: 1.93999, 93: 1.91959, 94: 1.89963, 95: 1.88009,
+          96: 1.86100},
+}
+# Far above the 0.15 nm the centres move, far below the 11 nm between orders.
+_ORDER_CENTRE_TOLERANCE_UM = 0.002
+# IRAF writes each WAT2 card as a 68-character slice of one long string, and a
+# FITS reader strips a slice's trailing blanks -- which may be the space
+# between two numbers. Every slice is padded back before joining.
+_WAT_CARD_WIDTH = 68
+
+
+@dataclass(frozen=True)
+class WatSpec:
+    """One ``specN`` entry of an IRAF multispec WAT2 header.
+
+    ``order`` is the entry's ``beam`` field, which the IGRINS PLP sets to the
+    physical echelle order. ``aperture`` is only the entry's position in the
+    list and says nothing about which data row it describes: the PLP reverses
+    rows and renumbers the entries when it writes wavelength-ascending files,
+    and drops the cards altogether when a custom order range was extracted.
+    """
+
+    aperture: int
+    order: int
+    w1_angstrom: float
+    dw_angstrom: float
+    nw: int
+    text: str
+
+    @property
+    def centre_um(self) -> float:
+        return (self.w1_angstrom + self.dw_angstrom * (self.nw - 1) / 2.0) * 1.0e-4
+
+
+def parse_wat_specs(header: Mapping[str, object]) -> tuple[WatSpec, ...]:
+    """Every ``specN`` entry in a header's WAT2 cards; empty if there are none."""
+
+    import re
+
+    items = header.items() if hasattr(header, "items") else header
+    cards = sorted((str(key), str(value)) for key, value in items
+                   if str(key).upper().startswith("WAT2_"))
+    if not cards:
+        return ()
+    text = "".join(value.ljust(_WAT_CARD_WIDTH) for _, value in cards)
+    specs = []
+    for aperture, body in re.findall(r'spec(\d+)\s*=\s*"([^"]*)"', text):
+        fields = body.split()
+        if len(fields) < 6:
+            raise ValueError(f"WAT entry spec{aperture} is truncated: {body!r}")
+        specs.append(WatSpec(aperture=int(aperture), order=int(float(fields[1])),
+                             w1_angstrom=float(fields[3]), dw_angstrom=float(fields[4]),
+                             nw=int(float(fields[5])), text=body.strip()))
+    return tuple(specs)
+
+
+def format_wat2_cards(specs) -> list[tuple[str, str]]:
+    """WAT2 ``(keyword, value)`` cards describing ``specs`` in this order.
+
+    Entries are renumbered ``spec1``... in the order given, which must be the
+    order of the data rows they describe; each keeps its own beam, dispersion
+    and function. Mirrors the PLP's ``get_wat2_spec_cards``.
+    """
+
+    entries = []
+    for aperture, spec in enumerate(specs, start=1):
+        fields = spec.text.split()
+        fields[0] = str(aperture)
+        entries.append(f'spec{aperture} = "{" ".join(fields)}"')
+    text = "wtype=multispec " + " ".join(entries)
+    return [(f"WAT2_{i // _WAT_CARD_WIDTH + 1:03d}", text[i:i + _WAT_CARD_WIDTH])
+            for i in range(0, len(text), _WAT_CARD_WIDTH)]
+
+
+def _row_centres_um(wavelength_um: np.ndarray) -> np.ndarray:
+    centres = np.full(wavelength_um.shape[0], np.nan)
+    pixels = np.arange(wavelength_um.shape[1], dtype=float)
+    middle = (wavelength_um.shape[1] - 1) / 2.0
+    for row, values in enumerate(wavelength_um):
+        finite = np.isfinite(values)
+        if np.count_nonzero(finite) >= 2:
+            centres[row] = float(np.interp(middle, pixels[finite], values[finite]))
+    return centres
+
+
+def identify_orders(
+    band: str, wavelength_um: np.ndarray, header: Mapping[str, object] | None = None,
+) -> tuple[tuple[int | None, ...], str]:
+    """The physical echelle order of every row of an (order, pixel) array.
+
+    Row position means nothing across IGRINS files: the number of orders in a
+    band differs between reductions (K ships 24, 25 or 26), a wavelength-
+    ascending file reverses them, and a custom extraction range drops some.
+    So each row is matched to a WAT entry *by wavelength* -- the entry's centre
+    against the row's -- never by position, and every match is then checked
+    against :data:`IGRINS_ORDER_CENTRES_UM`. Without usable WAT cards the table
+    alone names the rows. A row with no finite wavelength -- the PLP fills
+    orders it did not extract with NaN -- is ``None``.
+
+    Returns the orders and how they were found: ``"wat"``, ``"wavelength"``, or
+    ``"wavelength; wat inconsistent"`` when cards were present but described
+    other rows, as a header copied onto a subset of a frame's rows does.
+    """
+
+    wavelength_um = np.asarray(wavelength_um, dtype=float)
+    centres = _row_centres_um(wavelength_um)
+    table = IGRINS_ORDER_CENTRES_UM.get(str(band).strip().upper(), {})
+    tolerance = _ORDER_CENTRE_TOLERANCE_UM
+
+    def from_table(centre):
+        close = [m for m, c in table.items() if abs(c - centre) < tolerance]
+        return close[0] if len(close) == 1 else None
+
+    def unique(orders):
+        named = [m for m in orders if m is not None]
+        return len(named) == len(set(named))
+
+    specs = parse_wat_specs(header) if header is not None else ()
+    source = "wavelength"
+    if specs:
+        matched = []
+        for centre in centres:
+            if not np.isfinite(centre):
+                matched.append(None)
+                continue
+            close = [s.order for s in specs if abs(s.centre_um - centre) < tolerance]
+            matched.append(close[0] if len(close) == 1 else "unmatched")
+        agrees = all(m != "unmatched" for m in matched) and unique(matched) and all(
+            m is None or m not in table or abs(table[m] - c) < tolerance
+            for m, c in zip(matched, centres))
+        if agrees:
+            return tuple(matched), "wat"
+        source = "wavelength; wat inconsistent"
+        warnings.warn("the WAT cards do not describe these rows; naming orders by wavelength",
+                      stacklevel=2)
+
+    orders = tuple(None if not np.isfinite(c) else from_table(c) for c in centres)
+    missing = [row for row, (m, c) in enumerate(zip(orders, centres))
+               if m is None and np.isfinite(c)]
+    if missing:
+        raise ValueError(
+            f"cannot name the physical order of row(s) {missing} in band {band!r}: no WAT "
+            f"entry matches and no known {band} order is centred within "
+            f"{tolerance * 1e3:.0f} nm of {[round(float(centres[r]), 5) for r in missing]} um")
+    if not unique(orders):
+        raise ValueError(f"two rows name the same physical order: {orders}")
+    return orders, source
+
 
 @dataclass(frozen=True)
 class Site:
@@ -344,9 +510,15 @@ def zenith_angle_deg(header: Mapping[str, object]) -> float:
 
 @dataclass(frozen=True)
 class IGRINSOrder:
-    """One echelle order, ascending in vacuum wavelength."""
+    """One echelle order, ascending in vacuum wavelength.
 
-    index: int
+    ``number`` is the physical echelle order -- what the order *is*, and the
+    only name that means the same thing in every IGRINS file. ``row`` is where
+    it sat in this file and is kept for provenance only.
+    """
+
+    number: int
+    row: int
     band: str
     wavelength_vacuum_nm: np.ndarray
     flux: np.ndarray
@@ -381,7 +553,7 @@ class IGRINSOrder:
 
     @property
     def name(self) -> str:
-        return f"{self.band}{self.index:02d}"
+        return f"{self.band}{self.number}"
 
 
 @dataclass(frozen=True)
@@ -404,11 +576,23 @@ class IGRINSObservation:
     surface: Mapping[str, object]
     telluric_model: np.ndarray | None = None
     plp_continuum: np.ndarray | None = None
+    # The physical order of every row (None for a row the PLP left empty) and
+    # how it was found; see identify_orders.
+    order_numbers: tuple = ()
+    order_source: str = ""
 
     def __post_init__(self) -> None:
         wavelength = np.asarray(self.wavelength_vacuum_nm, dtype=float)
         if wavelength.ndim != 2:
             raise ValueError("an IGRINS band is an (order, pixel) array")
+        if not self.order_numbers:
+            numbers, source = identify_orders(self.band, wavelength * 1.0e-3)
+            object.__setattr__(self, "order_numbers", numbers)
+            object.__setattr__(self, "order_source", source)
+        if len(self.order_numbers) != wavelength.shape[0]:
+            raise ValueError("order_numbers must name every row")
+        object.__setattr__(self, "order_numbers", tuple(
+            None if m is None else int(m) for m in self.order_numbers))
         for name in ("flux", "variance", "telluric_model", "plp_continuum"):
             values = getattr(self, name)
             if values is None:
@@ -421,10 +605,11 @@ class IGRINSObservation:
         object.__setattr__(self, "path", Path(self.path))
 
     @property
-    def orders(self) -> int:
-        return int(self.wavelength_vacuum_nm.shape[0])
+    def orders(self) -> tuple[int, ...]:
+        """The physical orders present, in row order."""
+        return tuple(m for m in self.order_numbers if m is not None)
 
-    def order(self, index: int) -> IGRINSOrder:
+    def order(self, number: int) -> IGRINSOrder:
         """One order, with its non-finite edges trimmed away.
 
         The PLP leaves the first and last pixels of an order undefined where
@@ -434,14 +619,17 @@ class IGRINSObservation:
         masked instead.
         """
 
-        if not 0 <= index < self.orders:
-            raise ValueError(f"order {index} is outside 0-{self.orders - 1}")
+        number = int(number)
+        if number not in self.orders:
+            raise ValueError(f"{self.path.name} has no {self.band} order {number}; "
+                             f"it holds {self.orders}")
+        index = self.order_numbers.index(number)
         wavelength = self.wavelength_vacuum_nm[index]
         flux = self.flux[index]
         variance = self.variance[index]
         usable = np.isfinite(wavelength) & np.isfinite(flux) & np.isfinite(variance)
         if np.count_nonzero(usable) < 8:
-            raise ValueError(f"order {index} has too few usable pixels")
+            raise ValueError(f"order {self.band}{number} has too few usable pixels")
         first, last = int(np.argmax(usable)), int(usable.size - np.argmax(usable[::-1]))
         cut = slice(first, last)
         # The wavelength solution descends with order index in half the bands;
@@ -453,7 +641,8 @@ class IGRINSObservation:
             return None if values is None else np.asarray(values[index][cut][step], dtype=float)
 
         return IGRINSOrder(
-            index=index,
+            number=number,
+            row=index,
             band=self.band,
             wavelength_vacuum_nm=wavelength[cut][step],
             flux=flux[cut][step],
@@ -467,6 +656,7 @@ class IGRINSObservation:
                 "date_obs": self.date_obs,
                 "mjd": self.mjd,
                 "band": self.band,
+                "order_source": self.order_source,
                 "surface": dict(self.surface),
             },
         )
@@ -511,9 +701,25 @@ def read_igrins_observation(
         wavelength_um = np.asarray(handle[1].data, dtype=float)
     if flux.ndim != 2 or wavelength_um.shape != flux.shape:
         raise ValueError(f"{spec_path} is not a PLP (order, pixel) spectrum with a wavelength HDU")
+    band = str(header.get("BAND", spec_path.name[3:4])).strip()
+    order_numbers, order_source = identify_orders(band, wavelength_um, header)
+
+    def same_orders(path, companion_header):
+        # A companion carries its own WAT cards. If it names its rows
+        # differently, its data rows are not the spectrum's and must not be
+        # paired with them.
+        if not parse_wat_specs(companion_header):
+            return
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            theirs, _ = identify_orders(band, wavelength_um, companion_header)
+        if theirs != order_numbers:
+            raise ValueError(f"{path} names its rows {theirs}, {spec_path} names them "
+                             f"{order_numbers}")
 
     with fits.open(variance_path) as handle:
         variance = np.asarray(handle[0].data, dtype=float)
+        same_orders(variance_path, dict(handle[0].header))
     if variance.shape != flux.shape:
         raise ValueError(f"{variance_path} does not match the shape of {spec_path}")
 
@@ -521,6 +727,7 @@ def read_igrins_observation(
     digests = {"spec": file_sha256(spec_path), "variance": file_sha256(variance_path)}
     if flattened_path.exists():
         with fits.open(flattened_path) as handle:
+            same_orders(flattened_path, dict(handle[0].header))
             if "MODEL_TELTRANS" in handle:
                 telluric_model = np.asarray(handle["MODEL_TELTRANS"].data, dtype=float)
             if "FITTED_CONTINUUM" in handle:
@@ -529,7 +736,7 @@ def read_igrins_observation(
 
     return IGRINSObservation(
         path=spec_path,
-        band=str(header.get("BAND", spec_path.name[3:4])).strip(),
+        band=band,
         object_name=str(header.get("OBJECT", "")).strip(),
         object_type=str(header.get("OBJTYPE", "")).strip(),
         telescope=str(header.get("TELESCOP", "")).strip(),
@@ -544,6 +751,8 @@ def read_igrins_observation(
         surface=surface_conditions(header),
         telluric_model=telluric_model,
         plp_continuum=plp_continuum,
+        order_numbers=order_numbers,
+        order_source=order_source,
     )
 
 

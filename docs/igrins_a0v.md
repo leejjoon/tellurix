@@ -88,7 +88,7 @@ default that looks like a measurement.
   term is a *log* flux, so raw PLP counts put it near 10 and its bound has to
   span the counts scale — and L-BFGS-B rescales its variables onto that bound,
   so a first step of a fraction of a 60-unit range drives the continuum to
-  zero. Measured on order 10 of the reference frame, leaving the order
+  zero. Measured on order H108 of the reference frame, leaving the order
   unnormalized gave a residual of 220 sigma against 2.7 once normalized.
 - **Continuum degree 9, not 3.** An IGRINS order spans 77–96 cm-1 against an
   atlas page's 20 and carries the blaze. With the PLP's own telluric model
@@ -298,10 +298,10 @@ uncertainty:
 
 | order | line | pixels | no-star model | A0V model | gain |
 |---|---|---:|---:|---:|---:|
-| H05 | Br10 | 594 | 17.09 | 2.56 | 6.7 |
-| H11 | Br12 | 576 | 2.88 | 2.14 | 1.4 |
-| H15 | Br14 | 602 | 6.43 | 1.87 | 3.4 |
-| H19 | Br18/19 | 912 | 20.95 | 2.66 | 7.9 |
+| H103 | Br10 | 594 | 17.09 | 2.56 | 6.7 |
+| H109 | Br12 | 576 | 2.88 | 2.14 | 1.4 |
+| H113 | Br14 | 602 | 6.43 | 1.87 | 3.4 |
+| H117 | Br18/19 | 912 | 20.95 | 2.66 | 7.9 |
 | **pooled** | | 2684 | **13.97** | **2.33** | **6.0** |
 
 The A0V model removes a factor of six, and leaves 2.33 sigma — slightly *better*
@@ -398,8 +398,8 @@ found one cause and two dead ends.
 `lsf_sigma_kms` is fitted per order but is a single constant within one.
 Splitting orders into six x-segments, with five Chebyshev coefficients free per
 segment so the blaze cannot leak into the width, the fitted R varies
-monotonically with pixel: 29,400 to 40,400 across order 2 (33%), 42,600 to
-47,200 across order 24 (10%), always narrower at high x. But freeing the width
+monotonically with pixel: 29,400 to 40,400 across order H100 (33%), 42,600 to
+47,200 across order H122 (10%), always narrower at high x. But freeing the width
 per segment improves the residual by a median of 1.02, best 1.55. Velocity per
 pixel is constant to 3.1% across the band, so a constant sigma in km/s is
 already nearly a constant sigma in *pixels*. The calibration products cannot
@@ -425,7 +425,7 @@ It is the same pattern in every frame:
 
 - 56–76% of each frame's residual variance is **common across all ten frames**,
   five different stars spanning airmass 1.07 to 2.50.
-- It is strongest in orders with no telluric absorption (H10, median T 0.998,
+- It is strongest in orders with no telluric absorption (H108, median T 0.998,
   71% common), so it is not the line list.
 - Its amplitude is 0.13–0.21 with only 0.012–0.021 scatter, and the sign of its
   airmass dependence is **inconsistent between orders**. A telluric-model error
@@ -507,9 +507,9 @@ Coverage varies a lot between orders, and almost all of it is two cuts of ours.
 | **hydrogen mask** | **0–1151** | **yes; this is what makes coverage vary** |
 | saturation floor, T < 0.15, model < 0.2 continuum | 0–170 | mostly negligible |
 
-An order with no Brackett line (H02, H03, H04, H06, H07, H10, H24, H25) loses
+An order with no Brackett line (H100, H101, H102, H104, H105, H108, H122, H123) loses
 nothing to the mask and keeps 73–77% of its columns. An order with one loses
-about 590, and H20, which holds Br19 and Br20, loses 1151 — 56% of the order,
+about 590, and H118, which holds Br19 and Br20, loses 1151 — 56% of the order,
 leaving 14%.
 
 That is arithmetic: ±600 km/s at 2.04 km/s per pixel is ±294 pixels per line.
@@ -566,7 +566,7 @@ no mask fixes that, and costs about 1.4x in runtime.
 Fitting with a real stellar source needs one more thing: a **stellar stage**.
 These are five different A0V stars with radial velocities tens of km/s apart, so
 `stellar_velocity_kms` has to be fitted or the Brackett lines land in the wrong
-place. `stages_for()` adds it whenever `--stellar` is not `flat`. In order H11
+place. `stages_for()` adds it whenever `--stellar` is not `flat`. In order H109
 (Br12) the fitted velocities are self-consistent per star -- chi Cap +58.9 and
 +57.6, k Tau +42.7 and +43.8, HD 53205 +9.2 and +7.4 km/s -- which is a check
 on the whole arrangement that the flat source cannot provide. **Most other
@@ -645,7 +645,7 @@ The sky changes; the model does not need to.
 McDonald carries about 10 mm of precipitable water against DCT's 2, and its
 median residual is 1.78 sigma in H and 2.37 in K against 1.33 and 1.31. Binned
 by transmission, using the median rather than the rms because two of DCT's 516
-order-frames are pathological (H09 at 115 sigma, H06 at 33, both unexplained):
+order-frames are pathological (H107 at 115 sigma, H104 at 33, both unexplained):
 
 | effective transmission | DCT, ~2 mm | McDonald, ~10 mm |
 |---|---:|---:|
@@ -758,7 +758,7 @@ per instrument configuration and applied to nights carrying fewer than the five
 standards `--fixed-pattern-min-frames` requires. The remaining third is the
 genuinely per-night part — flexure, focus, and which frames were taken.
 
-The orders where the two nights agree least (H02 at r = 0.52, H05 at 0.65) are
+The orders where the two nights agree least (H100 at r = 0.52, H103 at 0.65) are
 the low-throughput ones with the fewest shared pixels.
 
 
@@ -957,7 +957,7 @@ night.
   capture 74-88% of each night's response and works across telescopes, so it is
   now a matter of measuring it from enough nights and storing it, not of
   establishing whether it is sound.
-- **Two unexplained order-frames**, H09 and H06 of the DCT A0V run, at 115 and
+- **Two unexplained order-frames**, H107 and H104 of the DCT A0V run, at 115 and
   33 sigma out of 516. They are excluded from the pooled statistics above by a
   cut rather than understood.
 - **A per-frame atmosphere.** One profile is built per night from the median
