@@ -61,7 +61,7 @@ from tellurix import (
     ils_fingerprint,
     load_atmosphere_csv,
     prepare_stellar_source,
-    read_fts_spectrum,
+    read_solar_spectrum,
     resample_stellar_continuum,
     trim_wavenumber_grid,
     zenith_angle_deg_for_airmass,
@@ -227,7 +227,7 @@ def prepare_window(args, root: Path, *, spectrum=None):
     # Re-reading the file per window costs 1.3 s to take a 3,166-pixel slice out
     # of 831,488 lines. A caller that walks many windows of one file passes the
     # spectrum in; it is immutable, so sharing it is safe.
-    spectrum = read_fts_spectrum(args.spectrum) if spectrum is None else spectrum
+    spectrum = read_solar_spectrum(args.spectrum) if spectrum is None else spectrum
     window = spectrum.select(args.v1, args.v2)
     profile = load_atmosphere_csv(root / args.profile)
 
@@ -352,7 +352,7 @@ def prepare_window(args, root: Path, *, spectrum=None):
     )
 
 
-def fit_window(args, root: Path):
+def fit_window(args, root: Path, *, spectrum=None):
     """Fit one window and return its report and its diagnostic arrays.
 
     `args` is anything carrying the CLI's attributes -- an argparse Namespace
@@ -362,7 +362,7 @@ def fit_window(args, root: Path):
     single-window fits validated.
     """
 
-    prepared = prepare_window(args, root)
+    prepared = prepare_window(args, root, spectrum=spectrum)
     spectrum = prepared.spectrum
     window = prepared.window
     profile = prepared.profile

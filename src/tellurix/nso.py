@@ -493,6 +493,45 @@ def read_photatl_page(path: str | Path, *, reconstruct_grid: bool = True) -> Pho
     )
 
 
+def photatl_as_fts_spectrum(page: PhotatlPage) -> FTSSpectrum:
+    """A page's ``total`` column in the shape the FTS fitting path reads.
+
+    photatl is the same instrument configuration as the raw 1990 December
+    spectra -- same sampling, same MOPD, same unapodized sinc (see
+    docs/solar_fit_plan.md) -- so it goes through the *same* window fit rather
+    than a second one that would be free to build its order differently. Only
+    ``total`` is carried, for the reason ``photatl_spectral_order`` gives.
+
+    The header fields a raw spectrum has and a page does not are left empty
+    rather than invented. In particular there is **no air mass**: a caller has
+    to supply the zenith angle, and ``fts_spectral_order`` refuses without one.
+    """
+
+    return FTSSpectrum(
+        path=page.path, sha256=page.sha256, source_name=f"photatl {page.path.name}",
+        comment="Livingston & Wallace 1991, NSO TR 91-001: total column",
+        date_mst="", julian_day=0, universal_time_start="", universal_time_stop="",
+        airmass_start=None, airmass_stop=None,
+        stated_resolution_cm1=None, transform_samples=0, point_of_center=0,
+        wavenumber_vacuum_cm1=page.wavenumber_vacuum_cm1, flux=page.total,
+        grid_residual_cm1=page.grid_residual_cm1,
+    )
+
+
+def is_photatl_page(path: str | Path) -> bool:
+    """photatl pages are named ``wnNNNN``, with no extension."""
+
+    return re.fullmatch(r"wn\d{4}", Path(path).name) is not None
+
+
+def read_solar_spectrum(path: str | Path) -> FTSSpectrum:
+    """Read either a raw FTS spectrum or one photatl page, by file name."""
+
+    if is_photatl_page(path):
+        return photatl_as_fts_spectrum(read_photatl_page(path))
+    return read_fts_spectrum(path)
+
+
 # ------------------------------------------------------------ to an order ----
 
 

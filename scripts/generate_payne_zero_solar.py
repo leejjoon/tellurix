@@ -13,6 +13,7 @@ environment. It runs in Payne Zero's own environment and writes an npz that
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band red
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band mid
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band blue
+    .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band red_edge
 
 The spectrum is a *fixed* input: the stellar labels are held at literature
 values and are not fitted. See docs/solar_fit_plan.md for where it is used.
@@ -93,6 +94,12 @@ BANDS = {
     # the wing margin: 1870.998 cm-1 = 5344.8 nm. Sizing this from the window
     # instead of the grid is why the first attempt still failed.
     "red": (2590.0, 5355.0),    # 1867-3861 cm-1
+    # Only for photatl's first page, wn1850 (1848-1877 cm-1), whose grid reaches
+    # 1843 cm-1 = 5426 nm. A separate band rather than a wider "red" because
+    # widening it would change the source of every ftsspec window already
+    # fitted; solar_source_for takes the first band in sorted order that
+    # covers a window, and "red" sorts first wherever both do.
+    "red_edge": (5300.0, 5445.0),   # 1837-1887 cm-1
 }
 
 

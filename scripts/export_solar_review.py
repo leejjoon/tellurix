@@ -35,7 +35,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from tellurix import TelluricParameters, read_fts_spectrum, read_scan  # noqa: E402
+from tellurix import TelluricParameters, read_scan, read_solar_spectrum  # noqa: E402
 from tellurix.nso import MEASURED_FWHM_CM1  # noqa: E402
 
 from fit_fts_window import prepare_window  # noqa: E402
@@ -203,7 +203,7 @@ def main() -> None:
 
                 key = str(spectrum_path)
                 if key not in spectra:
-                    spectra[key] = read_fts_spectrum(spectrum_path)
+                    spectra[key] = read_solar_spectrum(spectrum_path)
                 prepared = prepare_window(settings_for(row, spectrum_path, args), root,
                                           spectrum=spectra[key])
                 model, order = prepared.model, prepared.order

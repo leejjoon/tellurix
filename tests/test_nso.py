@@ -5,9 +5,11 @@ import pytest
 
 from tellurix import (
     fts_spectral_order,
+    photatl_as_fts_spectrum,
     photatl_spectral_order,
     read_fts_spectrum,
     read_photatl_page,
+    read_solar_spectrum,
     uniform_wavenumber_grid,
     zenith_angle_deg_for_airmass,
 )
@@ -170,6 +172,35 @@ def test_photatl_refuses_every_column_but_the_observed_one():
     for column in ("solar", "atmospheric", "ratioed"):
         with pytest.raises(ValueError, match="must be 'total'"):
             photatl_spectral_order(page, column=column)
+
+
+def test_a_page_through_the_fts_path_is_the_same_order():
+    page = read_photatl_page(PHOTATL_FIXTURE)
+    spectrum = photatl_as_fts_spectrum(page)
+
+    # The batch fit reads pages through the FTS path; it must build exactly the
+    # order the photatl path would, from the observed column and nothing else.
+    via_fts = fts_spectral_order(spectrum, zenith_angle_deg=60.0)
+    direct = photatl_spectral_order(page, zenith_angle_deg=60.0)
+    np.testing.assert_array_equal(via_fts.flux, direct.flux)
+    np.testing.assert_array_equal(via_fts.mask, direct.mask)
+    np.testing.assert_array_equal(via_fts.wavelength_vacuum_nm, direct.wavelength_vacuum_nm)
+    assert spectrum.sha256 == page.sha256
+
+    # A page records no air mass, and that must fail loudly rather than
+    # default to anything.
+    assert spectrum.airmass_mean is None
+    with pytest.raises(ValueError, match="no air mass"):
+        fts_spectral_order(spectrum)
+
+
+def test_read_solar_spectrum_dispatches_on_the_page_name(tmp_path):
+    page_path = tmp_path / "wn1850"
+    page_path.write_bytes(open(PHOTATL_FIXTURE, "rb").read())
+
+    np.testing.assert_array_equal(read_solar_spectrum(page_path).flux,
+                                  read_photatl_page(page_path).total)
+    assert read_solar_spectrum(FTS_FIXTURE).airmass_mean == pytest.approx(4.73)
 
 
 def test_selecting_a_range_keeps_the_provenance():
