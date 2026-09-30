@@ -484,6 +484,23 @@ def surface_conditions(header: Mapping[str, object]) -> dict:
     }
 
 
+# No object's zenith distance changes faster than the sky turns.
+_SIDEREAL_DEG_PER_S = 360.0 / 86164.0905
+
+
+def _exposure_seconds(header: Mapping[str, object]) -> float | None:
+    """DATE-END minus DATE-OBS; negative when the cards contradict each other."""
+
+    from datetime import datetime
+
+    try:
+        start = datetime.fromisoformat(str(header["DATE-OBS"]).strip())
+        end = datetime.fromisoformat(str(header["DATE-END"]).strip())
+    except (KeyError, ValueError):
+        return None
+    return (end - start).total_seconds()
+
+
 def zenith_angle_deg(header: Mapping[str, object]) -> float:
     """The mean zenith distance of an exposure, in degrees.
 
@@ -492,11 +509,33 @@ def zenith_angle_deg(header: Mapping[str, object]) -> float:
     two ends is good to better than a degree for IGRINS exposure times, and the
     residual curvature of sec(z) over one exposure is far below the accuracy of
     the atmosphere profile.
+
+    The *end* cards are not always this exposure's. In 6 of 111 archive files
+    -- all K band -- ``ZDEND``, ``HAEND`` and often ``DATE-END`` describe some
+    other frame: ``DATE-END`` precedes ``DATE-OBS`` in four, and one has the
+    zenith distance moving 5.2 deg in 61 s. The H file of the same exposure is
+    self-consistent and ``ZDSTART`` agrees with the geometry of ``HASTART`` and
+    ``TELDEC`` to 0.1 deg in every one. Averaging a foreign ``ZDEND`` put the K
+    slant path 4-5% short, which the fit then absorbed into every column. So
+    ``ZDEND`` is used only if no faster than the sidereal rate over the
+    exposure could produce it; otherwise ``ZDSTART`` alone, which is within a
+    quarter of a degree for a minute's exposure.
     """
 
     start, end = _card(header, "ZDSTART"), _card(header, "ZDEND")
     if start is not None and end is not None:
-        angle = 0.5 * (start + end)
+        duration = _exposure_seconds(header)
+        if duration is None:
+            exposure = _card(header, "EXPTIME")
+            combined = _card(header, "NCOMBINE") or 1.0
+            duration = None if exposure is None else exposure * max(combined, 1.0) + 120.0
+        # 10% and 0.05 deg of slack for rounding in the cards themselves.
+        plausible = duration is None or (
+            duration >= 0.0
+            and abs(end - start) <= 1.1 * _SIDEREAL_DEG_PER_S * duration + 0.05)
+        angle = 0.5 * (start + end) if plausible else start
+    elif start is not None:
+        angle = start
     else:
         airmass = [_card(header, key) for key in ("AMSTART", "AMEND")]
         usable = [value for value in airmass if value is not None and value >= 1.0]
@@ -810,27 +849,38 @@ def leave_one_out_patterns(fractional, minimum_frames=3, smooth_pixels=51):
     """
 
     stack = np.asarray(fractional, dtype=float)
-    patterns = []
-    for index in range(stack.shape[0]):
-        others = np.delete(stack, index, axis=0)
-        with warnings.catch_warnings():
-            # A pixel no frame measured is an all-NaN slice; that is the
-            # ordinary case at an order edge, and it is handled below.
-            warnings.simplefilter("ignore", RuntimeWarning)
-            pattern = np.nanmedian(others, axis=0)
-        enough = np.sum(np.isfinite(others), axis=0) >= minimum_frames
-        pattern = np.where(enough & np.isfinite(pattern), np.nan_to_num(pattern), 0.0)
-        if smooth_pixels and smooth_pixels > 1:
-            if smooth_pixels % 2 == 0:
-                raise ValueError("smooth_pixels must be odd so the boxcar is centred")
-            kernel = np.ones(smooth_pixels) / smooth_pixels
-            weight = np.convolve(enough.astype(float), kernel, mode="same")
-            total = np.convolve(np.where(enough, pattern, 0.0), kernel, mode="same")
-            # Where nothing was measured the correction stays exactly zero
-            # rather than bleeding in from a neighbour.
-            pattern = np.where(enough, total / np.maximum(weight, 1e-9), 0.0)
-        patterns.append(pattern)
-    return patterns
+    return [smoothed_frame_median(np.delete(stack, index, axis=0), minimum_frames, smooth_pixels)
+            for index in range(stack.shape[0])]
+
+
+def smoothed_frame_median(stack, minimum_frames=3, smooth_pixels=51):
+    """The median over frames of a (frame, pixel) stack, smoothed along pixels.
+
+    A pixel fewer than ``minimum_frames`` frames measured is zero, before and
+    after the boxcar, so an order edge nothing measured is left uncorrected
+    rather than filled in from its neighbours. This is the whole of
+    :func:`leave_one_out_patterns` for one frame's "others"; a science frame,
+    which is none of the standards, takes it over all of them.
+    """
+
+    stack = np.asarray(stack, dtype=float)
+    with warnings.catch_warnings():
+        # A pixel no frame measured is an all-NaN slice; that is the
+        # ordinary case at an order edge, and it is handled below.
+        warnings.simplefilter("ignore", RuntimeWarning)
+        pattern = np.nanmedian(stack, axis=0)
+    enough = np.sum(np.isfinite(stack), axis=0) >= minimum_frames
+    pattern = np.where(enough & np.isfinite(pattern), np.nan_to_num(pattern), 0.0)
+    if smooth_pixels and smooth_pixels > 1:
+        if smooth_pixels % 2 == 0:
+            raise ValueError("smooth_pixels must be odd so the boxcar is centred")
+        kernel = np.ones(smooth_pixels) / smooth_pixels
+        weight = np.convolve(enough.astype(float), kernel, mode="same")
+        total = np.convolve(np.where(enough, pattern, 0.0), kernel, mode="same")
+        # Where nothing was measured the correction stays exactly zero
+        # rather than bleeding in from a neighbour.
+        pattern = np.where(enough, total / np.maximum(weight, 1e-9), 0.0)
+    return pattern
 
 
 def run_provenance(root: Path, args, observations, profile_path: Path) -> tuple[dict, dict]:

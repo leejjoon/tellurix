@@ -217,6 +217,35 @@ def test_the_zenith_angle_prefers_the_measured_distance():
     assert zenith_angle_deg(GEMINI) == pytest.approx(15.8)
 
 
+# The H and K files of one DCT exposure, GJ 281 on 2018-12-20: the K file's end
+# cards describe another frame -- it ends before it starts -- and averaging its
+# ZDEND put the K slant path 5.8% short of the H file's.
+GJ281_H = {"ZDSTART": 45.85, "ZDEND": 45.59, "DATE-OBS": "2018-12-21T06:47:50.045",
+           "DATE-END": "2018-12-21T06:49:20.051", "EXPTIME": 60.0, "NCOMBINE": 8}
+GJ281_K = {**GJ281_H, "ZDEND": 39.18, "DATE-END": "2018-12-21T06:45:53.214"}
+
+
+def test_a_self_consistent_exposure_averages_its_ends():
+    assert zenith_angle_deg(GJ281_H) == pytest.approx(0.5 * (45.85 + 45.59))
+
+
+def test_end_cards_from_another_frame_are_not_averaged():
+    assert zenith_angle_deg(GJ281_K) == pytest.approx(45.85)
+
+
+def test_a_zenith_distance_faster_than_the_sky_is_refused():
+    """Gemini South 2021-03-16 frame 162, K: 0.71 deg in 90 s; the sky allows 0.38."""
+
+    header = {"ZDSTART": 40.5388, "ZDEND": 41.2459, "DATE-OBS": "2021-03-17T08:04:08.002",
+              "DATE-END": "2021-03-17T08:05:37.959"}
+    assert zenith_angle_deg(header) == pytest.approx(40.5388)
+    # Without DATE-END, the exposure time bounds it instead.
+    loose = {"ZDSTART": 40.0, "ZDEND": 40.4, "EXPTIME": 60.0}
+    assert zenith_angle_deg(loose) == pytest.approx(40.2)
+    tight = {"ZDSTART": 40.0, "ZDEND": 45.0, "EXPTIME": 60.0}
+    assert zenith_angle_deg(tight) == pytest.approx(40.0)
+
+
 def test_the_airmass_is_the_fallback():
     header = {"TELESCOP": "Gemini South", "AMSTART": 2.0, "AMEND": 2.0}
     assert zenith_angle_deg(header) == pytest.approx(np.degrees(np.arccos(0.5)))
