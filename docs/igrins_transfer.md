@@ -1,7 +1,8 @@
 # Carrying a night's standards to a frame without one
 
 Numbers here come from `docs/igrins_transfer_*.json`, written by
-`scripts/validate_igrins_transfer.py`. The per-order-frame rows behind them are
+`scripts/validate_igrins_transfer.py`; the `inject_` reports are the injection
+test below. The per-order-frame rows behind them are
 gitignored under `data/corrected/igrins/transfer/`.
 
 ## The question
@@ -117,36 +118,91 @@ artefact:
   zero points. S1 is as good as L1 on every night, so one shift per band per
   frame is enough.
 
-### What this does not test
+## A target with lines of its own
 
-- **A target with lines of its own.** An A0V has none outside the hydrogen
-  series, so nothing here competes with the telluric lines for the water scale
-  and the shift. That is the next test: an A0V frame multiplied by a Doppler-
-  shifted late-type model, fitted with a flat source, and the injected spectrum
-  recovered.
+An A0V has no lines outside the hydrogen series, so nothing above competes with
+the telluric lines for the water scale and the shift. A science target does.
+`--inject` multiplies every held-out frame by a second star's normalized
+spectrum -- here Payne Zero's Arcturus, K1.5 III, at +37 km/s, smoothed to the
+order's calibrated LSF -- and leaves it out of the model, so its lines are pure
+contamination. In three H orders sampled, 20-42% of pixels are then more than
+5% deep, 6-40% in three K orders, and the 2.3 um CO bandheads reach 57%.
+
+Correction difference from the full fit, over the noise, absorbing orders
+(DCT 2018, 10 frames):
+
+| | clean S2 | injected: L0 | S1 | L2 | S2 | S2c |
+|---|---|---|---|---|---|---|
+| H | 0.41 | 1.18 | 1.08 | 0.71 | 0.58 | **0.45** |
+| K | 0.45 | 1.32 | 0.80 | 0.74 | 0.64 | **0.61** |
+
+and the per-frame shifts against the clean run's:
+
+| | water, S2 | water, S2c | velocity, S2 | velocity, S2c |
+|---|---|---|---|---|
+| H | -0.015 (rms 0.017) | **-0.006 (0.008)** | +0.010 (0.017) km/s | +0.027 (0.032) |
+| K | +0.018 (0.019) | +0.019 (0.021) | -0.040 (0.050) | **+0.003 (0.015)** |
+
+Three conclusions.
+
+- **Per-order water is unsafe.** L2 goes from the best level to worse than S2:
+  each order's water is pulled by whatever stellar lines that order has. A
+  science frame must not free water per order.
+- **One water scale per frame survives, with a floor of about 2%.** The stellar
+  lines bias it by -1.5% in H and +1.8% in K -- same size, opposite sign, so a
+  line-rich target makes the two bands disagree by about 3%, and that
+  disagreement is a warning sign worth computing. Against the full fit's own
+  water it is still 1.7-1.9% rms, where time interpolation alone is 4-8%. The
+  bias does not come from weak-water orders: restricting the median to orders
+  with median transmission below 0.9 or 0.8 leaves it at 1.3-1.9%.
+- **Clipping helps H and not K.** S2c drops pixels more than 3 sigma below S2's
+  model, widened by 2 pixels either side (5% of pixels in H, 4% in K), and
+  measures the frame again. In H that takes the water bias from -1.5% to -0.6%
+  and the correction to 0.45, back at the clean 0.41. In K it removes the
+  velocity bias but leaves water at +1.9%. H's contaminating lines are
+  discrete; K's include the CO bandhead blends and a weak-line forest that never
+  crosses 3 sigma, and clipping cannot see either. That is the likely reason,
+  not a tested one.
+
+What would remove the K floor is a model of the target -- its synthetic
+spectrum in the source slot, which turns a science frame into the A0V case --
+or, for a target observed at several barycentric velocities, a stellar template
+learned from the frames themselves. Neither is tried here.
+
+### Still not tested
+
 - **A night with few standards.** Every night here has 8-14; the calibration
   had 7-13 after holding one out. Fewer standards mean wider gaps in time,
   which is exactly where interpolation failed, so S2 should matter more, not
   less -- and the response pattern then has to be the master pattern.
+- **Other target types and velocities.** One star at one velocity. A cooler or
+  line-richer target, or one whose lines sit on the water lines, will do worse.
 
 ### Something this exposed in the full fit
 
-The per-order stellar velocity is barely constrained. It rails at its
-+-60 km/s bound in 42% of the *full* fits' order-frames (113 of 270 on DCT 2018
-H, 157 of 378 on Gemini South), and where it does not, the orders of one frame
-scatter by 25-37 km/s. The Brackett lines are hundreds of km/s wide from Stark
-broadening and the assumed 150 km/s rotation, so an order's worth of one line
-wing does not pin a shift. The transfer frees it too and it rails as often,
-so the comparison is like for like. Frame medians over the unrailed orders do
-repeat per star (chi Cap -12.8 and -10.6 km/s in two frames), but no one order
-measures it, and the right parameterization is one stellar velocity per frame
--- the same argument as for water.
+The per-order stellar velocity is mostly not measuring the star. In the full
+A0V fits it rails at its +-60 km/s bound in 42% of order-frames (113 of 270 on
+DCT 2018 H, 157 of 378 on Gemini South), and the pattern belongs to the order,
+not the star: on DCT 2018 H, orders 2 and 10 rail on the same side for all ten
+frames of five stars, and one frame of k Tau reads +7.8 km/s from Br10 (H05),
++42.7 from Br12 (H11) and -60 from Br14 (H15), each at 1.5 sigma. H11 is the
+exception that does track the star -- chi Cap +58.8 and +57.6, k Tau +42.7 and
++43.8, HD 53205 +10.0 and +7.3 -- and is where the per-star check in
+`igrins_a0v.md` comes from. The Brackett lines are hundreds of km/s wide, the
+usable pixels start 450-550 pixels into each order so a line near the blue end
+is seen on one side only, and a degree-9 continuum absorbs what a shift would
+otherwise explain. The right parameterization is one stellar velocity per frame
+-- the same argument as for water. The transfer frees it per order too, so the
+comparisons above are like for like.
 
 ## Running it
 
 ```bash
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_igrins_transfer.py \
     --run-dir data/corrected/igrins/ladder_a0v --output docs/igrins_transfer_dct2018_h.json
+UV_CACHE_DIR=.uv-cache uv run python scripts/validate_igrins_transfer.py \
+    --run-dir data/corrected/igrins/ladder_a0v --inject data/stellar/arcturus_payne_zero_full.npz \
+    --inject-velocity-kms 37 --clip-sigma 3 --output docs/igrins_transfer_inject_dct2018_h.json
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_igrins_transfer.py --resummarize \
     --run-dir data/corrected/igrins/ladder_a0v --output docs/igrins_transfer_dct2018_h.json
 ```

@@ -57,6 +57,9 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 LEVELS = ("L0", "L1", "L2", "L3")
 SHARED = ("S1", "S2")
+# With --clip-sigma: L2 and S2 again, on the pixels S2's fit does not put far
+# below the model -- the unmodelled lines of a target, if it has any.
+CLIPPED = ("L2c", "S2c")
 
 
 def load_driver(root: Path):
@@ -107,6 +110,33 @@ def calibration(rows, species, order, held_out, frames, mjd):
     }
 
 
+def injected_lines(spectrum, wavelength_nm, velocity_kms, sigma_kms, step_kms=0.25):
+    """A second star's normalized spectrum as this order's pixels would see it.
+
+    Multiplying the *observed* flux by an already-convolved spectrum is not the
+    same as convolving the product, but the difference is the cross term the
+    Arcturus run measured at a median 0.00016 against 0.0137 of noise. Pixel
+    integration is left out for the same reason: it acts on both alike.
+    """
+
+    c_kms = 299792.458
+    wavelength_nm = np.asarray(wavelength_nm, dtype=float)
+    # Rest-frame wavelengths the pixels see, with room for the kernel.
+    reach = 1.0 + 8.0 * sigma_kms / c_kms
+    low = wavelength_nm.min() / (1.0 + velocity_kms / c_kms) / reach
+    high = wavelength_nm.max() / (1.0 + velocity_kms / c_kms) * reach
+    source_nm = 1.0e7 / np.asarray(spectrum.wavenumber_cm1)
+    order = np.argsort(source_nm)
+    grid = np.exp(np.arange(np.log(low), np.log(high), step_kms / c_kms))
+    flux = np.interp(grid, source_nm[order], np.asarray(spectrum.flux)[order])
+    half = int(np.ceil(5.0 * sigma_kms / step_kms))
+    kernel = np.exp(-0.5 * (np.arange(-half, half + 1) * step_kms / sigma_kms) ** 2)
+    kernel /= kernel.sum()
+    # Edge-padded, so the order's ends are not dragged toward zero.
+    smoothed = np.convolve(np.pad(flux, half, mode="edge"), kernel, mode="valid")
+    return np.interp(wavelength_nm / (1.0 + velocity_kms / c_kms), grid, smoothed)
+
+
 def native_axis(sorted_values, wavelength_nm):
     """Undo the driver's sort into ascending wavenumber."""
 
@@ -127,7 +157,7 @@ def summarize(selection):
         return out
     full = np.array([r["full"]["residual_rms_over_noise"] for r in selection])
     out["full_median_residual"] = float(np.median(full))
-    for level in LEVELS + SHARED:
+    for level in [k for k in LEVELS + SHARED + CLIPPED if k in selection[0]["levels"]]:
         residual = np.array([r["levels"][level]["residual_rms_over_noise"] for r in selection])
         dt = np.array([r["levels"][level]["transmission_rms_difference"] for r in selection])
         noise = np.array([r["levels"][level]["noise_continuum_units"] for r in selection])
@@ -215,6 +245,18 @@ def main() -> None:
                         help="default: the record's own")
     parser.add_argument("--orders", default=None)
     parser.add_argument("--frames", default=None, help="comma-separated held-out frames")
+    parser.add_argument("--inject", type=Path, default=None,
+                        help="a stellar npz whose normalized spectrum is multiplied into every "
+                             "held-out frame and left out of the model: a line-rich target's "
+                             "lines, as contamination the transfer has to survive")
+    parser.add_argument("--inject-velocity-kms", type=float, default=0.0)
+    parser.add_argument("--clip-sigma", type=float, default=None,
+                        help="after S2, drop pixels more than this many sigma BELOW the model "
+                             "and measure the frame's shifts again (levels L2c, S2c). One-sided "
+                             "because a target's unmodelled lines absorb.")
+    parser.add_argument("--clip-pixels", type=int, default=2,
+                        help="how far each clipped pixel's exclusion reaches either side: a "
+                             "line's wings are below threshold but still pull")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--resummarize", action="store_true",
                         help="rewrite --output's summaries from its rows and the run's record; "
@@ -249,6 +291,7 @@ def main() -> None:
     stellar_path = config["stellar"]
     stellar = (None if stellar_path == "flat"
                else StellarSpectrum.from_npz(args.data_root / stellar_path))
+    injected = None if args.inject is None else StellarSpectrum.from_npz(args.inject)
     profile_path = args.profile or Path(inputs["profile"])
     profile = load_atmosphere_csv(profile_path if profile_path.is_absolute()
                                   else root / profile_path)
@@ -270,7 +313,7 @@ def main() -> None:
     orders = (sorted({o for _, o in rows}) if args.orders is None
               else [int(v) for v in args.orders.split(",")])
 
-    def order_for(context, observation, name, extracted):
+    def order_for(context, observation, name, extracted, inject_sigma_kms=None):
         order = igrins_spectral_order(
             extracted, source_flux_model_grid=context["source"],
             saturation_floor=driver.ORDER["saturation_floor"],
@@ -284,6 +327,17 @@ def main() -> None:
             order = SpectralOrder(
                 order.wavelength_vacuum_nm, np.asarray(order.flux) / scale,
                 np.asarray(order.uncertainty) / scale, mask=order.mask,
+                zenith_angle_deg=order.zenith_angle_deg,
+                source_flux_model_grid=order.source_flux_model_grid)
+        if injected is not None:
+            lines = injected_lines(injected, order.wavelength_vacuum_nm,
+                                   args.inject_velocity_kms, inject_sigma_kms)
+            # The uncertainty scales with the flux, as a flat field would; a
+            # real star's lines would also lower the photon noise, but that is
+            # second order in a test of bias.
+            order = SpectralOrder(
+                order.wavelength_vacuum_nm, np.asarray(order.flux) * lines,
+                np.asarray(order.uncertainty) * lines, mask=order.mask,
                 zenith_angle_deg=order.zenith_angle_deg,
                 source_flux_model_grid=order.source_flux_model_grid)
         return order, cached
@@ -376,7 +430,8 @@ def main() -> None:
                 continue
             observation = observations[name]
             extracted = observation.order(index)
-            order, cached = order_for(context, observation, name, extracted)
+            order, cached = order_for(context, observation, name, extracted,
+                                      inject_sigma_kms=cal["lsf_sigma_kms"])
             if objective is None:
                 objective = OrderObjective(context["fit_model"], order, degree + 1)
             else:
@@ -431,43 +486,99 @@ def main() -> None:
         # rebuilding it: see below.
         retained[("context", index)] = (context, star_model, objective)
 
-    # Frame-level shifts, from L2: the median over orders of how far each
-    # order moved from its calibration.
-    shared = {}
-    for name in held:
-        mine = [r for r in results if r["frame"] == name]
-        if not mine:
-            continue
-        dv = [r["levels"]["L2"]["velocity_kms"] - r["calibration"]["velocity_kms"] for r in mine]
-        dw = [r["levels"]["L2"]["log_column_H2O"] - r["calibration"]["columns"]["H2O"]
-              for r in mine if r["water_free"]]
-        shared[name] = {"velocity_kms": float(np.median(dv)),
-                        "log_column_H2O": float(np.median(dw)) if dw else 0.0,
-                        "orders": len(mine), "water_orders": len(dw)}
+    def frame_shifts(level):
+        """Median over a frame's orders of how far ``level`` moved each from its calibration."""
 
+        shifts = {}
+        for name in held:
+            mine = [r for r in results if r["frame"] == name and level in r["levels"]]
+            if not mine:
+                continue
+            dv = [r["levels"][level]["velocity_kms"] - r["calibration"]["velocity_kms"]
+                  for r in mine]
+            dw = [r["levels"][level]["log_column_H2O"] - r["calibration"]["columns"]["H2O"]
+                  for r in mine if r["water_free"]]
+            shifts[name] = {"velocity_kms": float(np.median(dv)),
+                            "log_column_H2O": float(np.median(dw)) if dw else 0.0,
+                            "orders": len(mine), "water_orders": len(dw)}
+        return shifts
+
+    def shifted(parameters, shift, water_free):
+        columns = dict(parameters.log_column_scales)
+        if water_free:
+            columns["H2O"] = columns["H2O"] + shift["log_column_H2O"]
+        return parameters._replace(
+            velocity_kms=parameters.velocity_kms + shift["velocity_kms"],
+            log_column_scales=columns)
+
+    shared = frame_shifts("L2")
+    fitted_s2 = {}
     for entry in results:
         name, index = entry["frame"], entry["order"]
         context, star_model, objective = retained[("context", index)]
         order, cached, parameters = retained[(name, index)]
         objective = objective.rebind(order)
-        shift = shared[name]
-        base = parameters._replace(velocity_kms=parameters.velocity_kms + shift["velocity_kms"])
-        _, entry["levels"]["S1"] = fit(context, objective, order, base, set(), star_model, cached)
-        columns = dict(base.log_column_scales)
-        if entry["water_free"]:
-            columns["H2O"] = columns["H2O"] + shift["log_column_H2O"]
-        _, entry["levels"]["S2"] = fit(context, objective, order,
-                                       base._replace(log_column_scales=columns), set(),
+        velocity_only = dict(shared[name], log_column_H2O=0.0)
+        _, entry["levels"]["S1"] = fit(context, objective, order,
+                                       shifted(parameters, velocity_only, False), set(),
                                        star_model, cached)
+        fitted_s2[(name, index)], entry["levels"]["S2"] = fit(
+            context, objective, order, shifted(parameters, shared[name], entry["water_free"]),
+            set(), star_model, cached)
+
+    clipped_shared = None
+    if args.clip_sigma is not None:
+        clipped_orders = {}
+        width = 2 * args.clip_pixels + 1
+        for entry in results:
+            name, index = entry["frame"], entry["order"]
+            context, star_model, objective = retained[("context", index)]
+            order, cached, parameters = retained[(name, index)]
+            best = fitted_s2[(name, index)]
+            prediction = np.asarray(context["fit_model"].predict(order, best))
+            sigma = np.sqrt(np.asarray(order.uncertainty) ** 2
+                            + np.exp(2.0 * float(best.log_jitter)))
+            mask = np.asarray(order.mask)
+            low = mask & ((np.asarray(order.flux) - prediction) / sigma < -args.clip_sigma)
+            reach = np.convolve(low.astype(float), np.ones(width), mode="same") > 0
+            clipped = SpectralOrder(
+                order.wavelength_vacuum_nm, order.flux, order.uncertainty,
+                mask=mask & ~reach, zenith_angle_deg=order.zenith_angle_deg,
+                source_flux_model_grid=order.source_flux_model_grid)
+            entry["clipped_fraction"] = float(np.count_nonzero(mask & reach)
+                                              / max(np.count_nonzero(mask), 1))
+            clipped_orders[(name, index)] = clipped
+            objective = objective.rebind(clipped)
+            # From S2's answer, not the calibration: the point is to re-measure
+            # the frame on cleaner pixels, starting where it already stands.
+            free = {"velocity_kms"} | ({"H2O"} if entry["water_free"] else set())
+            _, entry["levels"]["L2c"] = fit(context, objective, clipped, best, free,
+                                            star_model, cached)
+        clipped_shared = frame_shifts("L2c")
+        for entry in results:
+            name, index = entry["frame"], entry["order"]
+            context, star_model, objective = retained[("context", index)]
+            order, cached, parameters = retained[(name, index)]
+            clipped = clipped_orders[(name, index)]
+            objective = objective.rebind(clipped)
+            _, entry["levels"]["S2c"] = fit(
+                context, objective, clipped,
+                shifted(parameters, clipped_shared[name], entry["water_free"]),
+                set(), star_model, cached)
 
     report = {
         "description": "Leave-one-standard-out transfer of telluric parameters to a held-out "
                        "IGRINS frame; see scripts/validate_igrins_transfer.py",
         "run_dir": str(args.run_dir), "profile": str(profile_path), "stellar": stellar_path,
+        "injected": None if injected is None else {
+            "source": str(args.inject), "velocity_kms": args.inject_velocity_kms},
         "frames": {f: {"object": observations[f].object_name, "mjd": mjd[f],
                        "airmass": float(1.0 / np.cos(np.radians(
                            observations[f].zenith_angle_deg)))} for f in frames},
         "shared_shifts": shared,
+        "clipped_shifts": clipped_shared,
+        "clip": None if args.clip_sigma is None else {
+            "sigma": args.clip_sigma, "pixels": args.clip_pixels},
         "rows": results,
         "seconds": round(time.time() - started, 1),
     }

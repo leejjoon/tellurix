@@ -299,10 +299,15 @@ in the median, 0.3-0.8x the noise in absorbing orders. The water error is the
 frame's, not the order's (0.04-0.08 in log column before the frame shift,
 0.009-0.014 after), and H and K measure the same shift independently at
 r = +0.95-0.97, so it can be measured in whichever band the target's lines spoil
-less. Not yet tested on a target with lines of its own. Separately, the
+less. With a target's own lines injected (`--inject`, Arcturus at +37 km/s),
+**per-order water becomes unsafe** -- each order's is pulled by its stellar
+lines -- while the per-frame scale survives with a ~2% floor: biased -1.5% in H
+and +1.8% in K, so the bands disagreeing by ~3% is the warning sign. Clipping
+pixels 3 sigma below the model (`--clip-sigma`) fixes H and not K, whose CO
+blends and weak-line forest never cross the threshold. Separately, the
 per-order `stellar_velocity_kms` rails at +-60 in 42% of the *full* fits'
-order-frames and scatters 25-37 km/s between orders of one frame: it should be
-one parameter per frame.
+order-frames in a pattern set by the order, not the star; only H11 (Br12)
+tracks the star. It should be one parameter per frame.
 
 `scripts/export_transmission_hdf5.py` writes the unconvolved transmission on the
 model's own grid -- 4 samples per resolution element, no interpolation -- for a

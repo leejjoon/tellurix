@@ -566,10 +566,12 @@ no mask fixes that, and costs about 1.4x in runtime.
 Fitting with a real stellar source needs one more thing: a **stellar stage**.
 These are five different A0V stars with radial velocities tens of km/s apart, so
 `stellar_velocity_kms` has to be fitted or the Brackett lines land in the wrong
-place. `stages_for()` adds it whenever `--stellar` is not `flat`. The fitted
-velocities are self-consistent per star -- chi Cap +58.9 and +57.6, k Tau +42.7
-and +43.8, HD 53205 +9.2 and +7.4 km/s -- which is a check on the whole
-arrangement that the flat source cannot provide.
+place. `stages_for()` adds it whenever `--stellar` is not `flat`. In order H11
+(Br12) the fitted velocities are self-consistent per star -- chi Cap +58.9 and
++57.6, k Tau +42.7 and +43.8, HD 53205 +9.2 and +7.4 km/s -- which is a check
+on the whole arrangement that the flat source cannot provide. **Most other
+orders do not measure it:** 42% of order-frames rail at +-60 km/s, in a pattern
+set by the order rather than the star (`docs/igrins_transfer.md`).
 
 | | rows | reliable pixels | median residual |
 |---|---:|---:|---:|
