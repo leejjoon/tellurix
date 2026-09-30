@@ -108,15 +108,46 @@ def check_npz(path: Path, band: str, number: int) -> None:
                          f"{band}{number} at {centre:.4f} um; refusing to rename it")
 
 
+def rewrite_pages(path: Path, pages: np.ndarray, attrs: dict) -> None:
+    """Replace a record's ``pages`` table, rewriting the whole file.
+
+    Deleting an HDF5 dataset does not return its space, and ``write_record``
+    compresses the table, so the file is copied object by object into a fresh
+    one rather than edited in place -- which is what the first version of this
+    script did, leaving records 2.4x their size.
+    """
+
+    import os
+    import h5py
+
+    temporary = path.with_suffix(".migrating.h5")
+    with h5py.File(path, "r") as source, h5py.File(temporary, "w") as target:
+        for key, value in source.attrs.items():
+            target.attrs[key] = value
+        for name in source:
+            if name != "pages":
+                source.copy(source[name], target, name=name)
+        dataset = target.create_dataset("pages", data=pages, compression="gzip")
+        for key, value in attrs.items():
+            dataset.attrs[key] = value
+    os.replace(temporary, path)
+
+
 def migrate_record(path: Path, frames: Frames, dry_run: bool, log: list) -> None:
     import h5py
 
     with h5py.File(path, "r") as handle:
         pages = handle["pages"][:]
         attrs = dict(handle["pages"].attrs)
+        compressed = handle["pages"].compression is not None
     names = pages.dtype.names
     if "order_number" in names:
-        print(f"  {path}: already physical")
+        if compressed:
+            print(f"  {path}: already physical")
+        else:
+            print(f"  {path}: already physical; repacking its uncompressed table")
+            if not dry_run:
+                rewrite_pages(path, pages, attrs)
         return
     if "order_index" not in names:
         print(f"  {path}: not an IGRINS record, left alone")
@@ -146,11 +177,7 @@ def migrate_record(path: Path, frames: Frames, dry_run: bool, log: list) -> None
           f"{new[0]['order'].decode()}")
     if dry_run:
         return
-    with h5py.File(path, "r+") as handle:
-        del handle["pages"]
-        dataset = handle.create_dataset("pages", data=new)
-        for key, value in attrs.items():
-            dataset.attrs[key] = value
+    rewrite_pages(path, new, attrs)
 
 
 def migrate_caches(run_dir: Path, frames: Frames, dry_run: bool, log: list) -> None:
