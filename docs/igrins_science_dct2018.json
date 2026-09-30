@@ -1,0 +1,413 @@
+{
+ "description": "IGRINS science-frame telluric correction against a night calibration; see scripts/fit_igrins_science.py and docs/igrins_science.md",
+ "runs": [
+  "/home/jjlee/work/lblrtm/data/corrected/igrins/science_dct2018",
+  "/home/jjlee/work/lblrtm/data/corrected/igrins/science_dct2018_standards"
+ ],
+ "band_agreement": {
+  "STD": {
+   "exposures": 4,
+   "median_abs_difference": 0.00277,
+   "max_abs_difference": 0.00852,
+   "flagged": 0
+  },
+  "TAR": {
+   "exposures": 6,
+   "median_abs_difference": 0.00749,
+   "max_abs_difference": 0.02219,
+   "flagged": 0
+  }
+ },
+ "exposures": {
+  "20181220_0037": {
+   "run": "science_dct2018",
+   "object": "Hubble 4",
+   "object_type": "TAR",
+   "mjd": 58473.052,
+   "time": "between standards",
+   "bands": {
+    "H": {
+     "airmass": 1.8324,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": -0.0169,
+     "velocity_shift_kms": -0.15309,
+     "water_shift_clipped": -0.01588,
+     "velocity_shift_clipped_kms": -0.1245,
+     "median_clipped_fraction": 0.01887,
+     "median_residual_over_noise": 4.7057,
+     "stellar_source": "flat"
+    },
+    "K": {
+     "airmass": 1.8324,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": -0.01603,
+     "velocity_shift_kms": 0.00342,
+     "water_shift_clipped": -0.01445,
+     "velocity_shift_clipped_kms": 0.00924,
+     "median_clipped_fraction": 0.01527,
+     "median_residual_over_noise": 4.36506,
+     "stellar_source": "flat"
+    }
+   },
+   "band_agreement": {
+    "H": -0.01588,
+    "K": -0.01445,
+    "difference": -0.00143,
+    "flag": false
+   }
+  },
+  "20181220_0053": {
+   "run": "science_dct2018",
+   "object": "V1075 Tau",
+   "object_type": "TAR",
+   "mjd": 58473.10514,
+   "time": "between standards",
+   "bands": {
+    "H": {
+     "airmass": 1.5092,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": 0.0178,
+     "velocity_shift_kms": 0.08551,
+     "water_shift_clipped": 0.00747,
+     "velocity_shift_clipped_kms": 0.07721,
+     "median_clipped_fraction": 0.02599,
+     "median_residual_over_noise": 2.80832,
+     "stellar_source": "flat"
+    },
+    "K": {
+     "airmass": 1.5092,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": 0.00078,
+     "velocity_shift_kms": 0.1609,
+     "water_shift_clipped": 0.01233,
+     "velocity_shift_clipped_kms": 0.16102,
+     "median_clipped_fraction": 0.02493,
+     "median_residual_over_noise": 2.17889,
+     "stellar_source": "flat"
+    }
+   },
+   "band_agreement": {
+    "H": 0.00747,
+    "K": 0.01233,
+    "difference": -0.00486,
+    "flag": false
+   }
+  },
+  "20181220_0055": {
+   "run": "science_dct2018_standards",
+   "object": "HR 1558",
+   "object_type": "STD",
+   "mjd": 58473.11395,
+   "time": "between standards",
+   "bands": {
+    "H": {
+     "airmass": 1.3541,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": -0.02402,
+     "velocity_shift_kms": -0.0591,
+     "water_shift_clipped": null,
+     "velocity_shift_clipped_kms": null,
+     "median_clipped_fraction": null,
+     "median_residual_over_noise": 1.03944,
+     "stellar_source": "/home/jjlee/work/lblrtm/data/stellar/a0v_payne_zero_hk.npz"
+    },
+    "K": {
+     "airmass": 1.3541,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": -0.0216,
+     "velocity_shift_kms": -0.03668,
+     "water_shift_clipped": null,
+     "velocity_shift_clipped_kms": null,
+     "median_clipped_fraction": null,
+     "median_residual_over_noise": 1.11295,
+     "stellar_source": "data/stellar/a0v_payne_zero_hk.npz"
+    }
+   },
+   "band_agreement": {
+    "H": -0.02402,
+    "K": -0.0216,
+    "difference": -0.00242,
+    "flag": false
+   }
+  },
+  "20181220_0059": {
+   "run": "science_dct2018",
+   "object": "LkCa 15",
+   "object_type": "TAR",
+   "mjd": 58473.12966,
+   "time": "between standards",
+   "bands": {
+    "H": {
+     "airmass": 1.3205,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": -0.00669,
+     "velocity_shift_kms": -0.30693,
+     "water_shift_clipped": -0.0025,
+     "velocity_shift_clipped_kms": -0.29127,
+     "median_clipped_fraction": 0.02559,
+     "median_residual_over_noise": 3.50981,
+     "stellar_source": "flat"
+    },
+    "K": {
+     "airmass": 1.3205,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": 0.00584,
+     "velocity_shift_kms": -0.26032,
+     "water_shift_clipped": 0.00761,
+     "velocity_shift_clipped_kms": -0.27635,
+     "median_clipped_fraction": 0.02321,
+     "median_residual_over_noise": 2.31426,
+     "stellar_source": "flat"
+    }
+   },
+   "band_agreement": {
+    "H": -0.0025,
+    "K": 0.00761,
+    "difference": -0.01012,
+    "flag": false
+   }
+  },
+  "20181220_0072": {
+   "run": "science_dct2018_standards",
+   "object": "HR 1558",
+   "object_type": "STD",
+   "mjd": 58473.18248,
+   "time": "between standards",
+   "bands": {
+    "H": {
+     "airmass": 1.1007,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": 0.03329,
+     "velocity_shift_kms": -0.19968,
+     "water_shift_clipped": null,
+     "velocity_shift_clipped_kms": null,
+     "median_clipped_fraction": null,
+     "median_residual_over_noise": 1.02403,
+     "stellar_source": "/home/jjlee/work/lblrtm/data/stellar/a0v_payne_zero_hk.npz"
+    },
+    "K": {
+     "airmass": 1.1007,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": 0.02476,
+     "velocity_shift_kms": -0.2545,
+     "water_shift_clipped": null,
+     "velocity_shift_clipped_kms": null,
+     "median_clipped_fraction": null,
+     "median_residual_over_noise": 1.01326,
+     "stellar_source": "data/stellar/a0v_payne_zero_hk.npz"
+    }
+   },
+   "band_agreement": {
+    "H": 0.03329,
+    "K": 0.02476,
+    "difference": 0.00852,
+    "flag": false
+   }
+  },
+  "20181220_0074": {
+   "run": "science_dct2018",
+   "object": "UY Aur",
+   "object_type": "TAR",
+   "mjd": 58473.18706,
+   "time": "between standards",
+   "bands": {
+    "H": {
+     "airmass": 1.0872,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": 0.03925,
+     "velocity_shift_kms": -0.19957,
+     "water_shift_clipped": 0.04054,
+     "velocity_shift_clipped_kms": -0.24431,
+     "median_clipped_fraction": 0.01658,
+     "median_residual_over_noise": 3.03906,
+     "stellar_source": "flat"
+    },
+    "K": {
+     "airmass": 1.0872,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": 0.03977,
+     "velocity_shift_kms": -0.19884,
+     "water_shift_clipped": 0.04435,
+     "velocity_shift_clipped_kms": -0.20492,
+     "median_clipped_fraction": 0.01678,
+     "median_residual_over_noise": 1.8993,
+     "stellar_source": "flat"
+    }
+   },
+   "band_agreement": {
+    "H": 0.04054,
+    "K": 0.04435,
+    "difference": -0.00381,
+    "flag": false
+   }
+  },
+  "20181220_0092": {
+   "run": "science_dct2018",
+   "object": "GJ 281",
+   "object_type": "TAR",
+   "mjd": 58473.28322,
+   "time": "between standards",
+   "bands": {
+    "H": {
+     "airmass": 1.4323,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": -0.00626,
+     "velocity_shift_kms": 0.08924,
+     "water_shift_clipped": -0.00225,
+     "velocity_shift_clipped_kms": 0.02585,
+     "median_clipped_fraction": 0.04125,
+     "median_residual_over_noise": 8.05778,
+     "stellar_source": "flat"
+    },
+    "K": {
+     "airmass": 1.4357,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": 0.00193,
+     "velocity_shift_kms": 0.06354,
+     "water_shift_clipped": 0.01994,
+     "velocity_shift_clipped_kms": 0.0735,
+     "median_clipped_fraction": 0.03324,
+     "median_residual_over_noise": 6.3029,
+     "stellar_source": "flat"
+    }
+   },
+   "band_agreement": {
+    "H": -0.00225,
+    "K": 0.01994,
+    "difference": -0.02219,
+    "flag": false
+   }
+  },
+  "20181220_0114": {
+   "run": "science_dct2018_standards",
+   "object": "k Tau V 5.8",
+   "object_type": "STD",
+   "mjd": 58473.39632,
+   "time": "after the last standard by 0.51 h",
+   "bands": {
+    "H": {
+     "airmass": 1.3248,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": 0.01706,
+     "velocity_shift_kms": 0.12507,
+     "water_shift_clipped": null,
+     "velocity_shift_clipped_kms": null,
+     "median_clipped_fraction": null,
+     "median_residual_over_noise": 1.01721,
+     "stellar_source": "/home/jjlee/work/lblrtm/data/stellar/a0v_payne_zero_hk.npz"
+    },
+    "K": {
+     "airmass": 1.3248,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": 0.01752,
+     "velocity_shift_kms": 0.18108,
+     "water_shift_clipped": null,
+     "velocity_shift_clipped_kms": null,
+     "median_clipped_fraction": null,
+     "median_residual_over_noise": 1.01522,
+     "stellar_source": "data/stellar/a0v_payne_zero_hk.npz"
+    }
+   },
+   "band_agreement": {
+    "H": 0.01706,
+    "K": 0.01752,
+    "difference": -0.00046,
+    "flag": false
+   }
+  },
+  "20181220_0122": {
+   "run": "science_dct2018_standards",
+   "object": "k Tau V 5.8",
+   "object_type": "STD",
+   "mjd": 58473.40871,
+   "time": "after the last standard by 0.81 h",
+   "bands": {
+    "H": {
+     "airmass": 1.406,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": -0.02551,
+     "velocity_shift_kms": 0.28137,
+     "water_shift_clipped": null,
+     "velocity_shift_clipped_kms": null,
+     "median_clipped_fraction": null,
+     "median_residual_over_noise": 0.88975,
+     "stellar_source": "/home/jjlee/work/lblrtm/data/stellar/a0v_payne_zero_hk.npz"
+    },
+    "K": {
+     "airmass": 1.406,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": -0.02862,
+     "velocity_shift_kms": 0.32038,
+     "water_shift_clipped": null,
+     "velocity_shift_clipped_kms": null,
+     "median_clipped_fraction": null,
+     "median_residual_over_noise": 0.88572,
+     "stellar_source": "data/stellar/a0v_payne_zero_hk.npz"
+    }
+   },
+   "band_agreement": {
+    "H": -0.02551,
+    "K": -0.02862,
+    "difference": 0.00311,
+    "flag": false
+   }
+  },
+  "20181220_0142": {
+   "run": "science_dct2018",
+   "object": "YY Gem",
+   "object_type": "TAR",
+   "mjd": 58473.47734,
+   "time": "after the last standard by 2.46 h",
+   "bands": {
+    "H": {
+     "airmass": 1.1605,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": 0.15578,
+     "velocity_shift_kms": -0.00173,
+     "water_shift_clipped": 0.15304,
+     "velocity_shift_clipped_kms": 0.02275,
+     "median_clipped_fraction": 0.01403,
+     "median_residual_over_noise": 2.06669,
+     "stellar_source": "flat"
+    },
+    "K": {
+     "airmass": 1.1605,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": 0.1468,
+     "velocity_shift_kms": 0.00028,
+     "water_shift_clipped": 0.1376,
+     "velocity_shift_clipped_kms": 0.00028,
+     "median_clipped_fraction": 0.00992,
+     "median_residual_over_noise": 1.82353,
+     "stellar_source": "flat"
+    }
+   },
+   "band_agreement": {
+    "H": 0.15304,
+    "K": 0.1376,
+    "difference": 0.01544,
+    "flag": false
+   }
+  }
+ }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Fetch IGRINS A0V telluric standards from the RRISA reduced archive.
+"""Fetch IGRINS A0V telluric standards -- or a night's science targets -- from RRISA.
 
 RRISA publishes two components. The *raw* one is 2D detector frames, which
 would need the PLP and a whole night of calibrations, and its Box folder only
@@ -16,6 +16,10 @@ choose what to download.
     uv run python scripts/download_rrisa_standard.py --catalog        # refresh the index
     uv run python scripts/download_rrisa_standard.py --list --facility DCT --night 20181220
     uv run python scripts/download_rrisa_standard.py --night 20181220 --min-snr 200
+    uv run python scripts/download_rrisa_standard.py --night 20181220 --objtype TAR --list
+
+``--objtype TAR`` selects the science targets instead, for fitting against the
+night's calibration with ``fit_igrins_science.py``.
 
 Each tarball is 77 MB but only a few megabytes of it are needed, so the four
 products per band that the fitting driver reads are extracted and the archive
@@ -68,11 +72,11 @@ def _number(row: dict, key: str) -> float:
 
 
 def select(rows, args) -> list[dict]:
-    """Standards matching the filters, brightest first within a night."""
+    """Observations matching the filters, brightest first within a night."""
 
     chosen = []
     for row in rows:
-        if row.get("OBJTYPE") != "STD":
+        if args.objtype != "any" and row.get("OBJTYPE") != args.objtype:
             continue
         if args.facility and row.get("FACILITY") != args.facility:
             continue
@@ -149,6 +153,8 @@ def main() -> None:
     parser.add_argument("--facility", choices=FACILITIES, default=None)
     parser.add_argument("--night", default=None, help="CIVIL date, YYYYMMDD")
     parser.add_argument("--object", default=None, help="substring of the target name")
+    parser.add_argument("--objtype", choices=("STD", "TAR", "any"), default="STD",
+                        help="STD for telluric standards, TAR for science targets")
     parser.add_argument("--min-snr", type=float, default=200.0,
                         help="signal to noise per resolution element in H")
     parser.add_argument("--max-airmass", type=float, default=None)
@@ -166,7 +172,7 @@ def main() -> None:
     if not chosen:
         raise SystemExit("nothing in the catalog matches those filters")
 
-    print(f"{len(chosen)} standard(s):")
+    print(f"{len(chosen)} observation(s):")
     for row in chosen:
         print("  " + describe(row))
     if args.list:

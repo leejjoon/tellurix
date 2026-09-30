@@ -27,6 +27,7 @@ from .atlas import (
     read_arcturus_page,
     robust_noise,
 )
+from .night import NightCalibration, OrderCalibration
 from .igrins import (
     IGRINS_ORDER_CENTRES_UM,
     IGRINSObservation,
@@ -39,6 +40,7 @@ from .igrins import (
     identify_orders,
     leave_one_out_patterns,
     parse_wat_specs,
+    smoothed_frame_median,
     precipitable_water_mm,
     saturation_vapour_pressure_hpa,
     igrins_spectral_order,
@@ -118,6 +120,8 @@ __all__ = [
     "load_mipas_profile",
     "merge_records",
     "MTCKDWaterContinuum",
+    "NightCalibration",
+    "OrderCalibration",
     "OrderObjective",
     "parameters_from_row",
     "parse_wat_specs",
@@ -132,6 +136,7 @@ __all__ = [
     "resample_stellar_continuum",
     "resample_stellar_source",
     "robust_noise",
+    "smoothed_frame_median",
     "WatSpec",
     "run_lblrtm",
     "saturation_vapour_pressure_hpa",

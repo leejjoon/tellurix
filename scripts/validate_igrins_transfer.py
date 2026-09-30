@@ -92,25 +92,23 @@ def read_run(run_dir: Path, record: Path | None = None):
     return rows, inputs, config, physics, species
 
 
-def calibration(rows, species, order, held_out, frames, mjd):
-    """This order's telluric parameters, from every frame except ``held_out``."""
+def calibration(night, number, mjd):
+    """This order's telluric parameters, from a night calibrated without the frame.
 
-    others = [f for f in frames if f != held_out and (f, order) in rows]
-    if len(others) < 3:
+    ``night`` is the :class:`~tellurix.NightCalibration` a science frame would
+    get, built with the held-out standard excluded -- so this tests the code a
+    science fit runs, not a copy of it.
+    """
+
+    try:
+        order = night.order(number)
+    except KeyError:
         return None
-    pick = lambda name: np.array([float(rows[(f, order)][name]) for f in others])  # noqa: E731
-    columns = {s: float(np.median(pick(f"log_column_{s}"))) for s in species if s != "H2O"}
-    times = np.array([mjd[f] for f in others])
-    water = pick("log_column_H2O")
-    arrangement = np.argsort(times)
-    # np.interp holds the end values flat outside the bracketing standards,
-    # which is the honest extrapolation: a trend in water is not a law.
-    columns["H2O"] = float(np.interp(mjd[held_out], times[arrangement], water[arrangement]))
     return {
-        "columns": columns,
-        "velocity_kms": float(np.median(pick("velocity_kms"))),
-        "lsf_sigma_kms": float(np.median(pick("lsf_sigma_kms"))),
-        "frames": len(others),
+        "columns": order.log_columns_at(mjd),
+        "velocity_kms": order.velocity_kms,
+        "lsf_sigma_kms": order.lsf_sigma_kms,
+        "frames": len(order.frames),
     }
 
 
@@ -287,7 +285,8 @@ def main() -> None:
 
     driver = load_driver(root)
     from tellurix import (
-        ArrayOpacityBackend, OrderObjective, SpectralOrder, StellarSpectrum, TelluricModel,
+        ArrayOpacityBackend, NightCalibration, OrderObjective, SpectralOrder, StellarSpectrum,
+        TelluricModel,
         TelluricParameters, fit_order, igrins_spectral_order, load_atmosphere_csv,
         read_igrins_observation,
     )
@@ -319,6 +318,12 @@ def main() -> None:
     mjd = {name: o.mjd for name, o in observations.items()}
     frames = sorted(observations, key=mjd.get)
     held = frames if args.frames is None else args.frames.split(",")
+    # The response pattern stays the one the run gave each frame -- built by
+    # leave_one_out_patterns from the others -- so only the parameters come
+    # from here; see the module docstring.
+    nights = {name: NightCalibration.from_run(args.record or args.run_dir / "record.h5", None,
+                                              exclude=[name])
+              for name in held}
     orders = (sorted({o for _, o in rows}) if args.orders is None
               else [int(v) for v in args.orders.split(",")])
 
@@ -434,7 +439,7 @@ def main() -> None:
             if (name, number) not in rows:
                 continue
             reference = rows[(name, number)]
-            cal = calibration(rows, model.species, number, name, frames, mjd)
+            cal = calibration(nights[name], number, mjd[name])
             if cal is None:
                 continue
             observation = observations[name]
@@ -447,7 +452,7 @@ def main() -> None:
                 objective = objective.rebind(order)
             usable = np.asarray(order.flux)[np.asarray(order.mask)]
             parameters = TelluricParameters(
-                log_column_scales=dict(cal["columns"]),
+                log_column_scales={s: float(cal["columns"].get(s, 0.0)) for s in model.species},
                 velocity_kms=cal["velocity_kms"], wavelength_stretch=0.0,
                 lsf_sigma_kms=cal["lsf_sigma_kms"],
                 continuum_coeffs=np.concatenate([[float(np.log(np.median(usable)))],

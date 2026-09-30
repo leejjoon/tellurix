@@ -116,6 +116,31 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_standard.py --spec <SDCH
 UV_CACHE_DIR=.uv-cache uv run python scripts/summarize_igrins_fit.py --summary <*_summary.json>
 ```
 
+Science frames (see `docs/igrins_science.md`) are corrected against a night's
+calibration, built once from that night's standards run:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run python scripts/download_rrisa_standard.py --night 20181220 --objtype TAR --list
+UV_CACHE_DIR=.uv-cache uv run python scripts/build_igrins_calibration.py --run-dir <standards run> --output data/calibration/<night>_<band>.h5
+UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_science.py --spec <SDCH and SDCK of the frames> --calibration <H.h5> <K.h5> --clip-sigma 3
+UV_CACHE_DIR=.uv-cache uv run python scripts/summarize_igrins_science.py --runs <output dirs> --output docs/<report>.json
+```
+
+`NightCalibration` (`night.py`) carries per physical order the standards'
+median dry columns, LSF and velocity zero point, water as a time series, and the
+response pattern taken over *all* the standards -- a science frame is none of
+them, so no leave-one-out, but the 51-pixel smoothing guard still applies. The
+science fit refits **one velocity shift and one water scale per frame**, the
+median over orders, and never keeps per-order water, which chases a target's
+lines. Held-out standards of DCT 2018 fit at 0.9-1.1 sigma that way. The
+check that matters is **H against K**: both bands measure the same water, so
+their frame shifts must agree -- to 0.009 for standards and 0.022 for six line-
+rich targets -- and a disagreement past 0.04 is flagged. It caught the zenith-
+angle header defect below before anything else did, because a fit absorbs a
+slant-path error into the columns and its residual does not move.
+`validate_igrins_transfer.py` builds its calibration through the same class,
+so the transfer test tests the production code.
+
 `fit_igrins_standard.py` takes **several `--spec` frames at once** and loops
 orders outside, frames inside. That is worth 70% of the runtime and is specific
 to this instrument: within a night the PLP uses one wavelength solution, so
@@ -266,7 +291,15 @@ at sea level. And the PLP's own `MASK` is **not** used (it flags 56% of H and
 76% of K by its own flattening criterion); the throughput cut at a quarter of
 peak, on the *smoothed* flux, is ours and is asymmetric because the blaze
 roll-off is. `reduced_log.csv`'s `AM` column writes `-1` for missing and carries
-impossible values -- the airmass comes from the header.
+impossible values -- the airmass comes from the header. And the header's *end*
+cards are not always the exposure's: in 9 of 111 archive files, all K band,
+`ZDEND`/`HAEND`/`DATE-END` describe another frame (`DATE-END` precedes
+`DATE-OBS` in most), while the H file of the same exposure and every `ZDSTART`
+are right. Averaging a foreign `ZDEND` moved the K slant path by up to 6% --
+including the airmass-3 top of the McDonald ladder and a DCT 2018 calibrating
+standard -- so `zenith_angle_deg` uses `ZDEND` only if the sidereal rate over
+the exposure could have produced it, and `ZDSTART` alone otherwise. Every K run
+fitted before this fix carries at least one such frame.
 
 **An IGRINS order is named by its physical echelle order, never its row.**
 `H109`, `K71`; `order(109)`; `--orders 109`; the record's `order_number`. Row
