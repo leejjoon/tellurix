@@ -566,11 +566,20 @@ class IGRINSOrder:
     telluric_model: np.ndarray | None = None
     plp_continuum: np.ndarray | None = None
     meta: Mapping[str, object] = field(default_factory=dict)
+    # The detector column each sample came from. Wavelength drifts by a few
+    # pixels between nights; anything fixed on the detector -- the blaze, the
+    # flat -- has to be looked up here, not by wavelength.
+    pixel: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         wavelength = np.asarray(self.wavelength_vacuum_nm, dtype=float)
         if wavelength.ndim != 1 or wavelength.size < 8:
             raise ValueError("an order needs at least eight pixels")
+        if self.pixel is not None:
+            pixel = np.asarray(self.pixel, dtype=int)
+            if pixel.shape != wavelength.shape:
+                raise ValueError("pixel must match the order's wavelength grid")
+            object.__setattr__(self, "pixel", pixel)
         if np.any(~np.isfinite(wavelength)) or np.any(np.diff(wavelength) <= 0.0):
             raise ValueError("order wavelengths must be finite and strictly increasing")
         for name in ("flux", "variance", "telluric_model", "plp_continuum"):
@@ -689,6 +698,7 @@ class IGRINSObservation:
             zenith_angle_deg=self.zenith_angle_deg,
             telluric_model=take(self.telluric_model),
             plp_continuum=take(self.plp_continuum),
+            pixel=np.arange(wavelength.size)[cut][step],
             meta={
                 "object": self.object_name,
                 "telescope": self.telescope,

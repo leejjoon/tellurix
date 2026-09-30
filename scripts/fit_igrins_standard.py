@@ -307,6 +307,24 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         raise RuntimeError(
             f"order {number} keeps {int(np.count_nonzero(order.mask))} pixels, "
             f"below the {ORDER['minimum_pixels']} this driver requires")
+    blaze = None
+    if getattr(args, "flat_blaze", None) is not None:
+        # The lamp's blaze, by detector column. Dividing it out leaves the
+        # continuum only the lamp-to-star colour -- the steep order-end
+        # roll-off a degree-9 polynomial cannot follow is most of what the
+        # response pattern was absorbing (tellurix.flat).
+        blaze = args.flat_blaze.blaze_on(number, extracted.pixel)
+        if blaze is None:
+            raise RuntimeError(f"order {number} has no usable blaze in {args.blaze} "
+                               "(not traced, or the lamp's own absorption is too deep)")
+        usable_blaze = np.isfinite(blaze) & (blaze > 0.02)
+        blaze = np.where(usable_blaze, blaze, 1.0)
+        order = SpectralOrder(
+            order.wavelength_vacuum_nm, np.asarray(order.flux) / blaze,
+            np.asarray(order.uncertainty) / blaze,
+            mask=np.asarray(order.mask) & usable_blaze,
+            zenith_angle_deg=order.zenith_angle_deg,
+            source_flux_model_grid=order.source_flux_model_grid)
     if response is not None:
         scale = 1.0 + np.clip(np.asarray(response, dtype=float), -0.8, 5.0)
         order = SpectralOrder(
@@ -450,6 +468,8 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
             arrays["plp_continuum"] = np.asarray(extracted.plp_continuum)[axis]
         if response is not None:
             arrays["response_pattern"] = np.asarray(response)[axis]
+        if blaze is not None:
+            arrays["blaze"] = np.asarray(blaze)[axis]
         np.savez_compressed(args.output_dir / f"{stem}_{extracted.name}.npz", **arrays)
 
     names = list(objective.codec.names)
@@ -641,6 +661,10 @@ def main() -> None:
                              "0 disables the guard and invalidates the residual as a test.")
     parser.add_argument("--fixed-pattern-min-frames", type=int, default=5,
                         help="below this many frames the pattern is too noisy to be a calibration")
+    parser.add_argument("--blaze", type=Path, default=None,
+                        help="a FlatBlaze (build_igrins_flat_blaze.py) to divide out before "
+                             "fitting, so the continuum only models the lamp-to-star colour; "
+                             "pair it with a low --continuum-degree")
     parser.add_argument("--response-pattern", type=Path, default=None,
                         help="a MasterPattern (build_igrins_master_pattern.py) to divide out "
                              "instead of the night's own leave-one-out pattern -- for a night "
@@ -670,6 +694,13 @@ def main() -> None:
                               read_igrins_observation)
 
     observations = [read_igrins_observation(path) for path in args.spec]
+    args.flat_blaze = None
+    if args.blaze is not None:
+        from tellurix import FlatBlaze
+
+        args.flat_blaze = FlatBlaze.load(args.blaze)
+        if {o.band for o in observations} != {args.flat_blaze.band}:
+            raise SystemExit(f"{args.blaze} is a {args.flat_blaze.band} blaze")
     master = None
     if args.response_pattern is not None:
         from tellurix import MasterPattern
@@ -800,6 +831,7 @@ def main() -> None:
                 "fixed_pattern": args.fixed_pattern,
                 "fixed_pattern_min_frames": args.fixed_pattern_min_frames,
                 "response_pattern": None if master is None else str(args.response_pattern),
+                "blaze": None if args.blaze is None else str(args.blaze),
                 "pattern_smooth_pixels": args.pattern_smooth_pixels,
                 "frames_in_run": len(observations),
             },
@@ -854,6 +886,7 @@ def main() -> None:
                     "min_optical_depth": args.min_optical_depth,
                     "min_transmission": args.min_transmission,
                     "vsini_kms": args.vsini_kms, "stellar": args.stellar,
+                    "blaze": "" if args.blaze is None else str(args.blaze),
                     **ORDER},
             physics={**PHYSICS, "stages": list(stages_for(args.stellar))},
             inputs=inputs,

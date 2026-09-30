@@ -148,6 +148,28 @@ floor) flips the sign of the bands' 1-2% water disagreement rather than removing
 it: that floor is how well the star is known. Calibrations store the pattern in
 float32 (`night._store`), which moves it by at most 2.5e-8.
 
+**Most of the "response pattern" is the blaze** (`docs/igrins_flat_blaze.md`).
+The degree-9 log-Chebyshev continuum cannot follow the blaze's order-end
+roll-off, and what it leaves is the pattern's red-edge rise and fall: the lamp
+flat's own residual from the same continuum reproduces it at r = +0.74-0.89. Each
+night's PLP calibrations are in RRISA (`CAL_URL`, ~1 GB, `flat_on`/`flat_off`
+plus a sky wavelength solution and `joined_flexure.csv`, but no order traces).
+`FlatBlaze` traces the orders in the lamp flat itself, names them by matching lit
+column ranges to the extracted spectra, and smooths each into a blaze that
+`fit_igrins_standard.py --blaze` divides out by **detector column**
+(`IGRINSOrder.pixel`, new). Three smoothing rules, each learned the hard way:
+the lamp has telluric lines of its own (clip narrow dips only -- the roll-off is
+a long "dip" under a lagging filter and must be kept; refuse orders where the
+lamp is absorbed below -6.5%); a dip must be at least 0.5% deep or a clean lamp
+oscillates the clipping; and the window is 31 px near the order ends but 151 px
+inside, because a 31-px blaze divides the lamp's own ~15-px structure into the
+star. On DCT 2018 the blended blaze is better than the old continuum on every
+measure in H (1.248 -> 1.235 sigma with the pattern, 1.914 -> 1.419 without, red
+edge 3.05 -> 1.51, Brackett stellar-velocity spread 28 -> 22 km/s) and leaves a
+third of the pattern; in K it is much better without a pattern (1.95 -> 1.53)
+but 8% worse with the night's own, at 1-4 px scales, for a reason not yet found
+(not flexure). Degree 5 on top of the blaze is worse than degree 9 in both bands.
+
 `NightCalibration` (`night.py`) carries per physical order the standards'
 median dry columns, LSF and velocity zero point, water as a time series, and the
 response pattern taken over *all* the standards -- a science frame is none of

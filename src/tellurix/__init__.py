@@ -27,6 +27,7 @@ from .atlas import (
     read_arcturus_page,
     robust_noise,
 )
+from .flat import FlatBlaze
 from .night import MasterPattern, NightCalibration, OrderCalibration
 from .igrins import (
     IGRINS_ORDER_CENTRES_UM,
@@ -102,6 +103,7 @@ __all__ = [
     "file_sha256",
     "fit_order",
     "FitResult",
+    "FlatBlaze",
     "format_wat2_cards",
     "hydrogen_series_um",
     "identify_orders",
