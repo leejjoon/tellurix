@@ -88,8 +88,17 @@ multiplied inside a convolution. The deliverable would be the solar analogue of
 
 `docs/solar_atlases.md` here is the survey -- what the data is, the traps
 measured on disk, and which of their documents to read for detail. Do not
-duplicate their content into this repository; they are the authority. Four
-things to know before touching it: `photatl` (1.11-5.41 um, 87% overlap with the
+duplicate their content into this repository; they are the authority. The
+first thing to know supersedes much of the rest: **`photatl` is
+`ftsspec_901218_5`**, rescaled per page as `gain * file 5 + offset` to 0.06
+sigma of file 5's noise, so it has file 5's air mass (1.985) and refitting it is
+refitting file 5. Its product, `photatl_corrected.h5`, is built from the file-5
+fit by `scripts/export_photatl_from_ftsspec.py`; the one thing photatl adds is
+the authors' zero level, which zeroes saturated cores and measurably improves
+the fit only across 5298-5402 cm-1, whose four pages the product therefore takes from
+a fit of photatl itself (`--patch`, `docs/solar_fit_plan.md` §4j). The telluric
+lines also put the wavelength scale +141 m/s red, against the +260 m/s solar
+lines gave them. The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
 Arcturus pages already fitted) **interpolates pixels where the sky is opaque**;
 its **ILS is the weakest input in their programme** -- R = 300,000 quoted once
 for four atlases, no MOPD, no apodization; its **wavelength scale is +260 m/s**

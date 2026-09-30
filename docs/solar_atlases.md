@@ -50,6 +50,13 @@ points each.
 
 ### Traps, measured
 
+- **`photatl` is `ftsspec_901218_5`**, rescaled page by page: `total = gain *
+  ftsspec_5 + offset` on every page, on the same samples, to 0.06 sigma of that
+  file's noise. It is not independent data, it inherits file 5's air mass
+  (mean 1.985), and its offset is a zero-level correction that puts saturated
+  cores at zero. `solar_fit_plan.md` §4j has the measurement; the traps below
+  that call photatl's air mass unknown or its ILS unmeasured predate it.
+
 - **The atmospheric column is at atlas resolution.** It is a mask, not an
   operator. This is the whole reason for the request.
 - **Pixels are interpolated where the sky is opaque.** The sibling project

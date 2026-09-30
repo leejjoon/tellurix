@@ -938,6 +938,125 @@ median -- and whose mask keeps 100% of its opaque pixels. That is not
 instrumental contrast, it is something specific to that window, and it is
 already flagged `reliable == 0`.
 
+### 4j. photatl is file 5, and its zero level is the one correction that works
+
+Numbers here are in `docs/photatl_identity.json`: every page's gain, offset and
+residual, the air-mass pilot, and the paired test page by page.
+
+**photatl's observed column is `ftsspec_901218_5`.** On all 258 pages, `total =
+gain * ftsspec_5 + offset` with one gain and one offset per page, on the same
+samples to 1.58e-5 cm-1 (photatl's single precision). What the two numbers
+leave is at most **0.0625 sigma** of file 5's own noise, median 0.0155; a scale
+alone leaves a median 0.218 and up to 4.9. Wallace et al. 1996 say photatl "is
+based on three spectra obtained by Livingston in 1990 December", which is true,
+but over 1848-9002 cm-1 it is one of them. The lineage §"same instrument
+configuration" called very likely is exact.
+
+It was found by the air-mass pilot this section was meant to be. photatl records
+no air mass, so 13 pages were fitted at zenith 0 and each well-mixed species'
+column divided by file 5's (vertical) column over the same wavenumbers:
+
+| species | pages | X against file 5 | X against file 4 |
+|---|---|---|---|
+| CO2 | 6 | 1.986 | 2.084 |
+| CH4 | 4 | 2.014 | 2.085 |
+| N2O | 2 | 2.008 | 2.084 |
+| O2 | 3 | 1.992 | 2.048 |
+| **H2O** | 13 | **1.991** | 2.671 |
+
+File 5's header says 1.985. The mixed gases say only that the slant-path model
+is consistent; **water** says it is the same sky at the same time, because the
+water column changes from hour to hour and against file 4 it gives 2.67. The
+~4% by which the mixed gases disagree between the two files is the file-4
+slant-path inconsistency, not a photatl property.
+
+Consequences:
+
+- **photatl has an air mass: file 5's, 2.17 -> 1.80, mean 1.985.** The Arcturus
+  caveat that a column scale is `true column x air mass` does not apply to it.
+- **Fitting photatl is refitting file 5.** It is not an independent
+  measurement, and the two must not be averaged or quoted as agreeing.
+- **The wavelength scale runs +141 m/s red**, measured by telluric lines, which
+  carry no solar physics: the fitted telluric velocity is -141 m/s (p16-p84 -172
+  to -105, 143 windows) in file 5, the same in file 4, and on every pilot page.
+  The sibling project's +260 m/s is from solar lines against ACE, and the
+  difference could be solar -- disc-centre against the ACE geometry changes the
+  convective line shifts. That is a hypothesis; nothing here tests it.
+
+**The offset is the atlas authors' zero level, and it zeroes saturated cores.**
+It is negative on 239 of 258 pages, in continuum units:
+
+| cm-1 | pages | median | most negative |
+|---|---|---|---|
+| 1848-2200 | 14 | -6.0e-4 | -1.3e-3 |
+| 2400-3500 | 44 | -3.4e-4 | -4.2e-3 |
+| 4000-5000 | 40 | -3.0e-3 | -4.2e-3 |
+| 5000-5600 | 24 | -3.1e-3 | **-1.3e-2** |
+| 5600-7000 | 56 | -1.1e-3 | -1.9e-3 |
+| 7000-9002 | 80 | -3.3e-4 | -1.5e-3 |
+
+Median data in cores the model calls opaque (effective transmission < 0.005),
+as a fraction of the page continuum level:
+
+| page | with photatl's offset | file 5 as observed |
+|---|---|---|
+| wn4950 | +0.0001 | +0.0033 |
+| wn4975 | +0.0000 | +0.0030 |
+| wn5300 | +0.0005 | +0.0056 |
+| wn5325 | +0.0007 | **+0.0139** |
+| wn5350 | +0.0004 | +0.0057 |
+| wn5375 | +0.0008 | +0.0076 |
+
+**Whether that correction is right** was tested by fitting 17 pages twice, at
+air mass 1.985 on identical windows: photatl as published, and photatl with the
+offset undone -- which is file 5's data to 0.023 sigma. The cores are masked in
+both, so the comparison is made on pixels a fit uses, which the correction was
+not constructed to fix:
+
+- **Outside the 1.9 um band it does nothing.** rms residual ratio 0.997-1.003
+  on 13 pages; every well-measured column moves by 0.9% or less.
+- **Inside it, it helps in proportion to the offset**: 0.976 on wn5300, 0.983
+  on wn5350, 0.985 on wn5375, 0.704 on wn5325 (32 reliable pixels only), where
+  CO2 moves 7.5% and H2O 6%.
+
+This refines §4i without contradicting it. Band-wide the floor is small and
+correcting it buys nothing, which is what §4i measured and what the 13 pages
+repeat. Across 5298-5402 cm-1 (wn5300-wn5375) it is 0.6-1.4% of continuum, and there a zero-level
+correction measurably helps -- and photatl's authors have already made one.
+(§4i's 6.6% for the 5326-5356 window is against that window's own continuum
+reference, not the page's, so the two figures are not in conflict.)
+
+A first comparison, photatl's fit against file 5's windows, was dominated by
+something else: photatl's 29 cm-1 pages and file 5's 30 cm-1 grid are
+different windows, and on them the residual ratio scattered 0.62-1.18 with no
+relation to the offset, while the columns of well-measured species agreed to
+1-3%. That spread is the window-choice systematic §4c warned about, measured.
+
+**The product is `photatl_corrected.h5`, built from the file-5 fit for 254
+pages and from a fit of photatl itself for the four band pages**
+(`scripts/export_photatl_from_ftsspec.py --patch
+data/corrected/solar/photatl_band/photatl_band_summary.json`). Every photatl
+pixel is a file-5 pixel, so the effective transmission transfers sample for
+sample with no interpolation, and `corrected = total / effective_transmission`
+in the page's own units. 258 pages, 10.6 MB, 84.9% of pixels reliable. `--check`
+divides photatl with its offset undone and compares against the file-5 fit's own
+corrected spectrum: worst pixel 0.223 sigma, which is what the per-page
+relation's 0.0625 sigma scatter reaches at its extreme; the patched pages
+reproduce their own fit's corrected spectrum to 2.8e-16. The unconvolved
+transmission is `ftsspec_901218_5_transmission.h5` and is not repeated -- so
+for those four pages it is the file-5 one, the one inconsistency left.
+
+**Why only four pages are refitted.** Dividing file 5's transmission into
+photatl's floor-corrected data is inconsistent where the floor matters: against
+a photatl refit the corrected spectrum differs by a median 10, 84 and 22 sigma
+on wn5300, wn5325 and wn5350 (-1.1%, +10%, -2.2% of flux). Elsewhere a refit
+moves it by 0.05-1.4 sigma, and none of that is an improvement: part is the
+change of windows, and part is the offset being absorbed into continuum and
+columns at no cost to the fit -- on wn4950 removing it moves the transmission
+by 2.8 sigma while the residual changes by 0.2%. The data cannot choose between
+those answers, so a refit would be different, not better. The four pages carry
+2,308 of the product's 670,608 reliable pixels (0.34%).
+
 ## One decision left before writing code
 
 **How much of file 4 to salvage.** The scan-average bias is analytic for a

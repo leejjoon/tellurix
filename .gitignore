@@ -20,6 +20,8 @@ data/corrected/**/*.npz
 # and stay in git.
 data/corrected/*spectra*.h5
 data/corrected/*transmission*.h5
+# Built from the file-5 fit by scripts/export_photatl_from_ftsspec.py.
+data/corrected/photatl_corrected.h5
 data/corrected/review/panels/
 # The batch driver's own summary; scripts/trim_atlas_summary.py writes the
 # committed record to docs/arcturus_atlas_summary.json.
