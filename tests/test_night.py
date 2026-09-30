@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from tellurix import NightCalibration, OrderCalibration, write_record
+from tellurix import MasterPattern, NightCalibration, OrderCalibration, write_record
 
 NU = np.linspace(6000.0, 6080.0, 400)
 TRUE_PATTERN = 0.02 * np.sin(np.linspace(0.0, 3.0, NU.size))
@@ -86,7 +86,8 @@ def test_save_and_load_round_trip(tmp_path):
     a, b = calibration.order(109), loaded.order(109)
     assert loaded.band == "H" and b.columns == a.columns and b.frames == a.frames
     assert np.array_equal(a.water_mjd, b.water_mjd)
-    assert np.array_equal(a.pattern, b.pattern)
+    # Stored in float32; see night._store.
+    assert np.allclose(a.pattern, b.pattern, rtol=0, atol=1e-7)
     assert loaded.source["record_sha256"] == calibration.source["record_sha256"]
 
 
@@ -107,3 +108,48 @@ def test_a_row_named_record_is_refused(tmp_path):
         extra_columns=(("band", "S256"), ("order_index", "i4")))
     with pytest.raises(ValueError, match="migrate_igrins_order_names"):
         NightCalibration.from_run(record, None)
+
+
+# --- the master pattern ---
+
+
+def _calibration_with(pattern, band="H", number=109):
+    order = OrderCalibration(band=band, number=number, columns={"CO2": 0.0}, velocity_kms=0.0,
+                             lsf_sigma_kms=2.8, water_mjd=np.array([1.0]),
+                             water_log_column=np.array([0.0]),
+                             pattern_wavenumber_cm1=NU, pattern=pattern)
+    return NightCalibration(band=band, orders={number: order}, source={"record": "x"})
+
+
+def test_the_master_is_the_median_night():
+    nights = [_calibration_with(TRUE_PATTERN * k) for k in (0.8, 1.0, 1.5)]
+    grid, pattern = MasterPattern.from_calibrations(nights).orders[109]
+    assert np.allclose(pattern, TRUE_PATTERN)
+
+
+def test_an_unmeasured_night_does_not_drag_the_master_to_zero():
+    """A calibration writes exactly zero where too few standards measured a pixel."""
+
+    blank = TRUE_PATTERN.copy()
+    blank[:100] = 0.0
+    master = MasterPattern.from_calibrations(
+        [_calibration_with(TRUE_PATTERN), _calibration_with(blank)])
+    assert np.allclose(master.orders[109][1][:100], TRUE_PATTERN[:100])
+
+
+def test_the_master_round_trips_and_serves_a_thin_night(tmp_path):
+    master = MasterPattern.from_calibrations(
+        [_calibration_with(TRUE_PATTERN), _calibration_with(TRUE_PATTERN)])
+    loaded = MasterPattern.load(master.save(tmp_path / "master.h5"))
+    assert np.allclose(loaded.orders[109][1], master.orders[109][1], rtol=0, atol=1e-7)
+    # A calibration built with it takes its pattern and never reads the cache.
+    night = NightCalibration.from_run(_night(tmp_path, with_cache=False), tmp_path / "absent",
+                                      master=loaded)
+    assert np.allclose(night.order(109).pattern_on(1.0e7 / NU), TRUE_PATTERN, rtol=0, atol=1e-6)
+    assert night.source["pattern"] == "master"
+
+
+def test_one_band_per_master():
+    with pytest.raises(ValueError, match="one band"):
+        MasterPattern.from_calibrations([_calibration_with(TRUE_PATTERN, "H"),
+                                         _calibration_with(TRUE_PATTERN, "K", 80)])

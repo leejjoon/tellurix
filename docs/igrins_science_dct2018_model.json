@@ -1,0 +1,100 @@
+{
+ "description": "IGRINS science-frame telluric correction against a night calibration; see scripts/fit_igrins_science.py and docs/igrins_science.md",
+ "runs": [
+  "/home/jjlee/work/lblrtm/data/corrected/igrins/science_dct2018_model"
+ ],
+ "band_agreement": {
+  "STD": {
+   "exposures": 0,
+   "median_abs_difference": null,
+   "max_abs_difference": null,
+   "flagged": 0
+  },
+  "TAR": {
+   "exposures": 2,
+   "median_abs_difference": 0.01566,
+   "max_abs_difference": 0.01861,
+   "flagged": 0
+  }
+ },
+ "exposures": {
+  "20181220_0059": {
+   "run": "science_dct2018_model",
+   "object": "LkCa 15",
+   "object_type": "TAR",
+   "mjd": 58473.12966,
+   "time": "between standards",
+   "bands": {
+    "H": {
+     "airmass": 1.3205,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": -0.00481,
+     "velocity_shift_kms": -0.25726,
+     "water_shift_clipped": 0.00215,
+     "velocity_shift_clipped_kms": -0.26504,
+     "median_clipped_fraction": 0.00379,
+     "median_residual_over_noise": 2.94044,
+     "stellar_source": "data/stellar/lkca15_payne_zero_hk.npz"
+    },
+    "K": {
+     "airmass": 1.3205,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": -0.00909,
+     "velocity_shift_kms": -0.24948,
+     "water_shift_clipped": -0.01055,
+     "velocity_shift_clipped_kms": -0.24947,
+     "median_clipped_fraction": 0.0,
+     "median_residual_over_noise": 2.21098,
+     "stellar_source": "data/stellar/lkca15_payne_zero_hk.npz"
+    }
+   },
+   "band_agreement": {
+    "H": 0.00215,
+    "K": -0.01055,
+    "difference": 0.0127,
+    "flag": false
+   }
+  },
+  "20181220_0092": {
+   "run": "science_dct2018_model",
+   "object": "GJ 281",
+   "object_type": "TAR",
+   "mjd": 58473.28322,
+   "time": "between standards",
+   "bands": {
+    "H": {
+     "airmass": 1.4323,
+     "orders": 27,
+     "order_source": "wat",
+     "water_shift": 0.00756,
+     "velocity_shift_kms": 0.02585,
+     "water_shift_clipped": 0.00856,
+     "velocity_shift_clipped_kms": 0.02585,
+     "median_clipped_fraction": 0.00469,
+     "median_residual_over_noise": 5.48186,
+     "stellar_source": "data/stellar/gj281_payne_zero_hk.npz"
+    },
+    "K": {
+     "airmass": 1.4357,
+     "orders": 25,
+     "order_source": "wat",
+     "water_shift": -0.00776,
+     "velocity_shift_kms": 0.07533,
+     "water_shift_clipped": -0.01005,
+     "velocity_shift_clipped_kms": 0.06829,
+     "median_clipped_fraction": 0.01203,
+     "median_residual_over_noise": 3.14055,
+     "stellar_source": "data/stellar/gj281_payne_zero_hk.npz"
+    }
+   },
+   "band_agreement": {
+    "H": 0.00856,
+    "K": -0.01005,
+    "difference": 0.01861,
+    "flag": false
+   }
+  }
+ }
+}

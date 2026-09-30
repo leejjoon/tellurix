@@ -53,6 +53,11 @@ import numpy as np
 # before the zenith-angle fix, which was most of it); an injected K giant's lines
 # pushed them 0.033 apart. 0.02 is 3-4 times the clean scatter and well under that.
 BAND_DISAGREEMENT = 0.02
+# The well-mixed gases a frame may also shift, with --dry-shift. On McDonald
+# 2017 K the frames above airmass 2.4 needed CO2 and CH4 7-8% up together --
+# a slant-path error a water scale cannot absorb -- and freeing them per frame
+# took those frames from 1.6-2.0 of the noise to 0.3-0.4.
+DRY = ("CO2", "CH4")
 
 
 def load_driver(root: Path):
@@ -92,6 +97,12 @@ def main() -> None:
     parser.add_argument("--stellar-velocity-kms", type=float, default=0.0,
                         help="the target's starting velocity when --stellar is a model")
     parser.add_argument("--clip-sigma", type=float, default=None)
+    parser.add_argument("--dry-shift", nargs="?", const="tied", default=None,
+                        choices=("tied", "separate"),
+                        help="also fit the well-mixed gases per frame -- for high-airmass K "
+                             "frames whose dry-gas slant path the calibration misses. 'tied' "
+                             "(the default when given) applies CO2's shift to CH4 as well: they "
+                             "move together, and a line-rich target biases CH4 four times more")
     parser.add_argument("--clip-pixels", type=int, default=2)
     parser.add_argument("--min-transmission", type=float, default=0.15)
     parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/igrins/science")
@@ -240,11 +251,13 @@ def main() -> None:
                 # Continuum first, then the shifts, from the calibration: the
                 # sequence the transfer test measured.
                 first = fit(context, objective, order, start, set()).parameters
-                free = {"velocity_kms"} | ({"H2O"} if water_free else set())
+                dry_free = [s for s in DRY if args.dry_shift and s in context["free_species"]]
+                free = {"velocity_kms"} | ({"H2O"} if water_free else set()) | set(dry_free)
                 per_order = fit(context, objective, order, first, free).parameters
                 work[(exposure(observation), number)] = {
                     "observation": observation, "order": order, "start": start,
                     "per_order": per_order, "water_free": water_free, "pattern": pattern,
+                    "dry_free": dry_free,
                     "objective": objective, "extracted": extracted,
                 }
             contexts[number] = (context, star_model)
@@ -260,12 +273,22 @@ def main() -> None:
                 shifts[key] = {"velocity_kms": float(np.median(dv)) if dv else 0.0,
                                "log_column_H2O": float(np.median(dw)) if dw else 0.0,
                                "orders": len(mine), "water_orders": len(dw)}
+                for species in DRY:
+                    d = [float(w[level].log_column_scales[species]
+                               - w["start"].log_column_scales[species])
+                         for w in mine if species in w["dry_free"]]
+                    shifts[key][f"log_column_{species}"] = float(np.median(d)) if d else 0.0
+                    shifts[key][f"{species}_orders"] = len(d)
+                if args.dry_shift == "tied" and shifts[key]["CO2_orders"]:
+                    shifts[key]["log_column_CH4"] = shifts[key]["log_column_CO2"]
             return shifts
 
-        def shifted(parameters, shift, water_free):
+        def shifted(parameters, shift, water_free, dry=()):
             columns = dict(parameters.log_column_scales)
             if water_free:
                 columns["H2O"] = columns["H2O"] + shift["log_column_H2O"]
+            for species in dry:
+                columns[species] = columns[species] + shift[f"log_column_{species}"]
             return parameters._replace(
                 velocity_kms=parameters.velocity_kms + shift["velocity_kms"],
                 log_column_scales=columns)
@@ -276,7 +299,8 @@ def main() -> None:
                 context, _ = contexts[number]
                 objective = w["objective"].rebind(w[order_key])
                 w[level] = fit(context, objective, w[order_key],
-                               shifted(w["start"], shifts[key], w["water_free"]), set()).parameters
+                               shifted(w["start"], shifts[key], w["water_free"], w["dry_free"]),
+                               set()).parameters
             return shifts
 
         shifts = frame_level("frame", "per_order")
@@ -299,7 +323,8 @@ def main() -> None:
                 w["clipped_fraction"] = float(np.count_nonzero(mask & reach)
                                               / max(np.count_nonzero(mask), 1))
                 objective = w["objective"].rebind(w["clipped"])
-                free = {"velocity_kms"} | ({"H2O"} if w["water_free"] else set())
+                free = ({"velocity_kms"} | ({"H2O"} if w["water_free"] else set())
+                        | set(w["dry_free"]))
                 w["per_order_clipped"] = fit(context, objective, w["clipped"], best, free).parameters
             clipped_shifts = frame_level("frame_clipped", "per_order_clipped", "clipped")
         final_level = "frame_clipped" if args.clip_sigma is not None else "frame"
@@ -378,6 +403,8 @@ def main() -> None:
                 "mjd": observation.mjd, "object": observation.object_name,
                 "water_shift": (clipped_shifts or shifts)[key]["log_column_H2O"],
                 "velocity_shift": (clipped_shifts or shifts)[key]["velocity_kms"],
+                "co2_shift": (clipped_shifts or shifts)[key].get("log_column_CO2", 0.0),
+                "ch4_shift": (clipped_shifts or shifts)[key].get("log_column_CH4", 0.0),
             })
 
         for key, rows in rows_by_frame.items():
@@ -402,7 +429,8 @@ def main() -> None:
                            "final": final_level},
                 "settings": {"stellar": args.stellar, "vsini_kms": args.vsini_kms,
                              "clip_sigma": args.clip_sigma, "clip_pixels": args.clip_pixels,
-                             "min_transmission": args.min_transmission},
+                             "min_transmission": args.min_transmission,
+                             "dry_shift": args.dry_shift},
                 "results": sorted(rows, key=lambda r: r["order"]),
             }
             final = (clipped_shifts or shifts)[key]
@@ -459,7 +487,8 @@ def main() -> None:
             continuum_degree=degree, key_fields=("frame", "order"),
             extra_columns=(("band", "S256"), ("order_number", "i4"), ("order_source", "S64"),
                            ("airmass", "f8"), ("zenith_angle_deg", "f8"), ("mjd", "f8"),
-                           ("object", "S256"), ("water_shift", "f8"), ("velocity_shift", "f8")))
+                           ("object", "S256"), ("water_shift", "f8"), ("velocity_shift", "f8"),
+                           ("co2_shift", "f8"), ("ch4_shift", "f8")))
     print(f"\n{sum(len(r) for r in record_rows.values())} order-frames in "
           f"{time.time() - started:.0f} s -> {args.output_dir}")
 

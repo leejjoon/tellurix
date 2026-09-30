@@ -28,6 +28,9 @@ def main() -> None:
                         help="default: RUN_DIR/record.h5")
     parser.add_argument("--exclude", default="",
                         help="comma-separated frames to leave out, e.g. to test on one of them")
+    parser.add_argument("--master-pattern", type=Path, default=None,
+                        help="take the response from a MasterPattern instead of the night's "
+                             "own standards -- for a night with too few of them")
     parser.add_argument("--pattern-smooth-pixels", type=int, default=51,
                         help="the guard against the pattern absorbing our own line-list "
                              "error; see leave_one_out_patterns")
@@ -35,11 +38,12 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    from tellurix import NightCalibration
+    from tellurix import MasterPattern, NightCalibration
 
     calibration = NightCalibration.from_run(
         args.record or args.run_dir / "record.h5", args.run_dir,
         exclude=[f for f in args.exclude.split(",") if f],
+        master=None if args.master_pattern is None else MasterPattern.load(args.master_pattern),
         smooth_pixels=args.pattern_smooth_pixels, minimum_frames=args.minimum_frames)
     calibration.save(args.output)
     with_pattern = sum(o.pattern is not None for o in calibration.orders.values())

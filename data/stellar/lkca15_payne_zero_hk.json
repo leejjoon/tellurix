@@ -1,0 +1,25 @@
+{
+  "star": "LkCa 15",
+  "labels": {
+    "effective_temperature": 4370.0,
+    "log_surface_gravity": 3.9,
+    "metallicity": 0.0,
+    "alpha_enhancement": 0.0,
+    "microturbulence_km_s": 1.5
+  },
+  "label_source": "approximate literature values for LkCa 15 (K5 T Tauri): Teff ~4370 K, log g ~3.9, solar metallicity; not fitted here, and veiling, spots and magnetic broadening are not modelled",
+  "wavelength_nm": [
+    1415.0,
+    2545.0
+  ],
+  "r_grid": 600000,
+  "points": 352201,
+  "velocity_step_kms": 0.4996536805577608,
+  "normalized_flux_range": [
+    0.2262104623817617,
+    1.0000000121042845
+  ],
+  "fraction_of_pixels_deeper_than_5_percent": 0.20607266873177532,
+  "initializer_family": "five_label",
+  "atmosphere_converged": false
+}

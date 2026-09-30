@@ -1,0 +1,970 @@
+{
+ "description": "Leave-one-standard-out transfer of telluric parameters to a held-out IGRINS frame; see scripts/validate_igrins_transfer.py",
+ "run_dir": "/home/jjlee/work/lblrtm/data/corrected/igrins/mcdonald_h",
+ "profile": "/home/jjlee/work/lblrtm/data/profiles/mcdonald_2017.csv",
+ "stellar": "data/stellar/a0v_payne_zero_hk.npz",
+ "injected": null,
+ "frames": {
+  "SDCH_20170420_0039": {
+   "object": "k Tau",
+   "mjd": 57864.140202,
+   "airmass": 2.990799
+  },
+  "SDCH_20170420_0055": {
+   "object": "HD 53205",
+   "mjd": 57864.17664,
+   "airmass": 2.478713
+  },
+  "SDCH_20170420_0074": {
+   "object": "HR 3651",
+   "mjd": 57864.24099,
+   "airmass": 1.873991
+  },
+  "SDCH_20170420_0084": {
+   "object": "HD 99966",
+   "mjd": 57864.268464,
+   "airmass": 1.142841
+  },
+  "SDCH_20170420_0092": {
+   "object": "HD 145127",
+   "mjd": 57864.303186,
+   "airmass": 2.079454
+  },
+  "SDCH_20170420_0108": {
+   "object": "HD 145127",
+   "mjd": 57864.383681,
+   "airmass": 1.757169
+  },
+  "SDCH_20170420_0131": {
+   "object": "HR 6386",
+   "mjd": 57864.473067,
+   "airmass": 1.917823
+  },
+  "SDCH_20170420_0151": {
+   "object": "HR 7384",
+   "mjd": 57864.501615,
+   "airmass": 1.019908
+  }
+ },
+ "shared_shifts": {
+  "SDCH_20170420_0039": {
+   "velocity_kms": 0.077798,
+   "log_column_H2O": 0.022004,
+   "orders": 26,
+   "water_orders": 26,
+   "log_column_CO2": 0.0,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.0,
+   "CH4_orders": 12
+  },
+  "SDCH_20170420_0055": {
+   "velocity_kms": 0.194575,
+   "log_column_H2O": -0.002216,
+   "orders": 26,
+   "water_orders": 26,
+   "log_column_CO2": 0.0,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.0,
+   "CH4_orders": 12
+  },
+  "SDCH_20170420_0074": {
+   "velocity_kms": 0.065,
+   "log_column_H2O": -0.008811,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": 0.0,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.0,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0084": {
+   "velocity_kms": -0.088303,
+   "log_column_H2O": 0.053148,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": 0.0,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.0,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0092": {
+   "velocity_kms": 0.001765,
+   "log_column_H2O": -0.015891,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": 0.0,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.0,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0108": {
+   "velocity_kms": -0.053693,
+   "log_column_H2O": -0.031987,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": 0.0,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.0,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0131": {
+   "velocity_kms": -0.070961,
+   "log_column_H2O": 0.099632,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": 0.0,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.0,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0151": {
+   "velocity_kms": -0.042974,
+   "log_column_H2O": -0.210517,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": 0.0,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.0,
+   "CH4_orders": 13
+  }
+ },
+ "clipped_shifts": null,
+ "dry_shifts": {
+  "SDCH_20170420_0039": {
+   "velocity_kms": 0.078485,
+   "log_column_H2O": 0.02164,
+   "orders": 26,
+   "water_orders": 26,
+   "log_column_CO2": 0.04953,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.066717,
+   "CH4_orders": 12
+  },
+  "SDCH_20170420_0055": {
+   "velocity_kms": 0.193047,
+   "log_column_H2O": -0.002313,
+   "orders": 26,
+   "water_orders": 26,
+   "log_column_CO2": 0.060505,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.075702,
+   "CH4_orders": 12
+  },
+  "SDCH_20170420_0074": {
+   "velocity_kms": 0.069477,
+   "log_column_H2O": -0.008811,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": -0.0,
+   "CO2_orders": 15,
+   "log_column_CH4": 0.009298,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0084": {
+   "velocity_kms": -0.084037,
+   "log_column_H2O": 0.055135,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": -0.016265,
+   "CO2_orders": 15,
+   "log_column_CH4": -0.001399,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0092": {
+   "velocity_kms": 0.005881,
+   "log_column_H2O": -0.015733,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": -0.068091,
+   "CO2_orders": 15,
+   "log_column_CH4": -0.049016,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0108": {
+   "velocity_kms": -0.054055,
+   "log_column_H2O": -0.031847,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": -0.03265,
+   "CO2_orders": 15,
+   "log_column_CH4": -0.024722,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0131": {
+   "velocity_kms": -0.070574,
+   "log_column_H2O": 0.099671,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": -0.010867,
+   "CO2_orders": 15,
+   "log_column_CH4": -0.019031,
+   "CH4_orders": 13
+  },
+  "SDCH_20170420_0151": {
+   "velocity_kms": -0.043729,
+   "log_column_H2O": -0.210746,
+   "orders": 27,
+   "water_orders": 27,
+   "log_column_CO2": -0.033917,
+   "CO2_orders": 15,
+   "log_column_CH4": -0.026003,
+   "CH4_orders": 13
+  }
+ },
+ "clip": null,
+ "seconds": 2721.6,
+ "summary": {
+  "all": {
+   "order_frames": 214,
+   "full_median_residual": 1.776153,
+   "L0": {
+    "median_residual": 2.016837,
+    "median_residual_ratio_to_full": 1.046281,
+    "p90_residual_ratio_to_full": 1.41076,
+    "max_residual_ratio_to_full": 2.844316,
+    "median_transmission_rms_difference": 0.00305,
+    "median_transmission_difference_over_noise": 0.779165
+   },
+   "L1": {
+    "median_residual": 1.979698,
+    "median_residual_ratio_to_full": 1.026662,
+    "p90_residual_ratio_to_full": 1.378785,
+    "max_residual_ratio_to_full": 2.834456,
+    "median_transmission_rms_difference": 0.002621,
+    "median_transmission_difference_over_noise": 0.657163
+   },
+   "L2": {
+    "median_residual": 1.829069,
+    "median_residual_ratio_to_full": 1.003459,
+    "p90_residual_ratio_to_full": 1.057312,
+    "max_residual_ratio_to_full": 1.225197,
+    "median_transmission_rms_difference": 0.00104,
+    "median_transmission_difference_over_noise": 0.244018
+   },
+   "L3": {
+    "median_residual": 1.816762,
+    "median_residual_ratio_to_full": 1.001007,
+    "p90_residual_ratio_to_full": 1.031871,
+    "max_residual_ratio_to_full": 1.183544,
+    "median_transmission_rms_difference": 0.000616,
+    "median_transmission_difference_over_noise": 0.136903
+   },
+   "S1": {
+    "median_residual": 1.982199,
+    "median_residual_ratio_to_full": 1.030157,
+    "p90_residual_ratio_to_full": 1.384856,
+    "max_residual_ratio_to_full": 2.838387,
+    "median_transmission_rms_difference": 0.00266,
+    "median_transmission_difference_over_noise": 0.682163
+   },
+   "S2": {
+    "median_residual": 1.841864,
+    "median_residual_ratio_to_full": 1.009674,
+    "p90_residual_ratio_to_full": 1.063425,
+    "max_residual_ratio_to_full": 1.235632,
+    "median_transmission_rms_difference": 0.001506,
+    "median_transmission_difference_over_noise": 0.363265
+   },
+   "L4": {
+    "median_residual": 1.783239,
+    "median_residual_ratio_to_full": 1.000286,
+    "p90_residual_ratio_to_full": 1.010742,
+    "max_residual_ratio_to_full": 1.079854,
+    "median_transmission_rms_difference": 0.000331,
+    "median_transmission_difference_over_noise": 0.086803
+   },
+   "S3": {
+    "median_residual": 1.802566,
+    "median_residual_ratio_to_full": 1.005882,
+    "p90_residual_ratio_to_full": 1.029283,
+    "max_residual_ratio_to_full": 1.081318,
+    "median_transmission_rms_difference": 0.001084,
+    "median_transmission_difference_over_noise": 0.261285
+   }
+  },
+  "absorbing_orders": {
+   "order_frames": 62,
+   "full_median_residual": 2.617494,
+   "L0": {
+    "median_residual": 3.070311,
+    "median_residual_ratio_to_full": 1.048549,
+    "p90_residual_ratio_to_full": 1.891605,
+    "max_residual_ratio_to_full": 2.844316,
+    "median_transmission_rms_difference": 0.006061,
+    "median_transmission_difference_over_noise": 1.743574
+   },
+   "L1": {
+    "median_residual": 3.036803,
+    "median_residual_ratio_to_full": 1.023815,
+    "p90_residual_ratio_to_full": 1.882741,
+    "max_residual_ratio_to_full": 2.834456,
+    "median_transmission_rms_difference": 0.005967,
+    "median_transmission_difference_over_noise": 1.72452
+   },
+   "L2": {
+    "median_residual": 2.616975,
+    "median_residual_ratio_to_full": 1.000614,
+    "p90_residual_ratio_to_full": 1.013936,
+    "max_residual_ratio_to_full": 1.027978,
+    "median_transmission_rms_difference": 0.001078,
+    "median_transmission_difference_over_noise": 0.255802
+   },
+   "L3": {
+    "median_residual": 2.616343,
+    "median_residual_ratio_to_full": 0.999771,
+    "p90_residual_ratio_to_full": 1.006454,
+    "max_residual_ratio_to_full": 1.018882,
+    "median_transmission_rms_difference": 0.000563,
+    "median_transmission_difference_over_noise": 0.130029
+   },
+   "S1": {
+    "median_residual": 3.042436,
+    "median_residual_ratio_to_full": 1.029283,
+    "p90_residual_ratio_to_full": 1.875815,
+    "max_residual_ratio_to_full": 2.838387,
+    "median_transmission_rms_difference": 0.006038,
+    "median_transmission_difference_over_noise": 1.751569
+   },
+   "S2": {
+    "median_residual": 2.632019,
+    "median_residual_ratio_to_full": 1.006378,
+    "p90_residual_ratio_to_full": 1.033679,
+    "max_residual_ratio_to_full": 1.067739,
+    "median_transmission_rms_difference": 0.002585,
+    "median_transmission_difference_over_noise": 0.491971
+   },
+   "L4": {
+    "median_residual": 2.616154,
+    "median_residual_ratio_to_full": 0.999808,
+    "p90_residual_ratio_to_full": 1.008442,
+    "max_residual_ratio_to_full": 1.019351,
+    "median_transmission_rms_difference": 0.000715,
+    "median_transmission_difference_over_noise": 0.207822
+   },
+   "S3": {
+    "median_residual": 2.632716,
+    "median_residual_ratio_to_full": 1.006399,
+    "p90_residual_ratio_to_full": 1.033439,
+    "max_residual_ratio_to_full": 1.061365,
+    "median_transmission_rms_difference": 0.002476,
+    "median_transmission_difference_over_noise": 0.477365
+   }
+  },
+  "clear_orders": {
+   "order_frames": 152,
+   "full_median_residual": 1.634951,
+   "L0": {
+    "median_residual": 1.773831,
+    "median_residual_ratio_to_full": 1.043013,
+    "p90_residual_ratio_to_full": 1.29478,
+    "max_residual_ratio_to_full": 1.970091,
+    "median_transmission_rms_difference": 0.002533,
+    "median_transmission_difference_over_noise": 0.59672
+   },
+   "L1": {
+    "median_residual": 1.768536,
+    "median_residual_ratio_to_full": 1.030068,
+    "p90_residual_ratio_to_full": 1.227661,
+    "max_residual_ratio_to_full": 1.969598,
+    "median_transmission_rms_difference": 0.00214,
+    "median_transmission_difference_over_noise": 0.537981
+   },
+   "L2": {
+    "median_residual": 1.650998,
+    "median_residual_ratio_to_full": 1.006059,
+    "p90_residual_ratio_to_full": 1.069827,
+    "max_residual_ratio_to_full": 1.225197,
+    "median_transmission_rms_difference": 0.000974,
+    "median_transmission_difference_over_noise": 0.237681
+   },
+   "L3": {
+    "median_residual": 1.649977,
+    "median_residual_ratio_to_full": 1.001846,
+    "p90_residual_ratio_to_full": 1.051027,
+    "max_residual_ratio_to_full": 1.183544,
+    "median_transmission_rms_difference": 0.000641,
+    "median_transmission_difference_over_noise": 0.14215
+   },
+   "S1": {
+    "median_residual": 1.769868,
+    "median_residual_ratio_to_full": 1.030407,
+    "p90_residual_ratio_to_full": 1.242521,
+    "max_residual_ratio_to_full": 1.96967,
+    "median_transmission_rms_difference": 0.002188,
+    "median_transmission_difference_over_noise": 0.539061
+   },
+   "S2": {
+    "median_residual": 1.660093,
+    "median_residual_ratio_to_full": 1.010872,
+    "p90_residual_ratio_to_full": 1.070227,
+    "max_residual_ratio_to_full": 1.235632,
+    "median_transmission_rms_difference": 0.001349,
+    "median_transmission_difference_over_noise": 0.324037
+   },
+   "L4": {
+    "median_residual": 1.648449,
+    "median_residual_ratio_to_full": 1.000379,
+    "p90_residual_ratio_to_full": 1.011377,
+    "max_residual_ratio_to_full": 1.079854,
+    "median_transmission_rms_difference": 0.000236,
+    "median_transmission_difference_over_noise": 0.06428
+   },
+   "S3": {
+    "median_residual": 1.651596,
+    "median_residual_ratio_to_full": 1.005836,
+    "p90_residual_ratio_to_full": 1.027947,
+    "max_residual_ratio_to_full": 1.081318,
+    "median_transmission_rms_difference": 0.000872,
+    "median_transmission_difference_over_noise": 0.207074
+   }
+  },
+  "absorbing_below_median_transmission": 0.9
+ },
+ "per_frame": {
+  "SDCH_20170420_0039": {
+   "order_frames": 26,
+   "full_median_residual": 1.930805,
+   "L0": {
+    "median_residual": 2.112292,
+    "median_residual_ratio_to_full": 1.068061,
+    "p90_residual_ratio_to_full": 1.129186,
+    "max_residual_ratio_to_full": 1.196395,
+    "median_transmission_rms_difference": 0.003233,
+    "median_transmission_difference_over_noise": 0.904732
+   },
+   "L1": {
+    "median_residual": 2.070576,
+    "median_residual_ratio_to_full": 1.048865,
+    "p90_residual_ratio_to_full": 1.096255,
+    "max_residual_ratio_to_full": 1.154678,
+    "median_transmission_rms_difference": 0.003003,
+    "median_transmission_difference_over_noise": 0.827569
+   },
+   "L2": {
+    "median_residual": 2.014718,
+    "median_residual_ratio_to_full": 1.011881,
+    "p90_residual_ratio_to_full": 1.091952,
+    "max_residual_ratio_to_full": 1.147982,
+    "median_transmission_rms_difference": 0.001229,
+    "median_transmission_difference_over_noise": 0.339462
+   },
+   "L3": {
+    "median_residual": 2.006633,
+    "median_residual_ratio_to_full": 1.009808,
+    "p90_residual_ratio_to_full": 1.082357,
+    "max_residual_ratio_to_full": 1.13057,
+    "median_transmission_rms_difference": 0.001081,
+    "median_transmission_difference_over_noise": 0.303318
+   },
+   "S1": {
+    "median_residual": 2.071827,
+    "median_residual_ratio_to_full": 1.049965,
+    "p90_residual_ratio_to_full": 1.097167,
+    "max_residual_ratio_to_full": 1.154685,
+    "median_transmission_rms_difference": 0.003005,
+    "median_transmission_difference_over_noise": 0.830542
+   },
+   "S2": {
+    "median_residual": 2.015979,
+    "median_residual_ratio_to_full": 1.019225,
+    "p90_residual_ratio_to_full": 1.097384,
+    "max_residual_ratio_to_full": 1.148719,
+    "median_transmission_rms_difference": 0.001921,
+    "median_transmission_difference_over_noise": 0.566502
+   },
+   "L4": {
+    "median_residual": 1.935114,
+    "median_residual_ratio_to_full": 1.000232,
+    "p90_residual_ratio_to_full": 1.004826,
+    "max_residual_ratio_to_full": 1.011397,
+    "median_transmission_rms_difference": 0.000257,
+    "median_transmission_difference_over_noise": 0.075303
+   },
+   "S3": {
+    "median_residual": 1.943516,
+    "median_residual_ratio_to_full": 1.006869,
+    "p90_residual_ratio_to_full": 1.019111,
+    "max_residual_ratio_to_full": 1.061365,
+    "median_transmission_rms_difference": 0.001012,
+    "median_transmission_difference_over_noise": 0.286461
+   }
+  },
+  "SDCH_20170420_0055": {
+   "order_frames": 26,
+   "full_median_residual": 1.926395,
+   "L0": {
+    "median_residual": 2.192708,
+    "median_residual_ratio_to_full": 1.093504,
+    "p90_residual_ratio_to_full": 1.194727,
+    "max_residual_ratio_to_full": 1.488483,
+    "median_transmission_rms_difference": 0.003643,
+    "median_transmission_difference_over_noise": 1.015573
+   },
+   "L1": {
+    "median_residual": 2.060494,
+    "median_residual_ratio_to_full": 1.01254,
+    "p90_residual_ratio_to_full": 1.095655,
+    "max_residual_ratio_to_full": 1.225721,
+    "median_transmission_rms_difference": 0.002302,
+    "median_transmission_difference_over_noise": 0.592626
+   },
+   "L2": {
+    "median_residual": 2.059136,
+    "median_residual_ratio_to_full": 1.011099,
+    "p90_residual_ratio_to_full": 1.093848,
+    "max_residual_ratio_to_full": 1.225197,
+    "median_transmission_rms_difference": 0.00137,
+    "median_transmission_difference_over_noise": 0.373137
+   },
+   "L3": {
+    "median_residual": 1.99724,
+    "median_residual_ratio_to_full": 1.006775,
+    "p90_residual_ratio_to_full": 1.076747,
+    "max_residual_ratio_to_full": 1.146188,
+    "median_transmission_rms_difference": 0.001168,
+    "median_transmission_difference_over_noise": 0.316544
+   },
+   "S1": {
+    "median_residual": 2.063952,
+    "median_residual_ratio_to_full": 1.016834,
+    "p90_residual_ratio_to_full": 1.095789,
+    "max_residual_ratio_to_full": 1.228847,
+    "median_transmission_rms_difference": 0.002305,
+    "median_transmission_difference_over_noise": 0.593469
+   },
+   "S2": {
+    "median_residual": 2.063537,
+    "median_residual_ratio_to_full": 1.016916,
+    "p90_residual_ratio_to_full": 1.095653,
+    "max_residual_ratio_to_full": 1.228917,
+    "median_transmission_rms_difference": 0.002198,
+    "median_transmission_difference_over_noise": 0.601869
+   },
+   "L4": {
+    "median_residual": 1.931413,
+    "median_residual_ratio_to_full": 1.000715,
+    "p90_residual_ratio_to_full": 1.00508,
+    "max_residual_ratio_to_full": 1.02614,
+    "median_transmission_rms_difference": 0.000473,
+    "median_transmission_difference_over_noise": 0.12285
+   },
+   "S3": {
+    "median_residual": 1.940219,
+    "median_residual_ratio_to_full": 1.003724,
+    "p90_residual_ratio_to_full": 1.01567,
+    "max_residual_ratio_to_full": 1.050481,
+    "median_transmission_rms_difference": 0.000744,
+    "median_transmission_difference_over_noise": 0.19523
+   }
+  },
+  "SDCH_20170420_0074": {
+   "order_frames": 27,
+   "full_median_residual": 1.892542,
+   "L0": {
+    "median_residual": 1.934977,
+    "median_residual_ratio_to_full": 1.01079,
+    "p90_residual_ratio_to_full": 1.043264,
+    "max_residual_ratio_to_full": 1.055834,
+    "median_transmission_rms_difference": 0.001555,
+    "median_transmission_difference_over_noise": 0.435537
+   },
+   "L1": {
+    "median_residual": 1.895563,
+    "median_residual_ratio_to_full": 1.005243,
+    "p90_residual_ratio_to_full": 1.012648,
+    "max_residual_ratio_to_full": 1.03108,
+    "median_transmission_rms_difference": 0.001071,
+    "median_transmission_difference_over_noise": 0.318955
+   },
+   "L2": {
+    "median_residual": 1.893083,
+    "median_residual_ratio_to_full": 1.001471,
+    "p90_residual_ratio_to_full": 1.009203,
+    "max_residual_ratio_to_full": 1.018762,
+    "median_transmission_rms_difference": 0.000517,
+    "median_transmission_difference_over_noise": 0.14139
+   },
+   "L3": {
+    "median_residual": 1.892502,
+    "median_residual_ratio_to_full": 1.000681,
+    "p90_residual_ratio_to_full": 1.004268,
+    "max_residual_ratio_to_full": 1.013954,
+    "median_transmission_rms_difference": 0.000436,
+    "median_transmission_difference_over_noise": 0.127475
+   },
+   "S1": {
+    "median_residual": 1.898904,
+    "median_residual_ratio_to_full": 1.006561,
+    "p90_residual_ratio_to_full": 1.014925,
+    "max_residual_ratio_to_full": 1.030854,
+    "median_transmission_rms_difference": 0.001139,
+    "median_transmission_difference_over_noise": 0.339394
+   },
+   "S2": {
+    "median_residual": 1.897557,
+    "median_residual_ratio_to_full": 1.00485,
+    "p90_residual_ratio_to_full": 1.0106,
+    "max_residual_ratio_to_full": 1.019249,
+    "median_transmission_rms_difference": 0.000741,
+    "median_transmission_difference_over_noise": 0.204926
+   },
+   "L4": {
+    "median_residual": 1.893115,
+    "median_residual_ratio_to_full": 1.000302,
+    "p90_residual_ratio_to_full": 1.001999,
+    "max_residual_ratio_to_full": 1.005891,
+    "median_transmission_rms_difference": 0.00019,
+    "median_transmission_difference_over_noise": 0.053756
+   },
+   "S3": {
+    "median_residual": 1.896522,
+    "median_residual_ratio_to_full": 1.004594,
+    "p90_residual_ratio_to_full": 1.010464,
+    "max_residual_ratio_to_full": 1.018878,
+    "median_transmission_rms_difference": 0.000687,
+    "median_transmission_difference_over_noise": 0.202225
+   }
+  },
+  "SDCH_20170420_0084": {
+   "order_frames": 27,
+   "full_median_residual": 1.778202,
+   "L0": {
+    "median_residual": 1.948576,
+    "median_residual_ratio_to_full": 1.09398,
+    "p90_residual_ratio_to_full": 1.36112,
+    "max_residual_ratio_to_full": 1.731099,
+    "median_transmission_rms_difference": 0.004254,
+    "median_transmission_difference_over_noise": 0.959317
+   },
+   "L1": {
+    "median_residual": 1.908478,
+    "median_residual_ratio_to_full": 1.084982,
+    "p90_residual_ratio_to_full": 1.289947,
+    "max_residual_ratio_to_full": 1.640085,
+    "median_transmission_rms_difference": 0.003675,
+    "median_transmission_difference_over_noise": 0.82545
+   },
+   "L2": {
+    "median_residual": 1.816687,
+    "median_residual_ratio_to_full": 1.011189,
+    "p90_residual_ratio_to_full": 1.025641,
+    "max_residual_ratio_to_full": 1.087205,
+    "median_transmission_rms_difference": 0.001453,
+    "median_transmission_difference_over_noise": 0.342155
+   },
+   "L3": {
+    "median_residual": 1.781298,
+    "median_residual_ratio_to_full": 1.000424,
+    "p90_residual_ratio_to_full": 1.003517,
+    "max_residual_ratio_to_full": 1.006655,
+    "median_transmission_rms_difference": 0.000358,
+    "median_transmission_difference_over_noise": 0.085562
+   },
+   "S1": {
+    "median_residual": 1.917138,
+    "median_residual_ratio_to_full": 1.085302,
+    "p90_residual_ratio_to_full": 1.312991,
+    "max_residual_ratio_to_full": 1.666808,
+    "median_transmission_rms_difference": 0.003845,
+    "median_transmission_difference_over_noise": 0.863618
+   },
+   "S2": {
+    "median_residual": 1.835604,
+    "median_residual_ratio_to_full": 1.020518,
+    "p90_residual_ratio_to_full": 1.059223,
+    "max_residual_ratio_to_full": 1.08845,
+    "median_transmission_rms_difference": 0.002182,
+    "median_transmission_difference_over_noise": 0.492196
+   },
+   "L4": {
+    "median_residual": 1.814746,
+    "median_residual_ratio_to_full": 1.011189,
+    "p90_residual_ratio_to_full": 1.024182,
+    "max_residual_ratio_to_full": 1.079854,
+    "median_transmission_rms_difference": 0.001356,
+    "median_transmission_difference_over_noise": 0.294426
+   },
+   "S3": {
+    "median_residual": 1.825737,
+    "median_residual_ratio_to_full": 1.021907,
+    "p90_residual_ratio_to_full": 1.054093,
+    "max_residual_ratio_to_full": 1.081318,
+    "median_transmission_rms_difference": 0.002173,
+    "median_transmission_difference_over_noise": 0.475112
+   }
+  },
+  "SDCH_20170420_0092": {
+   "order_frames": 27,
+   "full_median_residual": 1.749536,
+   "L0": {
+    "median_residual": 1.846399,
+    "median_residual_ratio_to_full": 1.026062,
+    "p90_residual_ratio_to_full": 1.054627,
+    "max_residual_ratio_to_full": 1.227738,
+    "median_transmission_rms_difference": 0.002573,
+    "median_transmission_difference_over_noise": 0.659662
+   },
+   "L1": {
+    "median_residual": 1.839731,
+    "median_residual_ratio_to_full": 1.020425,
+    "p90_residual_ratio_to_full": 1.046968,
+    "max_residual_ratio_to_full": 1.222946,
+    "median_transmission_rms_difference": 0.002502,
+    "median_transmission_difference_over_noise": 0.612568
+   },
+   "L2": {
+    "median_residual": 1.828896,
+    "median_residual_ratio_to_full": 1.003849,
+    "p90_residual_ratio_to_full": 1.044067,
+    "max_residual_ratio_to_full": 1.217643,
+    "median_transmission_rms_difference": 0.000912,
+    "median_transmission_difference_over_noise": 0.235014
+   },
+   "L3": {
+    "median_residual": 1.815011,
+    "median_residual_ratio_to_full": 1.002409,
+    "p90_residual_ratio_to_full": 1.035949,
+    "max_residual_ratio_to_full": 1.183544,
+    "median_transmission_rms_difference": 0.000888,
+    "median_transmission_difference_over_noise": 0.21255
+   },
+   "S1": {
+    "median_residual": 1.846867,
+    "median_residual_ratio_to_full": 1.027533,
+    "p90_residual_ratio_to_full": 1.054019,
+    "max_residual_ratio_to_full": 1.227211,
+    "median_transmission_rms_difference": 0.002574,
+    "median_transmission_difference_over_noise": 0.660885
+   },
+   "S2": {
+    "median_residual": 1.852255,
+    "median_residual_ratio_to_full": 1.020321,
+    "p90_residual_ratio_to_full": 1.0501,
+    "max_residual_ratio_to_full": 1.235632,
+    "median_transmission_rms_difference": 0.001558,
+    "median_transmission_difference_over_noise": 0.375602
+   },
+   "L4": {
+    "median_residual": 1.74949,
+    "median_residual_ratio_to_full": 1.000006,
+    "p90_residual_ratio_to_full": 1.002652,
+    "max_residual_ratio_to_full": 1.015928,
+    "median_transmission_rms_difference": 0.000138,
+    "median_transmission_difference_over_noise": 0.032559
+   },
+   "S3": {
+    "median_residual": 1.777071,
+    "median_residual_ratio_to_full": 1.007541,
+    "p90_residual_ratio_to_full": 1.022124,
+    "max_residual_ratio_to_full": 1.034907,
+    "median_transmission_rms_difference": 0.001082,
+    "median_transmission_difference_over_noise": 0.255047
+   }
+  },
+  "SDCH_20170420_0108": {
+   "order_frames": 27,
+   "full_median_residual": 1.948417,
+   "L0": {
+    "median_residual": 2.064643,
+    "median_residual_ratio_to_full": 1.022832,
+    "p90_residual_ratio_to_full": 1.074142,
+    "max_residual_ratio_to_full": 1.099076,
+    "median_transmission_rms_difference": 0.002531,
+    "median_transmission_difference_over_noise": 0.74778
+   },
+   "L1": {
+    "median_residual": 2.024634,
+    "median_residual_ratio_to_full": 1.013201,
+    "p90_residual_ratio_to_full": 1.068176,
+    "max_residual_ratio_to_full": 1.089636,
+    "median_transmission_rms_difference": 0.002255,
+    "median_transmission_difference_over_noise": 0.665874
+   },
+   "L2": {
+    "median_residual": 1.96356,
+    "median_residual_ratio_to_full": 1.001821,
+    "p90_residual_ratio_to_full": 1.012273,
+    "max_residual_ratio_to_full": 1.060467,
+    "median_transmission_rms_difference": 0.00065,
+    "median_transmission_difference_over_noise": 0.185787
+   },
+   "L3": {
+    "median_residual": 1.966038,
+    "median_residual_ratio_to_full": 1.000946,
+    "p90_residual_ratio_to_full": 1.011005,
+    "max_residual_ratio_to_full": 1.051537,
+    "median_transmission_rms_difference": 0.000466,
+    "median_transmission_difference_over_noise": 0.123911
+   },
+   "S1": {
+    "median_residual": 2.03249,
+    "median_residual_ratio_to_full": 1.017422,
+    "p90_residual_ratio_to_full": 1.070341,
+    "max_residual_ratio_to_full": 1.095385,
+    "median_transmission_rms_difference": 0.00231,
+    "median_transmission_difference_over_noise": 0.68352
+   },
+   "S2": {
+    "median_residual": 1.964844,
+    "median_residual_ratio_to_full": 1.004973,
+    "p90_residual_ratio_to_full": 1.017023,
+    "max_residual_ratio_to_full": 1.06397,
+    "median_transmission_rms_difference": 0.000996,
+    "median_transmission_difference_over_noise": 0.289304
+   },
+   "L4": {
+    "median_residual": 1.950879,
+    "median_residual_ratio_to_full": 1.000022,
+    "p90_residual_ratio_to_full": 1.001135,
+    "max_residual_ratio_to_full": 1.003457,
+    "median_transmission_rms_difference": 0.00023,
+    "median_transmission_difference_over_noise": 0.05937
+   },
+   "S3": {
+    "median_residual": 1.959449,
+    "median_residual_ratio_to_full": 1.002436,
+    "p90_residual_ratio_to_full": 1.01112,
+    "max_residual_ratio_to_full": 1.016658,
+    "median_transmission_rms_difference": 0.000603,
+    "median_transmission_difference_over_noise": 0.186562
+   }
+  },
+  "SDCH_20170420_0131": {
+   "order_frames": 27,
+   "full_median_residual": 1.576905,
+   "L0": {
+    "median_residual": 2.020056,
+    "median_residual_ratio_to_full": 1.086841,
+    "p90_residual_ratio_to_full": 1.691857,
+    "max_residual_ratio_to_full": 2.031794,
+    "median_transmission_rms_difference": 0.006075,
+    "median_transmission_difference_over_noise": 1.264074
+   },
+   "L1": {
+    "median_residual": 1.992085,
+    "median_residual_ratio_to_full": 1.076198,
+    "p90_residual_ratio_to_full": 1.683852,
+    "max_residual_ratio_to_full": 2.020467,
+    "median_transmission_rms_difference": 0.005911,
+    "median_transmission_difference_over_noise": 1.230021
+   },
+   "L2": {
+    "median_residual": 1.591385,
+    "median_residual_ratio_to_full": 1.001492,
+    "p90_residual_ratio_to_full": 1.008068,
+    "max_residual_ratio_to_full": 1.030861,
+    "median_transmission_rms_difference": 0.000818,
+    "median_transmission_difference_over_noise": 0.174623
+   },
+   "L3": {
+    "median_residual": 1.587002,
+    "median_residual_ratio_to_full": 1.000512,
+    "p90_residual_ratio_to_full": 1.006257,
+    "max_residual_ratio_to_full": 1.02027,
+    "median_transmission_rms_difference": 0.000605,
+    "median_transmission_difference_over_noise": 0.13076
+   },
+   "S1": {
+    "median_residual": 1.995869,
+    "median_residual_ratio_to_full": 1.076656,
+    "p90_residual_ratio_to_full": 1.680739,
+    "max_residual_ratio_to_full": 2.020605,
+    "median_transmission_rms_difference": 0.005929,
+    "median_transmission_difference_over_noise": 1.233653
+   },
+   "S2": {
+    "median_residual": 1.602259,
+    "median_residual_ratio_to_full": 1.006277,
+    "p90_residual_ratio_to_full": 1.03605,
+    "max_residual_ratio_to_full": 1.054092,
+    "median_transmission_rms_difference": 0.001248,
+    "median_transmission_difference_over_noise": 0.270374
+   },
+   "L4": {
+    "median_residual": 1.584426,
+    "median_residual_ratio_to_full": 1.000007,
+    "p90_residual_ratio_to_full": 1.002032,
+    "max_residual_ratio_to_full": 1.014036,
+    "median_transmission_rms_difference": 0.000302,
+    "median_transmission_difference_over_noise": 0.062303
+   },
+   "S3": {
+    "median_residual": 1.602243,
+    "median_residual_ratio_to_full": 1.005809,
+    "p90_residual_ratio_to_full": 1.029775,
+    "max_residual_ratio_to_full": 1.04679,
+    "median_transmission_rms_difference": 0.001219,
+    "median_transmission_difference_over_noise": 0.258124
+   }
+  },
+  "SDCH_20170420_0151": {
+   "order_frames": 27,
+   "full_median_residual": 1.376023,
+   "L0": {
+    "median_residual": 1.708142,
+    "median_residual_ratio_to_full": 1.183657,
+    "p90_residual_ratio_to_full": 2.164901,
+    "max_residual_ratio_to_full": 2.844316,
+    "median_transmission_rms_difference": 0.008612,
+    "median_transmission_difference_over_noise": 1.220558
+   },
+   "L1": {
+    "median_residual": 1.707793,
+    "median_residual_ratio_to_full": 1.160164,
+    "p90_residual_ratio_to_full": 2.162646,
+    "max_residual_ratio_to_full": 2.834456,
+    "median_transmission_rms_difference": 0.008602,
+    "median_transmission_difference_over_noise": 1.219171
+   },
+   "L2": {
+    "median_residual": 1.399374,
+    "median_residual_ratio_to_full": 1.003002,
+    "p90_residual_ratio_to_full": 1.027857,
+    "max_residual_ratio_to_full": 1.076651,
+    "median_transmission_rms_difference": 0.001621,
+    "median_transmission_difference_over_noise": 0.193472
+   },
+   "L3": {
+    "median_residual": 1.377654,
+    "median_residual_ratio_to_full": 1.000717,
+    "p90_residual_ratio_to_full": 1.007398,
+    "max_residual_ratio_to_full": 1.012916,
+    "median_transmission_rms_difference": 0.000514,
+    "median_transmission_difference_over_noise": 0.08371
+   },
+   "S1": {
+    "median_residual": 1.707808,
+    "median_residual_ratio_to_full": 1.177373,
+    "p90_residual_ratio_to_full": 2.162863,
+    "max_residual_ratio_to_full": 2.838387,
+    "median_transmission_rms_difference": 0.008602,
+    "median_transmission_difference_over_noise": 1.219179
+   },
+   "S2": {
+    "median_residual": 1.406416,
+    "median_residual_ratio_to_full": 1.009842,
+    "p90_residual_ratio_to_full": 1.034453,
+    "max_residual_ratio_to_full": 1.077956,
+    "median_transmission_rms_difference": 0.002243,
+    "median_transmission_difference_over_noise": 0.334811
+   },
+   "L4": {
+    "median_residual": 1.395132,
+    "median_residual_ratio_to_full": 1.001065,
+    "p90_residual_ratio_to_full": 1.016261,
+    "max_residual_ratio_to_full": 1.065339,
+    "median_transmission_rms_difference": 0.00084,
+    "median_transmission_difference_over_noise": 0.127134
+   },
+   "S3": {
+    "median_residual": 1.402065,
+    "median_residual_ratio_to_full": 1.00705,
+    "p90_residual_ratio_to_full": 1.031118,
+    "max_residual_ratio_to_full": 1.070878,
+    "median_transmission_rms_difference": 0.00196,
+    "median_transmission_difference_over_noise": 0.320552
+   }
+  }
+ },
+ "rows_file": "data/corrected/igrins/transfer/igrins_transfer_dry_mcdonald2017_h_rows.json"
+}

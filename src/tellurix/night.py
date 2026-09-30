@@ -25,6 +25,7 @@ run -- its record and its npz cache -- and keep it as one HDF5 file.
 from __future__ import annotations
 
 import json
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -122,13 +123,16 @@ class NightCalibration:
         cache_dir: str | Path | None = None,
         *,
         exclude: Sequence[str] = (),
+        master: "MasterPattern | None" = None,
         smooth_pixels: int = 51,
         minimum_frames: int = 3,
     ) -> "NightCalibration":
         """Measure the calibration from a ``fit_igrins_standard.py`` run.
 
         ``cache_dir`` holds the run's ``<frame>_<order>.npz`` arrays, which the
-        response pattern needs; without it there is no pattern. ``exclude``
+        response pattern needs; without it there is no pattern. ``master``
+        supplies the pattern instead, for a night with too few standards to
+        measure its own -- the cache is then not read at all. ``exclude``
         leaves frames out -- for testing the calibration on a standard it did
         not see.
         """
@@ -162,7 +166,10 @@ class NightCalibration:
             columns = {s: float(np.median(rows[f"log_column_{s}"])) for s in species
                        if s != "H2O"}
             pattern_nu = pattern = None
-            if cache_dir is not None:
+            if master is not None:
+                if number in master.orders:
+                    pattern_nu, pattern = master.orders[number]
+            elif cache_dir is not None:
                 pattern_nu, pattern = _order_pattern(
                     Path(cache_dir), frames, f"{band}{number}", smooth_pixels, minimum_frames)
             orders[number] = OrderCalibration(
@@ -175,6 +182,9 @@ class NightCalibration:
         source = {
             "record": str(record_path), "record_sha256": file_sha256(record_path),
             "cache_dir": None if cache_dir is None else str(cache_dir),
+            "pattern": ("master" if master is not None
+                        else "night" if cache_dir is not None else "none"),
+            "master_nights": list(master.nights) if master is not None else [],
             "excluded": sorted(excluded), "smooth_pixels": smooth_pixels,
             "minimum_frames": minimum_frames, "species": species,
             "config": config, "inputs": inputs,
@@ -200,9 +210,8 @@ class NightCalibration:
                 group["water_mjd"] = order.water_mjd
                 group["water_log_column"] = order.water_log_column
                 if order.pattern is not None:
-                    group.create_dataset("pattern_wavenumber_cm1",
-                                         data=order.pattern_wavenumber_cm1, compression="gzip")
-                    group.create_dataset("pattern", data=order.pattern, compression="gzip")
+                    _store(group, "pattern_wavenumber_cm1", order.pattern_wavenumber_cm1)
+                    _store(group, "pattern", order.pattern)
         return path
 
     @classmethod
@@ -224,12 +233,108 @@ class NightCalibration:
                     lsf_sigma_kms=float(group.attrs["lsf_sigma_kms"]),
                     water_mjd=group["water_mjd"][:],
                     water_log_column=group["water_log_column"][:],
-                    pattern_wavenumber_cm1=(group["pattern_wavenumber_cm1"][:]
+                    pattern_wavenumber_cm1=(group["pattern_wavenumber_cm1"][:].astype(float)
                                             if "pattern" in group else None),
-                    pattern=group["pattern"][:] if "pattern" in group else None,
+                    pattern=group["pattern"][:].astype(float) if "pattern" in group else None,
                     frames=tuple(json.loads(text(group.attrs["frames"]))))
             source = json.loads(text(handle.attrs["source"]))
         return cls(band=band, orders=orders, source=source)
+
+
+@dataclass(frozen=True)
+class MasterPattern:
+    """One band's instrument response, the median over several nights.
+
+    The response belongs to the spectrograph, not the night: four nights across
+    three telescopes and five years correlate at median r = +0.89 to +0.95, and
+    their median captures 74-88% of each night's own pattern. A night with too
+    few standards to measure its own -- 46% of the archive has fewer than five --
+    uses this instead. Per physical order, on the wavenumbers of the first night
+    given; within a night's 0.16 cm-1 of wavelength-solution drift that lands on
+    the same pixels as any other night's.
+    """
+
+    band: str
+    orders: Mapping[int, tuple[np.ndarray, np.ndarray]]
+    nights: tuple[str, ...] = ()
+
+    @classmethod
+    def from_calibrations(cls, calibrations: Sequence["NightCalibration"],
+                          minimum_nights: int = 2) -> "MasterPattern":
+        bands = {c.band for c in calibrations}
+        if len(bands) != 1:
+            raise ValueError(f"a master pattern is one band; got {sorted(bands)}")
+        orders = {}
+        numbers = sorted({n for c in calibrations for n in c.orders})
+        for number in numbers:
+            measured = [c.orders[number] for c in calibrations
+                        if number in c.orders and c.orders[number].pattern is not None]
+            if len(measured) < minimum_nights:
+                continue
+            grid = measured[0].pattern_wavenumber_cm1
+            stack = []
+            for order in measured:
+                values = np.interp(grid, order.pattern_wavenumber_cm1, order.pattern,
+                                   left=np.nan, right=np.nan)
+                # A calibration writes exactly zero where too few standards
+                # measured a pixel; that is "unknown", not "no response".
+                stack.append(np.where(values == 0.0, np.nan, values))
+            with warnings.catch_warnings():
+                # A pixel no night measured is an all-NaN slice; it becomes 0.
+                warnings.simplefilter("ignore", RuntimeWarning)
+                pattern = np.nanmedian(np.asarray(stack), axis=0)
+            orders[number] = (grid, np.nan_to_num(pattern, nan=0.0))
+        nights = tuple(str(c.source.get("record", "")) for c in calibrations)
+        return cls(band=bands.pop(), orders=orders, nights=nights)
+
+    def save(self, path: str | Path) -> Path:
+        import h5py
+
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with h5py.File(path, "w") as handle:
+            handle.attrs["format_version"] = FORMAT_VERSION
+            handle.attrs["kind"] = "master_pattern"
+            handle.attrs["band"] = self.band
+            handle.attrs["nights"] = json.dumps(list(self.nights))
+            for number, (grid, pattern) in sorted(self.orders.items()):
+                group = handle.create_group(f"{self.band}{number}")
+                group.attrs["number"] = number
+                _store(group, "pattern_wavenumber_cm1", grid)
+                _store(group, "pattern", pattern)
+        return path
+
+    @classmethod
+    def load(cls, path: str | Path) -> "MasterPattern":
+        import h5py
+
+        with h5py.File(Path(path), "r") as handle:
+            if text(handle.attrs.get("kind", "")) != "master_pattern":
+                raise ValueError(f"{path} is not a master pattern")
+            band = text(handle.attrs["band"])
+            orders = {int(g.attrs["number"]): (g["pattern_wavenumber_cm1"][:].astype(float),
+                                               g["pattern"][:].astype(float))
+                      for g in handle.values()}
+            nights = tuple(json.loads(text(handle.attrs["nights"])))
+        return cls(band=band, orders=orders, nights=nights)
+
+    def pattern_on(self, number: int, wavelength_nm: np.ndarray) -> np.ndarray:
+        """This order's response on another frame's pixels; zero if unmeasured."""
+
+        wavelength_nm = np.asarray(wavelength_nm, dtype=float)
+        if int(number) not in self.orders:
+            return np.zeros_like(wavelength_nm)
+        grid, pattern = self.orders[int(number)]
+        return np.interp(1.0e7 / wavelength_nm, grid, pattern, left=0.0, right=0.0)
+
+
+def _store(group, name, values):
+    """A pattern array in float32: the pattern is smooth to 51 pixels, and at
+    6000 cm-1 float32 resolves 6e-4 cm-1 against a 0.04 cm-1 pixel, so double
+    precision would only double a committed file's size."""
+
+    group.create_dataset(name, data=np.asarray(values, dtype=np.float32),
+                         compression="gzip", shuffle=True)
 
 
 def _order_pattern(cache_dir: Path, frames, name, smooth_pixels, minimum_frames):

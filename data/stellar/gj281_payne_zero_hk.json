@@ -1,0 +1,25 @@
+{
+  "star": "GJ 281",
+  "labels": {
+    "effective_temperature": 4000.0,
+    "log_surface_gravity": 4.7,
+    "metallicity": 0.0,
+    "alpha_enhancement": 0.0,
+    "microturbulence_km_s": 1.5
+  },
+  "label_source": "approximate for GJ 281 (K7-M0 V): Teff set at Payne Zero's 4000 K floor, log g 4.7 for a dwarf, solar metallicity; not fitted here",
+  "wavelength_nm": [
+    1415.0,
+    2545.0
+  ],
+  "r_grid": 600000,
+  "points": 352201,
+  "velocity_step_kms": 0.4996536805577608,
+  "normalized_flux_range": [
+    0.26378763770219604,
+    0.9999999114957433
+  ],
+  "fraction_of_pixels_deeper_than_5_percent": 0.1951101785628093,
+  "initializer_family": "five_label",
+  "atmosphere_converged": false
+}

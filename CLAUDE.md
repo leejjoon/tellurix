@@ -122,9 +122,31 @@ calibration, built once from that night's standards run:
 ```bash
 UV_CACHE_DIR=.uv-cache uv run python scripts/download_rrisa_standard.py --night 20181220 --objtype TAR --list
 UV_CACHE_DIR=.uv-cache uv run python scripts/build_igrins_calibration.py --run-dir <standards run> --output data/calibration/<night>_<band>.h5
-UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_science.py --spec <SDCH and SDCK of the frames> --calibration <H.h5> <K.h5> --clip-sigma 3
+UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_science.py --spec <SDCH and SDCK of the frames> --calibration <H.h5> <K.h5> --clip-sigma 3 --dry-shift
 UV_CACHE_DIR=.uv-cache uv run python scripts/summarize_igrins_science.py --runs <output dirs> --output docs/<report>.json
+# a night with fewer than five standards borrows the instrument's response:
+UV_CACHE_DIR=.uv-cache uv run python scripts/build_igrins_master_pattern.py --calibration <night calibrations> --output data/calibration/igrins_master_<band>.h5
+UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_standard.py --spec <the few standards> --response-pattern data/calibration/igrins_master_<band>.h5 ...
+UV_CACHE_DIR=.uv-cache uv run python scripts/build_igrins_calibration.py --run-dir <that run> --master-pattern data/calibration/igrins_master_<band>.h5 --minimum-frames 3 --output ...
+# a target model for the source slot, in Payne Zero's own environment (see the script):
+.venv/bin/python scripts/generate_payne_zero_star.py --name <star> --teff <K> --logg <dex> --label-source <where from> --output <npz>
 ```
+
+Three extensions, each measured (`docs/igrins_science.md`). **`--dry-shift`**
+adds one per-frame dry-gas scale, CO2's, applied to CH4 as well: McDonald 2017's
+K frames above airmass 2.4 need CO2 and CH4 7-8% up together, which a water scale
+cannot absorb, and it takes them from 1.6-2.0 of the noise to 0.3-0.4 while
+costing nothing elsewhere. Keep it **tied** -- freed separately, a line-rich
+target pulls CH4 by 3% through the 2.3 um CO bandheads. **A master pattern**
+(`MasterPattern`, the median of other nights') stands in for a thin night's own:
+DCT 2018 thinned to three standards corrects the other eleven within 5-7% of the
+full night's residual, with H and K still agreeing on water to 0.005.
+`data/calibration/igrins_master_{h,k}.h5` use all four fitted nights. **A target
+model** in the source slot halves GJ 281's K residual and places its lines to
+0.2-0.8 km/s, but an approximate model (Payne Zero at literature labels, 4000 K
+floor) flips the sign of the bands' 1-2% water disagreement rather than removing
+it: that floor is how well the star is known. Calibrations store the pattern in
+float32 (`night._store`), which moves it by at most 2.5e-8.
 
 `NightCalibration` (`night.py`) carries per physical order the standards'
 median dry columns, LSF and velocity zero point, water as a time series, and the
@@ -364,8 +386,14 @@ and +1.8% in K, so the bands disagreeing by ~3% is the warning sign. Clipping
 pixels 3 sigma below the model (`--clip-sigma`) fixes H and not K, whose CO
 blends and weak-line forest never cross the threshold. Separately, the
 per-order `stellar_velocity_kms` rails at +-60 in 42% of the *full* fits'
-order-frames in a pattern set by the order, not the star; only H109 (Br12)
-tracks the star. It should be one parameter per frame.
+order-frames in a pattern set by the order, not the star: each order's offset
+from its frame's median repeats across four nights (H115 +45, H119 +39, H106
+-24 km/s) and follows whether its Brackett line sits at an edge of the usable
+pixels, where one wing is fitted against a degree-9 continuum. The free shift is
+absorbing a wing mismatch, so do **not** pin one velocity per frame to "fix" it
+-- that moves the mismatch into the residuals. A star's velocity should come
+from the central-line orders (H98, H103, H109, H113, H120); the real fix is the
+wing, via a fixed master blaze.
 
 `scripts/export_transmission_hdf5.py` writes the unconvolved transmission on the
 model's own grid -- 4 samples per resolution element, no interpolation -- for a

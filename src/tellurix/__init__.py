@@ -27,7 +27,7 @@ from .atlas import (
     read_arcturus_page,
     robust_noise,
 )
-from .night import NightCalibration, OrderCalibration
+from .night import MasterPattern, NightCalibration, OrderCalibration
 from .igrins import (
     IGRINS_ORDER_CENTRES_UM,
     IGRINSObservation,
@@ -119,6 +119,7 @@ __all__ = [
     "load_atmosphere_csv",
     "load_mipas_profile",
     "merge_records",
+    "MasterPattern",
     "MTCKDWaterContinuum",
     "NightCalibration",
     "OrderCalibration",

@@ -97,15 +97,98 @@ same fix is why the threshold is 0.02 and not the 0.04 first chosen: the clean
 agreement it was set from (0.018-0.021) was itself mostly this defect, and is
 0.005-0.006 without it.
 
-## Not yet done
+## A night with three standards
 
-- High-airmass K frames on a night whose dry-gas columns drift with airmass --
-  McDonald 2017 above airmass 2.4 -- transfer at 1.6-2.0 of the noise, because
-  a water scale cannot absorb a CO2/CH4 slant-path error. A per-frame dry-gas
-  scale is untested.
-- A night with fewer than five standards, which needs the master pattern.
-- A target model in the source slot, which the injection test says removes the
-  line-rich floor; `--stellar` accepts one but it is untested here.
+46% of archive nights have fewer than five standards, too few to measure the
+night's own response pattern. The response belongs to the spectrograph, so the
+median of other nights' patterns stands in (`tellurix.MasterPattern`,
+`scripts/build_igrins_master_pattern.py`). Built from DCT 2016, McDonald 2017 and
+Gemini South 2021 only, it matches DCT 2018's own pattern at median r = +0.940
+in H and +0.914 in K and captures 88% and 84% of its variance.
+
+The test thins DCT 2018 to three standards spread over the night -- 39 (HR 1558,
+early), 84 (HD 53205) and 108 (k Tau, late) -- fits them with that master in
+place of the leave-one-out pattern (`fit_igrins_standard.py --response-pattern`),
+builds the calibration from the three (`build_igrins_calibration.py
+--master-pattern --minimum-frames 3`) and corrects the other eleven standards as
+science frames with the A0V model as their source. Against each frame's
+full-night reference -- its own full fit for the seven calibrating standards,
+the full-night science fit for the four extras:
+
+| | median residual ratio | worst | H - K water, median / worst |
+|---|---:|---:|---:|
+| H | 1.049 | 1.099 | 0.005 / 0.012 |
+| K | 1.066 | 1.124 | |
+
+The three standards themselves fit at 1.26-1.39 sigma in H and 1.25-1.41 in K
+with the borrowed pattern, against 1.19-1.35 and 1.21-1.32 with the night's own.
+So three standards and a master pattern cost about 5-7% of residual against a
+full night, while the bands still agree on every frame's water to 0.005 --
+the water interpolation, not the pattern, is what the frame's own water scale
+has to rescue, and three standards spread over the night bracket it well
+enough. Which part of the 5-7% is the pattern and which the fewer standards is
+not separated here. Numbers: `docs/igrins_science_dct2018_sparse.json`, whose
+residuals divide by `docs/igrins_science_dct2018.json` and the full-fit records.
+
+`data/calibration/igrins_master_{h,k}.h5` are built from all four nights, for
+use; the `_without_dct2018` masters exist only for this test.
+
+## A model of the target
+
+The injection test said a target's own model in the source slot should remove
+the line-rich floor. Two real targets were refitted with Payne Zero spectra at
+approximate literature labels (`scripts/generate_payne_zero_star.py`; both
+atmospheres unconverged, the metadata beside each npz says how the labels were
+chosen): GJ 281 at 4000 K, log g 4.7 -- Payne Zero's floor, the star itself
+being slightly cooler -- and LkCa 15 at 4370 K, log g 3.9, vsini 13 km/s.
+
+| | residual H / K, flat | with model | H - K water, flat | with model |
+|---|---|---|---:|---:|
+| GJ 281 | 8.06 / 6.30 | 5.48 / 3.14 | -0.022 | +0.019 |
+| LkCa 15 | 3.51 / 2.31 | 2.94 / 2.21 | -0.010 | +0.013 |
+
+The models land where they should -- the fitted stellar velocity agrees across
+orders to 0.2-0.8 km/s and between the bands (GJ 281 6.6 and 6.7, LkCa 15 26.6
+and 26.9 km/s) -- and take out a large part of the stellar structure, half of
+GJ 281's K residual. But the bands' water disagreement **changes sign and keeps
+its size**. So at the 1-2% level the target's water scale is limited by how well
+its spectrum is known, whether that spectrum is left in the data or modelled
+approximately; an approximate model moves the bias rather than removing it. A
+target whose labels are actually fitted, or a stellar template learned from
+several epochs, is what would be needed to do better.
+Numbers: `docs/igrins_science_dct2018_model.json`.
+
+## A dry-gas scale for high-airmass K
+
+On McDonald 2017 the two K frames above airmass 2.4 transferred at 1.6-2.0 of
+the noise with a per-frame water scale, while every other frame was under 0.8
+and H at the same airmass was fine: the night's CO2 and CH4 columns rise with
+airmass, and a water scale cannot absorb a dry-gas slant-path error.
+`--dry-shift` adds per-frame CO2 and CH4 scales, measured the same way -- free
+per order, median over orders. Tested by holding standards out
+(`validate_igrins_transfer.py --dry-shift`, `docs/igrins_transfer_dry_*.json`),
+correction against the full fit over the noise, absorbing orders:
+
+| | water + velocity (S2) | + CO2, CH4 separately (S3) | + one tied dry scale (S3t) |
+|---|---:|---:|---:|
+| McDonald 2017 K | 0.96 | 0.45 | **0.46** |
+| -- its airmass 2.96 frame | 2.00 | 0.42 | **0.41** |
+| -- its airmass 2.48 frame | 1.56 | 0.31 | **0.31** |
+| DCT 2018 K, no deficit | 0.38 | 0.40 | |
+| McDonald 2017 H | 0.49 | 0.48 | |
+| DCT 2018 K, Arcturus injected | 0.62 | 0.64 | **0.61** |
+
+Where the deficit exists it halves the error and removes the high-airmass
+outliers; where it does not, it costs nothing. The CO2 and CH4 shifts, measured
+in different orders, agree to 0.007 or better on seven of the eight frames
+(+0.081 and +0.080 on the airmass-2.96 frame, +0.074 and +0.072, -0.043 and
+-0.039), which is what a shared column or path error does and
+independent line-list errors would not; they are also not a function of
+airmass (+0.07 at 2.48, -0.04 at 2.08), so the fix has to be per frame. But
+freeing them separately lets a line-rich target pull CH4 by -3.3% and CO2 by
+-0.8% -- CH4's orders share 2.3 um with the CO bandheads -- which is why the
+default, `--dry-shift` with no value, **ties** them: CO2's shift, applied to
+both. That keeps all of the benefit and none of the penalty.
 
 ## Running it
 
@@ -117,7 +200,7 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/build_igrins_calibration.py \
 UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_science.py \
     --spec data/igrins/20181220_0059/SDC?_20181220_0059.spec.fits \
     --calibration data/calibration/igrins_dct2018_h.h5 data/calibration/igrins_dct2018_k.h5 \
-    --clip-sigma 3 --output-dir data/corrected/igrins/science_dct2018
+    --clip-sigma 3 --dry-shift --output-dir data/corrected/igrins/science_dct2018
 UV_CACHE_DIR=.uv-cache uv run python scripts/summarize_igrins_science.py \
     --runs data/corrected/igrins/science_dct2018 --output docs/igrins_science_dct2018.json
 ```

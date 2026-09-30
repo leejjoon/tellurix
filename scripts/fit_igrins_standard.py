@@ -641,6 +641,10 @@ def main() -> None:
                              "0 disables the guard and invalidates the residual as a test.")
     parser.add_argument("--fixed-pattern-min-frames", type=int, default=5,
                         help="below this many frames the pattern is too noisy to be a calibration")
+    parser.add_argument("--response-pattern", type=Path, default=None,
+                        help="a MasterPattern (build_igrins_master_pattern.py) to divide out "
+                             "instead of the night's own leave-one-out pattern -- for a night "
+                             "with fewer than --fixed-pattern-min-frames standards")
     parser.add_argument("--no-covariance", action="store_true",
                         help="skip the formal errors, and with them the 8.2 s Hessian compile")
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"),
@@ -666,6 +670,13 @@ def main() -> None:
                               read_igrins_observation)
 
     observations = [read_igrins_observation(path) for path in args.spec]
+    master = None
+    if args.response_pattern is not None:
+        from tellurix import MasterPattern
+
+        master = MasterPattern.load(args.response_pattern)
+        if {o.band for o in observations} != {master.band}:
+            raise SystemExit(f"{args.response_pattern} is a {master.band} pattern")
     profile = load_atmosphere_csv(root / args.profile)
     stellar = None if args.stellar == "flat" else StellarSpectrum.from_npz(args.stellar)
 
@@ -719,10 +730,19 @@ def main() -> None:
         # one pass cannot see it, because a single frame cannot tell a
         # repeatable response error from its own noise.
         corrected = None
-        if args.fixed_pattern and len(first_pass) >= args.fixed_pattern_min_frames:
-            patterns = leave_one_out_patterns(
-                [r["_fractional_residual"] for _, r in first_pass],
-                smooth_pixels=args.pattern_smooth_pixels)
+        use_master = master is not None and first_pass
+        if use_master or (args.fixed_pattern
+                          and len(first_pass) >= args.fixed_pattern_min_frames):
+            if use_master:
+                # A night too thin to measure its own response borrows the
+                # instrument's, measured on other nights. No leave-one-out is
+                # needed: none of these frames went into it.
+                patterns = [master.pattern_on(number, observation.order(number).wavelength_vacuum_nm)
+                            for observation, _ in first_pass]
+            else:
+                patterns = leave_one_out_patterns(
+                    [r["_fractional_residual"] for _, r in first_pass],
+                    smooth_pixels=args.pattern_smooth_pixels)
             corrected = []
             for (observation, previous), pattern in zip(first_pass, patterns):
                 began = time.time()
@@ -779,6 +799,7 @@ def main() -> None:
                 "covariance": not args.no_covariance,
                 "fixed_pattern": args.fixed_pattern,
                 "fixed_pattern_min_frames": args.fixed_pattern_min_frames,
+                "response_pattern": None if master is None else str(args.response_pattern),
                 "pattern_smooth_pixels": args.pattern_smooth_pixels,
                 "frames_in_run": len(observations),
             },

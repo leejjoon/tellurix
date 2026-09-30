@@ -109,7 +109,11 @@ absorb -- and the night's dry-gas columns rise with airmass at 2 sigma
 (`igrins_a0v.md`). A water scale and a velocity cannot absorb a dry-gas
 slant-path error. Before the header fix k Tau's K airmass read 3.16 instead of
 2.96 and its transfer looked fine (0.58): the wrong airmass was supplying the
-missing dry column. A per-frame dry-gas scale is the obvious thing to try.
+missing dry column. A per-frame dry-gas scale fixes it -- one CO2 scale per
+frame, applied to CH4 too, takes the two frames to 0.41 and 0.31 and the
+night's absorbing orders from 0.96 to 0.46, and costs nothing on DCT 2018 or
+with Arcturus injected (`--dry-shift`; `igrins_science.md`, "A dry-gas scale";
+`igrins_transfer_dry_*.json`).
 
 Two cross-checks that the frame shift is the atmosphere and not a fitting
 artefact:
@@ -200,9 +204,12 @@ exception that does track the star -- chi Cap +58.8 and +57.6, k Tau +42.7 and
 `igrins_a0v.md` comes from. The Brackett lines are hundreds of km/s wide, the
 usable pixels start 450-550 pixels into each order so a line near the blue end
 is seen on one side only, and a degree-9 continuum absorbs what a shift would
-otherwise explain. The right parameterization is one stellar velocity per frame
--- the same argument as for water. The transfer frees it per order too, so the
-comparisons above are like for like.
+otherwise explain. Across four nights each order's offset from its frame's
+median repeats, and it follows whether the line sits at an edge of the usable
+pixels (`igrins_a0v.md`, "The stellar velocity belongs to the order"): the free
+shift is absorbing a wing mismatch, so pinning one velocity per frame would move
+that mismatch into the residuals rather than remove it. The transfer frees it
+per order too, so the comparisons above are like for like.
 
 ## Running it
 

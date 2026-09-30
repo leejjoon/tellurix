@@ -60,6 +60,14 @@ SHARED = ("S1", "S2")
 # With --clip-sigma: L2 and S2 again, on the pixels S2's fit does not put far
 # below the model -- the unmodelled lines of a target, if it has any.
 CLIPPED = ("L2c", "S2c")
+# With --dry-shift: L2 plus the well-mixed columns free per order (L4), and the
+# frame-wide medians of all four shifts (S3). A water scale cannot absorb a
+# dry-gas slant-path error, which is what McDonald's high-airmass K frames show.
+DRY = ("CO2", "CH4")
+# S3t ties the two: one dry scale, CO2's, applied to both. McDonald shows them
+# moving together (+0.081 and +0.080 on its airmass-3 frame), and CO2 is the one
+# a line-rich target biases least -- CH4 shares 2.3 um with the CO bandheads.
+DRY_LEVELS = ("L4", "S3", "S3t")
 
 
 def load_driver(root: Path):
@@ -159,7 +167,8 @@ def summarize(selection):
         return out
     full = np.array([r["full"]["residual_rms_over_noise"] for r in selection])
     out["full_median_residual"] = float(np.median(full))
-    for level in [k for k in LEVELS + SHARED + CLIPPED if k in selection[0]["levels"]]:
+    for level in [k for k in LEVELS + SHARED + CLIPPED + DRY_LEVELS
+                  if k in selection[0]["levels"]]:
         residual = np.array([r["levels"][level]["residual_rms_over_noise"] for r in selection])
         dt = np.array([r["levels"][level]["transmission_rms_difference"] for r in selection])
         noise = np.array([r["levels"][level]["noise_continuum_units"] for r in selection])
@@ -261,6 +270,9 @@ def main() -> None:
                         help="after S2, drop pixels more than this many sigma BELOW the model "
                              "and measure the frame's shifts again (levels L2c, S2c). One-sided "
                              "because a target's unmodelled lines absorb.")
+    parser.add_argument("--dry-shift", action="store_true",
+                        help="also free CO2 and CH4 per order (L4) and apply their frame "
+                             "medians with the velocity and water (S3)")
     parser.add_argument("--clip-pixels", type=int, default=2,
                         help="how far each clipped pixel's exclusion reaches either side: a "
                              "line's wings are below threshold but still pull")
@@ -410,6 +422,8 @@ def main() -> None:
             "velocity_kms": float(result.parameters.velocity_kms),
             "lsf_sigma_kms": float(result.parameters.lsf_sigma_kms),
             "log_column_H2O": float(result.parameters.log_column_scales.get("H2O", 0.0)),
+            **{f"log_column_{s}": float(result.parameters.log_column_scales.get(s, 0.0))
+               for s in DRY},
             "stellar_velocity_kms": float(result.parameters.stellar_velocity_kms),
             "converged": bool(result.success), "seconds": round(time.time() - began, 2),
         })
@@ -483,9 +497,17 @@ def main() -> None:
                 "L3": {"velocity_kms", "lsf_sigma_kms"} | ({"H2O"} if water_free else set()),
             }
             current = parameters
+            fitted = {}
             for level in LEVELS:
                 current, entry["levels"][level] = fit(
                     context, objective, order, current, frees[level], star_model, cached)
+                fitted[level] = current
+            entry["dry_free"] = [s for s in DRY if s in context["free_species"]]
+            if args.dry_shift:
+                # From L2, not L3: the LSF stays the calibration's.
+                _, entry["levels"]["L4"] = fit(
+                    context, objective, order, fitted["L2"],
+                    frees["L2"] | set(entry["dry_free"]), star_model, cached)
             results.append(entry)
             retained[(name, number)] = (order, cached, parameters)
             L = entry["levels"]
@@ -515,12 +537,20 @@ def main() -> None:
             shifts[name] = {"velocity_kms": float(np.median(dv)),
                             "log_column_H2O": float(np.median(dw)) if dw else 0.0,
                             "orders": len(mine), "water_orders": len(dw)}
+            for species in DRY:
+                d = [r["levels"][level][f"log_column_{species}"]
+                     - r["calibration"]["columns"][species]
+                     for r in mine if species in r.get("dry_free", ())]
+                shifts[name][f"log_column_{species}"] = float(np.median(d)) if d else 0.0
+                shifts[name][f"{species}_orders"] = len(d)
         return shifts
 
-    def shifted(parameters, shift, water_free):
+    def shifted(parameters, shift, water_free, dry=()):
         columns = dict(parameters.log_column_scales)
         if water_free:
             columns["H2O"] = columns["H2O"] + shift["log_column_H2O"]
+        for species in dry:
+            columns[species] = columns[species] + shift[f"log_column_{species}"]
         return parameters._replace(
             velocity_kms=parameters.velocity_kms + shift["velocity_kms"],
             log_column_scales=columns)
@@ -539,6 +569,24 @@ def main() -> None:
         fitted_s2[(name, number)], entry["levels"]["S2"] = fit(
             context, objective, order, shifted(parameters, shared[name], entry["water_free"]),
             set(), star_model, cached)
+
+    dry_shared = None
+    if args.dry_shift:
+        dry_shared = frame_shifts("L4")
+        for entry in results:
+            name, number = entry["frame"], entry["order"]
+            context, star_model, objective = retained[("context", number)]
+            order, cached, parameters = retained[(name, number)]
+            objective = objective.rebind(order)
+            _, entry["levels"]["S3"] = fit(
+                context, objective, order,
+                shifted(parameters, dry_shared[name], entry["water_free"], entry["dry_free"]),
+                set(), star_model, cached)
+            tied = dict(dry_shared[name], log_column_CH4=dry_shared[name]["log_column_CO2"])
+            _, entry["levels"]["S3t"] = fit(
+                context, objective, order,
+                shifted(parameters, tied, entry["water_free"], entry["dry_free"]),
+                set(), star_model, cached)
 
     clipped_shared = None
     if args.clip_sigma is not None:
@@ -591,6 +639,7 @@ def main() -> None:
                            observations[f].zenith_angle_deg)))} for f in frames},
         "shared_shifts": shared,
         "clipped_shifts": clipped_shared,
+        "dry_shifts": dry_shared,
         "clip": None if args.clip_sigma is None else {
             "sigma": args.clip_sigma, "pixels": args.clip_pixels},
         "rows": results,

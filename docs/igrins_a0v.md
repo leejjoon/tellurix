@@ -962,6 +962,50 @@ record, because their `inputs` name different files — one record per band per
 night.
 
 
+## The stellar velocity belongs to the order, not the star
+
+The A0V fits free `stellar_velocity_kms` per order, and it does not behave
+like a star's velocity. In the full fits it rails at its +-60 km/s bound in 42%
+of order-frames, and among orders with a Brackett line well inside them the
+unrailed values of one frame scatter by 20-40 km/s. Frame medians repeat only
+loosely per star (HIP 82560 -40.2 and -40.9, k Tau +4.2 and +4.8, but chi Cap
+-12.8 and +8.9).
+
+The scatter is not noise. Each order's offset from its frame's median repeats
+across four nights, three telescopes and every star:
+
+| order | line position | offset, km/s | frames |
+|---|---|---:|---:|
+| H98 | Br9 at 0.28 | +8 +- 5 | 29 |
+| H103 | Br10 at 0.42 | -5 +- 3 | 43 |
+| H106 | Br11 at -0.07 | **-24 +- 4** | 25 |
+| H109 | Br12 at 0.23 | +13 +- 4 | 42 |
+| H111 | Br13 at 0.14 | **-23 +- 5** | 11 |
+| H113 | Br14 at 0.45 | **-25 +- 7** | 14 |
+| H114 | Br15 at 0.15 | -15 +- 3 | 29 |
+| H115 | Br15 at 1.02, Br16 at 0.06 | **+45 +- 4** | 32 |
+| H116 | Br16 at 0.93, Br17 at 0.14 | **-21 +- 3** | 42 |
+| H119 | Br20 at 1.03, Br21-22 inside | **+39 +- 5** | 21 |
+
+Line position is where the line falls in the order's usable pixels, 0 at the
+blue end and 1 at the red. The large offsets are almost all orders whose line
+sits at or past an edge of the usable data, so that only one wing is fitted,
+and the sign follows the edge: a line at the blue end is pushed blueward, one at
+the red end redward -- in both cases *out* of the window, which lowers the
+model's wing inside it. The likely reading is that the model's wings are too
+strong for the continuum-normalized data where the degree-9 continuum cannot
+tell a wing from the blaze, and a free shift is the cheapest way to weaken one.
+H113, a central line at -25, does not fit that story.
+
+Two consequences. Pinning one stellar velocity per frame is not neutral: it
+takes away the freedom that is absorbing a wing mismatch and would move it into
+those orders' residuals. And a star's velocity should come from orders with a
+central line (H98, H103, H109, H113, H120), not from all of them. The actual fix
+is the wing -- a fixed master blaze, so the continuum cannot trade against a
+wing -- which is also what fitting vsini would need, since rotation shapes the
+core and not the wings. None of this limits the telluric correction, whose
+residual at the Brackett lines is already at the noise.
+
 ## What is not done yet
 
 - **Science frames.** Whether a night's standards can set the telluric model of
@@ -994,4 +1038,5 @@ night.
 - **`vsini` is fixed, not fitted.** The A0V run used 150 km/s for every
   standard. A0V rotation velocities range over roughly 100-250 km/s, and the
   Brackett lines are already hundreds of km/s wide from Stark broadening, so
-  this should be second order — but it is assumed, not measured.
+  this should be second order — but it is assumed, not measured. Fitting it,
+  or one stellar velocity per frame, waits on the wing mismatch above.
