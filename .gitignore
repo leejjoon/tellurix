@@ -49,3 +49,6 @@ docs/*_files/
 # The page itself is docs/review_page/index.html and is committed.
 data/review/
 data/review_[0-9]/
+
+# Claude Code worktrees and session state.
+.claude/
