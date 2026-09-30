@@ -163,12 +163,15 @@ a long "dip" under a lagging filter and must be kept; refuse orders where the
 lamp is absorbed below -6.5%); a dip must be at least 0.5% deep or a clean lamp
 oscillates the clipping; and the window is 31 px near the order ends but 151 px
 inside, because a 31-px blaze divides the lamp's own ~15-px structure into the
-star. On DCT 2018 the blended blaze is better than the old continuum on every
-measure in H (1.248 -> 1.235 sigma with the pattern, 1.914 -> 1.419 without, red
-edge 3.05 -> 1.51, Brackett stellar-velocity spread 28 -> 22 km/s) and leaves a
-third of the pattern; in K it is much better without a pattern (1.95 -> 1.53)
-but 8% worse with the night's own, at 1-4 px scales, for a reason not yet found
-(not flexure). Degree 5 on top of the blaze is worse than degree 9 in both bands.
+star. On DCT 2018 the blended blaze is better in both bands -- per-pixel z
+1.432 -> 1.149 in H, 1.576 -> 1.412 in K, almost all at the order ends -- and
+leaves a third of the pattern. **Compare continuum models by per-pixel z**
+(`residual_z_rms`, now in every summary and record), not by
+`residual_rms_over_noise`: that divides by the *median* uncertainty, so a blaze
+reweighting the order ends made it read K 8% *worse*. What is really left in K is
++2-3% inside deep lines, a Gaussian-LSF trade (the blaze fit balances the cores
+with a 1.7% wider LSF; both miss cores by ~3 sigma) -- not the blaze, not
+flexure, not pattern leakage. Degree 5 on top of the blaze is worse than 9.
 
 `NightCalibration` (`night.py`) carries per physical order the standards'
 median dry columns, LSF and velocity zero point, water as a time series, and the

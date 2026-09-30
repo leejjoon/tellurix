@@ -504,6 +504,13 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         "pixel_sigma": pixel_sigma,
         "residual_rms": residual_rms,
         "residual_rms_over_noise": residual_rms / pixel_sigma,
+        # Per pixel, residual over its own uncertainty. residual_rms_over_noise
+        # divides by the *median* uncertainty, so it moves when anything
+        # reweights the order -- dividing out a blaze raised it 8% in K on
+        # DCT 2018 while this fell 10%. Compare runs with different continuum
+        # models by this one.
+        "residual_z_rms": (float(np.sqrt(np.mean((residual[reliable] / sigma[reliable]) ** 2)))
+                           if reliable.any() else float("nan")),
         "median_transmission": float(np.median(transmission[mask])),
         "all_stages_converged": all(s["success"] for s in stages),
         "mt_ckd_version": context["mt_ckd_version"],
@@ -534,6 +541,7 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         "log_jitter": row["log_jitter"], "pixel_sigma": pixel_sigma,
         "residual_rms": residual_rms,
         "residual_rms_over_noise": row["residual_rms_over_noise"],
+        "residual_z_rms": row["residual_z_rms"],
         "reduced_chi2": 0.0, "median_transmission": row["median_transmission"],
         "continuum_level": row["continuum_level_counts"], "continuum_level_pixels": 0,
         "condition_number": row["condition_number"] or 0.0,
@@ -907,6 +915,7 @@ def main() -> None:
                            ("surface_pressure_hpa", "f8"),
                            ("surface_humidity_percent", "f8"),
                            ("response_pattern_rms", "f8"),
+                           ("residual_z_rms", "f8"),
                            ("reused_compilation", "?")),
         )
         print(f"wrote {record_path} ({record_path.stat().st_size / 1e6:.2f} MB)")

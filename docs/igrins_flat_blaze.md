@@ -48,28 +48,40 @@ Three things the smoothing has to get right, each found by getting it wrong:
 
 ## Results, DCT 2018-12-20
 
-Ten standards, A0V model, over the orders with a usable blaze:
+Ten standards, A0V model, over the orders with a usable blaze. **Compare runs by
+per-pixel z** -- the rms of residual / uncertainty on the pixels both runs call
+reliable. The driver's `residual_rms_over_noise` divides the rms residual by the
+*median* uncertainty, so it moves when a blaze reweights the order ends: it made
+the blaze look 8% worse in K when per-pixel z says 10% better. The driver now
+writes `residual_z_rms` beside it.
 
-| | residual, no pattern | with pattern | red-edge rms | pattern still needed | Brackett v_star spread |
+| | per-pixel z, whole order | interior only | driver metric, with / without pattern | red-edge rms | pattern still needed |
 |---|---:|---:|---:|---:|---:|
-| H, degree 9 (before) | 1.914 | 1.248 | 3.05 | 0.0116 | 28.0 km/s, 34% railed |
-| H, blended blaze + degree 9 | **1.419** | **1.235** | **1.51** | **0.0037** | **21.9 km/s, 24%** |
-| K, degree 9 (before) | 1.950 | **1.318** | 2.53 | 0.0132 | |
-| K, blended blaze + degree 9 | **1.534** | 1.424 | **1.51** | **0.0040** | |
+| H, degree 9 (before) | 1.432 | 1.072 | 1.248 / 1.914 | 3.05 | 0.0116 |
+| H, blended blaze + degree 9 | **1.149** | **1.071** | 1.235 / 1.419 | **1.51** | **0.0037** |
+| K, degree 9 (before) | 1.576 | **1.257** | 1.318 / 1.950 | 2.53 | 0.0132 |
+| K, blended blaze + degree 9 | **1.412** | 1.316 | 1.424 / 1.534 | **1.51** | **0.0040** |
 
-The block-averaged residual (1 = white noise) tells where it acts: in H the
-blended blaze is at or below the old fit at every scale, interior and red end;
-the red end falls from 7.09 to 2.78 at 16 pixels.
+**Better in both bands** -- 20% in H, 10% in K -- almost all of it at the order
+ends, where the old continuum could not follow the roll-off (the red end's
+block-averaged residual at 16 pixels falls from 7.09 to 2.78 times white noise
+in H). In H the interior is unchanged. The Brackett-order stellar velocity
+spread falls from 28 to 22 km/s and its rail rate from 34% to 24%.
 
-**H: better everywhere.** **K: much better without a pattern, 8% worse with the
-night's own pattern.** K's loss is at 1-4 pixel scales, which a blaze smoothed
-over 31-151 pixels cannot carry; it is in every frame (+3% to +15%) and does not
-follow the PLP's flexure (r = -0.20), and the K fits with the blaze come out with
-a slightly wider LSF (+0.04 km/s). It is not understood.
+**What is left in K's interior is a line-shape trade.** Its interior is 4.7%
+worse, all of it inside telluric lines (continuum within 0.1-0.7%, transmission
+below 0.8 +2-3%). In the line cores both fits miss by about 3 sigma: the old one
+leaves the cores too deep (mean z +0.24) with a narrower Gaussian LSF, the blaze
+run balances the cores (mean z -0.09) with a 1.7% wider one and pays slightly in
+the flanks. A Gaussian cannot match an IGRINS line's core and wings at once, so
+a change anywhere else -- here the continuum -- moves where the miss lands. It is
+not the blaze and not flexure (r = -0.20 against the PLP's), and it is not the
+old, larger pattern hiding line error: both patterns track absorption depth
+equally weakly (r = +0.12, +0.13). The fix, if one is wanted, is a non-Gaussian
+LSF.
 
 A lower continuum degree does not follow from the blaze: degree 5 is worse than
-degree 9 in both bands (H 1.355, K 1.508 with the pattern) -- the lamp-to-star
-colour is not that smooth.
+degree 9 in both bands -- the lamp-to-star colour is not that smooth.
 
 The report's "blaze + degree 9" and "blaze + degree 5" runs used an earlier blaze
 -- one 31-pixel window, before the dip-depth floor and the long-run rule -- whose
@@ -79,13 +91,11 @@ is committed.
 
 ## Where to use it
 
-Where the night's own pattern exists and K is being fitted, the old continuum
-still wins by 8%. Everywhere else the blaze is the better base: H on any night,
-and both bands where the pattern must be borrowed -- thin nights and science
-targets, which is where the pattern matters most and is least well measured.
-The blaze leaves a third of the pattern to correct, so a borrowed one has less
-to get right. That test -- blaze plus master pattern against master pattern
-alone on a thinned night -- needs the other nights' flats and is not done.
+Everywhere a flat is available: it beats the old continuum in both bands and
+leaves a third of the response pattern to correct, which matters most where the
+pattern has to be borrowed -- thin nights and science targets. The test of that
+-- blaze plus master pattern against master pattern alone on a thinned night --
+needs the other nights' flats and is not done.
 
 ## Also in the bundle
 

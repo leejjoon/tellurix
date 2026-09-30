@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 """Compare fit_igrins_standard.py runs of the same frames, order by order.
 
-For each run, over the orders every run has: the median residual after the
-fixed-pattern pass and before it, the residual in the reddest 150 reliable
+For each run, over the orders every run has: the median per-pixel rms of
+residual / uncertainty on the pixels every run calls reliable -- the measure to
+compare runs by, because the driver's ``residual_rms_over_noise`` divides the rms
+residual by the *median* uncertainty and so changes when a blaze reweights the
+order ends, by +8% in K on DCT 2018 when per-pixel z fell 10% -- then the
+driver's median residual after the fixed-pattern pass and before it, the residual in the reddest 150 reliable
 samples of each order (where the blaze rolls off), the rms of the response
 pattern the run still needed, the block-averaged residual at several scales
 (scaled so white noise reads 1), and for H the order-to-order spread of the
@@ -40,7 +44,8 @@ def scaled_block_rms(z, index, block):
     return float(np.sqrt(np.mean(means ** 2)) * np.sqrt(block))
 
 
-def measure(record_dir: Path, cache: Path, band: str, orders: set[int]) -> dict:
+def measure(record_dir: Path, cache: Path, band: str, orders: set[int],
+            common: dict | None = None) -> dict:
     import h5py
 
     pages = h5py.File(record_dir / "record.h5", "r")["pages"][:]
@@ -51,12 +56,21 @@ def measure(record_dir: Path, cache: Path, band: str, orders: set[int]) -> dict:
             if int(row["order"]) in orders and "residual_rms_over_noise_uncorrected" in row:
                 first.append(row["residual_rms_over_noise_uncorrected"])
     edge, pattern, interior, red = [], [], {b: [] for b in BLOCKS}, {b: [] for b in BLOCKS}
+    zrms, zrms_interior = [], []
     for page in pages:
-        path = cache / f"{page['frame'].decode()}_{page['order'].decode()}.npz"
+        key = f"{page['frame'].decode()}_{page['order'].decode()}"
+        path = cache / f"{key}.npz"
         if not path.exists():
             continue
         with np.load(path) as d:
             ok = d["reliable"].astype(bool)
+            if common is not None and key in common and common[key].shape == ok.shape:
+                shared = common[key]
+                z_all = d["residual"] / d["uncertainty"]
+                zrms.append(float(np.sqrt(np.mean(z_all[shared] ** 2))))
+                inside = np.flatnonzero(shared)
+                if inside.size > 700:
+                    zrms_interior.append(float(np.sqrt(np.mean(z_all[inside[300:-300]] ** 2))))
             z = np.where(ok, d["residual"] / d["uncertainty"], np.nan)
             index = np.flatnonzero(ok)
             if index.size > 600:
@@ -70,6 +84,8 @@ def measure(record_dir: Path, cache: Path, band: str, orders: set[int]) -> dict:
                 pattern.append(float(np.sqrt(np.mean(p ** 2))))
     out = {
         "order_frames": int(len(pages)),
+        "median_pixel_z_rms": float(np.median(zrms)) if zrms else None,
+        "median_pixel_z_rms_interior": float(np.median(zrms_interior)) if zrms_interior else None,
         "median_residual_with_pattern": float(np.median(pages["residual_rms_over_noise"])),
         "median_residual_without_pattern": float(np.median(first)) if first else None,
         "median_red_edge_rms": float(np.median(edge)) if edge else None,
@@ -117,15 +133,27 @@ def main() -> None:
 
         blaze = FlatBlaze.load(args.orders_from_blaze)
         orders = {n for n in orders if blaze.usable(n)}
+    # The pixels every run calls reliable, per order-frame, so per-pixel z is
+    # compared on exactly the same samples.
+    common = {}
+    for record_dir, cache in runs.values():
+        for path in cache.glob(f"SDC{args.band}_*.npz"):
+            with np.load(path) as d:
+                ok = d["reliable"].astype(bool)
+            key = path.stem
+            common[key] = ok if key not in common or common[key].shape != ok.shape else common[key] & ok
     report = {"band": args.band, "orders": sorted(orders),
-              "runs": {label: {"record": str(r), "cache": str(c), **measure(r, c, args.band, orders)}
+              "runs": {label: {"record": str(r), "cache": str(c),
+                               **measure(r, c, args.band, orders, common)}
                        for label, (r, c) in runs.items()}}
     existing = json.loads(args.output.read_text()) if args.output.exists() else {}
     existing[args.band] = report
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(existing, indent=1) + "\n")
     for label, r in report["runs"].items():
-        print(f"{args.band} {label:24s} with pattern {r['median_residual_with_pattern']:.3f}, without "
+        print(f"{args.band} {label:24s} per-pixel z {r['median_pixel_z_rms'] or float('nan'):.3f} "
+              f"(interior {r['median_pixel_z_rms_interior'] or float('nan'):.3f}); driver metric: "
+              f"with pattern {r['median_residual_with_pattern']:.3f}, without "
               f"{r['median_residual_without_pattern'] or float('nan'):.3f}, red edge "
               f"{r['median_red_edge_rms'] or float('nan'):.2f}, pattern rms {r['median_pattern_rms'] or float('nan'):.4f}")
 
