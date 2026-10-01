@@ -416,6 +416,7 @@ def main() -> None:
                     "date_obs": observation.date_obs, "mjd": observation.mjd,
                     "airmass": float(1.0 / np.cos(np.radians(observation.zenith_angle_deg))),
                     "orders": list(observation.orders), "order_source": observation.order_source,
+                    "zenith_source": observation.zenith_source,
                     "sha256": dict(observation.sha256),
                 },
                 "calibration": {"path": str(calibration_path), "source": calibration.source["record"],

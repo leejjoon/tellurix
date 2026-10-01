@@ -173,6 +173,30 @@ reweighting the order ends made it read K 8% *worse*. What is really left in K i
 with a 1.7% wider LSF; both miss cores by ~3 sigma) -- not the blaze, not
 flexure, not pattern leakage. Degree 5 on top of the blaze is worse than 9.
 
+**What is left after blaze and pattern depends on the night's S/N, and some of
+it on the epoch -- do not generalize from one night**
+(`docs/igrins_residual_structure.md`, `analyze_igrins_residual_structure.py`).
+At S/N ~150 (DCT 2018) line-free pixels fit at z = 0.98 (H) and 0.83 (K) and the
+wiggles show only after binning. At S/N 400-900 (McDonald 2015-12-01 and -03)
+line-free pixels fit at 2.4-4.6 sigma, carried by three things. (1) **Bad
+pixels that recur between nights**: under 15 pixels, frames share their
+residual at r ~ +0.87 in H, and half of that is the top 1% of pixels -- isolated
+columns that spike on every night (95% shared between the two 2015 nights,
+92-94% with DCT 2018, fewer on later nights), not lamp, telluric or stellar.
+**Mask them** with another night's spike pixels (`pixel_scale_spikes`): it does
+as well as subtracting that night's template and never hurts where a template
+does (K from DCT 2018). (2) **A detector patch noisy in some exposures**: H
+columns >~1536 over H106-H120 at z 15-26 in one frame, at the same place on both
+2015 nights; K columns ~130-640 over K80-K83 -- not count level, not OH, not
+telluric; needs the 2-D frames. (3) **The 2.75-2.80 cm-1 etalon fringe** (n*d 1.8 mm): in H it is
+~0.15% on both epochs with a phase common to all frames; in **K in 2015 it is
+~1% (lamp to 2.2%), four to six times DCT 2018's, and its phase changes between
+pointings**, so a template from other frames can double the damage and it must
+be fitted per frame (K 0054: 3.30 -> 1.94 sigma). The blaze's filters copy
+17-32% of the lamp's fringe into the star. **A fit cache (npz) runs in
+ascending wavenumber, `IGRINSOrder.pixel` in ascending wavelength** -- map a
+cached array to detector columns by wavenumber, never by position.
+
 `NightCalibration` (`night.py`) carries per physical order the standards'
 median dry columns, LSF and velocity zero point, water as a time series, and the
 response pattern taken over *all* the standards -- a science frame is none of
@@ -353,7 +377,17 @@ are right. Averaging a foreign `ZDEND` moved the K slant path by up to 6% --
 including the airmass-3 top of the McDonald ladder and a DCT 2018 calibrating
 standard -- so `zenith_angle_deg` uses `ZDEND` only if the sidereal rate over
 the exposure could have produced it, and `ZDSTART` alone otherwise. Every K run
-fitted before this fix carries at least one such frame.
+fitted before this fix carries at least one such frame. **McDonald 2015 breaks
+both rules further.** Its weather is Celsius and station hPa where 2017 is
+Fahrenheit and inHg, so `Site.alternatives` lists both and `surface_conditions`
+keeps whichever the frame's own numbers support (hydrostatic pressure, and
+temperature/dewpoint/humidity agreeing by Magnus); four -1 cards are missing
+weather. And 12 of its 13 frames carry a zenith distance that is -1 or 2-24 deg
+wrong, with the catalog's RA/Dec empty or wrong too: `scripts/igrins_pointing.py`
+resolves the target by SIMBAD name, computes the zenith distance from geometry
+(`geometric_zenith_angle_deg`, 0.2 deg from the header on every later night) and
+writes a `pointing.json` beside the frame, which the reader prefers and records
+as `zenith_source`. Run it in check mode on any new night before fitting.
 
 **An IGRINS order is named by its physical echelle order, never its row.**
 `H109`, `K71`; `order(109)`; `--orders 109`; the record's `order_number`. Row

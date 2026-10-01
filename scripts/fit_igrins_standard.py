@@ -822,6 +822,7 @@ def main() -> None:
                 "mjd": observation.mjd, "exposure_time_s": observation.exposure_time_s,
                 "zenith_angle_deg": observation.zenith_angle_deg,
                 "orders": list(observation.orders), "order_source": observation.order_source,
+                "zenith_source": observation.zenith_source,
                 "sha256": dict(observation.sha256), "surface": dict(observation.surface),
             },
             "settings": {

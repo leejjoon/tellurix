@@ -97,6 +97,13 @@ pattern has to be borrowed -- thin nights and science targets. The test of that
 -- blaze plus master pattern against master pattern alone on a thinned night --
 needs the other nights' flats and is not done.
 
+What the blaze and the pattern leave -- a 2.75-2.80 cm-1 fringe that the blaze
+partly copies from the lamp into the star, bad pixels that recur between
+nights, a detector patch that is noisy in some exposures, and a slowly drifting
+response; below
+the noise per pixel at S/N ~150, well above it at S/N 400-900 -- is in
+`igrins_residual_structure.md`.
+
 ## Also in the bundle
 
 `joined_flexure.csv` gives the PLP's per-frame H and K flexure. It does not

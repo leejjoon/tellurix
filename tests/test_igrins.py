@@ -192,6 +192,61 @@ def test_a_changed_convention_fails_loudly():
         surface_conditions({**DCT, "BARPRESS": 763.0})
 
 
+def test_mcdonald_2015_reports_metric_and_the_frame_says_so():
+    """Same telescope, other units: 2015-12-03 is Celsius and station hPa.
+
+    Pressure alone rules out inHg; the dewpoint and humidity agree only in
+    Celsius. The 2017 frame, read the same way, still comes out Fahrenheit.
+    """
+
+    metric = {"TELESCOP": "Harlen J. Smith", "OBSERVAT": "McDonald Observatory",
+              "AIRTEMP": 5.6, "BARPRESS": 799.5, "HUMIDITY": 34.0, "DEWPOINT": -8.7}
+    conditions = surface_conditions(metric)
+    assert conditions["temperature_k"] == pytest.approx(278.75)
+    assert conditions["pressure_hpa"] == pytest.approx(799.5)
+    assert conditions["dewpoint_c"] == pytest.approx(-8.7)
+    imperial = surface_conditions({**metric, "AIRTEMP": 66.0, "BARPRESS": 23.4,
+                                   "HUMIDITY": 37.0, "DEWPOINT": 38.6})
+    assert imperial["temperature_k"] == pytest.approx(292.04, abs=0.01)
+    # a humidity neither unit reproduces is refused, not guessed
+    with pytest.raises(ValueError, match="convention has changed"):
+        surface_conditions({**metric, "HUMIDITY": 80.0})
+
+
+def test_geometry_reproduces_a_header_zenith_distance():
+    """DCT 2018-12-20 frame 0045, HD 31069 (SIMBAD): ZDSTART/ZDEND 49.30/49.08."""
+
+    from tellurix.igrins import SITES, geometric_zenith_angle_deg
+
+    angle = geometric_zenith_angle_deg(73.71351218, 44.06086201, "2018-12-21T02:05:43.189",
+                                       "2018-12-21T02:06:54.301", SITES["DCT"])
+    assert angle == pytest.approx(0.5 * (49.30 + 49.08), abs=0.15)
+
+
+def test_a_pointing_sidecar_overrides_the_header(tmp_path):
+    import json
+    import shutil
+
+    for suffix in ("spec.fits", "variance.fits"):
+        shutil.copy(FIXTURE.replace("spec.fits", suffix), tmp_path)
+    spec = tmp_path / "SDCH_test_0001.spec.fits"
+    assert read_igrins_observation(spec).zenith_source == "header"
+    (tmp_path / "pointing.json").write_text(json.dumps({"zenith_angle_deg": 42.5}))
+    observation = read_igrins_observation(spec)
+    assert observation.zenith_angle_deg == 42.5
+    assert observation.zenith_source == "geometry"
+    assert observation.order(observation.orders[0]).meta["zenith_source"] == "geometry"
+
+
+def test_the_all_minus_one_sentinel_is_missing_weather():
+    """2015-12-01 McDonald writes -1 in every weather card."""
+
+    blank = surface_conditions({"TELESCOP": "Harlen J. Smith", "AIRTEMP": -1.0,
+                                "BARPRESS": -1.0, "HUMIDITY": -1.0, "DEWPOINT": -1.0})
+    assert all(blank[key] is None for key in
+               ("temperature_k", "pressure_hpa", "relative_humidity_percent", "dewpoint_c"))
+
+
 def test_an_unknown_telescope_is_refused():
     with pytest.raises(ValueError, match="unknown IGRINS telescope"):
         surface_conditions({**GEMINI, "TELESCOP": "Subaru"})

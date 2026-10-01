@@ -22,6 +22,7 @@ silent convention change is exactly the failure this module has to survive.
 
 from __future__ import annotations
 
+import json
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -53,6 +54,11 @@ _HECTOPASCAL_PER_INCH_HG = 33.863886
 # slop while still rejecting a sea-level value read as a station one, which is
 # off by 35% at DCT.
 _PRESSURE_TOLERANCE = 0.08
+# How far, in percentage points, a header's humidity may sit from the one its
+# own temperature and dewpoint imply. The two McDonald conventions observed land
+# within 1; read in the wrong unit, 2015's 5.6/-8.7 would imply 51%, not 34%,
+# and 2017's 66/38.6 would imply 26%, not 37%.
+_HUMIDITY_TOLERANCE = 10.0
 
 # Centre wavelength, vacuum microns at pixel 1023.5, of every IGRINS echelle
 # order, keyed by band and *physical* order number. Measured from the 93 RRISA
@@ -227,6 +233,8 @@ class Site:
 
     name: str
     altitude_km: float
+    latitude_deg: float
+    longitude_deg: float  # east positive
     temperature_unit: str  # "C" or "F"
     pressure_unit: str  # "hPa" or "inHg"
     pressure_reference: str  # "station" or "sea_level"
@@ -235,6 +243,11 @@ class Site:
     # Smith' and OBSERVAT='McDonald Observatory', an older one says
     # '2.7-m Harlen J. Smith' and plain 'McDonald'.
     aliases: tuple[str, ...] = ()
+    # Other (temperature_unit, pressure_unit) pairs this site has used. The
+    # header never says which is in force, so surface_conditions keeps only
+    # the ones the frame's own numbers are consistent with and refuses if that
+    # leaves more than one.
+    alternatives: tuple[tuple[str, str], ...] = ()
 
 
 # Keyed on the TELESCOP card. The conventions are measured, not documented:
@@ -242,16 +255,20 @@ class Site:
 # mercury (23.6 inHg = 799 hPa, right for Mt Locke); DCT reports 1025 hPa,
 # which is impossible at 2360 m and is therefore reduced to sea level; Gemini
 # South reports 730 hPa, which is the true station pressure at Cerro Pachon.
+# McDonald has used both: 2015-12-03 reports 5.6/799.5 with a dewpoint of -8.7
+# and 34% humidity, which is Celsius and station hectopascals (and consistent
+# only in Celsius); 2017 is the Fahrenheit/inHg above.
 SITES: Mapping[str, Site] = {
-    "McDonald": Site("McDonald Observatory", 2.077, "F", "inHg", "station",
-                     ("mcdonald", "harlen j. smith", "otto struve")),
-    "DCT": Site("Lowell Discovery Telescope", 2.360, "C", "hPa", "sea_level",
+    "McDonald": Site("McDonald Observatory", 2.077, 30.6714, -104.0225, "F", "inHg", "station",
+                     ("mcdonald", "harlen j. smith", "otto struve"),
+                     alternatives=(("C", "hPa"),)),
+    "DCT": Site("Lowell Discovery Telescope", 2.360, 34.7444, -111.4222, "C", "hPa", "sea_level",
                 ("discovery channel", "lowell", "dct")),
     # Deliberately not aliased to a bare "gemini observatory": that card cannot
     # tell South from North, and IGRINS-2 is at Gemini North on a different
     # mountain. An unrecognised Gemini frame should raise, not be placed on
     # Cerro Pachon by default.
-    "Gemini South": Site("Gemini South", 2.722, "C", "hPa", "station",
+    "Gemini South": Site("Gemini South", 2.722, -30.2407, -70.7366, "C", "hPa", "station",
                          ("gemini south", "cerro pachon")),
 }
 
@@ -448,32 +465,54 @@ def surface_conditions(header: Mapping[str, object]) -> dict:
     """
 
     site = site_for(header)
-    temperature = _card(header, "AIRTEMP")
-    if temperature is not None:
-        if site.temperature_unit == "F":
-            temperature = (temperature - 32.0) * 5.0 / 9.0
-        temperature += 273.15
+    cards = {key: _card(header, key) for key in ("AIRTEMP", "BARPRESS", "DEWPOINT", "HUMIDITY")}
+    # 2015-12-01 McDonald writes -1 in all four when the weather station is
+    # down. -1 is a possible temperature but not a pressure or a humidity, so
+    # the four together are the sentinel.
+    if all(value == -1.0 for value in cards.values()):
+        cards = dict.fromkeys(cards)
+    ratio = _station_pressure_ratio(site.altitude_km)
+    expected = _SEA_LEVEL_PRESSURE_HPA * ratio
 
-    pressure = _card(header, "BARPRESS")
-    if pressure is not None:
-        if site.pressure_unit == "inHg":
-            pressure *= _HECTOPASCAL_PER_INCH_HG
-        ratio = _station_pressure_ratio(site.altitude_km)
-        if site.pressure_reference == "sea_level":
-            pressure *= ratio
-        expected = _SEA_LEVEL_PRESSURE_HPA * ratio
-        if abs(pressure / expected - 1.0) > _PRESSURE_TOLERANCE:
-            raise ValueError(
-                f"{site.name} reports BARPRESS={header.get('BARPRESS')!r}, which normalizes "
-                f"to {pressure:.1f} hPa against {expected:.1f} hPa expected at "
-                f"{site.altitude_km:.3f} km -- the header convention has changed"
-            )
+    def celsius(value, unit):
+        return None if value is None else ((value - 32.0) * 5.0 / 9.0 if unit == "F" else value)
 
-    dewpoint = _card(header, "DEWPOINT")
-    if dewpoint is not None and site.temperature_unit == "F":
-        dewpoint = (dewpoint - 32.0) * 5.0 / 9.0
+    def station_hpa(value, unit):
+        if value is None:
+            return None
+        value = value * _HECTOPASCAL_PER_INCH_HG if unit == "inHg" else value
+        return value * ratio if site.pressure_reference == "sea_level" else value
 
-    humidity = _card(header, "HUMIDITY")
+    def consistent(temperature_unit, pressure_unit):
+        pressure = station_hpa(cards["BARPRESS"], pressure_unit)
+        if pressure is not None and abs(pressure / expected - 1.0) > _PRESSURE_TOLERANCE:
+            return False
+        air, dew = celsius(cards["AIRTEMP"], temperature_unit), celsius(cards["DEWPOINT"], temperature_unit)
+        if None not in (air, dew, cards["HUMIDITY"]):
+            # Magnus: the humidity the temperature and dewpoint imply.
+            implied = 100.0 * np.exp(17.62 * dew / (243.12 + dew) - 17.62 * air / (243.12 + air))
+            return abs(implied - cards["HUMIDITY"]) <= _HUMIDITY_TOLERANCE
+        return True
+
+    conventions = ((site.temperature_unit, site.pressure_unit),) + site.alternatives
+    passing = [c for c in conventions if consistent(*c)]
+    if not passing:
+        raise ValueError(
+            f"{site.name} reports BARPRESS={header.get('BARPRESS')!r}, AIRTEMP="
+            f"{header.get('AIRTEMP')!r}, DEWPOINT={header.get('DEWPOINT')!r}, HUMIDITY="
+            f"{header.get('HUMIDITY')!r}, which no known convention makes consistent with "
+            f"{expected:.1f} hPa at {site.altitude_km:.3f} km -- the header convention has changed"
+        )
+    if len(passing) > 1 and site.alternatives and any(
+            cards[key] is not None for key in ("AIRTEMP", "BARPRESS", "DEWPOINT")):
+        raise ValueError(f"{site.name}: the weather cards fit {passing} alike; "
+                         "cannot tell which units the header uses")
+    temperature_unit, pressure_unit = passing[0]
+    air = celsius(cards["AIRTEMP"], temperature_unit)
+    temperature = None if air is None else air + 273.15
+    pressure = station_hpa(cards["BARPRESS"], pressure_unit)
+    dewpoint = celsius(cards["DEWPOINT"], temperature_unit)
+    humidity = cards["HUMIDITY"]
     return {
         "site": site.name,
         "altitude_km": site.altitude_km,
@@ -545,6 +584,37 @@ def zenith_angle_deg(header: Mapping[str, object]) -> float:
     if not 0.0 <= angle < 90.0:
         raise ValueError(f"the zenith distance is outside [0, 90): {angle:.3f} deg")
     return float(angle)
+
+
+# Written by scripts/igrins_pointing.py beside a frame whose header pointing
+# cannot be used; read_igrins_observation prefers it to the header.
+POINTING_SIDECAR = "pointing.json"
+
+
+def geometric_zenith_angle_deg(ra_deg: float, dec_deg: float, date_obs: str, date_end: str,
+                               site: Site) -> float:
+    """The mean zenith distance of a target over DATE-OBS..DATE-END, from geometry.
+
+    For frames whose pointing cards are missing or wrong. On DCT 2018, DCT
+    2016, McDonald 2017 and Gemini South 2021 it agrees with the header's
+    ZDSTART/ZDEND to 0.2 deg; McDonald 2015-12 writes -1, or a value 5-24 deg
+    off, in half its frames.
+    """
+
+    import astropy.units as u
+    from astropy.coordinates import AltAz, EarthLocation, SkyCoord
+    from astropy.time import Time
+
+    location = EarthLocation(lat=site.latitude_deg * u.deg, lon=site.longitude_deg * u.deg,
+                             height=site.altitude_km * u.km)
+    target = SkyCoord(ra_deg * u.deg, dec_deg * u.deg)
+    angles = [90.0 - target.transform_to(AltAz(obstime=Time(t.strip(), scale="utc"),
+                                                 location=location)).alt.deg
+              for t in (date_obs, date_end)]
+    angle = float(np.mean(angles))
+    if not 0.0 <= angle < 90.0:
+        raise ValueError(f"the target is not above the horizon: zenith distance {angle:.3f} deg")
+    return angle
 
 
 @dataclass(frozen=True)
@@ -628,6 +698,8 @@ class IGRINSObservation:
     # how it was found; see identify_orders.
     order_numbers: tuple = ()
     order_source: str = ""
+    # "header", or "geometry" when a pointing sidecar overrode the header.
+    zenith_source: str = "header"
 
     def __post_init__(self) -> None:
         wavelength = np.asarray(self.wavelength_vacuum_nm, dtype=float)
@@ -706,6 +778,7 @@ class IGRINSObservation:
                 "mjd": self.mjd,
                 "band": self.band,
                 "order_source": self.order_source,
+                "zenith_source": self.zenith_source,
                 "surface": dict(self.surface),
             },
         )
@@ -728,6 +801,10 @@ def read_igrins_observation(
     ``spec.fits`` carries the extracted counts in its primary HDU and the
     wavelength solution, in microns, in the first extension. The variance and
     the ``spec_flattened`` products are found beside it unless given.
+
+    A ``pointing.json`` beside the spectrum (``scripts/igrins_pointing.py``)
+    supplies the zenith distance from geometry and takes precedence over the
+    header's pointing cards, which some nights write as -1 or get wrong.
 
     The flattened product is read for its ``MODEL_TELTRANS`` and
     ``FITTED_CONTINUUM`` only. Neither enters the fit: they are the PLP's own
@@ -783,6 +860,15 @@ def read_igrins_observation(
                 plp_continuum = np.asarray(handle["FITTED_CONTINUUM"].data, dtype=float)
         digests["flattened"] = file_sha256(flattened_path)
 
+    sidecar = spec_path.parent / POINTING_SIDECAR
+    if sidecar.exists():
+        pointing = json.loads(sidecar.read_text())
+        zenith, zenith_source = float(pointing["zenith_angle_deg"]), "geometry"
+        if not 0.0 <= zenith < 90.0:
+            raise ValueError(f"{sidecar}: zenith distance {zenith} is outside [0, 90)")
+    else:
+        zenith, zenith_source = zenith_angle_deg(header), "header"
+
     return IGRINSObservation(
         path=spec_path,
         band=band,
@@ -792,7 +878,7 @@ def read_igrins_observation(
         date_obs=str(header.get("DATE-OBS", "")).strip(),
         mjd=_number(header.get("MJD-OBS")),
         exposure_time_s=_number(header.get("EXPTIME")),
-        zenith_angle_deg=zenith_angle_deg(header),
+        zenith_angle_deg=zenith,
         wavelength_vacuum_nm=wavelength_um * 1000.0,
         flux=flux,
         variance=variance,
@@ -802,6 +888,7 @@ def read_igrins_observation(
         plp_continuum=plp_continuum,
         order_numbers=order_numbers,
         order_source=order_source,
+        zenith_source=zenith_source,
     )
 
 

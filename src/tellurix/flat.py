@@ -187,6 +187,39 @@ def edge_blended_blaze(lamp1d: np.ndarray, edge_window: int = 31, interior_windo
     return np.where(np.isfinite(narrow), out, np.nan)
 
 
+def lamp_spectra(flat_on: str | Path, flat_off: str | Path, spectrum: str | Path,
+                 half_width: int = 28) -> tuple[dict[int, np.ndarray], float, int]:
+    """The lamp's unsmoothed 1-D spectrum per physical order, on detector columns.
+
+    Returns the spectra, the median column mismatch of the naming, and how many
+    bands were traced.
+    """
+
+    from astropy.io import fits
+
+    from .igrins import read_igrins_observation
+
+    lamp = (np.asarray(fits.getdata(flat_on, 0), dtype=float)
+            - np.asarray(fits.getdata(flat_off, 0), dtype=float))
+    centres = trace_bands(lamp)
+    raw = [collapse(lamp, c, half_width) for c in centres]
+    extents = []
+    for values in raw:
+        lit = np.flatnonzero(np.isfinite(values) & (values > 0.05 * np.nanmax(values)))
+        extents.append((int(lit.min()), int(lit.max())))
+    observation = read_igrins_observation(spectrum)
+    spectrum_extents = {}
+    for row, number in enumerate(observation.order_numbers):
+        if number is None:
+            continue
+        flux = observation.flux[row]
+        lit = np.flatnonzero(np.isfinite(flux) & (flux > 0.05 * np.nanmax(flux)))
+        if lit.size:
+            spectrum_extents[number] = (int(lit.min()), int(lit.max()))
+    names, mismatch = name_bands(extents, spectrum_extents)
+    return {number: raw[k] for k, number in names.items()}, mismatch, len(centres)
+
+
 def name_bands(extents: list[tuple[int, int]], spectrum_extents: Mapping[int, tuple[int, int]]):
     """Physical order of each band, bottom to top, and the median column mismatch.
 
@@ -250,44 +283,25 @@ class FlatBlaze:
                    interior_window: int | None = 151) -> "FlatBlaze":
         """Trace, collapse, smooth and name, using one extracted spectrum of the night."""
 
-        from astropy.io import fits
-
         from .igrins import read_igrins_observation
 
-        lamp = (np.asarray(fits.getdata(flat_on, 0), dtype=float)
-                - np.asarray(fits.getdata(flat_off, 0), dtype=float))
-        centres = trace_bands(lamp)
-        raw = [collapse(lamp, c, half_width) for c in centres]
-        extents = []
-        for values in raw:
-            lit = np.flatnonzero(np.isfinite(values) & (values > 0.05 * np.nanmax(values)))
-            extents.append((int(lit.min()), int(lit.max())))
-        observation = read_igrins_observation(spectrum)
-        spectrum_extents = {}
-        for row, number in enumerate(observation.order_numbers):
-            if number is None:
-                continue
-            flux = observation.flux[row]
-            lit = np.flatnonzero(np.isfinite(flux) & (flux > 0.05 * np.nanmax(flux)))
-            if lit.size:
-                spectrum_extents[number] = (int(lit.min()), int(lit.max()))
-        names, mismatch = name_bands(extents, spectrum_extents)
+        raw, mismatch, traced = lamp_spectra(flat_on, flat_off, spectrum, half_width)
         if interior_window:
-            orders = {number: edge_blended_blaze(raw[k], window, interior_window)
-                      for k, number in names.items()}
+            orders = {number: edge_blended_blaze(values, window, interior_window)
+                      for number, values in raw.items()}
         else:
-            orders = {number: smooth_blaze(raw[k], window=window) for k, number in names.items()}
+            orders = {number: smooth_blaze(values, window=window) for number, values in raw.items()}
         absorption = {}
-        for k, number in names.items():
+        for number, values in raw.items():
             smooth = orders[number]
             lit = np.isfinite(smooth) & (smooth > 0.25 * np.nanmax(smooth))
-            absorption[number] = float(np.percentile(raw[k][lit] / smooth[lit] - 1.0, 1))
+            absorption[number] = float(np.percentile(values[lit] / smooth[lit] - 1.0, 1))
         source = {"flat_on": str(flat_on), "flat_on_sha256": file_sha256(flat_on),
                   "flat_off": str(flat_off), "flat_off_sha256": file_sha256(flat_off),
                   "named_with": str(spectrum), "column_mismatch": mismatch,
-                  "bands_traced": len(centres), "half_width": half_width, "window": window,
+                  "bands_traced": traced, "half_width": half_width, "window": window,
                   "interior_window": interior_window or 0}
-        return cls(band=observation.band, orders=orders, source=source,
+        return cls(band=read_igrins_observation(spectrum).band, orders=orders, source=source,
                    lamp_absorption=absorption)
 
     def save(self, path: str | Path) -> Path:
