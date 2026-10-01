@@ -183,8 +183,12 @@ def main() -> None:
     parser.add_argument("--zenith-angle-deg", type=float, default=None,
                         help="default is the header's mean air mass; 0 folds it into the "
                              "column scales, which is the diagnostic half of the slant-path test")
-    parser.add_argument("--accuracy-mode", choices=("mt_ckd", "lblrtm_corrected"), default="mt_ckd",
-                        help="'lblrtm_corrected' replaces the runtime MT_CKD continuum with an "
+    parser.add_argument("--accuracy-mode", choices=("mt_ckd", "fast", "lblrtm_corrected"),
+                        default="mt_ckd",
+                        help="'fast' fits lines with no continuum at all, for windows past the "
+                             "end of the MT_CKD table (20000 cm-1), where its coefficients are "
+                             "~1e-31 and falling. "
+                             "'lblrtm_corrected' replaces the runtime MT_CKD continuum with an "
                              "LBLRTM correction template built by build_lblrtm_correction.py. "
                              "The template is valid only for the profile and grid it was built "
                              "for, so --profile, --v1/--v2 and the grid options must match it.")
@@ -281,6 +285,8 @@ def prepare_window(args, root: Path, *, spectrum=None):
             raise SystemExit("--accuracy-mode lblrtm_corrected needs --correction")
         correction = LBLRTMOpticalDepthCorrection.load(root / args.correction)
         continuum = None
+    elif args.accuracy_mode == "fast":
+        correction, continuum = None, None
     else:
         correction = None
         continuum = MTCKDWaterContinuum.from_netcdf(

@@ -111,7 +111,11 @@ UT times reproduces every header to 0.02 -- which is how `_3`, whose header prin
 **band-dependent** excess (B-band 4% above A-band in both files), so the O2 line
 data, not the geometry, is off, and niratl's A-band air mass of 1.10 may be 2-4% high.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
-corrected visible spectra keep their broadband dimming. The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
+corrected visible spectra keep their broadband dimming. **A column at its
+upper bound makes a window unusable** -- the fit is absorbing the solar model's error
+into it, 5-13% of fake absorption -- while one at the lower bound is harmless; the
+transmission files flag the former per row (`column_at_upper_bound`) and the
+corrected files mark it unreliable (`scripts/quality_flags.py`, §4m). The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
 Arcturus pages already fitted) **interpolates pixels where the sky is opaque**;
 its **ILS is the weakest input in their programme** -- R = 300,000 quoted once
 for four atlases, no MOPD, no apodization; its **wavelength scale is +260 m/s**

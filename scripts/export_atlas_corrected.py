@@ -38,11 +38,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tellurix import file_sha256, read_solar_spectrum  # noqa: E402
 
+from quality_flags import UPPER_BOUND_NOTE, species_at_upper_bound  # noqa: E402
+
 STATUS = {
     0: "fitted: this page's own fit supplied the correction",
     1: "not corrected: every species was below the run's slant optical-depth cut, "
        "which still allows lines up to ~1% deep; observed is kept, corrected is NaN",
     2: "not fitted: the page's fit failed or was opaque",
+    3: "not usable: " + UPPER_BOUND_NOTE + "; reliable is False on the whole page",
 }
 
 
@@ -91,6 +94,11 @@ def main() -> None:
                     worst = max(worst, float(np.max(np.abs(observed[ok] / te[ok] - theirs)
                                                     / np.abs(theirs))))
             status = 0
+            railed = species_at_upper_bound(
+                row["at_bound"], {s: row["parameters"][s] for s in row["species"]})
+            if railed:
+                reliable[:] = False
+                status = 3
         elif row.get("negligible_telluric"):
             status = 1
         else:
@@ -158,6 +166,7 @@ def main() -> None:
             dataset.attrs["description"] = description
 
     counts = {k: sum(int(r["status"][0] == k) for r in rows) for k in STATUS}
+    print(f"{counts[3]} pages withheld for a column at its upper bound")
     reliable = sum(int(r["reliable"].sum()) for r in rows)
     pixels = sum(r["wavenumber_cm1"].size for r in rows)
     print(f"wrote {args.output} ({args.output.stat().st_size / 1e6:.1f} MB): {len(rows)} pages "

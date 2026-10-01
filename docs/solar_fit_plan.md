@@ -1196,6 +1196,42 @@ lower at dawn. Computed from the timestamps that predicts O2 scales of 0.961 (`_
 Products: the records `solar/ftsspec_830626_{2,3}.h5` with their summaries, and
 `ftsspec_830626_{2,3}_transmission.h5`.
 
+### 4m. Past the MT_CKD table, and a column at its upper bound
+
+**The seven windows past MT_CKD were refitted without it**, and the refit says they
+should not be used. `--accuracy-mode fast` (lines only, no continuum) now runs through
+`fit_fts_window`, the batch driver -- which records it as the run's physics and drops
+MT_CKD from the inputs it never read -- and `export_transmission_hdf5`, which rebuilds
+such a record the same way. The windows are their own run,
+`solar/ftsspec_830626_2_edge/`, so no record mixes the two physics. All seven fitted,
+and five rail at a column bound: water lines 0.1-7% deep against a 2.6-5.7% residual,
+mostly the solar model in the blue, so the fit used the water column to absorb solar
+mismatch -- and the two that "found" 5-7% lines did it at 6-7x the expected column. The
+neighbouring windows fitted *with* MT_CKD, 19000-20440 cm-1, scatter 0.135-7.4 in the
+same way: water is unconstrained across the blue end of `_2`, and MT_CKD was only what
+made seven of those windows fail loudly. No transmission is exported for the edge run.
+
+**Only the upper bound flags a window.** Across every solar run, 81 species railed:
+
+| at the | cases | absorption the railed species carries | over 5% |
+|---|---|---|---|
+| lower bound (0.135x) | 71 | median 0.17%, p90 0.8% | 0 |
+| upper bound (7.39x) | 10 | median 7.9%, max 12.9% | 7 |
+
+A column driven *down* leaves little absorption behind to be wrong by; one driven *up*
+puts absorption into the model that is not in the sky. Flagging every bound would
+discard 9% of the 1990 windows to no purpose. Per run, windows with a column at the
+upper bound: file 4 two (NO, CH4), file 5 none, photatl none, niratl none, `_2` five
+and `_3` two (all water). `scripts/quality_flags.py` holds the rule;
+`export_transmission_hdf5.py` writes `column_at_upper_bound` and
+`species_at_upper_bound` per row (`annotate_quality_flags.py` added them to the five
+files already written, with the same function); the corrected-spectrum exporters set
+`reliable` False on such pages. Neither corrected file changed, since neither source
+has an upper-bound window.
+
+What it does not catch: a column far too high but short of the bound -- the edge
+window at 5.9x. That is stated rather than thresholded.
+
 ## One decision left before writing code
 
 **How much of file 4 to salvage.** The scan-average bias is analytic for a

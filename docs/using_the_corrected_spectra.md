@@ -306,6 +306,16 @@ sufficient.
 
 ## Caveats that will bite you
 
+**Skip a solar window whose column is at its upper bound.** The solar transmission
+files carry `column_at_upper_bound` (one boolean per row) and
+`species_at_upper_bound`: there the fit drove a column to e^2 to soak up something
+else, usually the solar model's error, and the transmission holds absorption the sky
+does not -- 5-13% in the cases measured. The corrected-spectrum files already set
+`reliable` False on those pages. A column at the *lower* bound is harmless and not
+flagged. Nine windows across the solar runs, none in file 5, photatl or niratl
+(`docs/solar_fit_plan.md` §4m). The flag cannot see a column that is far too high but
+short of the bound.
+
 **The formal errors are not uncertainties.** `record.sigma` and
 `FitResult.covariance` invert the objective's real Hessian, but they assume
 independent pixel errors, and the residual is dominated by *correlated* model

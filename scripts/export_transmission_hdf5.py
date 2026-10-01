@@ -38,6 +38,7 @@ driver uses and it halves the work here.
 from __future__ import annotations
 
 import argparse
+import sys
 import os
 import time
 from pathlib import Path
@@ -171,7 +172,9 @@ def main() -> None:
             vectorize_layers=bool(physics["vectorize_layers"]),
             mixed_precision=bool(physics["mixed_precision"]),
             pressure_shift=bool(physics["pressure_shift"]))
-        continuum = MTCKDWaterContinuum.from_netcdf(
+        # A "fast" record fitted lines only -- the windows past MT_CKD's 20000
+        # cm-1 -- and must be rebuilt the same way.
+        continuum = None if physics["accuracy_mode"] == "fast" else MTCKDWaterContinuum.from_netcdf(
             verified("mt_ckd", Path(inputs.get("mt_ckd")
                      or root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc")), grid)
         model = TelluricModel(profile, grid, opacity, continuum=continuum,
@@ -296,6 +299,8 @@ def main() -> None:
         for name, values in profile.vmr.items():
             vmr.create_dataset(name, data=np.asarray(values))
 
+        write_upper_bound_flags(handle, pages[keep], species_all)
+
         handle.create_dataset("parameters", data=pages[keep], compression=args.compression)
         handle["parameters"].attrs["description"] = (
             "the fitted parameters and quality numbers, one row per spectrum, in the same "
@@ -314,6 +319,32 @@ def main() -> None:
     print(f"wrote {args.output} ({size:.1f} MB)")
     if args.check:
         print(f"max |interpolated back to pixels - cached transmission| = {worst_check:.3e}")
+
+
+def write_upper_bound_flags(handle, rows, species) -> int:
+    """Per-row datasets marking a window whose correction must not be used.
+
+    Separate from the export loop so a file already written can be annotated
+    with the same function (annotate_quality_flags.py) instead of re-exported.
+    """
+
+    import numpy as np
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from quality_flags import UPPER_BOUND_NOTE, species_at_upper_bound
+
+    names = [species_at_upper_bound(row["at_bound"],
+                                    {s: row[f"log_column_{s}"] for s in species})
+             for row in rows]
+    for key in ("column_at_upper_bound", "species_at_upper_bound"):
+        if key in handle:
+            del handle[key]
+    handle.create_dataset("column_at_upper_bound", data=np.array([bool(n) for n in names]))
+    handle["column_at_upper_bound"].attrs["description"] = (
+        "True: do not use this row. " + UPPER_BOUND_NOTE + ". A species at the LOWER bound "
+        "is harmless and not flagged (docs/solar_fit_plan.md §4m).")
+    handle.create_dataset("species_at_upper_bound", data=["+".join(n).encode() for n in names])
+    return int(sum(bool(n) for n in names))
 
 
 if __name__ == "__main__":

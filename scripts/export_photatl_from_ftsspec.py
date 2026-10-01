@@ -56,6 +56,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tellurix import file_sha256, read_fts_spectrum, read_photatl_page, robust_noise  # noqa: E402
 from tellurix.nso import is_photatl_page  # noqa: E402
 
+from quality_flags import UPPER_BOUND_NOTE, species_at_upper_bound  # noqa: E402
+
 NSO = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso")
 
 # Per pixel: where its correction came from.
@@ -64,6 +66,7 @@ STATUS = {
     1: "opaque: that window had no pixel above the transmission floor and is not in "
        "the record; effective_transmission is the fit's but must not be trusted",
     2: "not fitted: file 5 has no fitted window here (below 1876 cm-1 on wn1850)",
+    4: "not usable: the file-5 window here had " + UPPER_BOUND_NOTE,
     3: "refitted: this page was fitted as photatl itself (see `source`), not "
        "transferred from file 5",
 }
@@ -102,6 +105,8 @@ def load_windows(summary_path: Path, npz_dir: Path) -> list[dict]:
             windows.append({
                 "v1": row["v1"], "v2": row["v2"], "npz": row["npz"],
                 "opaque": bool(row.get("opaque")),
+                "railed": species_at_upper_bound(
+                    row["at_bound"], {s: row["parameters"][s] for s in row["species"]}),
                 "wavenumber_cm1": nu[order],
                 "effective_transmission": model / star,
                 "transmission_unconvolved": z["transmission_pixels"][order],
@@ -181,8 +186,8 @@ def main() -> None:
             pixels, k = pixels[hit], k[hit]
             te[pixels] = win["effective_transmission"][k]
             tu[pixels] = win["transmission_unconvolved"][k]
-            reliable[pixels] = win["reliable"][k] & ~win["opaque"]
-            status[pixels] = 1 if win["opaque"] else 0
+            reliable[pixels] = win["reliable"][k] & ~win["opaque"] & (not win["railed"])
+            status[pixels] = 1 if win["opaque"] else 4 if win["railed"] else 0
             source[pixels] = w
             if args.check:
                 # The file-5 fit's own corrected spectrum, rescaled by this page's
@@ -213,6 +218,10 @@ def main() -> None:
                         total[ok] / te[ok] - z["corrected"][order][ok]) / np.abs(z["corrected"][order][ok]))))
             status[:] = 3
             source[:] = -1
+            if species_at_upper_bound(row["at_bound"],
+                                      {s: row["parameters"][s] for s in row["species"]}):
+                reliable[:] = False
+                status[:] = 4
             source_name = f"photatl refit ({summary.name})"
         corrected = total / te
         reliable &= np.isfinite(corrected)
