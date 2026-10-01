@@ -15,6 +15,7 @@ environment. It runs in Payne Zero's own environment and writes an npz that
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band blue
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band red_edge
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band nir --fwhm-cm1 0.01859
+    .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band vis --fwhm-cm1 0.04102
 
 The spectrum is a *fixed* input: the stellar labels are held at literature
 values and are not fitted. See docs/solar_fit_plan.md for where it is used.
@@ -107,6 +108,10 @@ BANDS = {
     # after "mid" and before "red", so where it overlaps "blue" (1100-1110 nm)
     # "blue" still wins and no ftsspec window changes source.
     "nir": (725.0, 1110.0),     # 9009-13793 cm-1
+    # ftsspec_830626_{2,3}, which carry signal to 20750 cm-1 = 482 nm. Their
+    # sinc is 0.0417 / 0.0410 cm-1 (docs/solar_fts_ils.json), so generate with
+    # --fwhm-cm1 0.04102. Sorts after "nir", which keeps 725-735 nm.
+    "vis": (475.0, 735.0),      # 13605-21053 cm-1
 }
 
 

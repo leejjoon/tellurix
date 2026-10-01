@@ -1130,6 +1130,72 @@ window on the wrong grid (9130 points against at most 8610). Every earlier run
 used the default, which is why nothing showed. The driver now records what it
 ran, and niratl's record and summary were rewritten from the saved fits.
 
+### 4l. The 1983 raw pair, and an O2 ladder that finds the spectroscopy instead
+
+`ftsspec_830626_{2,3}` are the raw spectra of niratl's campaign (1983-06-26, defocused Sun
+centre, L. Brown for H. Stokes), 8516-20735 cm-1 with signal throughout, down to 482 nm.
+
+**`_3`'s air mass is computed, not read.** Its header prints `?.??`, and the README's
+"3.0" is a nominal label -- `_2`'s comment line says "5. AIRMASSES" where its header says
+6.66 -> 4.08. The Kasten & Young (1989) air-mass formula at the Sun's position over Kitt
+Peak reproduces every header air mass in both campaigns to 0.02 (6.64/4.08 against
+6.66/4.08; 5.87/3.58, 2.18/1.80 for the 1990 pair), so the headers use it, and `_3`
+ran **3.53 -> 2.64**, fitted at the endpoint mean 3.085 as every other file is.
+
+Inputs: the sinc measured per file (FWHM 0.04167 and 0.04102 cm-1,
+`docs/solar_fts_ils.json`); **one** ERA5 profile for both,
+`kitt_peak_19830626_file3.csv` (14:00 UT, 3.49 mm), as the 1990 pair shared one (ERA5
+gives 3.72 mm for `_2`'s hour -- 6% more, which its fitted water scale absorbs); a new
+Payne Zero band `vis`, 475-735 nm; and one scan serving both files through the new
+`--scan-fwhm-cm1`, since sincs 1.6% apart rank the same molecules.
+
+The sky: H2O in 300 of 407 windows at `_2`'s air mass, **O2 in 42 across four bands**
+(a1-Delta 1.07 um, A 760 nm, B 687 nm, gamma 628 nm), CH4 in 19, CO2 in 6. **No ozone**:
+its Chappuis band is a cross-section absorber with no lines in AER, so it is not in the
+model. It is broad enough that a 30 cm-1 window's continuum absorbs it, which means the
+corrected spectra **still carry its broadband dimming** -- as they carry every other
+continuum. NO2 is absent the same way.
+
+| | fitted | nothing above cut | failed | rms | noise | reliable |
+|---|---|---|---|---|---|---|
+| `_2`, X 5.37 | 307 | 93 | 7 | 1.67% | 0.148% | 95.5% |
+| `_3`, X 3.09 | 287 | 119 | 0 | 1.62% | 0.143% | 96.8% |
+
+The seven failures are `_2`'s windows above 19960 cm-1: the MT_CKD table ends at 20000
+cm-1, and at air mass 5.37 weak water lines there cleared the cut, where at `_3`'s 3.09
+nothing did. The continuum is ~1e-31 there and falling; they are left as recorded
+failures rather than the physics changed for a band edge. The absolute rms is above
+niratl's 1.20%: the solar model is the limit again, and the visible is denser in solar
+lines.
+
+**The O2 ladder.** Each file is fitted at the mean of its endpoint air masses, but the
+FTS co-adds through the scan, so weak lines respond to the *time-averaged* air mass,
+lower at dawn. Computed from the timestamps that predicts O2 scales of 0.961 (`_2`) and
+0.986 (`_3`). Saturated windows:
+
+| band | `_2` | `_3` |
+|---|---|---|
+| A, 760 nm | 1.018 (8) | 1.037 (7) |
+| B, 687 nm | **1.058** (6) | **1.064** (6) |
+| gamma, 628 nm | 0.998 (5) | 1.042 (4) |
+| a1-Delta, 1.07 um (weak only) | 0.94 (6) | 0.95 (3) |
+
+- **The co-add deficit is not seen.** The weak-line windows that would show it most
+  cleanly are few and scatter 0.94-1.49.
+- **The slant path scales correctly between the files**: on the A-band `_2`/`_3` =
+  0.982 against a predicted 0.975.
+- **The excess is band-dependent, so it is spectroscopy, not geometry.** An air-mass or
+  pressure error scales every O2 band alike; here the B-band stands 4% above the A-band
+  in both files. B-band line intensities or line mixing in the line list or the line
+  shape is the candidate. Not tested.
+- **It qualifies §4k's air mass.** niratl's 1.10 was read off the same A-band. If that
+  band needs 2-4% more column than it should, niratl's true air mass is nearer
+  1.06-1.08 -- closer to the crude 1.06-1.10 and the README's "1.0". Recorded as a
+  caveat, not refitted on.
+
+Products: the records `solar/ftsspec_830626_{2,3}.h5` with their summaries, and
+`ftsspec_830626_{2,3}_transmission.h5`.
+
 ## One decision left before writing code
 
 **How much of file 4 to salvage.** The scan-average bias is analytic for a

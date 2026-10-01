@@ -103,7 +103,15 @@ page by page: air mass 1.10 from the O2 A-band, its own sinc (FWHM 0.01859, not
 photatl's 0.01753 -- pass `--fwhm-cm1`), the June 1983 profile and the `nir`
 Payne Zero band; products `niratl_corrected.h5` and `niratl_transmission.h5`
 (§4k). Its residual reads ~76 sigma only because its noise is 5x lower than
-file 5's; in flux units the fit is as good. The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
+file 5's; in flux units the fit is as good. The 1983 raw pair
+`ftsspec_830626_{2,3}` (8516-20735 cm-1, to 482 nm) is fitted too (§4l). Header air
+masses are **Kasten & Young 1989** at the Sun's position -- recomputing them from the
+UT times reproduces every header to 0.02 -- which is how `_3`, whose header prints
+`?.??`, gets 3.53 -> 2.64 (pass `--airmass 3.085`). Its O2 columns show a
+**band-dependent** excess (B-band 4% above A-band in both files), so the O2 line
+data, not the geometry, is off, and niratl's A-band air mass of 1.10 may be 2-4% high.
+Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
+corrected visible spectra keep their broadband dimming. The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
 Arcturus pages already fitted) **interpolates pixels where the sky is opaque**;
 its **ILS is the weakest input in their programme** -- R = 300,000 quoted once
 for four atlases, no MOPD, no apodization; its **wavelength scale is +260 m/s**

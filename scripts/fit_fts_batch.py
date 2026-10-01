@@ -241,7 +241,7 @@ def scan_species(entry, args, root, profile, airmass: float) -> dict:
     identity = ScanIdentity.for_profile(
         root / args.profile, (entry["v1"], entry["v2"]),
         threshold=args.scan_threshold, line_budget=args.scan_line_budget,
-        margin_cm1=args.margin_cm1, fwhm_cm1=args.fwhm_cm1,
+        margin_cm1=args.margin_cm1, fwhm_cm1=args.scan_fwhm_cm1,
         samples_per_resolution=args.scan_samples_per_resolution)
     cached = cached_scan(
         args.scan_cache, identity, profile, root / LINE_ROOT,
@@ -448,6 +448,11 @@ def main() -> None:
                         help="optical depth discarded by dropping weak lines; two orders "
                              "below --scan-threshold so it cannot move a species across it")
     parser.add_argument("--scan-samples-per-resolution", type=float, default=2.0)
+    parser.add_argument("--scan-fwhm-cm1", type=float, default=None,
+                        help="the resolution the scan samples at; default --fwhm-cm1. Two "
+                             "files of one campaign whose sincs differ by a percent (the 1983 "
+                             "pair: 0.04167 and 0.04102) rank the same molecules, so one scan "
+                             "can serve both while each is still fitted with its own sinc.")
     parser.add_argument("--verbose-scan", action="store_true")
     parser.add_argument("--stride", type=int, default=1, help="take every Nth window")
     parser.add_argument("--shard", default=None, metavar="I/N",
@@ -476,6 +481,8 @@ def main() -> None:
     if args.compilation_cache:
         enable_compilation_cache(Path(args.compilation_cache))
 
+    if args.scan_fwhm_cm1 is None:
+        args.scan_fwhm_cm1 = args.fwhm_cm1
     if args.airmass is not None:
         if args.zenith_angle_deg is not None:
             raise SystemExit("pass --airmass or --zenith-angle-deg, not both")
@@ -557,7 +564,7 @@ def main() -> None:
                           "grid_margin_cm1": args.grid_margin_cm1,
                           "continuum_degree": args.continuum_degree,
                           "min_transmission": args.min_transmission,
-                          "scan_threshold": args.scan_threshold,
+                          "scan_threshold": args.scan_threshold, "scan_fwhm_cm1": args.scan_fwhm_cm1,
                           "species_threshold": args.species_threshold,
                           "scan_line_budget": args.scan_line_budget,
                           "airmass": airmass},
@@ -599,7 +606,7 @@ def main() -> None:
                     "margin_cm1": args.margin_cm1, "grid_margin_cm1": args.grid_margin_cm1,
                     "continuum_degree": args.continuum_degree,
                     "min_transmission": args.min_transmission,
-                    "scan_threshold": args.scan_threshold,
+                    "scan_threshold": args.scan_threshold, "scan_fwhm_cm1": args.scan_fwhm_cm1,
                     "species_threshold": args.species_threshold,
                     "scan_line_budget": args.scan_line_budget, "airmass": airmass},
             physics=physics_record(root, args.fwhm_cm1),
