@@ -1,4 +1,4 @@
-<title>Kitt Peak Fit Review</title>
+<title>June 1983 Fit Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -248,6 +248,7 @@
   .u-axis.u-off, .u-select.u-off, .u-cursor-x.u-off, .u-cursor-y.u-off,
   .u-cursor-pt.u-off { display: none; }
   .u-legend { display: none; }
+  .fixed-tag { font-size: 12px; color: var(--muted); padding: 4px 10px; border: 1px solid var(--hair); border-radius: 8px; background: var(--sunk); }
 
   .readout {
     display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 2px 0;
@@ -278,14 +279,15 @@
 <div id="app">
   <header>
     <div class="brand">
-      <b>Kitt Peak Fit Review</b>
+      <b>June 1983 Fit Review</b>
       <span class="mono" id="window-name">loading…</span>
     </div>
     <div class="badges" id="badges"></div>
     <div class="spacer"></div>
+    <span class="fixed-tag mono">ftsspec_830626 · defocused Sun centre · L. Brown for H. Stokes</span>
     <div class="ctl" role="group" aria-label="Which file">
-      <button type="button" data-file="5" aria-pressed="true">file 5 · X 1.99</button>
-      <button type="button" data-file="4" aria-pressed="false">file 4 · X 4.73</button>
+      <button type="button" data-file="3" aria-pressed="true">file 3 · X 3.09</button>
+      <button type="button" data-file="2" aria-pressed="false">file 2 · X 5.37</button>
     </div>
     <div class="ctl" role="group" aria-label="View options">
       <button type="button" id="cmp" aria-pressed="true">compare</button>
@@ -370,11 +372,11 @@
 
   var STATE = {
     manifest: null, index: [], byV1: new Map(), chunks: new Map(), pending: new Map(),
-    v1: null, file: "5", compare: true, logy: false,
+    v1: null, file: "3", compare: true, logy: false,
     traces: { observed: true, model: true, stellar: true, continuum: true,
               corrected: false },
     seriesIndex: {}, plotWindow: null,
-    species: new Set(), filter: "all", marks: { 5: {}, 4: {} },
+    species: new Set(), filter: "all", marks: { 3: {}, 2: {} },
     plot: null, rplot: null, db: null, writing: Promise.resolve()
   };
 
@@ -450,6 +452,7 @@
   var FILTERS = [
     { key: "all", label: "all" },
     { key: "opaque", label: "opaque", test: function (e) { return e.opaque; } },
+    { key: "upper", label: "column at upper bound", test: function (e) { return upperBound(e).length > 0; } },
     { key: "bound", label: "at a bound", test: function (e) { return e.at_bound.length > 0; } },
     { key: "unconverged", label: "not converged", test: function (e) { return !e.quality.all_stages_converged; } },
     { key: "worst", label: "worst 30", test: null },
@@ -458,8 +461,18 @@
 
   function entriesFor(v1) { return STATE.byV1.get(v1) || {}; }
 
+  // A column at its UPPER bound is the fit absorbing the solar model's error
+  // into that species: the window's correction carries absorption the sky
+  // does not (5-13% where measured). The lower bound is harmless. Same rule
+  // as scripts/quality_flags.py and the transmission files' column_at_upper_bound.
+  function upperBound(e) {
+    return Object.keys(e.species).filter(function (k) {
+      return e.species[k].at_bound && e.species[k].log_scale > 0;
+    });
+  }
+
   function severity(e) {
-    if (e.opaque || !e.quality.all_stages_converged) return "bad";
+    if (e.opaque || !e.quality.all_stages_converged || upperBound(e).length) return "bad";
     if (e.quality.residual_rms_over_noise > 15 || e.at_bound.length) return "warn";
     return "";
   }
@@ -489,16 +502,17 @@
     var shown = visibleWindows();
     $("list-count").textContent = shown.length + " of " + STATE.index.length + " windows";
     var html = shown.map(function (v1) {
-      var e = entriesFor(v1)[STATE.file] || entriesFor(v1)["5"] || entriesFor(v1)["4"];
+      var e = entriesFor(v1)[STATE.file] || entriesFor(v1)["3"] || entriesFor(v1)["2"];
       if (!e) return "";
       var mark = (STATE.marks[e.file] || {})[String(v1)];
-      var micron = (1e4 / (v1 + 15)).toFixed(2);
+      var nm = (1e7 / (v1 + 15)).toFixed(0);
       return '<button type="button" class="row mono" role="option" data-v1="' + v1 + '"' +
         ' aria-current="' + (v1 === STATE.v1) + '" aria-selected="' + (v1 === STATE.v1) + '">' +
         '<span class="dot ' + severity(e) + '"></span>' +
         '<span class="who">' + v1.toFixed(0) + '<em>–' + e.v2.toFixed(0) + '</em> ' +
-        '<em>' + micron + ' µm</em></span>' +
-        '<span class="q">' + e.quality.residual_rms_over_noise.toFixed(1) + 'σ' +
+        '<em>' + nm + ' nm</em></span>' +
+        '<span class="q">' + (100 * e.quality.residual_rms).toFixed(2) + '% · ' +
+        e.quality.residual_rms_over_noise.toFixed(1) + 'σ' +
         (mark ? ' <span class="marked">' + (mark.mark === "good" ? "✓" : mark.mark === "suspect" ? "!" : "✕") + '</span>' : '') +
         '</span></button>';
     }).join("");
@@ -692,8 +706,10 @@
       (1e7 / entry.v2).toFixed(0) + "–" + (1e7 / entry.v1).toFixed(0) + " nm";
     var q = entry.quality;
     var items = [
+      { k: "rms", v: (100 * q.residual_rms).toFixed(2) + "%" },
       { k: "rms/noise", v: q.residual_rms_over_noise.toFixed(2) + "σ",
         cls: q.residual_rms_over_noise < 5 ? "is-good" : q.residual_rms_over_noise < 20 ? "is-warn" : "is-bad" },
+      { k: "noise", v: (100 * q.pixel_sigma).toFixed(3) + "%" },
       { k: "χ²ᵥ", v: q.reduced_chi2.toFixed(1) },
       { k: "median T", v: q.median_transmission.toFixed(3) },
       { k: "usable px", v: q.reliable + " / " + q.pixels,
@@ -701,6 +717,8 @@
       { k: "air mass", v: entry.airmass.toFixed(2) }
     ];
     if (entry.opaque) items.push({ k: "", v: "opaque — do not use", cls: "is-bad" });
+    var up = upperBound(entry);
+    if (up.length) items.push({ k: "", v: up.join(", ") + " at upper bound — do not use", cls: "is-bad" });
     if (!q.all_stages_converged) items.push({ k: "", v: "a stage did not converge", cls: "is-warn" });
     if (entry.at_bound.length) items.push({ k: "at bound", v: entry.at_bound.join(", "), cls: "is-warn" });
     $("badges").innerHTML = items.map(function (b) {
@@ -746,7 +764,7 @@
       if (!db) { $("review-status").textContent = "marks unavailable here"; return; }
       STATE.db = db;
       $("review-status").textContent = "ready";
-      ["5", "4"].forEach(function (file) {
+      ["3", "2"].forEach(function (file) {
         db.doc("reviews/file" + file).onSnapshot(function (snap) {
           STATE.marks[file] = (snap.exists && snap.data().marks) || {};
           renderReview(); renderList();
@@ -759,9 +777,9 @@
   function show(v1) {
     STATE.v1 = v1;
     var pair = entriesFor(v1);
-    var entry = pair[STATE.file] || pair["5"] || pair["4"];
+    var entry = pair[STATE.file] || pair["3"] || pair["2"];
     if (!entry) return;
-    var otherEntry = pair[STATE.file === "5" ? "4" : "5"];
+    var otherEntry = pair[STATE.file === "3" ? "2" : "3"];
     renderHeader(entry); renderSpecies(entry); renderReview(); renderList();
     var jobs = [load(entry)];
     if (otherEntry && STATE.compare) jobs.push(load(otherEntry));
@@ -876,9 +894,9 @@
     });
     STATE.index = Array.from(STATE.byV1.keys()).sort(function (a, b) { return a - b; });
     renderFilters(); renderLegend(); wire(); connectStore();
-    // Open on the window that shows the instrument at its best: the 4.7 um
-    // ozone window, where the fit reaches the pixel noise.
-    var start = STATE.index.indexOf(2086) >= 0 ? 2086 : STATE.index[0];
+    // Open in the heart of the O2 A-band, where the two air masses differ most
+    // visibly and the O2 ladder (docs/solar_fit_plan.md §4l) was measured.
+    var start = STATE.index.indexOf(13060) >= 0 ? 13060 : STATE.index[0];
     show(start);
   }).catch(function (e) {
     document.getElementById("app").innerHTML =
