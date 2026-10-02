@@ -1,0 +1,194 @@
+{
+  "window_cm1": [
+    6000.0,
+    6030.0
+  ],
+  "profile": "data/profiles/kitt_peak_19901218_afgl.csv",
+  "zenith_angle_deg": 0.0,
+  "threshold_peak_optical_depth": 0.001,
+  "species": [
+    "CH4",
+    "H2O",
+    "CO2"
+  ],
+  "fit": [
+    {
+      "species": "CH4",
+      "molecule": 6,
+      "lines": 2998,
+      "lines_kept": 2924,
+      "peak_optical_depth": 0.7798603874373098,
+      "median_optical_depth": 0.0008974260746944717
+    },
+    {
+      "species": "H2O",
+      "molecule": 1,
+      "lines": 745,
+      "lines_kept": 573,
+      "peak_optical_depth": 0.0579350309626254,
+      "median_optical_depth": 0.00017116895606610793
+    },
+    {
+      "species": "CO2",
+      "molecule": 2,
+      "lines": 3265,
+      "lines_kept": 2573,
+      "peak_optical_depth": 0.004320287757700204,
+      "median_optical_depth": 0.00013968784704199323
+    }
+  ],
+  "rejected": [
+    {
+      "species": "N2O",
+      "molecule": 4,
+      "lines": 269,
+      "lines_kept": 137,
+      "peak_optical_depth": 9.36819499429785e-05,
+      "median_optical_depth": 3.851057686950101e-08
+    },
+    {
+      "species": "NO2",
+      "molecule": 10,
+      "lines": 2687,
+      "lines_kept": 588,
+      "peak_optical_depth": 4.923453163588945e-06,
+      "median_optical_depth": 2.7165427912962013e-11
+    },
+    {
+      "species": "O3",
+      "molecule": 3,
+      "lines": 1075,
+      "lines_kept": 948,
+      "peak_optical_depth": 4.278742646847121e-06,
+      "median_optical_depth": 5.7560836753319176e-08
+    },
+    {
+      "species": "NH3",
+      "molecule": 11,
+      "lines": 86,
+      "lines_kept": 1,
+      "peak_optical_depth": 1.1945825863657663e-06,
+      "median_optical_depth": 2.154602142153269e-11
+    },
+    {
+      "species": "CO",
+      "molecule": 5,
+      "lines": 69,
+      "lines_kept": 1,
+      "peak_optical_depth": 5.871000893715349e-09,
+      "median_optical_depth": 1.696818602065597e-14
+    },
+    {
+      "species": "HI",
+      "molecule": 17,
+      "lines": 66,
+      "lines_kept": 1,
+      "peak_optical_depth": 2.2331355711283317e-12,
+      "median_optical_depth": 1.070521601762018e-18
+    },
+    {
+      "species": "HCN",
+      "molecule": 23,
+      "lines": 1339,
+      "lines_kept": 1,
+      "peak_optical_depth": 1.3636858404317626e-12,
+      "median_optical_depth": 2.8634106863158966e-13
+    },
+    {
+      "species": "C2H2",
+      "molecule": 26,
+      "lines": 1141,
+      "lines_kept": 1,
+      "peak_optical_depth": 4.7650951892066e-14,
+      "median_optical_depth": 9.917215618467874e-15
+    },
+    {
+      "species": "HCL",
+      "molecule": 15,
+      "lines": 333,
+      "lines_kept": 1,
+      "peak_optical_depth": 3.5294170736802886e-16,
+      "median_optical_depth": 7.382200408709612e-17
+    },
+    {
+      "species": "H2S",
+      "molecule": 31,
+      "lines": 443,
+      "lines_kept": 1,
+      "peak_optical_depth": 4.811344982873918e-18,
+      "median_optical_depth": 2.974595473151014e-23
+    },
+    {
+      "species": "OH",
+      "molecule": 13,
+      "lines": 208,
+      "lines_kept": 1,
+      "peak_optical_depth": 1.6496669080880662e-21,
+      "median_optical_depth": 3.4105965783338235e-22
+    },
+    {
+      "species": "HBR",
+      "molecule": 16,
+      "lines": 26,
+      "lines_kept": 1,
+      "peak_optical_depth": 3.811482318945224e-32,
+      "median_optical_depth": 5.300421758217572e-38
+    },
+    {
+      "species": "H2",
+      "molecule": 45,
+      "lines": 80,
+      "lines_kept": 1,
+      "peak_optical_depth": 5.244496068215337e-35,
+      "median_optical_depth": 4.222212873469336e-40
+    },
+    {
+      "species": "HF",
+      "molecule": 14,
+      "lines": 87,
+      "lines_kept": 1,
+      "peak_optical_depth": 9.84942785477995e-41,
+      "median_optical_depth": 1.253407920567033e-41
+    },
+    {
+      "species": "NO",
+      "molecule": 8,
+      "lines": 614,
+      "lines_kept": 1,
+      "peak_optical_depth": 7.583237614181685e-52,
+      "median_optical_depth": 1.5015106419708557e-52
+    }
+  ],
+  "no_lines_in_window": [
+    "O2",
+    "SO2",
+    "HNO3",
+    "CLO",
+    "OCS",
+    "H2CO",
+    "HOCL",
+    "N2",
+    "CH3CL",
+    "H2O2",
+    "C2H6",
+    "PH3",
+    "COF2",
+    "SF6",
+    "HCOOH",
+    "HO2",
+    "CLONO2",
+    "NO+",
+    "HOBR",
+    "C2H4",
+    "CH3OH",
+    "CH3BR",
+    "CH3CN",
+    "CF4",
+    "C4H2",
+    "HC3N",
+    "CS",
+    "SO3"
+  ],
+  "not_in_profile": [],
+  "headroom": 10.674414875103167
+}

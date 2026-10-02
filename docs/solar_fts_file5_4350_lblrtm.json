@@ -1,0 +1,179 @@
+{
+  "spectrum": {
+    "path": "/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso/telluric_near_ir/ftsspec_901218_5.txt",
+    "name": "ftsspec_901218_5.txt",
+    "sha256": "4b6533e95580196d94c965df79c9152eea9da73593961a995375c38235effbce",
+    "source_name": "CENT DISK E AUX",
+    "observed_utc": "1990-12-18T17:59:03+00:00",
+    "airmass_start": 2.17,
+    "airmass_stop": 1.8,
+    "airmass_mean": 1.9849999999999999,
+    "window_cm1": [
+      4350.0,
+      4380.0
+    ],
+    "pixels": 3165,
+    "masked": 0,
+    "spacing_cm1": 0.009477093873101694,
+    "grid_residual_cm1": 5.000023975298973e-05,
+    "uncertainty": 0.0013860658163616223,
+    "stated_resolution_cm1": 0.053
+  },
+  "grid": {
+    "resolving_power": 249001.71135196806,
+    "samples_per_resolution": 4.0,
+    "margin_cm1": 25.0,
+    "grid_margin_cm1": 5.0,
+    "points": 9129,
+    "velocity_step_kms": 0.3009932535465387
+  },
+  "physics": {
+    "accuracy_mode": "lblrtm_corrected",
+    "continuum": "LBLRTM correction template",
+    "correction": "/tmp/claude-1001/-home-jjlee-work-lblrtm/29b32d8f-996f-4d78-a0a5-926616faf1b7/scratchpad/corr_4350.npz",
+    "pressure_shift": true,
+    "mixed_precision": true,
+    "precomputed_opacity": "linear",
+    "pixel_integration": "point",
+    "instrument": "boxcar FTS sinc",
+    "fwhm_cm1": 0.01753,
+    "mopd_cm": 34.41842555618939,
+    "instrument_resolving_power": 249001.71135196806,
+    "profile": "/tmp/claude-1001/-home-jjlee-work-lblrtm/29b32d8f-996f-4d78-a0a5-926616faf1b7/scratchpad/prof_fitted.csv",
+    "species": [
+      "CH4",
+      "H2O",
+      "CO",
+      "CO2",
+      "N2O",
+      "O2"
+    ],
+    "lines_per_species": {
+      "CH4": 8921,
+      "H2O": 1077
+    },
+    "species_without_lines": [],
+    "zenith_angle_deg": 59.74971078080449,
+    "airmass_used": 1.9849999999999999
+  },
+  "stellar": {
+    "source": "/home/jjlee/work/lblrtm/data/stellar/solar_payne_zero_mid.npz",
+    "vsini_kms": 0.0,
+    "macroturbulence_kms": 1.5,
+    "normalized": false,
+    "carries_stellar_continuum": false,
+    "emergent_quantity_note": "Payne Zero returns Eddington flux and has no mu option; this is a disc-centre observation, so the source mode is mismatched. See docs/solar_fit_plan.md."
+  },
+  "pinned": {},
+  "stages": [
+    {
+      "stage": "continuum",
+      "free": [
+        "continuum_0",
+        "continuum_1",
+        "continuum_2",
+        "continuum_3",
+        "log_jitter"
+      ],
+      "objective": -13596.223371336686,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "iterations": 21,
+      "seconds": 18.1
+    },
+    {
+      "stage": "velocity",
+      "free": [
+        "velocity_kms",
+        "lsf_sigma_kms",
+        "continuum_0",
+        "continuum_1",
+        "continuum_2",
+        "continuum_3",
+        "log_jitter"
+      ],
+      "objective": -14023.764874460572,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "iterations": 26,
+      "seconds": 0.19
+    },
+    {
+      "stage": "columns",
+      "free": [
+        "CH4",
+        "H2O",
+        "CO",
+        "CO2",
+        "N2O",
+        "O2",
+        "velocity_kms",
+        "lsf_sigma_kms",
+        "continuum_0",
+        "continuum_1",
+        "continuum_2",
+        "continuum_3",
+        "log_jitter"
+      ],
+      "objective": -14026.886078186435,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "iterations": 151,
+      "seconds": 0.62
+    },
+    {
+      "stage": "stellar",
+      "free": [
+        "CH4",
+        "H2O",
+        "CO",
+        "CO2",
+        "N2O",
+        "O2",
+        "velocity_kms",
+        "lsf_sigma_kms",
+        "continuum_0",
+        "continuum_1",
+        "continuum_2",
+        "continuum_3",
+        "log_jitter",
+        "stellar_velocity_kms"
+      ],
+      "objective": -14045.853215520525,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "iterations": 63,
+      "seconds": 0.35
+    }
+  ],
+  "at_bound": [
+    "CO2"
+  ],
+  "parameters": {
+    "CH4": -0.002412917061872212,
+    "H2O": 0.02096620872339145,
+    "CO": 0.01898074579408585,
+    "CO2": 2.0,
+    "N2O": -0.027457344899225838,
+    "O2": 0.01898074579408585,
+    "velocity_kms": -0.09985761830481846,
+    "stellar_velocity_kms": 0.21639347227828387,
+    "lsf_sigma_kms": 0.35313294964359165,
+    "continuum_coeffs": [
+      -0.34154049069703024,
+      -0.004138940821608335,
+      0.002855590188966284,
+      0.0032897509761246357
+    ],
+    "log_jitter": -4.956911864149364
+  },
+  "residuals": {
+    "reduced_chi2": 26.758044439521207,
+    "rms": 0.00716986598680441,
+    "percentile_99_absolute": 0.024451264926085556,
+    "jitter_over_uncertainty": 5.075241087065959
+  },
+  "runtime_seconds": 36.5,
+  "platform": "cuda:0",
+  "jax": "0.6.2"
+}

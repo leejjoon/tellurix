@@ -13,19 +13,25 @@ import jax.numpy as jnp
 import numpy as np
 
 from tellurix import (
+    AER_MOLECULE_IDS,
     AERLineDatabase,
+    trim_wavenumber_grid,
     ExoJAXOpacityBackend,
     LBLRTMOpticalDepthCorrection,
     read_tape12_single_precision,
     TelluricModel,
     TelluricParameters,
     build_lblrtm_correction,
-    igrins_wavenumber_grid,
+    constant_velocity_grid,
     load_atmosphere_csv,
 )
 
 
-MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
+# Every molecule AER ships, from the package rather than a local copy: keeping
+# a second list here is what let O3 be 'unknown' after OCS had been added, and
+# what let OCS be unreachable for as long as it was. Which species are worth
+# fitting is a per-window question, answered by --species and by `at_bound`.
+MOLECULE_IDS = AER_MOLECULE_IDS
 
 
 def main() -> None:
@@ -37,8 +43,35 @@ def main() -> None:
     # The template is only valid on the grid it was built for, so the grid has
     # to be selectable: the R=45,000 x 4 default is coarser than an FTS pixel.
     parser.add_argument("--resolving-power", type=float, default=45_000.0)
+    # The template is rejected unless its grid matches the model's to rtol
+    # 1e-12, so transcribing a rounded resolving power silently produces an
+    # unusable template. This derives it exactly as fit_fts_window.py does,
+    # from the window centre and the measured instrument width.
+    parser.add_argument("--fwhm-cm1", type=float, default=None,
+                        help="derive the resolving power as v_centre / fwhm, as the FTS "
+                             "driver does; overrides --resolving-power")
     parser.add_argument("--samples-per-resolution", type=float, default=4.0)
     parser.add_argument("--margin-cm1", type=float, default=25.0)
+    # The template is only valid on the grid it was built for, so this has to
+    # match the fit driver's own trim or the two grids differ.
+    parser.add_argument("--grid-margin-cm1", type=float, default=None,
+                        help="trim the grid to the window plus this, as fit_fts_window.py does")
+    parser.add_argument("--species", default=None,
+                        help="comma-separated subset of the molecules given a *line database*, "
+                             "i.e. the JAX side of the difference. It does not restrict the "
+                             "template, whose species are the profile's: a molecule left out "
+                             "here still gets a correction, carrying LBLRTM's whole optical "
+                             "depth rather than a residual. That is coherent, but it means the "
+                             "fit sees every profile species and an unconstrained one will rail "
+                             "-- watch `at_bound`.")
+    # The line file is not universal: LNFL builds it for one wavenumber range
+    # and one set of molecules, and the bootstrapped run_lnfl_igrins covers
+    # 4000-6750 cm-1 with molecules 1-7 only. Pointing a 2030-2060 window at it
+    # gives LBLRTM no lines at all, and the failure surfaces as a missed
+    # acceptance threshold rather than as anything that names the cause.
+    parser.add_argument("--tape3", type=Path, default=Path("run_lnfl_igrins/TAPE3"),
+                        help="LNFL line file, relative to data/lblrtm; it must cover the "
+                             "window and carry every molecule being fitted")
     parser.add_argument("--run-dir", default="run_corrections",
                         help="working directory under data/lblrtm for this build")
     # The wing matrix is dense in lines x grid, and vmap over the layer axis
@@ -52,16 +85,24 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     reference = root / "data/lblrtm"
     profile = load_atmosphere_csv(root / args.profile)
-    grid = igrins_wavenumber_grid(
+    resolving_power = (args.resolving_power if args.fwhm_cm1 is None
+                       else 0.5 * (args.v1 + args.v2) / args.fwhm_cm1)
+    grid = constant_velocity_grid(
         1.0e7 / args.v2,
         1.0e7 / args.v1,
-        resolving_power=args.resolving_power,
+        resolving_power=resolving_power,
         samples_per_resolution=args.samples_per_resolution,
         margin_cm1=args.margin_cm1,
     )
+    if args.grid_margin_cm1 is not None:
+        grid = trim_wavenumber_grid(grid, args.v1, args.v2, args.grid_margin_cm1)
     line_root = reference / "AER_Line_File/aer_v_3.9/line_files_By_Molecule"
     databases = {}
+    wanted = (set(MOLECULE_IDS) if args.species is None
+              else {n.strip().upper() for n in args.species.split(",")})
     for species, molecule_id in MOLECULE_IDS.items():
+        if species not in wanted:
+            continue
         name = f"{molecule_id:02d}_{species}"
         try:
             databases[species] = AERLineDatabase(
@@ -86,7 +127,7 @@ def main() -> None:
         grid,
         opacity,
         reference / "LBLRTM/lblrtm_v12.17_linux_gnu_sgl",
-        reference / "run_lnfl_igrins/TAPE3",
+        reference / args.tape3,
         reference / "LBLRTM/data/absco-ref_wv-mt-ckd.nc",
     )
     output = root / args.output
@@ -146,7 +187,7 @@ def main() -> None:
         raise RuntimeError("LBLRTM correction did not improve median agreement")
 
     executable = reference / "LBLRTM/lblrtm_v12.17_linux_gnu_sgl"
-    tape3 = reference / "run_lnfl_igrins/TAPE3"
+    tape3 = reference / args.tape3
     mt_ckd_data = reference / "LBLRTM/data/absco-ref_wv-mt-ckd.nc"
 
     def reference_error(run_profile, parameters, name, zenith_angle_deg=0.0):

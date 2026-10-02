@@ -16,7 +16,7 @@ import numpy as np
 
 from tellurix import (
     AERLineDatabase, AtmosphereProfile, ExoJAXOpacityBackend, SpectralOrder,
-    TelluricModel, TelluricParameters, fit_order, igrins_wavenumber_grid,
+    TelluricModel, TelluricParameters, fit_order, constant_velocity_grid,
     load_atmosphere_csv,
 )
 from exojax.opacity import OpaDirect
@@ -76,7 +76,7 @@ def main():
         if any(case["species"] == species and case["interval_cm1"] == list(limits)
                for case in report["opacity_cases"]):
             continue
-        grid = igrins_wavenumber_grid(1e7 / limits[1], 1e7 / limits[0])
+        grid = constant_velocity_grid(1e7 / limits[1], 1e7 / limits[0])
         db = database(species, limits)
         original = OpaDirect(db, grid)
         mixed = SparseCoreDirect(db, grid, mixed_precision=True)
@@ -105,7 +105,7 @@ def main():
         limits = (center, center + 20.)
         if sum(case["interval_cm1"] == list(limits) for case in report["spectral_cases"]) == 15:
             continue
-        grid = igrins_wavenumber_grid(1e7 / limits[1], 1e7 / limits[0])
+        grid = constant_velocity_grid(1e7 / limits[1], 1e7 / limits[0])
         dbs = {}
         absent = []
         for species in IDS:
@@ -154,7 +154,7 @@ def main():
     # Paired recovery through the actual public fitter. Fix stretch, slope,
     # and jitter to isolate identifiable H2O, velocity, width, and throughput.
     limits = (5000., 5020.)
-    grid = igrins_wavenumber_grid(1e7 / limits[1], 1e7 / limits[0])
+    grid = constant_velocity_grid(1e7 / limits[1], 1e7 / limits[0])
     dbs = {"H2O": database("H2O", limits)}
     models = [TelluricModel(profile, grid, ExoJAXOpacityBackend.prepare(
         dbs, grid, methods="direct_sparse", vectorize_layers=True, mixed_precision=mixed))

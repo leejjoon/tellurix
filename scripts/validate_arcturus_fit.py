@@ -33,7 +33,7 @@ from tellurix import (
     TelluricModel,
     TelluricParameters,
     fit_order,
-    igrins_wavenumber_grid,
+    constant_velocity_grid,
     load_atmosphere_csv,
     prepare_stellar_source,
 )
@@ -48,7 +48,7 @@ MOPD_CM = 15.167
 
 
 def build(profile, root, v1, v2, margin, resolving_power, samples, gaussian_ils, chunk):
-    grid = igrins_wavenumber_grid(
+    grid = constant_velocity_grid(
         1.0e7 / v2, 1.0e7 / v1, resolving_power=resolving_power,
         samples_per_resolution=samples, margin_cm1=margin,
     )

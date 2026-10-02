@@ -218,8 +218,17 @@ def build_lblrtm_correction(
     nu = np.asarray(wavenumber_cm1, dtype=float)
     root = Path(workdir)
 
+    # LBLRTM lays its own monochromatic grid inside the requested interval, so
+    # asking for exactly [nu[0], nu[-1]] returns a span that can fall a
+    # fraction short of the endpoints -- measured at 9.4e-05 cm-1, one part in
+    # 4e7, which is enough for _optical_depth_on_grid to refuse the result.
+    # Where that lands depends on the endpoints in a way the caller cannot
+    # predict, so pad the request rather than make every caller guess.
+    pad_cm1 = 0.5
+
     def run(run_profile, continuum_flag: int, name: str):
-        config = LBLRTMRunConfig(float(nu[0]), float(nu[-1]), continuum_flag=continuum_flag,
+        config = LBLRTMRunConfig(float(nu[0]) - pad_cm1, float(nu[-1]) + pad_cm1,
+                                 continuum_flag=continuum_flag,
                                  description=f"tellurix correction {name}")
         spectrum = run_lblrtm(root / name, run_profile, config, executable, tape3, mt_ckd_data)
         return _optical_depth_on_grid(spectrum, nu)

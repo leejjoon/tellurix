@@ -27,8 +27,14 @@ def test_tape5_writer_uses_requested_range_profile_and_continuum(tmp_path):
     assert float(lines[2][:10]) == 5000.0
     assert float(lines[2][10:20]) == 5100.0
     assert any("AAAAAAA" in line for line in lines)
-    level_count = int(lines[7][:5])
-    level_records = lines[8 : 8 + 2 * level_count : 2]
+    # Locate the level block by content: the boundary record before it is
+    # 8 values per line, so its length depends on the layer count.
+    header = next(i for i, line in enumerate(lines) if "tellurix profile" in line)
+    level_count = int(lines[header][:5])
+    # One record 3.5 per level, then its abundances wrapped eight to a line.
+    from tellurix.lblrtm import _ABUNDANCE_PER_LINE, _LBLRTM_SPECIES
+    stride = 1 + -(-len(_LBLRTM_SPECIES) // _ABUNDANCE_PER_LINE)
+    level_records = lines[header + 1 : header + 1 + stride * level_count : stride]
     pressures_hpa = np.asarray([float(line[10:20]) for line in level_records])
     assert level_count == len(profile.temperature_k) + 1
     np.testing.assert_allclose(pressures_hpa[[0, -1]], [800.0, 10.0])
@@ -42,9 +48,13 @@ def test_tape5_converts_wet_air_vmr_to_lblrtm_dry_air_abundance(tmp_path):
     output = tmp_path / "TAPE5"
     write_tape5(output, profile, LBLRTMRunConfig(5000.0, 5001.0))
     lines = output.read_text().splitlines()
-    abundances = np.asarray([float(value) for value in lines[9].split()])
+    header = next(i for i, line in enumerate(lines) if "tellurix profile" in line)
+    abundances = np.asarray([float(value) for value in lines[header + 2].split()])
     np.testing.assert_allclose(abundances[0], 0.1 / 0.9 * 1.0e6)
     np.testing.assert_allclose(abundances[1], 4.0e-4 / 0.9 * 1.0e6)
+    # Molecules with no profile entry are declared and left at zero: record 3.6
+    # is positional, so OCS at 19 cannot be reached without the eighteen below.
+    np.testing.assert_allclose(abundances[2:], 0.0)
 
 
 def test_degrade_and_compare_reference_spectrum():
@@ -149,3 +159,39 @@ def test_build_lblrtm_correction_isolates_continuum_and_line_residual(tmp_path, 
     np.testing.assert_allclose(correction.water_foreign_optical_depth, 0.03)
     np.testing.assert_allclose(correction.line_residual_optical_depth["H2O"], 0.01)
     np.testing.assert_allclose(correction.reference_background_optical_depth, 0.01)
+
+
+def test_tape5_supplies_the_layer_boundaries_instead_of_letting_lblrtm_invent_them(tmp_path):
+    """IBMAX and record 3.3B, for two reasons.
+
+    LBLRTM's AUTLAY fails outright on these profiles: with IBMAX = 0 it
+    subdivides without progress and stops at its 600-boundary limit. And even
+    where it succeeds it chooses its own layers, so LBLRTM and the JAX model
+    integrate different atmospheres and a disagreement between them cannot be
+    attributed to the line physics.
+    """
+
+    profile = load_atmosphere_csv("data/profiles/kitt_peak_1994.csv")
+    output = tmp_path / "TAPE5"
+    write_tape5(output, profile, LBLRTMRunConfig(4350.0, 4380.0, 59.75))
+    lines = output.read_text().splitlines()
+
+    expected = len(profile.temperature_k) + 1
+    assert int(lines[4][10:15]) == expected                    # record 3.1, IBMAX
+
+    header = next(i for i, line in enumerate(lines) if "tellurix profile" in line)
+    boundaries = [float(value) for line in lines[6:header] for value in
+                  (line[index : index + 10] for index in range(0, len(line.rstrip()), 10))]
+    assert len(boundaries) == expected
+    assert boundaries == sorted(boundaries)
+
+    # They must be the model's own edges, not a re-derivation: the point is
+    # that both codes integrate the same layers.
+    from tellurix.lblrtm import _hydrostatic_altitude_edges
+
+    np.testing.assert_allclose(
+        boundaries, _hydrostatic_altitude_edges(profile)[::-1], atol=5.0e-4
+    )
+    # The level block must still follow, undisturbed by the extra records.
+    assert int(lines[header][:5]) == expected
+    assert lines[-1] == "%"

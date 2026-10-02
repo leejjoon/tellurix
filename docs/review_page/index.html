@@ -1,0 +1,889 @@
+<title>Kitt Peak Fit Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.iife.min.js"></script>
+
+<style>
+  :root {
+    --ground: #eef2f3;
+    --panel: #ffffff;
+    --sunk: #e3e9eb;
+    --ink: #10181c;
+    --muted: #5b6b72;
+    --faint: #8a9aa1;
+    --line: #cfd9dd;
+    --hair: #dde5e8;
+
+    --observed: #10181c;
+    --telluric: #0e7c8c;
+    --solar: #c07b12;
+    --continuum: #6f5bb5;
+    --corrected: #a83f6b;
+
+    --good: #2c7f56;
+    --warn: #a86a12;
+    --bad: #b4402c;
+
+    --focus: #0e7c8c;
+    --shadow: 0 1px 2px rgba(16, 40, 48, .07), 0 8px 24px rgba(16, 40, 48, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0c1216;
+      --panel: #141c21;
+      --sunk: #101a1f;
+      --ink: #e6edf0;
+      --muted: #93a6ad;
+      --faint: #6b7f87;
+      --line: #27343a;
+      --hair: #1d282d;
+
+      --observed: #e6edf0;
+      --telluric: #4bc3d4;
+      --solar: #e8a33c;
+      --continuum: #a48ff0;
+      --corrected: #f18cb4;
+
+      --good: #4cb583;
+      --warn: #d69a3a;
+      --bad: #e4705a;
+
+      --focus: #4bc3d4;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0c1216;
+    --panel: #141c21;
+    --sunk: #101a1f;
+    --ink: #e6edf0;
+    --muted: #93a6ad;
+    --faint: #6b7f87;
+    --line: #27343a;
+    --hair: #1d282d;
+
+    --observed: #e6edf0;
+    --telluric: #4bc3d4;
+    --solar: #e8a33c;
+    --continuum: #a48ff0;
+    --corrected: #f18cb4;
+
+    --good: #4cb583;
+    --warn: #d69a3a;
+    --bad: #e4705a;
+
+    --focus: #4bc3d4;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+  #app {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 252px minmax(0, 1fr) 312px;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0;
+  }
+
+  /* ---- top bar ------------------------------------------------------- */
+  header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 8px 18px;
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: 4px; }
+  .brand b { font-weight: 600; letter-spacing: -0.01em; }
+  .brand span { color: var(--faint); font-size: 12px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--sunk); border: 1px solid var(--hair);
+    font-size: 12px; white-space: nowrap;
+  }
+  .badge i { font-style: normal; color: var(--faint); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .badge b { font-weight: 600; }
+  .badge.is-good { border-color: color-mix(in srgb, var(--good) 45%, var(--hair)); }
+  .badge.is-warn { border-color: color-mix(in srgb, var(--warn) 55%, var(--hair)); }
+  .badge.is-bad  { border-color: color-mix(in srgb, var(--bad) 55%, var(--hair)); background: color-mix(in srgb, var(--bad) 10%, var(--sunk)); }
+  .spacer { flex: 1 1 24px; }
+
+  .ctl {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: var(--sunk); border: 1px solid var(--hair); border-radius: 8px; padding: 2px;
+  }
+  .ctl button {
+    border: 0; background: transparent; cursor: pointer;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--muted);
+  }
+  .ctl button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+  .ctl button:hover { color: var(--ink); }
+
+  /* ---- rails --------------------------------------------------------- */
+  aside {
+    background: var(--panel);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  aside.left { border-right: 1px solid var(--line); }
+  aside.right { border-left: 1px solid var(--line); }
+  .rail-head {
+    padding: 10px 12px 8px; border-bottom: 1px solid var(--hair);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .rail-title { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+  .filters { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip {
+    border: 1px solid var(--hair); background: var(--sunk); color: var(--muted);
+    border-radius: 999px; padding: 2px 9px; font-size: 11.5px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+  .list { overflow-y: auto; min-height: 0; flex: 1; }
+  .row {
+    width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer;
+    display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 9px;
+    padding: 7px 12px; border-bottom: 1px solid var(--hair);
+  }
+  .row:hover { background: var(--sunk); }
+  .row[aria-current="true"] { background: color-mix(in srgb, var(--telluric) 12%, var(--panel)); box-shadow: inset 3px 0 0 var(--telluric); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  .dot.warn { background: var(--warn); }
+  .dot.bad { background: var(--bad); }
+  .row .who { font-size: 12.5px; }
+  .row .who em { font-style: normal; color: var(--faint); }
+  .row .q { font-size: 12px; color: var(--muted); }
+  .row .marked { font-size: 11px; color: var(--faint); }
+
+  /* ---- centre -------------------------------------------------------- */
+  main { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 12px 14px 14px; gap: 10px; overflow: hidden; }
+  .plotwrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 4px; box-shadow: var(--shadow); }
+  .plotwrap.main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .plotwrap.resid { flex: 0 0 auto; }
+  /* Reserved, not left to the chart: both charts are destroyed before the main
+     one measures its space, so an empty strip here handed the main chart this
+     strip's 118 px and put its x axis on top of the residuals. */
+  #rplot { min-height: 118px; }
+  .plot-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 2px 2px 8px; }
+  .trace { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; background: none; border: 0; padding: 0; color: var(--muted); }
+  .trace[aria-pressed="true"] { color: var(--ink); }
+  .trace .swatch { width: 15px; height: 3px; border-radius: 2px; background: currentColor; flex: none; }
+  .trace[aria-pressed="false"] .swatch { opacity: .3; }
+
+  .hint { color: var(--faint); font-size: 11.5px; padding: 0 2px; }
+
+  /* ---- species ------------------------------------------------------- */
+  .species-groups { overflow-y: auto; min-height: 0; flex: 1; }
+  .group-title {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--panel); padding: 9px 12px 5px;
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint);
+    border-bottom: 1px solid var(--hair);
+  }
+  .sp {
+    display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 9px;
+    padding: 6px 12px; width: 100%; text-align: left; border: 0; background: transparent;
+    border-bottom: 1px solid var(--hair); font-size: 12.5px;
+  }
+  .sp.active { cursor: pointer; }
+  .sp.active:hover { background: var(--sunk); }
+  .sp.off { color: var(--faint); }
+  .sp .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--hair); }
+  .sp .name { font-weight: 500; }
+  .sp .why { font-size: 11.5px; color: var(--faint); }
+  .sp .num { font-size: 11.5px; color: var(--muted); }
+  .sp .flag { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--bad); }
+
+  /* ---- review -------------------------------------------------------- */
+  .review { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--sunk); }
+  .marks { display: flex; gap: 6px; }
+  .mark {
+    flex: 1; border: 1px solid var(--hair); background: var(--panel); color: var(--muted);
+    border-radius: 7px; padding: 5px 4px; font-size: 12px; cursor: pointer;
+  }
+  .mark[aria-pressed="true"][data-mark="good"]    { background: var(--good); border-color: var(--good); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="suspect"] { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="reject"]  { background: var(--bad);  border-color: var(--bad);  color: #fff; }
+  .review textarea {
+    width: 100%; min-height: 54px; resize: vertical;
+    background: var(--panel); border: 1px solid var(--hair); border-radius: 7px;
+    padding: 6px 8px; font-size: 12.5px; font-family: inherit;
+  }
+  .review .status { font-size: 11.5px; color: var(--faint); min-height: 1.2em; }
+
+  /* ---- uPlot --------------------------------------------------------- */
+  .uplot, .uplot *, .uplot *::before, .uplot *::after { box-sizing: border-box; }
+  .uplot { width: min-content; font-family: "IBM Plex Mono", ui-monospace, monospace; line-height: 1.5; }
+  .u-wrap { position: relative; user-select: none; }
+  .u-over, .u-under, .u-axis { position: absolute; }
+  .u-under { overflow: hidden; }
+  .uplot canvas { display: block; position: relative; width: 100%; height: 100%; }
+  .u-select { background: rgba(14, 124, 140, .12); position: absolute; pointer-events: none; }
+  .u-cursor-x, .u-cursor-y { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; z-index: 100; }
+  .u-hz .u-cursor-x, .u-vt .u-cursor-y { height: 100%; border-right: 1px dashed var(--faint); }
+  .u-hz .u-cursor-y, .u-vt .u-cursor-x { width: 100%; border-bottom: 1px dashed var(--faint); }
+  .u-cursor-pt { position: absolute; top: 0; left: 0; border-radius: 50%; border: 0 solid;
+    pointer-events: none; will-change: transform; z-index: 100;
+    /* uPlot sets `background` inline as a shorthand, so this must win. */
+    background-clip: padding-box !important; }
+  .u-axis.u-off, .u-select.u-off, .u-cursor-x.u-off, .u-cursor-y.u-off,
+  .u-cursor-pt.u-off { display: none; }
+  .u-legend { display: none; }
+
+  .readout {
+    display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 2px 0;
+    font-size: 11.5px; color: var(--muted); min-height: 1.4em;
+  }
+  .readout b { color: var(--ink); font-weight: 500; }
+
+  #boot { padding: 40px 20px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
+
+  @media (max-width: 1080px) {
+    #app { grid-template-columns: 216px minmax(0, 1fr) 268px; }
+  }
+  @media (max-width: 900px) {
+    html, body { height: auto; }
+    #app { display: flex; flex-direction: column; }
+    main { order: 1; }
+    aside.right { order: 2; }
+    aside.left { order: 3; }
+    header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+    main { padding: 12px 16px; overflow: visible; }
+    .plotwrap.main { min-height: 340px; }
+    aside { border: 0 !important; border-top: 1px solid var(--line) !important; }
+    .list, .species-groups { max-height: 340px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <b>Kitt Peak Fit Review</b>
+      <span class="mono" id="window-name">loading…</span>
+    </div>
+    <div class="badges" id="badges"></div>
+    <div class="spacer"></div>
+    <div class="ctl" role="group" aria-label="Which file">
+      <button type="button" data-file="5" aria-pressed="true">file 5 · X 1.99</button>
+      <button type="button" data-file="4" aria-pressed="false">file 4 · X 4.73</button>
+    </div>
+    <div class="ctl" role="group" aria-label="View options">
+      <button type="button" id="cmp" aria-pressed="true">compare</button>
+      <button type="button" id="logy" aria-pressed="false">log flux</button>
+    </div>
+  </header>
+
+  <aside class="left">
+    <div class="rail-head">
+      <div class="rail-title" id="list-count">windows</div>
+      <div class="filters" id="filters"></div>
+    </div>
+    <div class="list" id="list" role="listbox" aria-label="Windows"></div>
+  </aside>
+
+  <main>
+    <div class="plotwrap main">
+      <div class="plot-legend" id="legend"></div>
+      <div class="hint" id="corrected-note" hidden>telluric-corrected = observed &divide; model &times; stellar model,
+        blanked where the modelled transmission falls below 0.15. Compare it with the stellar model:
+        what is left is the solar model&rsquo;s own error.</div>
+      <div id="plot" style="flex:1 1 auto; min-height:0;"></div>
+      <div class="readout mono" id="readout"></div>
+    </div>
+    <div class="plotwrap resid">
+      <div class="hint">residual / pixel noise &mdash; the shaded band is &plusmn;1&sigma;</div>
+      <div id="rplot"></div>
+    </div>
+  </main>
+
+  <aside class="right">
+    <div class="rail-head">
+      <div class="rail-title">species in this window</div>
+      <div class="hint" id="species-hint">every molecule the scan ranked</div>
+    </div>
+    <div class="species-groups" id="species"></div>
+    <div class="review">
+      <div class="rail-title">your verdict</div>
+      <div class="marks">
+        <button type="button" class="mark" data-mark="good" aria-pressed="false">good</button>
+        <button type="button" class="mark" data-mark="suspect" aria-pressed="false">suspect</button>
+        <button type="button" class="mark" data-mark="reject" aria-pressed="false">reject</button>
+      </div>
+      <textarea id="note" placeholder="What did you see?" maxlength="400"></textarea>
+      <div class="status" id="review-status">connecting…</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TRACES = [
+    { key: "observed",   label: "observed",         token: "--observed",  width: 1.1 },
+    { key: "model",      label: "fitted model",     token: "--telluric",  width: 1.2 },
+    { key: "stellar",    label: "stellar model",    token: "--solar",     width: 1.1 },
+    { key: "continuum",  label: "fitted continuum", token: "--continuum", width: 1.6, dash: [6, 4] },
+    // observed / model x stellar -- the atmosphere divided out. It is the
+    // pipeline's own correction operator, not a re-derivation: the fitted
+    // continuum cancels, so what is left should be the Sun through the
+    // instrument. Off by default; against the stellar model it shows the
+    // solar model's error directly.
+    { key: "corrected",  label: "telluric-corrected", token: "--corrected", width: 1.1 }
+  ];
+
+  // Below this modelled transmission the correction divides by a small number
+  // and amplifies everything, noise and quantization alike. It is the same cut
+  // the batch driver uses for its `reliable` column.
+  var MINIMUM_TRANSMISSION = 0.15;
+
+  // Stable per molecule, so a species keeps its colour as you step through
+  // windows. Ordered by how often the scan lists one across the band.
+  var SPECIES_COLOR = {
+    H2O: "#2f7ad6", CO2: "#d1493f", CH4: "#4aa564", N2O: "#a35fd1", CO: "#d4881f",
+    O2: "#2a9d9d", O3: "#c0398a", OCS: "#7d8b2f", HCL: "#0f9bd7", N2: "#8a6a4b",
+    HF: "#c76b9b", H2CO: "#5f6fd6", HCN: "#3f9e7c", C2H6: "#b4732a", NH3: "#6a8fbd",
+    CH3CL: "#9c5fa8", C2H2: "#cf5f5f", NO2: "#7a9c2f", NO: "#4d8ac4",
+    continuum: "#8a9aa1"
+  };
+  function speciesColor(name) { return SPECIES_COLOR[name] || "#7f8f96"; }
+
+  var STATE = {
+    manifest: null, index: [], byV1: new Map(), chunks: new Map(), pending: new Map(),
+    v1: null, file: "5", compare: true, logy: false,
+    traces: { observed: true, model: true, stellar: true, continuum: true,
+              corrected: false },
+    seriesIndex: {}, plotWindow: null,
+    species: new Set(), filter: "all", marks: { 5: {}, 4: {} },
+    plot: null, rplot: null, db: null, writing: Promise.resolve()
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  // ---- data ------------------------------------------------------------
+  function chunkBuffer(n) {
+    if (STATE.chunks.has(n)) return Promise.resolve(STATE.chunks.get(n));
+    if (STATE.pending.has(n)) return STATE.pending.get(n);
+    var p = fetch("chunk_" + String(n).padStart(3, "0") + ".wasm")
+      .then(function (r) {
+        if (!r.ok) throw new Error("chunk " + n + " did not load (" + r.status + ")");
+        return r.arrayBuffer();
+      })
+      .then(function (buf) { STATE.chunks.set(n, buf); STATE.pending.delete(n); return buf; });
+    STATE.pending.set(n, p);
+    return p;
+  }
+
+  function decode(buf, entry, name) {
+    var meta = entry.arrays[name];
+    if (!meta) return null;
+    var codes = new Uint16Array(buf, meta.offset, entry.n);
+    var out = new Float64Array(entry.n);
+    var span = (meta.hi - meta.lo) / 65535;
+    for (var i = 0; i < entry.n; i++) out[i] = meta.lo + codes[i] * span;
+    return out;
+  }
+
+  function axis(entry) {
+    var x = new Float64Array(entry.n);
+    for (var i = 0; i < entry.n; i++) x[i] = entry.nu0 + i * entry.dnu;
+    return x;
+  }
+
+  function maskOf(buf, entry) {
+    var bytes = new Uint8Array(buf, entry.mask_offset, Math.ceil(entry.n / 8));
+    var out = new Uint8Array(entry.n);
+    for (var i = 0; i < entry.n; i++) out[i] = (bytes[i >> 3] >> (7 - (i & 7))) & 1;
+    return out;
+  }
+
+  function load(entry) {
+    return chunkBuffer(entry.chunk).then(function (buf) {
+      var pack = { entry: entry, x: axis(entry), mask: maskOf(buf, entry), series: {}, species: {} };
+      TRACES.forEach(function (t) { pack.series[t.key] = decode(buf, entry, t.key); });
+      pack.series.residual = decode(buf, entry, "residual");
+      pack.series.transmission = decode(buf, entry, "transmission");
+      Object.keys(entry.arrays).forEach(function (k) {
+        if (k.indexOf("species:") === 0) pack.species[k.slice(8)] = decode(buf, entry, k);
+      });
+      // Masked pixels carry a placeholder in the fit; they are not data.
+      var observed = pack.series.observed, residual = pack.series.residual;
+      for (var i = 0; i < entry.n; i++) {
+        if (!pack.mask[i]) { observed[i] = NaN; residual[i] = NaN; }
+      }
+      // The corrected spectrum, computed here rather than shipped: it is
+      // exactly observed / model x stellar, so it adds nothing to the bundle.
+      var corrected = new Float64Array(entry.n);
+      var model = pack.series.model, stellar = pack.series.stellar,
+          trans = pack.series.transmission;
+      for (var j = 0; j < entry.n; j++) {
+        corrected[j] = (pack.mask[j] && trans[j] >= MINIMUM_TRANSMISSION)
+          ? observed[j] / Math.max(model[j], 1e-6) * stellar[j] : NaN;
+      }
+      pack.series.corrected = corrected;
+      return pack;
+    });
+  }
+
+  // ---- window list -----------------------------------------------------
+  var FILTERS = [
+    { key: "all", label: "all" },
+    { key: "opaque", label: "opaque", test: function (e) { return e.opaque; } },
+    { key: "bound", label: "at a bound", test: function (e) { return e.at_bound.length > 0; } },
+    { key: "unconverged", label: "not converged", test: function (e) { return !e.quality.all_stages_converged; } },
+    { key: "worst", label: "worst 30", test: null },
+    { key: "marked", label: "marked", test: function (e) { return !!(STATE.marks[e.file] || {})[String(e.v1)]; } }
+  ];
+
+  function entriesFor(v1) { return STATE.byV1.get(v1) || {}; }
+
+  function severity(e) {
+    if (e.opaque || !e.quality.all_stages_converged) return "bad";
+    if (e.quality.residual_rms_over_noise > 15 || e.at_bound.length) return "warn";
+    return "";
+  }
+
+  function visibleWindows() {
+    var all = STATE.index.slice();
+    var f = FILTERS.find(function (x) { return x.key === STATE.filter; });
+    if (STATE.filter === "worst") {
+      return all.slice().sort(function (a, b) {
+        return quality(b) - quality(a);
+      }).slice(0, 30).sort(function (a, b) { return a - b; });
+    }
+    if (!f || !f.test) return all;
+    return all.filter(function (v1) {
+      var e = entriesFor(v1)[STATE.file];
+      return e ? f.test(e) : false;
+    });
+  }
+
+  function quality(v1) {
+    var e = entriesFor(v1)[STATE.file];
+    return e ? e.quality.residual_rms_over_noise : -1;
+  }
+
+  function renderList() {
+    var list = $("list");
+    var shown = visibleWindows();
+    $("list-count").textContent = shown.length + " of " + STATE.index.length + " windows";
+    var html = shown.map(function (v1) {
+      var e = entriesFor(v1)[STATE.file] || entriesFor(v1)["5"] || entriesFor(v1)["4"];
+      if (!e) return "";
+      var mark = (STATE.marks[e.file] || {})[String(v1)];
+      var micron = (1e4 / (v1 + 15)).toFixed(2);
+      return '<button type="button" class="row mono" role="option" data-v1="' + v1 + '"' +
+        ' aria-current="' + (v1 === STATE.v1) + '" aria-selected="' + (v1 === STATE.v1) + '">' +
+        '<span class="dot ' + severity(e) + '"></span>' +
+        '<span class="who">' + v1.toFixed(0) + '<em>–' + e.v2.toFixed(0) + '</em> ' +
+        '<em>' + micron + ' µm</em></span>' +
+        '<span class="q">' + e.quality.residual_rms_over_noise.toFixed(1) + 'σ' +
+        (mark ? ' <span class="marked">' + (mark.mark === "good" ? "✓" : mark.mark === "suspect" ? "!" : "✕") + '</span>' : '') +
+        '</span></button>';
+    }).join("");
+    list.innerHTML = html;
+  }
+
+  // ---- plotting --------------------------------------------------------
+  function buildPlots(pack, other) {
+    var el = $("plot"), rel = $("rplot");
+    // Read the zoom off the chart that is about to be destroyed, rather than
+    // tracking it in a hook. A range is only meaningful within one window.
+    var keep = null;
+    if (STATE.plot && STATE.plotWindow === STATE.v1) {
+      var sx = STATE.plot.scales.x;
+      if (sx.min != null && sx.max != null) keep = [sx.min, sx.max];
+    }
+    if (typeof uPlot === "undefined") {
+      el.innerHTML = '<div style="padding:28px 8px;color:var(--muted);font-size:13px">' +
+        'The chart library did not load, so the spectra cannot be drawn. ' +
+        'Everything else on this page is live. It is fetched from ' +
+        '<span class="mono">cdn.jsdelivr.net</span> — a blocked or offline ' +
+        'connection is the usual cause.</div>';
+      return;
+    }
+    if (STATE.plot) { STATE.plot.destroy(); STATE.plot = null; }
+    if (STATE.rplot) { STATE.rplot.destroy(); STATE.rplot = null; }
+
+    var width = el.clientWidth || 800;
+    var height = Math.max(220, el.clientHeight || 320);
+    var data = [pack.x];
+    var series = [{}];
+
+    TRACES.forEach(function (t) {
+      data.push(pack.series[t.key]);
+      var spec = {
+        label: t.label, stroke: css(t.token), width: t.width,
+        scale: "f", spanGaps: false, points: { show: false },
+        show: STATE.traces[t.key]
+      };
+      if (t.dash) spec.dash = t.dash;
+      series.push(spec);
+    });
+
+    if (other && STATE.compare) {
+      ["observed", "model"].forEach(function (k) {
+        data.push(other.series[k]);
+        series.push({
+          label: "file " + other.entry.file + " " + k,
+          stroke: css(k === "observed" ? "--faint" : "--telluric"),
+          width: 0.9, scale: "f", spanGaps: false, points: { show: false },
+          dash: [2, 3]
+        });
+      });
+    }
+
+    Array.from(STATE.species).forEach(function (name) {
+      var values = pack.species[name];
+      if (!values) return;
+      data.push(values);
+      series.push({
+        label: name, stroke: speciesColor(name), width: 1.2, scale: "t",
+        points: { show: false }
+      });
+    });
+
+    var scales = { x: { time: false }, f: { distr: STATE.logy ? 3 : 1 }, t: { range: [0, 1.04] } };
+
+    STATE.plot = new uPlot({
+      width: width, height: height, scales: scales, series: series,
+      legend: { show: false },
+      cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      axes: [
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") },
+          font: "11px 'IBM Plex Mono', monospace",
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(0); }); } },
+        { scale: "f", stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") },
+          font: "11px 'IBM Plex Mono', monospace", size: 52 },
+        { scale: "t", side: 1, stroke: css("--muted"), grid: { show: false },
+          font: "11px 'IBM Plex Mono', monospace", size: 42,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(1); }); } }
+      ],
+      hooks: {
+        setCursor: [function (u) {
+          var i = u.cursor.idx;
+          var r = $("readout");
+          if (i == null) { r.innerHTML = ""; return; }
+          var bits = ['<b>' + pack.x[i].toFixed(4) + '</b> cm⁻¹',
+                      '<b>' + (1e7 / pack.x[i]).toFixed(2) + '</b> nm',
+                      'pixel <b>' + i + '</b>'];
+          if (pack.mask[i]) {
+            bits.push('obs <b>' + pack.series.observed[i].toFixed(4) + '</b>');
+            bits.push('model <b>' + pack.series.model[i].toFixed(4) + '</b>');
+            bits.push('T <b>' + pack.series.transmission[i].toFixed(4) + '</b>');
+          } else { bits.push('<b>masked</b>'); }
+          Array.from(STATE.species).forEach(function (name) {
+            if (pack.species[name]) bits.push(name + ' <b>' + pack.species[name][i].toFixed(4) + '</b>');
+          });
+          r.innerHTML = bits.join("");
+        }]
+      }
+    }, data, el);
+
+    // Which uPlot series each legend button drives, so a toggle can call
+    // setSeries instead of rebuilding the chart and discarding the zoom.
+    STATE.seriesIndex = {};
+    TRACES.forEach(function (t2, i) { STATE.seriesIndex[t2.key] = i + 1; });
+
+    // residual strip, x-linked to the main plot
+    var band = new Float64Array(pack.x.length).fill(1);
+    var nband = new Float64Array(pack.x.length).fill(-1);
+    STATE.rplot = new uPlot({
+      width: width, height: 118,
+      scales: { x: { time: false } },
+      legend: { show: false },
+      cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      series: [
+        {},
+        { stroke: "transparent", width: 0, points: { show: false } },
+        { stroke: "transparent", width: 0, points: { show: false } },
+        { stroke: css("--telluric"), width: 0.9, points: { show: false }, spanGaps: false }
+      ],
+      bands: [{ series: [1, 2], fill: css("--hair") }],
+      axes: [
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace",
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(0); }); } },
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", size: 52 }
+      ]
+    }, [pack.x, band, nband, pack.series.residual], rel);
+
+    // Restore the zoom AFTER construction. Handing the range to uPlot as
+    // `scales.x.range` instead looks equivalent and is not: a static range on
+    // the x scale left the chart drawing its grid and axes and none of its
+    // series. Measured, with everything else held fixed.
+    if (keep) {
+      STATE.plot.setScale("x", { min: keep[0], max: keep[1] });
+      STATE.rplot.setScale("x", { min: keep[0], max: keep[1] });
+    }
+    STATE.plotWindow = STATE.v1;
+  }
+
+  // ---- species panel ---------------------------------------------------
+  var GROUPS = [
+    { state: "fitted", title: "fitted here" },
+    { state: "below cut", title: "measured, below the cut" },
+    { state: "bounded out", title: "rejected on its bound" },
+    { state: "no lines here", title: "no lines in this window" },
+    { state: "not in the profile", title: "not in the atmosphere" },
+    { state: "no line file", title: "no line file" }
+  ];
+
+  function renderSpecies(entry) {
+    var rows = entry.scan.slice().sort(function (a, b) {
+      return (b.peak_optical_depth || b.optical_depth_bound || 0) - (a.peak_optical_depth || a.optical_depth_bound || 0);
+    });
+    var out = "";
+    GROUPS.forEach(function (g) {
+      var members = rows.filter(function (r) { return r.state === g.state; });
+      if (!members.length) return;
+      out += '<div class="group-title">' + g.title + ' <span style="opacity:.7">(' + members.length + ')</span></div>';
+      members.forEach(function (r) {
+        var active = r.state === "fitted";
+        var on = STATE.species.has(r.species);
+        var fit = entry.species[r.species];
+        var detail = "";
+        if (r.state === "fitted") {
+          detail = '<span class="num">τ ' + r.peak_optical_depth.toPrecision(3) +
+            (fit ? ' · scale ' + Math.exp(fit.log_scale).toFixed(2) + '×' : '') + '</span>';
+          if (fit && fit.at_bound) detail += ' <span class="flag">bound</span>';
+        } else if (r.state === "below cut") {
+          detail = '<span class="num">τ ' + r.peak_optical_depth.toPrecision(2) + '</span>';
+        } else if (r.state === "bounded out") {
+          detail = '<span class="num">≤ ' + r.optical_depth_bound.toPrecision(2) + '</span>';
+        }
+        out += '<' + (active ? 'button type="button"' : 'div') +
+          ' class="sp ' + (active ? "active" : "off") + '" data-species="' + r.species + '">' +
+          '<span class="swatch" style="background:' + (active && on ? speciesColor(r.species) : "transparent") + ';' +
+          (active ? 'border-color:' + speciesColor(r.species) : '') + '"></span>' +
+          '<span class="name mono">' + r.species + '</span>' +
+          '<span>' + detail + '</span>' +
+          '</' + (active ? 'button' : 'div') + '>';
+      });
+    });
+    $("species").innerHTML = out;
+    var fitted = entry.scan.filter(function (r) { return r.state === "fitted"; }).length;
+    $("species-hint").textContent = fitted + " fitted of " + entry.scan.length + " the scan ranked";
+  }
+
+  // ---- header ----------------------------------------------------------
+  function renderHeader(entry) {
+    $("window-name").textContent = entry.v1.toFixed(0) + "–" + entry.v2.toFixed(0) + " cm⁻¹ · " +
+      (1e7 / entry.v2).toFixed(0) + "–" + (1e7 / entry.v1).toFixed(0) + " nm";
+    var q = entry.quality;
+    var items = [
+      { k: "rms/noise", v: q.residual_rms_over_noise.toFixed(2) + "σ",
+        cls: q.residual_rms_over_noise < 5 ? "is-good" : q.residual_rms_over_noise < 20 ? "is-warn" : "is-bad" },
+      { k: "χ²ᵥ", v: q.reduced_chi2.toFixed(1) },
+      { k: "median T", v: q.median_transmission.toFixed(3) },
+      { k: "usable px", v: q.reliable + " / " + q.pixels,
+        cls: q.reliable === 0 ? "is-bad" : "" },
+      { k: "air mass", v: entry.airmass.toFixed(2) }
+    ];
+    if (entry.opaque) items.push({ k: "", v: "opaque — do not use", cls: "is-bad" });
+    if (!q.all_stages_converged) items.push({ k: "", v: "a stage did not converge", cls: "is-warn" });
+    if (entry.at_bound.length) items.push({ k: "at bound", v: entry.at_bound.join(", "), cls: "is-warn" });
+    $("badges").innerHTML = items.map(function (b) {
+      return '<span class="badge ' + (b.cls || "") + '">' + (b.k ? '<i>' + b.k + '</i>' : "") +
+        '<b class="mono">' + b.v + '</b></span>';
+    }).join("");
+  }
+
+  // ---- review marks ----------------------------------------------------
+  function markFor(v1, file) { return (STATE.marks[file] || {})[String(v1)] || null; }
+
+  function renderReview() {
+    var m = markFor(STATE.v1, STATE.file);
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(!!m && m.mark === b.dataset.mark));
+    });
+    var note = $("note");
+    if (document.activeElement !== note) note.value = (m && m.note) || "";
+  }
+
+  function saveMark(patch) {
+    if (!STATE.db) { $("review-status").textContent = "not saved — this view cannot store marks"; return; }
+    var file = STATE.file, key = String(STATE.v1);
+    var current = markFor(STATE.v1, file) || {};
+    var next = Object.assign({}, current, patch, { at: new Date().toISOString() });
+    if (!next.mark && !next.note) next = null;
+    STATE.marks[file] = Object.assign({}, STATE.marks[file]);
+    if (next) STATE.marks[file][key] = next; else delete STATE.marks[file][key];
+    renderReview(); renderList();
+    // One write at a time per document, chained so a burst cannot overlap.
+    STATE.writing = STATE.writing.then(function () {
+      return STATE.db.doc("reviews/file" + file).set({ marks: STATE.marks[file] });
+    }).then(function () {
+      $("review-status").textContent = "saved " + new Date().toLocaleTimeString();
+    }).catch(function (e) {
+      $("review-status").textContent = "not saved (" + (e && e.code ? e.code : "error") + ")";
+    });
+  }
+
+  function connectStore() {
+    if (!(window.claude && window.claude.use)) { $("review-status").textContent = "marks unavailable here"; return; }
+    window.claude.use("db").then(function (db) {
+      if (!db) { $("review-status").textContent = "marks unavailable here"; return; }
+      STATE.db = db;
+      $("review-status").textContent = "ready";
+      ["5", "4"].forEach(function (file) {
+        db.doc("reviews/file" + file).onSnapshot(function (snap) {
+          STATE.marks[file] = (snap.exists && snap.data().marks) || {};
+          renderReview(); renderList();
+        }, function (e) { $("review-status").textContent = "marks offline (" + e.code + ")"; });
+      });
+    }).catch(function () { $("review-status").textContent = "marks unavailable here"; });
+  }
+
+  // ---- orchestration ---------------------------------------------------
+  function show(v1) {
+    STATE.v1 = v1;
+    var pair = entriesFor(v1);
+    var entry = pair[STATE.file] || pair["5"] || pair["4"];
+    if (!entry) return;
+    var otherEntry = pair[STATE.file === "5" ? "4" : "5"];
+    renderHeader(entry); renderSpecies(entry); renderReview(); renderList();
+    var jobs = [load(entry)];
+    if (otherEntry && STATE.compare) jobs.push(load(otherEntry));
+    Promise.all(jobs).then(function (packs) {
+      if (STATE.v1 !== v1) return;
+      buildPlots(packs[0], packs[1] || null);
+    }).catch(function (e) {
+      $("readout").textContent = String(e.message || e);
+    });
+  }
+
+  function step(delta) {
+    var shown = visibleWindows();
+    var at = shown.indexOf(STATE.v1);
+    var next = shown[Math.min(Math.max(at + delta, 0), shown.length - 1)];
+    if (next != null && next !== STATE.v1) show(next);
+  }
+
+  function renderLegend() {
+    $("corrected-note").hidden = !STATE.traces.corrected;
+    $("legend").innerHTML = TRACES.map(function (t) {
+      return '<button type="button" class="trace" data-trace="' + t.key + '" style="color:var(' + t.token + ')"' +
+        ' aria-pressed="' + STATE.traces[t.key] + '">' +
+        '<span class="swatch"></span><span style="color:var(--ink)">' + t.label + '</span></button>';
+    }).join("");
+  }
+
+  function renderFilters() {
+    $("filters").innerHTML = FILTERS.map(function (f) {
+      return '<button type="button" class="chip" data-filter="' + f.key + '" aria-pressed="' +
+        (STATE.filter === f.key) + '">' + f.label + '</button>';
+    }).join("");
+  }
+
+  function wire() {
+    $("list").addEventListener("click", function (e) {
+      var row = e.target.closest(".row"); if (row) show(Number(row.dataset.v1));
+    });
+    $("filters").addEventListener("click", function (e) {
+      var chip = e.target.closest(".chip"); if (!chip) return;
+      STATE.filter = chip.dataset.filter; renderFilters(); renderList();
+    });
+    $("legend").addEventListener("click", function (e) {
+      var b = e.target.closest(".trace"); if (!b) return;
+      var key = b.dataset.trace;
+      var on = !STATE.traces[key];
+      STATE.traces[key] = on;
+      b.setAttribute("aria-pressed", String(on));
+      $("corrected-note").hidden = !STATE.traces.corrected;
+      // Rebuild rather than toggle in place. uPlot's setSeries flips the
+      // flag, but its commit only repaints when a scale or the size actually
+      // changed -- and hiding one trace here moves neither, because the others
+      // pin the flux scale. setData(data) does commit but re-ranges x and
+      // throws the zoom away; setData(data, false) keeps the scales and skips
+      // the commit entirely. Measured: setSeries, redraw() and both setData
+      // forms each left the canvas pixel-identical. Constructing the chart
+      // afresh honours `show`, costs a few milliseconds, and buildPlots carries
+      // the reader's zoom across.
+      show(STATE.v1);
+    });
+    $("species").addEventListener("click", function (e) {
+      var b = e.target.closest(".sp.active"); if (!b) return;
+      var name = b.dataset.species;
+      if (STATE.species.has(name)) STATE.species.delete(name); else STATE.species.add(name);
+      show(STATE.v1);
+    });
+    document.querySelectorAll("[data-file]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        STATE.file = b.dataset.file;
+        document.querySelectorAll("[data-file]").forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o.dataset.file === STATE.file));
+        });
+        show(STATE.v1);
+      });
+    });
+    $("cmp").addEventListener("click", function () {
+      STATE.compare = !STATE.compare;
+      $("cmp").setAttribute("aria-pressed", String(STATE.compare)); show(STATE.v1);
+    });
+    $("logy").addEventListener("click", function () {
+      STATE.logy = !STATE.logy;
+      $("logy").setAttribute("aria-pressed", String(STATE.logy)); show(STATE.v1);
+    });
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var m = markFor(STATE.v1, STATE.file);
+        saveMark({ mark: m && m.mark === b.dataset.mark ? "" : b.dataset.mark });
+      });
+    });
+    var timer = null;
+    $("note").addEventListener("input", function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () { saveMark({ note: $("note").value.trim() }); }, 700);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+      if (e.key === "ArrowDown" || e.key === "j") { step(1); e.preventDefault(); }
+      if (e.key === "ArrowUp" || e.key === "k") { step(-1); e.preventDefault(); }
+    });
+    var resize = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(resize); resize = setTimeout(function () { if (STATE.v1 != null) show(STATE.v1); }, 180);
+    });
+  }
+
+  fetch("manifest.json").then(function (r) { return r.json(); }).then(function (m) {
+    STATE.manifest = m;
+    m.windows.forEach(function (w) {
+      var pair = STATE.byV1.get(w.v1) || {};
+      pair[w.file] = w;
+      STATE.byV1.set(w.v1, pair);
+    });
+    STATE.index = Array.from(STATE.byV1.keys()).sort(function (a, b) { return a - b; });
+    renderFilters(); renderLegend(); wire(); connectStore();
+    // Open on the window that shows the instrument at its best: the 4.7 um
+    // ozone window, where the fit reaches the pixel noise.
+    var start = STATE.index.indexOf(2086) >= 0 ? 2086 : STATE.index[0];
+    show(start);
+  }).catch(function (e) {
+    document.getElementById("app").innerHTML =
+      '<div id="boot">The fit bundle did not load.<br><span class="mono">' +
+      String(e.message || e) + '</span></div>';
+  });
+})();
+</script>

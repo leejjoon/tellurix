@@ -19,7 +19,7 @@ from tellurix import (
     TelluricParameters,
     compare_transmission,
     degrade_to_resolving_power,
-    igrins_wavenumber_grid,
+    constant_velocity_grid,
     load_atmosphere_csv,
     run_lblrtm,
 )
@@ -44,7 +44,7 @@ def main() -> None:
         reference_root / "run_lnfl_igrins/TAPE3",
         reference_root / "LBLRTM/data/absco-ref_wv-mt-ckd.nc",
     )
-    nu_grid = igrins_wavenumber_grid(
+    nu_grid = constant_velocity_grid(
         1.0e7 / limits[1],
         1.0e7 / limits[0],
         resolving_power=120_000.0,

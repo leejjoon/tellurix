@@ -34,7 +34,7 @@ from tellurix import (
     chebyshev_continuum,
     trim_wavenumber_grid,
     fit_order,
-    igrins_wavenumber_grid,
+    constant_velocity_grid,
     load_atmosphere_csv,
     prepare_stellar_source,
     read_arcturus_page,
@@ -172,7 +172,7 @@ def main() -> None:
 
     page = read_arcturus_page(args.page, args.epoch).select(args.v1, args.v2)
     profile = load_atmosphere_csv(root / args.profile)
-    grid = igrins_wavenumber_grid(
+    grid = constant_velocity_grid(
         1.0e7 / args.v2, 1.0e7 / args.v1,
         resolving_power=args.resolving_power,
         samples_per_resolution=args.samples_per_resolution,

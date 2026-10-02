@@ -13,7 +13,16 @@ from .reference import LBLRTMSpectrum, read_tape12_single_precision
 from .types import AtmosphereProfile
 
 
-_LBLRTM_SPECIES = ("H2O", "CO2", "O3", "N2O", "CO", "CH4", "O2")
+# HITRAN molecule order, which is what record 3.6 is positional in: there is no
+# way to give LBLRTM a subset, so reaching OCS at number 19 means declaring all
+# nineteen and leaving the ones we have no profile for at zero. The list stops
+# at OCS because that is the highest molecule this package models; extending it
+# further is adding names, not logic.
+_LBLRTM_SPECIES = ("H2O", "CO2", "O3", "N2O", "CO", "CH4", "O2", "NO", "SO2",
+                   "NO2", "NH3", "HNO3", "OH", "HF", "HCL", "HBR", "HI", "CLO", "OCS")
+# Record 3.6 is read as (8E15.8) because record 3.5 sets JLONG, so the
+# abundances wrap every eight molecules.
+_ABUNDANCE_PER_LINE = 8
 _GAS_CONSTANT_J_MOL_K = 8.314462618
 
 
@@ -123,9 +132,27 @@ def write_tape5(
         f"{float(temperature[0]):10.3f}{1.0:10.3f}{0.0:10.3f}{0.0:10.3f}"
         f"{0.0:10.3f}{0.0:10.3f}{0.0:10.3f}    s"
     )
-    # MODEL=0, ITYPE=3, IBMAX=0, NMOL=7. HSPACE is the top supplied level.
+    # MODEL=0, ITYPE=3, NMOL=7. HSPACE is the top supplied level.
+    #
+    # IBMAX is the count of layer boundaries, given explicitly on record 3.3B
+    # rather than left at 0 for LBLRTM to generate with AUTLAY. Two reasons,
+    # and the second is why this is not just a workaround:
+    #
+    # AUTLAY fails on these profiles. With IBMAX = 0 and AVTRAT/TDIFF left at
+    # zero it subdivides without making progress -- on the 12-layer Kitt Peak
+    # profiles it emits 600 boundaries all at the same altitude and stops with
+    # "THE NUMBER OF GENERATED LAYER BOUNDARIES EXCEEDS THE DIMENSION IBDIM".
+    # It happens to survive the 6-layer example_midlatitude.csv, which is the
+    # only profile this writer had ever been run on.
+    #
+    # And the layers are the point. The JAX model integrates optical depth over
+    # exactly these edges; letting LBLRTM choose its own means the two codes
+    # integrate different atmospheres, so a disagreement between them is no
+    # longer attributable to the line physics. Supplying the boundaries makes
+    # the comparison a comparison.
+    boundaries = np.asarray(altitude, dtype=float)
     lines.append(
-        f"{0:5d}{3:5d}{0:5d}{0:5d}{0:5d}{len(_LBLRTM_SPECIES):5d}{0:5d}"
+        f"{0:5d}{3:5d}{len(boundaries):5d}{0:5d}{0:5d}{len(_LBLRTM_SPECIES):5d}{0:5d}"
         f"{0:2d} {0:2d}{0.0:10.3f}{space_altitude:10.3f}"
         f"{0.5 * (config.wavenumber_min_cm1 + config.wavenumber_max_cm1):10.3f}"
         f"{'':10s}{0.0:10.3f}"
@@ -134,12 +161,19 @@ def write_tape5(
         f"{observer_altitude:10.3f}{0.0:10.3f}{config.zenith_angle_deg:10.3f}"
         f"{0.0:10.3f}{0.0:10.3f}{0:5d}{'':5s}{observer_altitude:10.3f}"
     )
-    lines.append(f"{0.0:10.3f}{0.0:10.3f}{0.0:10.3f}{observer_altitude:10.3f}{space_altitude:10.3f}")
+    # Record 3.3B, 8F10.3: the boundaries themselves, ascending from the
+    # observer. This replaces record 3.3A, which LBLRTM reads only when
+    # IBMAX is zero.
+    for start in range(0, len(boundaries), 8):
+        lines.append("".join(f"{z:10.3f}" for z in boundaries[start : start + 8]))
     nlevels = nlayers + 1
     lines.append(f"{nlevels:5d}{' tellurix profile':24s}")
+    jchar = "A" * len(_LBLRTM_SPECIES)
     for z_km, pressure, temp, abundances in zip(altitude, pressure_hpa, temperature, abundance_ppmv):
-        lines.append(f"{z_km:10.3E}{pressure:10.3E}{temp:10.3E}     AA L AAAAAAA")
-        lines.append("".join(f"{value:15.8E}" for value in abundances))
+        lines.append(f"{z_km:10.3E}{pressure:10.3E}{temp:10.3E}     AA L {jchar}")
+        for start in range(0, len(abundances), _ABUNDANCE_PER_LINE):
+            lines.append("".join(f"{value:15.8E}"
+                                 for value in abundances[start : start + _ABUNDANCE_PER_LINE]))
     lines.extend((f"{-1.0:4.1f}", f"{-1.0:4.1f}", "%"))
     Path(path).write_text("\n".join(lines) + "\n", encoding="ascii")
 

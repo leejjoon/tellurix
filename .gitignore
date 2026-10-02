@@ -20,6 +20,8 @@ data/corrected/**/*.npz
 # and stay in git.
 data/corrected/*spectra*.h5
 data/corrected/*transmission*.h5
+# Corrected-spectrum exports: export_photatl_from_ftsspec.py, export_atlas_corrected.py.
+data/corrected/*_corrected.h5
 data/corrected/review/panels/
 # The batch driver's own summary; scripts/trim_atlas_summary.py writes the
 # committed record to docs/arcturus_atlas_summary.json.
@@ -37,3 +39,18 @@ benchmarks/results/*.npz
 .jax-cache/
 .jax_cache/
 xla_gpu_per_fusion_autotune_cache_dir/
+
+# Quarto renders of the notebooks. The executed .ipynb is committed and is the
+# source of truth; the HTML is a build product and is 4 MB of embedded figures.
+docs/*.html
+docs/*_files/
+.quarto/
+
+# The review bundle: 31 MB of per-window arrays, rebuilt by
+# scripts/export_solar_review.py + scripts/merge_review_bundle.py.
+# The page itself is docs/review_page/index.html and is committed.
+data/review/
+data/review_*/
+
+# Claude Code worktrees and session state.
+.claude/

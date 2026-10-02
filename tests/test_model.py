@@ -18,7 +18,7 @@ from tellurix import (
     TelluricModel,
     TelluricParameters,
     fit_order,
-    igrins_wavenumber_grid,
+    constant_velocity_grid,
     trim_wavenumber_grid,
 )
 
@@ -37,7 +37,7 @@ def make_model():
 
 
 def test_igrins_grid_is_padded_and_oversampled():
-    grid = igrins_wavenumber_grid(2200.0, 2220.0)
+    grid = constant_velocity_grid(2200.0, 2220.0)
     assert grid[0] <= 1.0e7 / 2220.0 - 25.0
     assert grid[-1] >= 1.0e7 / 2200.0 + 25.0
     velocity_step = np.diff(np.log(grid)) * 299792.458
@@ -755,7 +755,7 @@ def test_shared_objective_rejects_a_different_model_or_order():
 
 def test_trimming_keeps_the_original_samples_and_covers_the_window():
     """Trimming must not move the samples, or it changes what is modelled."""
-    full = igrins_wavenumber_grid(2200.0, 2220.0, resolving_power=100_000.0,
+    full = constant_velocity_grid(2200.0, 2220.0, resolving_power=100_000.0,
                                   samples_per_resolution=4.0, margin_cm1=25.0)
     nu_min, nu_max = 1.0e7 / 2220.0, 1.0e7 / 2200.0
     trimmed = trim_wavenumber_grid(full, nu_min, nu_max, 2.0)
@@ -772,7 +772,7 @@ def test_trimming_keeps_the_original_samples_and_covers_the_window():
 
 
 def test_trimming_refuses_to_lose_the_window_or_the_grid():
-    full = igrins_wavenumber_grid(2200.0, 2220.0, margin_cm1=25.0)
+    full = constant_velocity_grid(2200.0, 2220.0, margin_cm1=25.0)
     nu_min, nu_max = 1.0e7 / 2220.0, 1.0e7 / 2200.0
     with pytest.raises(ValueError, match="does not cover"):
         trim_wavenumber_grid(full[: full.size // 2], nu_min, nu_max, 5.0)
@@ -787,7 +787,7 @@ def test_trimming_refuses_to_lose_the_window_or_the_grid():
 
 def test_a_trimmed_grid_predicts_what_the_untrimmed_one_did():
     """Only the line-wing margin is dropped, not anything the model reaches."""
-    full = igrins_wavenumber_grid(2200.0, 2220.0, resolving_power=100_000.0,
+    full = constant_velocity_grid(2200.0, 2220.0, resolving_power=100_000.0,
                                   samples_per_resolution=4.0, margin_cm1=25.0)
     nu_min, nu_max = 1.0e7 / 2220.0, 1.0e7 / 2200.0
     profile = AtmosphereProfile(
@@ -966,3 +966,94 @@ def test_the_zenith_angle_can_be_overridden_for_tracing():
         np.asarray(model.predict(order, truth)),
         np.asarray(model.predict(order, truth, zenith_angle_deg=order.zenith_angle_deg)),
         rtol=1e-12)
+
+
+# Per-species transmission. The review page shows each absorber's own
+# contribution, and a decomposition that did not multiply back to the fitted
+# transmission would be fiction presented as evidence.
+
+def _two_species_model():
+    # constant_velocity_grid takes WAVELENGTHS in nm and returns wavenumbers.
+    # Getting that backwards puts the lines off the grid, transmission at 1.0
+    # everywhere, and every identity below holds trivially.
+    nu = constant_velocity_grid(2320.0, 2325.0, resolving_power=60000.0,
+                                samples_per_resolution=3.0, margin_cm1=1.0)
+    assert 4300.0 < nu[0] < nu[-1] < 4320.0
+    profile = AtmosphereProfile(
+        pressure_edges_bar=[0.01, 0.3, 1.0],
+        temperature_k=[240.0, 280.0],
+        altitude_km=[10.0, 2.0],
+        vmr={"H2O": [2.0e-4, 5.0e-3], "CO2": [4.0e-4, 4.0e-4]},
+    )
+    water = np.exp(-0.5 * ((nu - 4308.0) / 0.03) ** 2) * 3.0e-22
+    carbon = np.exp(-0.5 * ((nu - 4304.0) / 0.05) ** 2) * 8.0e-22
+    opacity = ArrayOpacityBackend({"H2O": np.vstack([water, 1.3 * water]),
+                                   "CO2": np.vstack([carbon, 0.7 * carbon])})
+    return TelluricModel(profile, nu, opacity), nu
+
+
+def _two_species_params(**scales):
+    return TelluricParameters(
+        log_column_scales={"H2O": 0.0, "CO2": 0.0, **scales},
+        velocity_kms=0.0, wavelength_stretch=0.0, lsf_sigma_kms=2.8,
+        continuum_coeffs=jnp.array([0.0, 0.0, 0.0]), log_jitter=np.log(1.0e-4),
+    )
+
+
+def test_species_transmission_multiplies_back_to_the_total():
+    model, _ = _two_species_model()
+    parameters = _two_species_params(H2O=0.4, CO2=-0.3)
+
+    pieces = model.species_transmission(parameters, zenith_angle_deg=55.0)
+    assert set(pieces) == {"H2O", "CO2"}
+    # Both must actually absorb, or the product identity is vacuous.
+    for species, values in pieces.items():
+        assert np.min(np.asarray(values)) < 0.7, f"{species} barely absorbs here"
+
+    product = np.ones_like(np.asarray(pieces["H2O"]))
+    for values in pieces.values():
+        product = product * np.asarray(values)
+    total = np.asarray(model.transmission(parameters, zenith_angle_deg=55.0))
+    np.testing.assert_allclose(product, total, rtol=1e-12, atol=1e-12)
+
+
+def test_species_transmission_isolates_one_absorber():
+    """Zeroing the others must reproduce that species' own curve, or the page
+    would be attributing one molecule's lines to another."""
+    model, _ = _two_species_model()
+    parameters = _two_species_params(H2O=0.4, CO2=-0.3)
+
+    water = np.asarray(model.species_transmission(parameters)["H2O"])
+    alone = np.asarray(model.transmission(
+        parameters._replace(log_column_scales={"H2O": 0.4, "CO2": -80.0})))
+    np.testing.assert_allclose(water, alone, rtol=1e-10, atol=1e-10)
+
+
+def test_species_transmission_keeps_the_continuum_out_of_the_water_line():
+    """The MT_CKD continuum is not a line species and is a standing suspect in
+    this package's residuals, so it gets its own trace rather than hiding
+    inside H2O's."""
+    model, nu = _two_species_model()
+    coefficient_nu = np.arange(4280.0, 4340.0, 5.0)
+    continuum = MTCKDWaterContinuum(
+        nu, coefficient_nu,
+        np.full_like(coefficient_nu, 2.0e-28), np.full_like(coefficient_nu, 3.0e-28),
+        np.full_like(coefficient_nu, 4.2))
+    with_continuum = TelluricModel(
+        model.profile, nu, model.opacity, continuum=continuum, accuracy_mode="mt_ckd")
+    parameters = _two_species_params(H2O=0.4, CO2=-0.3)
+
+    pieces = with_continuum.species_transmission(parameters)
+    assert set(pieces) == {"H2O", "CO2", "continuum"}
+    assert np.all(np.asarray(pieces["continuum"]) < 1.0)
+    # H2O's own trace is unchanged by the continuum's presence.
+    np.testing.assert_allclose(
+        np.asarray(pieces["H2O"]),
+        np.asarray(model.species_transmission(parameters)["H2O"]), rtol=1e-12)
+
+    product = np.ones_like(np.asarray(pieces["H2O"]))
+    for values in pieces.values():
+        product = product * np.asarray(values)
+    np.testing.assert_allclose(
+        product, np.asarray(with_continuum.transmission(parameters)),
+        rtol=1e-12, atol=1e-12)

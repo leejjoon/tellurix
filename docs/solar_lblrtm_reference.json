@@ -1,0 +1,53 @@
+{
+  "window_cm1": [
+    4350.0,
+    4380.0
+  ],
+  "zenith_angle_deg": 59.74971078080449,
+  "profile": "data/profiles/kitt_peak_19901218_file5.csv",
+  "species": [
+    "CH4",
+    "CO",
+    "CO2",
+    "H2O",
+    "N2O"
+  ],
+  "points": 30293,
+  "lblrtm_version": "12.17 linux_gnu_sgl",
+  "column_scales": "all 1.0",
+  "median_absolute": 0.0029392216765964374,
+  "rms": 0.0031797094778595633,
+  "percentile_99_absolute": 0.007087508851632054,
+  "max_absolute": 0.014003353521484074,
+  "mean_signed": -0.002905603075720372,
+  "transmission_0.95_1.01": {
+    "points": 14043,
+    "rms": 0.0029581286872791945,
+    "median_absolute": 0.00295350000230421
+  },
+  "transmission_0.85_0.95": {
+    "points": 9775,
+    "rms": 0.0032157893216891087,
+    "median_absolute": 0.003047772843104868
+  },
+  "transmission_0.7_0.85": {
+    "points": 3632,
+    "rms": 0.003238137124764551,
+    "median_absolute": 0.002452409532763433
+  },
+  "transmission_0.5_0.7": {
+    "points": 1690,
+    "rms": 0.003792377369125969,
+    "median_absolute": 0.0020240279478268564
+  },
+  "transmission_0.2_0.5": {
+    "points": 922,
+    "rms": 0.004312868040095543,
+    "median_absolute": 0.002321602434857184
+  },
+  "transmission_0.0_0.2": {
+    "points": 231,
+    "rms": 0.0034627937140220117,
+    "median_absolute": 0.0024405376005455226
+  }
+}

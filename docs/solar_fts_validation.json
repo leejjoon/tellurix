@@ -1,0 +1,170 @@
+{
+  "window_cm1": [
+    6000.0,
+    6020.0
+  ],
+  "pixels": 2110,
+  "noise": 0.00046,
+  "profile": "data/profiles/kitt_peak_19901218_file5.csv",
+  "instrument": {
+    "mopd_cm": 34.41842555618939,
+    "fwhm_cm1": 0.01753,
+    "resolving_power_at_centre": 342840.8442669709
+  },
+  "truth": {
+    "H2O_scale": 1.2,
+    "CH4_scale": 1.15,
+    "velocity_kms": 0.3,
+    "lsf_sigma_kms": 0.4,
+    "airmass": 4.73
+  },
+  "cases": [
+    {
+      "case": "L1_half",
+      "resolving_power": 171420.42213348544,
+      "samples_per_resolution": 4.0,
+      "points": 3425,
+      "velocity_step_kms": 0.4371852448582182,
+      "instrument": "boxcar FTS sinc",
+      "seconds": 37.5,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "H2O_scale": 1.1985809761709398,
+      "CH4_scale": 1.1502601103788537,
+      "velocity_kms": 0.30101287063928595,
+      "lsf_sigma_kms": 0.36271829980411785,
+      "rms": 0.0005252420727573084,
+      "rms_over_noise": 1.1418305929506705,
+      "reduced_chi2": 1.3037771029980794
+    },
+    {
+      "case": "L1_full",
+      "resolving_power": 342840.8442669709,
+      "samples_per_resolution": 4.0,
+      "points": 6848,
+      "velocity_step_kms": 0.21860630760047978,
+      "instrument": "boxcar FTS sinc",
+      "seconds": 44.3,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "H2O_scale": 1.1987992879039777,
+      "CH4_scale": 1.1499103948224385,
+      "velocity_kms": 0.29977080439101184,
+      "lsf_sigma_kms": 0.3936500500447659,
+      "rms": 0.00046117367736062576,
+      "rms_over_noise": 1.0025514725230995,
+      "reduced_chi2": 1.0051094550582351
+    },
+    {
+      "case": "L1_double",
+      "resolving_power": 685681.6885339417,
+      "samples_per_resolution": 4.0,
+      "points": 13693,
+      "velocity_step_kms": 0.10930315380023989,
+      "instrument": "boxcar FTS sinc",
+      "seconds": 36.2,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "H2O_scale": 1.1991083982974289,
+      "CH4_scale": 1.1501866169110766,
+      "velocity_kms": 0.29979511878424936,
+      "lsf_sigma_kms": 0.401127035053923,
+      "rms": 0.00045497960716749195,
+      "rms_over_noise": 0.989086102538026,
+      "reduced_chi2": 0.9782913182338624
+    },
+    {
+      "case": "L2_gaussian",
+      "resolving_power": 342840.8442669709,
+      "samples_per_resolution": 4.0,
+      "points": 6848,
+      "velocity_step_kms": 0.21860630760047978,
+      "instrument": "gaussian",
+      "seconds": 27.7,
+      "success": true,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+      "H2O_scale": 1.198827758887826,
+      "CH4_scale": 1.1499706571343722,
+      "velocity_kms": 0.2997695678176362,
+      "lsf_sigma_kms": 0.3945209558114504,
+      "rms": 0.0004835933994549833,
+      "rms_over_noise": 1.0512899988151811,
+      "reduced_chi2": 1.1052106616088233
+    }
+  ],
+  "L0_injection_recovery": {
+    "note": "formal errors are not quotable uncertainties; see fit.py",
+    "H2O_fractional_error": -0.0007430014188092304,
+    "CH4_fractional_error": 0.00016227557484929295,
+    "velocity_error_kms": -0.00020488121575062967,
+    "lsf_error_kms": 0.0011270350539229756,
+    "reduced_chi2": 0.9782913182338624,
+    "threshold_fractional_error": 0.01,
+    "passed": true
+  },
+  "L1_grid_convergence": {
+    "threshold_fractional_shift": 0.005,
+    "H2O": {
+      "fractional_shift_full_vs_double": 0.00025778352806973636,
+      "converged": true,
+      "fractional_shift_half_vs_double": 0.00043984524438149953
+    },
+    "CH4": {
+      "fractional_shift_full_vs_double": 0.00024015414940221376,
+      "converged": true,
+      "fractional_shift_half_vs_double": 6.389699436292156e-05
+    },
+    "half_rms_over_noise": 1.1418305929506705,
+    "passed": true
+  },
+  "L2_instrument_profile": {
+    "gaussian_rms_over_noise": 1.0512899988151811,
+    "sinc_rms_over_noise": 1.0025514725230995,
+    "gaussian_penalty": 1.0486144877623316,
+    "H2O_bias_vs_sinc": 2.374958355043982e-05,
+    "CH4_bias_vs_sinc": 5.240609373131548e-05,
+    "threshold_rms_over_noise": 1.2,
+    "passed": true
+  },
+  "L3_air_mass": {
+    "airmass": 4.73,
+    "zenith_angle_deg": 77.79462487330612,
+    "fitted_at_header_zenith": {
+      "success": true,
+      "H2O_scale": 1.1998993717718027,
+      "CH4_scale": 1.150236257837462,
+      "velocity_kms": 0.29981508203849266,
+      "lsf_sigma_kms": 0.3921876650312425,
+      "rms": 0.0004727422134332598,
+      "rms_over_noise": 1.0277004639853473,
+      "reduced_chi2": 1.056168243675698
+    },
+    "fitted_at_zero_zenith": {
+      "success": false,
+      "H2O_scale": 5.758446753684201,
+      "CH4_scale": 5.440057120456277,
+      "velocity_kms": 0.29986967269116477,
+      "lsf_sigma_kms": 0.3895730012396242,
+      "rms": 0.0005918651304117939,
+      "rms_over_noise": 1.2866633269821606,
+      "reduced_chi2": 1.6555025170008026
+    },
+    "threshold_fractional_error": 0.01,
+    "H2O": {
+      "recovered_at_header_zenith": 1.1998993717718027,
+      "fractional_error": -8.385685683102533e-05,
+      "recovered_at_zero_zenith": 5.758446753684201,
+      "ratio_to_truth": 4.798705628070167,
+      "ratio_over_airmass": 1.014525502763249
+    },
+    "CH4": {
+      "recovered_at_header_zenith": 1.150236257837462,
+      "fractional_error": 0.00020544159779319364,
+      "recovered_at_zero_zenith": 5.440057120456277,
+      "ratio_to_truth": 4.730484452570677,
+      "ratio_over_airmass": 1.0001024212622993
+    },
+    "passed": true
+  },
+  "runtime_seconds": 243.1
+}

@@ -23,14 +23,72 @@ _DRY_MOLAR_MASS_G_MOL = 28.9647
 _WATER_MOLAR_MASS_G_MOL = 18.01528
 _SEA_LEVEL_GRAVITY = 9.80665
 
-# Dry-air volume mixing ratios. The 1993-94 column is the epoch of the Hinkle,
-# Wallace & Livingston Arcturus atlas; see docs/arcturus_fit.md.
-EPOCH_DRY_VMR = {
-    "1994": {"CO2": 357.0e-6, "CH4": 1.72e-6, "N2O": 0.310e-6, "CO": 0.10e-6, "O2": 0.2095},
-    "2020": {"CO2": 414.0e-6, "CH4": 1.87e-6, "N2O": 0.333e-6, "CO": 0.10e-6, "O2": 0.2095},
+# Gases whose abundance has trended, as dry-air volume mixing ratios at the
+# surface. Everything else comes from the AFGL standard atmosphere extracted by
+# scripts/extract_afgl_profiles.py, which carries all 47 HITRAN molecules with
+# their vertical structure -- including the stratospheric ones a single mixing
+# ratio cannot represent. The 1993-94 column is the epoch of the Hinkle,
+# Wallace & Livingston Arcturus atlas; 1990-12 is the epoch of the NSO solar
+# spectra. NOAA GML global annual means.
+EPOCH_SURFACE_VMR = {
+    # For niratl and ftsspec_830626_{2,3}, 1983 June. CO2 is NOAA GML's global
+    # annual mean (342.53 ppm). Its global CH4 starts in 1984 (1644.84 ppb) and
+    # is taken back one year at the mid-1980s growth of ~13 ppb/yr; N2O is the
+    # 1990 value below taken back seven years at ~0.7 ppb/yr. Every column is
+    # fitted, so these seed the fit and the scan's ranking and nothing else.
+    "1983": {"CO2": 342.5e-6, "CH4": 1.632e-6, "N2O": 0.3035e-6},
+    "1990": {"CO2": 354.4e-6, "CH4": 1.714e-6, "N2O": 0.3085e-6},
+    "1994": {"CO2": 357.0e-6, "CH4": 1.72e-6, "N2O": 0.310e-6},
+    "2020": {"CO2": 414.0e-6, "CH4": 1.87e-6, "N2O": 0.333e-6},
 }
+# Retained under the old name so existing callers keep working; the values are
+# the surface ones above plus the two that have not trended.
+EPOCH_DRY_VMR = {
+    epoch: {**values, "CO": 0.10e-6, "O2": 0.2095}
+    for epoch, values in EPOCH_SURFACE_VMR.items()
+}
+AFGL_MODELS = ("tropical", "midlatitude_summer", "midlatitude_winter",
+               "subarctic_summer", "subarctic_winter", "us_standard_1976")
 
-# Height above the site, in km. Fine near the ground where the water sits, and
+
+def load_afgl(model: str, root: Path) -> dict:
+    """The AFGL standard atmosphere, as arrays over its own 50-level grid."""
+
+    path = root / "data/profiles/afgl" / f"{model}.csv"
+    if not path.exists():
+        raise SystemExit(f"{path} is missing; run scripts/extract_afgl_profiles.py")
+    rows = [line for line in path.read_text().splitlines() if not line.startswith("#")]
+    names = rows[0].split(",")
+    values = np.asarray([[float(v) for v in row.split(",")] for row in rows[1:]])
+    return {name: values[:, index] for index, name in enumerate(names)}
+
+
+def afgl_dry_vmr(model: str, altitude_km: np.ndarray, epoch: str, root: Path) -> dict:
+    """Every AFGL molecule on the requested altitudes, as dry-air fractions.
+
+    Interpolated in the log, because these span fourteen orders of magnitude
+    and ozone changes by a factor of 260 between the surface and 38 km. Water
+    is excluded: it comes from the site's own precipitable-water argument or
+    from ERA5, never from a climatology.
+    """
+
+    table = load_afgl(model, root)
+    grid = table["altitude_km"]
+    surface = EPOCH_SURFACE_VMR[epoch]
+    out = {}
+    for name, ppmv in table.items():
+        if name in ("altitude_km", "H2O"):
+            continue
+        dry = np.exp(np.interp(altitude_km, grid, np.log(np.maximum(ppmv, 1e-30)))) * 1.0e-6
+        # Scale the trended gases to the epoch by their surface ratio, which
+        # preserves the AFGL vertical shape.
+        if name in surface:
+            dry = dry * (surface[name] / (ppmv[0] * 1.0e-6))
+        out[name] = dry
+    return out
+
+
+# Height above the site# Height above the site, in km. Fine near the ground where the water sits, and
 # with four layers above 0.25 bar where the well-mixed line cores form.
 DEFAULT_EDGES_KM = (0.0, 0.3, 0.7, 1.2, 1.8, 2.6, 3.6, 5.0, 7.0, 10.0, 14.0, 20.0, 30.0)
 
@@ -120,9 +178,26 @@ def main() -> None:
     parser.add_argument("--stratospheric-water-vmr", type=float, default=5.0e-6)
     parser.add_argument("--precipitable-water-mm", type=float, default=5.0)
     parser.add_argument("--epoch", choices=sorted(EPOCH_DRY_VMR), default="1994")
+    parser.add_argument("--afgl-model", choices=AFGL_MODELS, default=None,
+                        help="carry every AFGL molecule with its vertical structure, "
+                             "instead of the handful of well-mixed surface values. A "
+                             "species-scan can only rank what the profile knows about, "
+                             "and a stratospheric gas cannot be described by one number: "
+                             "ozone is 260x more abundant at 38 km than at the ground.")
     parser.add_argument("--site", default="Kitt Peak")
     parser.add_argument("--output", type=Path, default=Path("data/profiles/kitt_peak_1994.csv"))
     args = parser.parse_args()
+
+    root = Path(__file__).resolve().parents[1]
+    if args.afgl_model is None:
+        dry_vmr = EPOCH_DRY_VMR[args.epoch]
+    else:
+        # The abundances are needed at the layer centres, which build_profile
+        # derives from the same edges; per-layer arrays multiply through its
+        # moist-air conversion exactly as scalars do.
+        edges = np.asarray(DEFAULT_EDGES_KM, dtype=float)
+        centres = args.site_altitude_km + 0.5 * (edges[:-1] + edges[1:])
+        dry_vmr = afgl_dry_vmr(args.afgl_model, centres, args.epoch, root)
 
     profile = build_profile(
         args.surface_pressure_hpa,
@@ -133,14 +208,15 @@ def main() -> None:
         args.water_scale_height_km,
         args.stratospheric_water_vmr,
         args.precipitable_water_mm,
-        EPOCH_DRY_VMR[args.epoch],
+        dry_vmr,
     )
     profile.pop("_precipitable_water_mm")
     columns = list(profile)
     rows = len(profile["temperature_k"])
 
     lines = [
-        f"# {args.site}, {args.epoch} trace-gas abundances, generated by scripts/make_site_profile.py.",
+        f"# {args.site}, {args.epoch} trace-gas abundances, generated by scripts/make_site_profile.py."
+        + ("" if args.afgl_model is None else f" AFGL {args.afgl_model}."),
         f"# surface {args.surface_pressure_hpa:.1f} hPa / {args.surface_temperature_k:.1f} K at "
         f"{args.site_altitude_km:.3f} km, lapse {args.lapse_rate_k_km:.1f} K/km.",
         f"# water: exponential scale height {args.water_scale_height_km:.1f} km on a "

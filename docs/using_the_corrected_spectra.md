@@ -1,7 +1,9 @@
 # Using the corrected spectra
 
 This is the short version, for someone who wants to *use* the output rather than
-reproduce it. `docs/arcturus_fit.md` and `docs/igrins_a0v.md` are the long
+reproduce it. If you want to know **how** the correction works rather than how to
+consume it, read `docs/arcturus_walkthrough.ipynb` instead: it takes one page
+through every component with plots, then repeats it across all 598. `docs/arcturus_fit.md` and `docs/igrins_a0v.md` are the long
 versions: they are development records, organised by how the work unfolded, and
 you should not have to read either to get a spectrum out.
 
@@ -304,6 +306,16 @@ sufficient.
 
 ## Caveats that will bite you
 
+**Skip a solar window whose column is at its upper bound.** The solar transmission
+files carry `column_at_upper_bound` (one boolean per row) and
+`species_at_upper_bound`: there the fit drove a column to e^2 to soak up something
+else, usually the solar model's error, and the transmission holds absorption the sky
+does not -- 5-13% in the cases measured. The corrected-spectrum files already set
+`reliable` False on those pages. A column at the *lower* bound is harmless and not
+flagged. Nine windows across the solar runs, none in file 5, photatl or niratl
+(`docs/solar_fit_plan.md` §4m). The flag cannot see a column that is far too high but
+short of the bound.
+
 **The formal errors are not uncertainties.** `record.sigma` and
 `FitResult.covariance` invert the objective's real Hessian, but they assume
 independent pixel errors, and the residual is dominated by *correlated* model
@@ -340,60 +352,49 @@ good = f["reliable"][i] & (f["effective_transmission"][i] > 0.8)
 
 The floor the run used is on the dataset as `transmission_floor`.
 
-**The retrieved H2O column depends on how blanketed the page is.** Splitting the
-atlas at the median blanketing of the Payne Zero source over each page window,
-the heavily blanketed half retrieves 3.1% (summer) and 7.1% (winter) less water
-than the lightly blanketed half. Blanketing is confounded with wavelength
-(r = -0.31), but the effect survives removing it: within eight narrow wavenumber
-bands the partial correlation is still -0.19 (summer) and -0.11 (winter).
+**Do not compare fitted column scales between pages.** The atlas was fitted
+with `zenith_angle_deg = 0`, so the model divides optical depth by
+cos(0) = 1 and **every bit of air mass ends up inside the fitted column scale**.
+A page observed at air mass 1.8 returns a scale 1.8x larger than the same sky at
+the zenith. The atlas is also not one exposure: it is 0.92-5.36 um at
+R = 100,000 from an FTS, assembled from at least five instrument configurations
+(the data carries five distinct sampling intervals, each confined to its own
+spectral region), and its two epochs are two *dates* chosen for opposite
+heliocentric shifts, not two exposures. So pages differ in air mass, and in the
+case of water in the actual amount of water overhead.
 
-The sign is what a continuum-source degeneracy predicts -- `continuum x source
-x T` lets a continuum placed too low be paid for by a transmission too high --
-but that mechanism has been tested and does not account for it. Refitting the
-twelve most blanketed page-epochs with `fit_arcturus_page.py --continuum-anchor
-0.98`, which drops the 38% of pixels where the source model sits below 0.98 so
-the Chebyshev is anchored only on near-continuum pixels, moves the retrieved
-H2O by a median of +0.4% and makes the residual 1.1% worse. So the effect is
-real, it is not the continuum degeneracy, and it is unexplained. Treat it as a
-floor on an absolute column from a single page; slopes and ratios across pages
-at similar blanketing are much safer. `--continuum-anchor` remains as an
-experiment flag, not a default.
+A fitted scale is therefore `true vertical column x air mass / profile column`,
+and the three factors are not separable from a single page. Measured p16-p84
+spread over 4000-9000 cm-1 (1.11-2.50 um):
 
-**Do not use `continuum` as the stellar continuum, and do not use it at all if you
-are measuring line strengths.** It is a free degree-3 Chebyshev fitted *jointly
-with* a source built from fixed Payne Zero oscillator strengths, so whatever
-those got wrong in a smooth way, the polynomial absorbed. Deriving gf values
-from anything divided by it is circular.
+| | summer | winter |
+|---|---|---|
+| H2O | 1.34x | 1.29x |
+| CO2 | 1.31x | 1.55x |
+| CH4 | 1.81x | 1.95x |
 
-`stellar_continuum` is the other half: the model's own physical continuum,
-interpolated to the pixels, a prediction rather than a free function. Its units
-are the model's, so only its shape means anything. Splitting the fitted tilt by
-it shows how little of the page-scale slope is actually stellar:
+Those numbers bound air mass plus model error together. They do not isolate
+either, and **none of them should be read as an accuracy**.
 
-| page | fitted tilt | stellar | remainder |
-|---|---|---|---|
-| ab6225_ | +3.3% | −0.6% | +3.8% |
-| ab6600_ | +25.1% | −0.2% | +25.3% |
-| ab5825_ | +1.9% | −1.8% | +3.8% |
-| ab8450_ | +0.1% | −0.5% | +0.6% |
+**One feature does survive that caveat.** Above 9000 cm-1 (0.91-1.11 um) the
+water scale runs 2.4x (summer) and 2.3x (winter) above the 4000-9000 cm-1
+value, closely reproduced in both epochs. Those pages are not poorly
+constrained -- they carry more absorption than the bulk (median transmission
+0.950 against 0.981), a tighter formal error (0.0059 against 0.0071) and a
+better residual (2.94 against 3.34 sigma). What cannot be checked there is
+whether it is air mass: **CO2 and CH4 have no measurable band above 9000 cm-1**,
+so no second species shares the path and the airmass-free cross-check does not
+exist in that region. Treat water from the 0.91-1.11 um pages as carrying a
+factor of about two of unexplained scale, of which an unknown part is air mass.
 
-**`stellar_continuum` carries bound-free edges, which no fitted polynomial can
-represent.** The largest single-sample step in the Arcturus model sits at
-1458.8 nm, the Brackett limit, at 0.19% — three hundred times any other step in
-the array. In the A0V model the same edge is **5.6%**, because at 9500 K
-hydrogen bound-free is the continuum opacity. It falls inside the two bluest
-IGRINS H orders, and those two fit at a median 3.76 sigma against 1.79 for the
-other 25, with H124 alone at 5.44. That is confounded with the band edge, so it
-is a suspicion rather than a measurement — but it is the right place to be
-suspicious.
-
-**The correction itself does not carry our stellar model, though.** `corrected`
-is exactly `observed / effective_transmission` (verified to 2.2e-16), so the
-source enters only through the convolution weighting in
-`Conv[T x S] / Conv[S]`. Recomputing that with a flat source moves it by a
-median of 0.00016, p99 0.0031 and at worst 0.0097, against 0.0137 of pixel
-noise. So `corrected` is safe to derive line strengths from; it is the
-*continuum* that is not.
+**Two attributions this is not.** Not line blanketing: the raw split reproduces
+(-4.3% summer, -6.4% winter) but blanketing, page width and wavenumber are
+mutually confounded -- each of the atlas's five page widths sits in its own
+spectral region -- and the partial correlation swings from -0.24 to +0.16 with
+the control set, which is instability rather than a measurement. And not the
+continuum-source degeneracy, tested directly: `fit_arcturus_page.py
+--continuum-anchor 0.98` moves the retrieved H2O by a median of +0.4% and makes
+the residual 1.1% worse.
 
 **The Arcturus residual is dominated by the stellar model, not the atmosphere.**
 It is flat against transmission — 0.97 in deep absorption, 1.52 at the continuum
@@ -495,6 +496,19 @@ uv run --with aiohttp python scripts/era5_site_profile.py \
 ```
 
 ## What this does not do
+
+**There is no solar equivalent of these products yet.** The NSO solar atlases
+ship a telluric column at atlas resolution, which can only mask -- the same trap
+the transmission export exists to avoid. `docs/solar_atlases.md` surveys what
+the data is and what it would take.
+
+**Cite the atlas if you publish.** The Arcturus data is Hinkle, Wallace &
+Livingston 1995, *Infrared Atlas of the Arcturus Spectrum, 0.9-5.3 um*, ASP
+(ISBN 1-886733-04-X); PASP **107**, 1042,
+doi [10.1086/133660](https://doi.org/10.1086/133660). The README shipped with
+the data asks for that citation explicitly. The README and the full provenance,
+including where to find the atlas now that the FTP URL in every paper is dead,
+are in `README.md` and `docs/arcturus_fit.md`.
 
 **It does not correct science targets.** Every fit here is of a telluric
 standard or of Arcturus. Taking a fitted atmosphere to a target observed at a

@@ -38,11 +38,17 @@ driver uses and it halves the work here.
 from __future__ import annotations
 
 import argparse
+import sys
 import os
 import time
 from pathlib import Path
 
-MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
+# Which molecules to build line lists for comes from the **record**, not from a
+# table here. A private species list in this file would be a third copy of the
+# mistake that hid OCS and O3 for as long as it did: a solar record carries
+# whatever its per-window scan found, and a hardcoded six would silently drop
+# the rest. Iterating the record's own species is also faster than iterating all
+# 46 AER molecules, which is what a naive fix would do.
 
 
 def main() -> None:
@@ -69,8 +75,8 @@ def main() -> None:
     import numpy as np
 
     from tellurix import (
-        AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, TelluricModel,
-        file_sha256, igrins_wavenumber_grid, load_atmosphere_csv, parameters_from_row,
+        AER_MOLECULE_IDS, AERLineDatabase, ExoJAXOpacityBackend, MTCKDWaterContinuum, TelluricModel,
+        file_sha256, constant_velocity_grid, load_atmosphere_csv, parameters_from_row,
         read_record, select_significant_lines, trim_wavenumber_grid,
     )
 
@@ -87,12 +93,26 @@ def main() -> None:
         return path
 
     profile = load_atmosphere_csv(verified("profile", Path(inputs["profile"])))
-    line_root = Path(inputs["aer_line_root"])
+    line_root = Path(inputs.get("aer_line_root")
+                     or root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
 
     # The atlas fits everything at the zenith and carries one angle in the
     # config; an IGRINS night carries the frame's own angle per row, 18.7 to
     # 67.3 degrees on one night. Take the row's when it has one, so the saved T
     # is the slant transmission that frame actually saw.
+    # The atlas and IGRINS hold a resolving power fixed for the whole run; the
+    # NSO FTS spectra hold the interferogram truncation fixed instead, so the
+    # resolution element is constant in WAVENUMBER and R rises across the band
+    # -- 114,075 at 2000 cm-1 to 513,338 at 9000. Those records carry the FWHM
+    # rather than an R, and each window's grid is sized from its own centre.
+    fwhm_cm1 = physics.get("fwhm_cm1")
+    if "resolving_power" in config:
+        resolving_power_for = lambda v1, v2: float(config["resolving_power"])
+    elif fwhm_cm1:
+        resolving_power_for = lambda v1, v2: 0.5 * (v1 + v2) / float(fwhm_cm1)
+    else:
+        raise SystemExit("this record carries neither a resolving power nor an ILS width")
+
     per_row_zenith = "zenith_angle_deg" in pages.dtype.names
     if not per_row_zenith and "zenith_angle_deg" not in config:
         raise SystemExit("this record carries no zenith angle, per row or in its config")
@@ -122,15 +142,15 @@ def main() -> None:
     for position, key in enumerate(ordered):
         v1, v2 = key
         grid = trim_wavenumber_grid(
-            igrins_wavenumber_grid(1.0e7 / v2, 1.0e7 / v1,
-                                   resolving_power=float(config["resolving_power"]),
+            constant_velocity_grid(1.0e7 / v2, 1.0e7 / v1,
+                                   resolving_power=resolving_power_for(v1, v2),
                                    samples_per_resolution=float(config["samples_per_resolution"]),
                                    margin_cm1=float(config["margin_cm1"])),
             v1, v2, float(config["grid_margin_cm1"]))
 
         databases = {}
-        for name, molecule_id in sorted(MOLECULE_IDS.items()):
-            stem = f"{molecule_id:02d}_{name}"
+        for name in sorted(species_all):
+            stem = f"{AER_MOLECULE_IDS[name]:02d}_{name}"
             try:
                 databases[name] = AERLineDatabase(
                     verified(f"aer_{name}", line_root / stem / stem), name, (v1, v2),
@@ -152,8 +172,17 @@ def main() -> None:
             vectorize_layers=bool(physics["vectorize_layers"]),
             mixed_precision=bool(physics["mixed_precision"]),
             pressure_shift=bool(physics["pressure_shift"]))
-        continuum = MTCKDWaterContinuum.from_netcdf(
-            verified("mt_ckd", Path(inputs["mt_ckd"])), grid)
+        # A "fast" record fitted lines only -- the windows past MT_CKD's 20000
+        # cm-1 -- and must be rebuilt the same way.
+        continuum = None if physics["accuracy_mode"] == "fast" else MTCKDWaterContinuum.from_netcdf(
+            verified("mt_ckd", Path(inputs.get("mt_ckd")
+                     or root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc")), grid)
+        if physics.get("o2_cia"):
+            from tellurix import ContinuumSum, O2CollisionInducedContinuum
+
+            o2 = O2CollisionInducedContinuum(grid)
+            if o2.terms:
+                continuum = o2 if continuum is None else ContinuumSum((continuum, o2))
         model = TelluricModel(profile, grid, opacity, continuum=continuum,
                               accuracy_mode=physics["accuracy_mode"],
                               max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
@@ -225,7 +254,11 @@ def main() -> None:
             "so that is the slant transmission along the line of sight.")
         handle.attrs["format"] = "tellurix transmission 1"
         handle.attrs["record"] = str(args.record)
-        handle.attrs["resolving_power"] = float(config["resolving_power"])
+        if "resolving_power" in config:
+            handle.attrs["resolving_power"] = float(config["resolving_power"])
+        else:
+            # Constant in wavenumber, not in R: quote what is actually fixed.
+            handle.attrs["fwhm_cm1"] = float(fwhm_cm1)
         handle.attrs["samples_per_resolution"] = float(config["samples_per_resolution"])
         for key, value in record.run.items():
             handle.attrs[key] = "" if value is None else value
@@ -272,6 +305,8 @@ def main() -> None:
         for name, values in profile.vmr.items():
             vmr.create_dataset(name, data=np.asarray(values))
 
+        write_upper_bound_flags(handle, pages[keep], species_all)
+
         handle.create_dataset("parameters", data=pages[keep], compression=args.compression)
         handle["parameters"].attrs["description"] = (
             "the fitted parameters and quality numbers, one row per spectrum, in the same "
@@ -290,6 +325,32 @@ def main() -> None:
     print(f"wrote {args.output} ({size:.1f} MB)")
     if args.check:
         print(f"max |interpolated back to pixels - cached transmission| = {worst_check:.3e}")
+
+
+def write_upper_bound_flags(handle, rows, species) -> int:
+    """Per-row datasets marking a window whose correction must not be used.
+
+    Separate from the export loop so a file already written can be annotated
+    with the same function (annotate_quality_flags.py) instead of re-exported.
+    """
+
+    import numpy as np
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from quality_flags import UPPER_BOUND_NOTE, species_at_upper_bound
+
+    names = [species_at_upper_bound(row["at_bound"],
+                                    {s: row[f"log_column_{s}"] for s in species})
+             for row in rows]
+    for key in ("column_at_upper_bound", "species_at_upper_bound"):
+        if key in handle:
+            del handle[key]
+    handle.create_dataset("column_at_upper_bound", data=np.array([bool(n) for n in names]))
+    handle["column_at_upper_bound"].attrs["description"] = (
+        "True: do not use this row. " + UPPER_BOUND_NOTE + ". A species at the LOWER bound "
+        "is harmless and not flagged (docs/solar_fit_plan.md §4m).")
+    handle.create_dataset("species_at_upper_bound", data=["+".join(n).encode() for n in names])
+    return int(sum(bool(n) for n in names))
 
 
 if __name__ == "__main__":

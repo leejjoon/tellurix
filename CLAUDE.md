@@ -39,6 +39,32 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/trim_atlas_summary.py         # -> 
 UV_CACHE_DIR=.uv-cache uv run python scripts/rebuild_arcturus_page.py --page ab5000_ --epoch summer --check
 ```
 
+`docs/arcturus_walkthrough.ipynb` is the end-to-end explanation of that pipeline
+-- every component on one page, then the same thing across all 598 -- and it is
+**generated, not hand-edited**, so the prose and the code stay in one reviewable
+file. Rebuild and re-execute it after changing anything it describes; the
+committed copy carries its outputs so it renders without being run.
+
+```bash
+uv run --with nbformat python scripts/build_arcturus_notebook.py
+CUDA_VISIBLE_DEVICES=0 uv run --with nbformat --with nbconvert --with ipykernel \
+    jupyter nbconvert --to notebook --execute --inplace \
+        --ExecutePreprocessor.timeout=1800 docs/arcturus_walkthrough.ipynb
+quarto render docs/arcturus_walkthrough.ipynb --to html   # standalone page, gitignored
+```
+
+Quarto reads the stored outputs rather than re-executing, so render it *after*
+`nbconvert --execute` or it will publish stale figures. Verified with Quarto
+1.10.18: 4.06 MB self-contained HTML, all 20 figures embedded with their
+`#| fig-cap:` captions, the table of contents and the MathJax equation intact,
+no warnings.
+
+It runs the real `fit_arcturus_page.py` on ab5000_ rather than reimplementing
+it, which is what makes it a test as well as a document: the live fit reproduces
+the committed record's 3.61 sigma to 3.62. Notebook tooling is deliberately not
+a project dependency -- `--with` keeps it out of the lock, the same way
+`era5_site_profile.py` takes `--with aiohttp`.
+
 The batch driver writes its full summary to `data/corrected/atlas/summary.json`
 (gitignored — 1.6 MB at atlas scale, mostly per-page timings and a per-stage
 optimizer log). `trim_atlas_summary.py` reduces it to the 0.39 MB record under
@@ -48,6 +74,74 @@ lifting per-page fields that never vary into `settings`.
 Both fit drivers default to `--precompute-opacity` (see *What a fit costs*);
 `--no-precompute-opacity` restores the exact-kernel-per-iteration path and is
 the control to reach for when a fitted value looks wrong.
+
+## The sibling project, and the solar work it is asking for
+
+`/home/jjlee/work/differentiable_stellar_spectroscopy` is where the observed
+spectra come from and where this package's output goes. Its
+`docs/solar_data_status.md` (2026-09-26) names **running this package on a solar
+atlas as "the single highest-value piece of data work available"**, for a reason
+that is this package's own result handed back: the NSO solar atlases ship a
+telluric column *at atlas resolution*, which can only mask, and cannot be
+multiplied inside a convolution. The deliverable would be the solar analogue of
+`data/corrected/arcturus_transmission.h5`.
+
+`docs/solar_atlases.md` here is the survey -- what the data is, the traps
+measured on disk, and which of their documents to read for detail. Do not
+duplicate their content into this repository; they are the authority. The
+first thing to know supersedes much of the rest: **`photatl` is
+`ftsspec_901218_5`**, rescaled per page as `gain * file 5 + offset` to 0.06
+sigma of file 5's noise, so it has file 5's air mass (1.985) and refitting it is
+refitting file 5. Its product, `photatl_corrected.h5`, is built from the file-5
+fit by `scripts/export_photatl_from_ftsspec.py`; the one thing photatl adds is
+the authors' zero level, which zeroes saturated cores and measurably improves
+the fit only across 5298-5402 cm-1, whose four pages the product therefore takes from
+a fit of photatl itself (`--patch`, `docs/solar_fit_plan.md` §4j). The telluric
+lines also put the wavelength scale +141 m/s red, against the +260 m/s solar
+lines gave them. **`niratl`** (8900-13600 cm-1) is independent data and is fitted
+page by page: air mass 1.10 from the O2 A-band, its own sinc (FWHM 0.01859, not
+photatl's 0.01753 -- pass `--fwhm-cm1`), the June 1983 profile and the `nir`
+Payne Zero band; products `niratl_corrected.h5` and `niratl_transmission.h5`
+(§4k). Its residual reads ~76 sigma only because its noise is 5x lower than
+file 5's; in flux units the fit is as good. The 1983 raw pair
+`ftsspec_830626_{2,3}` (8516-20735 cm-1, to 482 nm) is fitted too (§4l). Header air
+masses are **Kasten & Young 1989** at the Sun's position -- recomputing them from the
+UT times reproduces every header to 0.02 -- which is how `_3`, whose header prints
+`?.??`, gets 3.53 -> 2.64 (pass `--airmass 3.085`). Its O2 columns show an excess that LBLRTM on the same lines does not explain
+(§4n): the line physics agree to 2-3%, and the fits still ask for ~5% more A-band and
+~9% more B-band absorption -- so niratl's A-band air mass of 1.10 is uncertain, 1.05-1.12.
+**O2's collision-induced continuum is ported from LBLRTM** (`tellurix.o2_cia`,
+`--o2-cia`, validated to 0.13%, §4o). It does not move columns -- the fitted Chebyshev
+had been absorbing it -- but without it the corrected spectra keep its dimming, up to
+6.7% at air mass 5.4 in the A-band.
+Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
+corrected visible spectra keep their broadband dimming. **A column at its
+upper bound makes a window unusable** -- the fit is absorbing the solar model's error
+into it, 5-13% of fake absorption -- while one at the lower bound is harmless; the
+transmission files flag the former per row (`column_at_upper_bound`) and the
+corrected files mark it unreliable (`scripts/quality_flags.py`, §4m). The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
+Arcturus pages already fitted) **interpolates pixels where the sky is opaque**;
+its **ILS is the weakest input in their programme** -- R = 300,000 quoted once
+for four atlases, no MOPD, no apodization; its **wavelength scale is +260 m/s**
+off two independent ACE atlases that agree with each other to 2 m/s; and the NSO
+telluric atlases have **no loader** anywhere. Their W4.1 also found that telluric
+lines can measure an instrument profile where stellar lines cannot, which is a
+lever on the `lsf_sigma_kms` railing documented above and has not been tried
+here.
+
+Their status document cites our export under a stale name
+(`arcturus_transmission_full.h5`); the file is `arcturus_transmission.h5` and
+comes from the promoted full-coverage record.
+
+The Arcturus atlas is **not fetched by this repository**. Runs read it from a
+sibling project (`differentiable_stellar_spectroscopy/data/atlases/arcturus/ir`)
+and the record pins it by that absolute path plus a per-page sha256 -- which
+catches a changed file, not a moved directory. It is Hinkle, Wallace &
+Livingston 1995 (ASP, ISBN 1-886733-04-X; PASP 107, 1042), whose README asks for
+a citation in any publication. The `ftp://ftp.noao.edu/catalogs/arcturusatlas/`
+URL every paper cites is dead; start from
+https://noirlab.edu/science/data-services/other. README.md and
+`docs/arcturus_fit.md` carry the full provenance.
 
 The committed Arcturus record is the **full-coverage** run: `page_windows`
 no longer trims the ~5 cm-1 the atlas pages overlap by, so every pixel the atlas
@@ -489,11 +583,25 @@ where the star is blanketed. Measured over 1500-1540 nm: mean depth 0.0278 for
 own `flux_continuum` -- but renormalizing that same source by its median gives
 0.0304, so most of the gap is the zero point and only about 9% of it is anything
 the continuum absorbed. The visible consequence is that ~16% of
-`corrected / continuum` pixels sit above 1.02 at 1.5 um. Separately and still
-unexplained: heavily blanketed pages retrieve 3-7% less water than lightly
-blanketed ones, which survives a wavelength control (partial r = -0.19 summer,
--0.11 winter) but is **not** fixed by `--continuum-anchor 0.98` (median H2O shift
-+0.4%, residual 1.1% worse), so the continuum-source degeneracy is not the cause.
+`corrected / continuum` pixels sit above 1.02 at 1.5 um. Separately, **fitted column scales are not comparable between pages.** The
+atlas runs with `zenith_angle_deg = 0`, so air mass is absorbed wholly into the
+column scale, and the atlas is not one exposure -- 0.92-5.36 um at R = 100,000
+comes from at least five FTS configurations (five distinct sampling intervals,
+each in its own spectral region) and its two epochs are two dates. A fitted
+scale is `true column x air mass / profile column` and a single page cannot
+separate them. The p16-p84 spread over 4000-9000 cm-1 is 1.34x/1.29x for H2O,
+1.31x/1.55x for CO2, 1.81x/1.95x for CH4 (summer/winter); those bound air mass
+*plus* model error and are not an accuracy. One feature survives: above
+9000 cm-1 the water scale runs 2.4x/2.3x above the bulk in both epochs, on pages
+that are better constrained than the bulk (median transmission 0.950 vs 0.981,
+formal sigma 0.0059 vs 0.0071, residual 2.94 vs 3.34 sigma) -- but **CO2 and CH4
+have no measurable band above 9000 cm-1**, so no second species shares the path
+and air mass cannot be ruled out there. Do **not** attribute any of this to line
+blanketing, as earlier notes did: the raw split reproduces (-4.3%/-6.4%) but
+blanketing, page width and wavenumber are mutually confounded and the partial
+correlation swings from -0.24 to +0.16 with the control set. The
+continuum-source degeneracy is separately ruled out by `--continuum-anchor 0.98`
+(median H2O shift +0.4%, residual 1.1% worse).
 
 `scripts/generate_payne_zero_arcturus.py` makes the stellar source and does **not**
 run in this environment: Payne Zero needs Python >= 3.11 while this package is pinned
@@ -600,7 +708,7 @@ and sampling, which is what makes one grid spacing shared across the atlas.
 
 ### Two margins, not one
 
-`igrins_wavenumber_grid(..., margin_cm1=25)` pads so that outside lines
+`constant_velocity_grid(..., margin_cm1=25)` pads so that outside lines
 contribute their wings — a property of the *line list*. The grid only has to
 cover the window plus what the model reaches back for (LSF kernel, Doppler
 shifts, instrument edge padding), under 2 cm-1 anywhere in this atlas. Sharing
@@ -701,7 +809,7 @@ opt-in to keep the default numerically identical to ExoJAX.
   Follow that pattern rather than validating at call sites.
 - Atmosphere arrays are ordered top-to-bottom: pressure edges increase,
   altitude decreases. Wavenumber grids are strictly increasing and evenly
-  spaced in log wavenumber (constant velocity step) — `igrins_wavenumber_grid`
+  spaced in log wavenumber (constant velocity step) — `constant_velocity_grid`
   builds them with padding for line wings.
 - Units are in names: `_bar`, `_hpa`, `_cm1`, `_km`, `_kms`, `_k`, `cm2`.
 - Comments explain *why* (a numerical or LBLRTM-compatibility reason), not what.

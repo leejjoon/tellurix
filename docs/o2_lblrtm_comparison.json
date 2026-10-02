@@ -1,0 +1,298 @@
+{
+ "about": "O2 equivalent widths, tellurix against LBLRTM 12.17 with the same AER v3.9 lines; scale_* is the O2 column scale tellurix needs to reproduce each LBLRTM variant. scripts/compare_o2_lblrtm.py; docs/solar_fit_plan.md section 4n.",
+ "profile": "data/profiles/kitt_peak_19830626_file3.csv, O2 only",
+ "runs": {
+  "airmass_5.37_lines": [
+   {
+    "band": "A",
+    "v1": 13000.0,
+    "ew_tellurix_1": 2.4248058991611865,
+    "ew_coupled": 2.367389902119484,
+    "scale_coupled": 0.9572444803600209,
+    "ew_uncoupled": 2.370933481686442,
+    "scale_uncoupled": 0.959855644189586,
+    "ew_coupled+continua": 4.994288910893084,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "A",
+    "v1": 13060.0,
+    "ew_tellurix_1": 17.322317809547393,
+    "ew_coupled": 16.998046487857945,
+    "scale_coupled": 0.9486723984517013,
+    "ew_uncoupled": 16.997742127050195,
+    "scale_uncoupled": 0.9486255499157114,
+    "ew_coupled+continua": 18.608529090344973,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "A",
+    "v1": 13120.0,
+    "ew_tellurix_1": 23.746074033421642,
+    "ew_coupled": 23.526453894002174,
+    "scale_coupled": 0.9421454936870919,
+    "ew_uncoupled": 23.520661366761637,
+    "scale_uncoupled": 0.9406852726974184,
+    "ew_coupled+continua": 24.411956147226075,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "B",
+    "v1": 14410.0,
+    "ew_tellurix_1": 1.229762990198893,
+    "ew_coupled": 1.1914069551854218,
+    "scale_coupled": 0.9449463172432971,
+    "ew_uncoupled": 1.1914069551854218,
+    "scale_uncoupled": 0.9449463172432971,
+    "ew_coupled+continua": 5.14206515695546,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "B",
+    "v1": 14440.0,
+    "ew_tellurix_1": 2.810262282408506,
+    "ew_coupled": 2.7591824647476835,
+    "scale_coupled": 0.9667529156353999,
+    "ew_uncoupled": 2.7591824647476835,
+    "scale_uncoupled": 0.9667529156353999,
+    "ew_coupled+continua": 6.523949672457448,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "B",
+    "v1": 14470.0,
+    "ew_tellurix_1": 5.779276992700488,
+    "ew_coupled": 5.723540789042457,
+    "scale_coupled": 0.9805512746506699,
+    "ew_uncoupled": 5.723540789042457,
+    "scale_uncoupled": 0.9805512746506699,
+    "ew_coupled+continua": 9.104505211564156,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "B",
+    "v1": 14500.0,
+    "ew_tellurix_1": 6.376895945721693,
+    "ew_coupled": 6.29620459695356,
+    "scale_coupled": 0.9748531992106888,
+    "ew_uncoupled": 6.29620459695356,
+    "scale_uncoupled": 0.9748531992106888,
+    "ew_coupled+continua": 9.624089284203272,
+    "scale_coupled+continua": NaN
+   }
+  ],
+  "airmass_1.00_lines": [
+   {
+    "band": "A",
+    "v1": 13000.0,
+    "ew_tellurix_1": 0.9691083240711065,
+    "ew_coupled": 0.9582258894612461,
+    "scale_coupled": 0.9802877998168983,
+    "ew_uncoupled": 0.941452751571395,
+    "scale_uncoupled": 0.9502878462329505,
+    "ew_coupled+continua": 1.505960732941097,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "A",
+    "v1": 13060.0,
+    "ew_tellurix_1": 8.474435846188289,
+    "ew_coupled": 8.399461206483323,
+    "scale_coupled": 0.9816394129590066,
+    "ew_uncoupled": 8.394481323448597,
+    "scale_uncoupled": 0.9804239033654059,
+    "ew_coupled+continua": 8.940109474214301,
+    "scale_coupled+continua": 1.118723559261722
+   },
+   {
+    "band": "A",
+    "v1": 13120.0,
+    "ew_tellurix_1": 14.907233135881524,
+    "ew_coupled": 14.865992046724008,
+    "scale_coupled": 0.9930465992231358,
+    "ew_uncoupled": 14.851790708264094,
+    "scale_uncoupled": 0.9906522008234591,
+    "ew_coupled+continua": 15.349783649039615,
+    "scale_coupled+continua": 1.0775399362892917
+   },
+   {
+    "band": "B",
+    "v1": 14410.0,
+    "ew_tellurix_1": 0.4387798331179441,
+    "ew_coupled": 0.42517453396321636,
+    "scale_coupled": 0.956855692777504,
+    "ew_uncoupled": 0.42517453396321636,
+    "scale_uncoupled": 0.956855692777504,
+    "ew_coupled+continua": 1.2452617559196861,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "B",
+    "v1": 14440.0,
+    "ew_tellurix_1": 1.1272787083797813,
+    "ew_coupled": 1.0977354804764703,
+    "scale_coupled": 0.9536939133189323,
+    "ew_uncoupled": 1.0977354804764703,
+    "scale_uncoupled": 0.9536939133189323,
+    "ew_coupled+continua": 1.9058331564236242,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "B",
+    "v1": 14470.0,
+    "ew_tellurix_1": 2.4708480368079995,
+    "ew_coupled": 2.4675803963089002,
+    "scale_coupled": 0.9974208676332225,
+    "ew_uncoupled": 2.4675803963089002,
+    "scale_uncoupled": 0.9974208676332225,
+    "ew_coupled+continua": 3.243715492138486,
+    "scale_coupled+continua": NaN
+   },
+   {
+    "band": "B",
+    "v1": 14500.0,
+    "ew_tellurix_1": 2.683284628082002,
+    "ew_coupled": 2.6717866501992464,
+    "scale_coupled": 0.9918077230205621,
+    "ew_uncoupled": 2.6717866501992464,
+    "scale_uncoupled": 0.9918077230205621,
+    "ew_coupled+continua": 3.448648424945101,
+    "scale_coupled+continua": NaN
+   }
+  ],
+  "airmass_5.37_cia": [
+   {
+    "band": "A",
+    "v1": 13000.0,
+    "ew_tellurix_1": 2.4248058991611865,
+    "ew_coupled": 2.367389902119484,
+    "scale_coupled": 0.9572444803600209,
+    "ew_no-rayleigh continua": 2.438801233176996,
+    "scale_no-rayleigh continua": 1.0105474833632515
+   },
+   {
+    "band": "A",
+    "v1": 13060.0,
+    "ew_tellurix_1": 17.322317809547393,
+    "ew_coupled": 16.998046487857945,
+    "scale_coupled": 0.9486723984517013,
+    "ew_no-rayleigh continua": 17.42195717586126,
+    "scale_no-rayleigh continua": 1.0162957764879152
+   },
+   {
+    "band": "A",
+    "v1": 13120.0,
+    "ew_tellurix_1": 23.746074033421642,
+    "ew_coupled": 23.526453894002174,
+    "scale_coupled": 0.9421454936870919,
+    "ew_no-rayleigh continua": 23.820191070855024,
+    "scale_no-rayleigh continua": 1.020873962058599
+   },
+   {
+    "band": "B",
+    "v1": 14410.0,
+    "ew_tellurix_1": 1.229762990198893,
+    "ew_coupled": 1.1914069551854218,
+    "scale_coupled": 0.9449463172432971,
+    "ew_no-rayleigh continua": 1.1914069551854218,
+    "scale_no-rayleigh continua": 0.9449463172432971
+   },
+   {
+    "band": "B",
+    "v1": 14440.0,
+    "ew_tellurix_1": 2.810262282408506,
+    "ew_coupled": 2.7591824647476835,
+    "scale_coupled": 0.9667529156353999,
+    "ew_no-rayleigh continua": 2.7591824647476835,
+    "scale_no-rayleigh continua": 0.9667529156353999
+   },
+   {
+    "band": "B",
+    "v1": 14470.0,
+    "ew_tellurix_1": 5.779276992700488,
+    "ew_coupled": 5.723540789042457,
+    "scale_coupled": 0.9805512746506699,
+    "ew_no-rayleigh continua": 5.723540789042457,
+    "scale_no-rayleigh continua": 0.9805512746506699
+   },
+   {
+    "band": "B",
+    "v1": 14500.0,
+    "ew_tellurix_1": 6.376895945721693,
+    "ew_coupled": 6.29620459695356,
+    "scale_coupled": 0.9748531992106888,
+    "ew_no-rayleigh continua": 6.29620459695356,
+    "scale_no-rayleigh continua": 0.9748531992106888
+   }
+  ],
+  "airmass_1.10_cia": [
+   {
+    "band": "A",
+    "v1": 13000.0,
+    "ew_tellurix_1": 1.0221994161293735,
+    "ew_coupled": 1.0105623688278098,
+    "scale_coupled": 0.9798814648040078,
+    "ew_no-rayleigh continua": 1.0261535028236806,
+    "scale_no-rayleigh continua": 1.0068870232025842
+   },
+   {
+    "band": "A",
+    "v1": 13060.0,
+    "ew_tellurix_1": 8.867188275404423,
+    "ew_coupled": 8.785617163164197,
+    "scale_coupled": 0.9807535632756643,
+    "ew_no-rayleigh continua": 8.93546262106264,
+    "scale_no-rayleigh continua": 1.016294772832906
+   },
+   {
+    "band": "A",
+    "v1": 13120.0,
+    "ew_tellurix_1": 15.473369254067318,
+    "ew_coupled": 15.42697235469626,
+    "scale_coupled": 0.9922469109688014,
+    "ew_no-rayleigh continua": 15.63512897253686,
+    "scale_no-rayleigh continua": 1.0275119232551317
+   },
+   {
+    "band": "B",
+    "v1": 14410.0,
+    "ew_tellurix_1": 0.4690804534728019,
+    "ew_coupled": 0.4544055898426995,
+    "scale_coupled": 0.955665890735125,
+    "ew_no-rayleigh continua": 0.4544055898426995,
+    "scale_no-rayleigh continua": 0.955665890735125
+   },
+   {
+    "band": "B",
+    "v1": 14440.0,
+    "ew_tellurix_1": 1.188474401519825,
+    "ew_coupled": 1.1617388132566056,
+    "scale_coupled": 0.9599504622261141,
+    "ew_no-rayleigh continua": 1.1617388132566056,
+    "scale_no-rayleigh continua": 0.9599504622261141
+   },
+   {
+    "band": "B",
+    "v1": 14470.0,
+    "ew_tellurix_1": 2.594692351433003,
+    "ew_coupled": 2.5943396152156266,
+    "scale_coupled": 0.9997343503359384,
+    "ew_no-rayleigh continua": 2.5943396152156266,
+    "scale_no-rayleigh continua": 0.9997343503359384
+   },
+   {
+    "band": "B",
+    "v1": 14500.0,
+    "ew_tellurix_1": 2.820703718244001,
+    "ew_coupled": 2.812384342133776,
+    "scale_coupled": 0.994349105540599,
+    "ew_no-rayleigh continua": 2.812384342133776,
+    "scale_no-rayleigh continua": 0.994349105540599
+   }
+  ]
+ },
+ "fitted_ftsspec_830626_2": {
+  "A_saturated_median": 1.018,
+  "B_saturated_median": 1.058
+ }
+}

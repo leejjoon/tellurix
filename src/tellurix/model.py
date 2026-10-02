@@ -17,14 +17,26 @@ _C_KMS = 299792.458
 _BOXCAR_FWHM_CONSTANT = 1.20671
 
 
-def igrins_wavenumber_grid(
+def constant_velocity_grid(
     wavelength_min_nm: float,
     wavelength_max_nm: float,
     resolving_power: float = 45_000.0,
     samples_per_resolution: float = 4.0,
     margin_cm1: float = 25.0,
 ) -> np.ndarray:
-    """Create an ascending constant-velocity grid padded beyond one order."""
+    """An ascending wavenumber grid with a constant velocity step, padded.
+
+    Uniform in *log* wavenumber, which is what makes the step a constant
+    velocity and lets one grid spacing serve a whole atlas. Nothing here is
+    specific to an instrument: ``resolving_power`` and ``samples_per_resolution``
+    fully determine the spacing, and every pipeline caller passes both. The
+    45,000 default is IGRINS's resolving power and is a convenience for
+    benchmarks and tests, not a statement about the grid.
+
+    ``margin_cm1`` is the *line* margin -- padding so that lines outside the
+    window still contribute their wings. It is not the grid margin; see
+    :func:`trim_wavenumber_grid`, which cuts the result back down.
+    """
 
     if not 0.0 < wavelength_min_nm < wavelength_max_nm:
         raise ValueError("wavelength limits must be positive and increasing")
@@ -544,6 +556,58 @@ class TelluricModel:
             tau = tau + xs[species] * (air_column * vmr_scaled[species])[:, None]
         mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
         return jnp.exp(-jnp.sum(tau, axis=0) / mu)
+
+    def species_transmission(
+        self, parameters: TelluricParameters, zenith_angle_deg: float = 0.0
+    ) -> dict[str, jnp.ndarray]:
+        """Each absorber's own transmission, and the continuum's, separately.
+
+        Optical depth is additive, so ``transmission`` is the product of these
+        by construction and the two cannot drift apart -- which is the only
+        reason a decomposition like this is safe to show anyone. A species'
+        cross section depends on its *own* partial pressure through
+        self-broadening and on no other species', so the split is exact rather
+        than a linearization.
+
+        The continuum is returned under ``"continuum"`` and is kept apart from
+        H2O deliberately: it is not a line species, and it is a standing suspect
+        in this package's residuals.
+        """
+
+        pressure = jnp.asarray(self.profile.pressure_layer_bar)
+        vmr_scaled = {
+            species: jnp.asarray(vmr)
+            * jnp.exp(jnp.asarray(parameters.log_column_scales.get(species, 0.0)))
+            for species, vmr in self.profile.vmr.items()
+        }
+        partial_pressure = {
+            species: pressure * vmr_scaled[species] for species in self.opacity.species
+        }
+        xs = self.opacity.cross_sections(
+            jnp.asarray(self.profile.temperature_k), pressure, partial_pressure)
+        air_column = jnp.asarray(self.profile.air_column_cm2)
+        mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
+
+        def collapse(tau: jnp.ndarray) -> jnp.ndarray:
+            return jnp.exp(-jnp.sum(tau, axis=0) / mu)
+
+        pieces = {
+            species: collapse(xs[species] * (air_column * vmr_scaled[species])[:, None])
+            for species in self.opacity.species
+        }
+        background = jnp.zeros((air_column.size, self.wavenumber_cm1.size))
+        if self.continuum is not None:
+            background = background + self.continuum.optical_depth(self.profile, vmr_scaled)
+        if self.correction is not None:
+            if self.accuracy_mode == "mt_ckd":
+                background = background + self.correction.mt_ckd_optical_depth(
+                    self.profile, vmr_scaled)
+            else:
+                background = background + self.correction.optical_depth(
+                    self.profile, vmr_scaled)
+        if self.continuum is not None or self.correction is not None:
+            pieces["continuum"] = collapse(background)
+        return pieces
 
     def _convolve_lsf(self, spectrum: jnp.ndarray, sigma_kms: jnp.ndarray) -> jnp.ndarray:
         return _gaussian_convolve(spectrum, sigma_kms, self.velocity_step_kms, self.kernel_half_width)

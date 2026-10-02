@@ -53,7 +53,7 @@ def main() -> None:
         AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
         ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum, TelluricModel,
         arcturus_spectral_order, chebyshev_continuum, file_sha256,
-        igrins_wavenumber_grid, ils_fingerprint, load_atmosphere_csv,
+        constant_velocity_grid, ils_fingerprint, load_atmosphere_csv,
         parameters_from_row, prepare_stellar_source, read_arcturus_page, read_record,
         select_significant_lines, trim_wavenumber_grid,
     )
@@ -84,7 +84,7 @@ def main() -> None:
 
     v1, v2 = float(row["v1"]), float(row["v2"])
     grid = trim_wavenumber_grid(
-        igrins_wavenumber_grid(1.0e7 / v2, 1.0e7 / v1,
+        constant_velocity_grid(1.0e7 / v2, 1.0e7 / v1,
                                resolving_power=float(config["resolving_power"]),
                                samples_per_resolution=float(config["samples_per_resolution"]),
                                margin_cm1=float(config["margin_cm1"])),
