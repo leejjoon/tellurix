@@ -1296,6 +1296,69 @@ so does the corrected spectrum, by 1.1-6.7% at air mass 5.37 in the A-band and 5
 the records written before it, and each record states which (`physics.o2_cia`; a record
 without the key had none). `export_transmission_hdf5.py` rebuilds accordingly.
 
+## Open work (as of 2026-10-02)
+
+### TODO: regenerate every solar product with the O2 collision-induced continuum
+
+Every record and export written so far predates `--o2-cia` (§4o). Their columns and
+residuals stand -- the continuum moves neither by more than 0.4% -- but their
+**corrected spectra and transmissions still carry O2's collision-induced dimming**, up to
+6.7% at air mass 5.4 in the A-band and 5.6% at 1.07 um. Regenerate with the flag on, as
+whole runs rather than patched windows, so each record keeps one physics
+(`physics.o2_cia`). New output names, so the current records stay until the new ones are
+checked.
+
+| run | bands it touches | rough cost on 4 GPUs |
+|---|---|---|
+| `ftsspec_901218_{4,5}` (and photatl, through file 5) | 1.27 um, 7536-8500 cm-1 | ~1 h fit + ~45 min export |
+| `niratl` | 1.06 um, A-band | ~25 min + ~15 min |
+| `ftsspec_830626_{2,3}` | 1.06 um, A-band, visible O2-O2 above 15140 cm-1 | ~2 h + ~1 h |
+
+Each is its original command (§4h, §4k, §4l and the run records' `config`) plus
+`--o2-cia`, e.g. for niratl:
+
+    UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \
+        --spectrum .../nso/niratl --airmass 1.10 --fwhm-cm1 0.01859 \
+        --profile data/profiles/kitt_peak_19830626_era5_afgl.csv --o2-cia \
+        --shard I/4 --output-dir data/corrected/solar/niratl_o2cia ...
+
+then, per run: merge the shard summaries and write one record (as for niratl, §4k);
+`export_transmission_hdf5.py --check`; the corrected-spectrum export
+(`export_atlas_corrected.py` for niratl, `export_photatl_from_ftsspec.py --patch ...`
+for photatl, after file 5); `annotate_quality_flags.py` is not needed, the export writes
+the flag. Then the review bundles (`export_solar_review.py` + `merge_review_bundle.py`)
+and republish the three review pages to their URLs (Kitt Peak `13ajxPMQNfJxeZWgwTi6Lu`,
+niratl `1Gxrn927Fb9U6F1G37w8m4`, June 1983 `YZyzbzP2niCQovCh9yYcfs`). Check before
+promoting: columns within 0.4% of the current records, corrected spectra differing from
+them by exactly 1/T of the O2 continuum (§4o measured both), every round trip exact.
+
+### Also open
+
+- **The O2 excess is unexplained** (§4n): ~5% A-band, ~9% B-band above what the line
+  physics predict. Next check: AER v3.9's O2 A- and B-band intensities against
+  HITRAN2020, which revised them; HITRAN's API needs a registered key. It settles
+  niratl's air mass too (1.05-1.12 now).
+- **`lsf_sigma_kms` at a bound** in 78 of 222 windows of file 5, 105 of 215 of file 4,
+  37 of 307 of `_2`. Not examined. The sibling project's W4.1 result -- telluric lines
+  constrain an ILS where stellar lines cannot -- is the lever not yet tried.
+- **The upper-bound flag (§4m) on the Arcturus export**: the rule should hold there and
+  has not been checked.
+- **The solar-model floor**: every run stops at ~1% (4-5% in solar lines), from Payne
+  Zero's Eddington flux standing in for disc-centre intensity. It caps the species cut,
+  causes the column railing, and limits every product. Needs a design discussion --
+  a disc-centre intensity source, or an empirical solar template across files.
+- **Atlases not started**: `fluxatl` (disc-integrated, so the one atlas where Payne Zero's
+  quantity is right -- a measure of how much of the floor is the flux/intensity mismatch;
+  needs an air-wavelength, uneven-grid reader), `spot1atl` (waits on the solar model),
+  IAG (re-download first). `telluric_mid_ir` is not a target (§"What the atlases' own
+  documentation says" in `solar_atlases.md`).
+- **The sibling project's handoff note**, `differentiable_stellar_spectroscopy/
+  docs/solar_telluric_handoff.md`, is written and deliberately uncommitted there. It
+  will need the regenerated products' numbers once the TODO above is done.
+- **Untracked experiment directories** under `data/corrected/solar/` (`*_pilot`,
+  `photatl_x1985`, `photatl_nooffset`, `niratl_cut2e-3`, `cia_test_*`): their numbers are
+  in §4j-§4o; delete when no longer wanted.
+
 ## One decision left before writing code
 
 **How much of file 4 to salvage.** The scan-average bias is analytic for a

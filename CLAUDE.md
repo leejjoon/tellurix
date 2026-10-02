@@ -113,7 +113,9 @@ UT times reproduces every header to 0.02 -- which is how `_3`, whose header prin
 **O2's collision-induced continuum is ported from LBLRTM** (`tellurix.o2_cia`,
 `--o2-cia`, validated to 0.13%, §4o). It does not move columns -- the fitted Chebyshev
 had been absorbing it -- but without it the corrected spectra keep its dimming, up to
-6.7% at air mass 5.4 in the A-band.
+6.7% at air mass 5.4 in the A-band. **Every solar product still predates it:**
+regenerating them with `--o2-cia` is the first item in `docs/solar_fit_plan.md`
+"Open work", which also lists what else is open.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error
