@@ -134,7 +134,7 @@ copied from the record, so it stands on its own.
 ```python
 import h5py
 with h5py.File("data/corrected/arcturus_spectra.h5") as f:
-    i = list(f["key"].asstr()).index("ab5000_ summer")     # or "SDCH_20181220_0100 H10"
+    i = list(f["key"].asstr()).index("ab5000_ summer")     # or "SDCH_20181220_0100 H108"
     good = f["reliable"][i]
     wavenumber = f["wavenumber_cm1"][i][good]
     spectrum = f["corrected"][i][good]
@@ -410,7 +410,7 @@ in *sign* between nights, so do not quote a trend from one night.
 real absorption; it is a template, not a per-observation retrieval. It is kept
 for comparison, not validation.
 
-**Two IGRINS order-frames are pathological** — H09 and H06 of the DCT 2018 run,
+**Two IGRINS order-frames are pathological** — H107 and H104 of the DCT 2018 run,
 at 115 and 33 sigma out of 516 — and are unexplained. Cut on
 `residual_rms_over_noise` if you pool statistics.
 

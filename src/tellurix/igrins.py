@@ -22,6 +22,7 @@ silent convention change is exactly the failure this module has to survive.
 
 from __future__ import annotations
 
+import json
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -53,6 +54,177 @@ _HECTOPASCAL_PER_INCH_HG = 33.863886
 # slop while still rejecting a sea-level value read as a station one, which is
 # off by 35% at DCT.
 _PRESSURE_TOLERANCE = 0.08
+# How far, in percentage points, a header's humidity may sit from the one its
+# own temperature and dewpoint imply. The two McDonald conventions observed land
+# within 1; read in the wrong unit, 2015's 5.6/-8.7 would imply 51%, not 34%,
+# and 2017's 66/38.6 would imply 26%, not 37%.
+_HUMIDITY_TOLERANCE = 10.0
+
+# Centre wavelength, vacuum microns at pixel 1023.5, of every IGRINS echelle
+# order, keyed by band and *physical* order number. Measured from the 93 RRISA
+# frames of 2014-2021 whose WAT cards name their orders: each repeats to
+# 0.15 nm or better across seven years and three telescopes, while adjacent
+# orders sit 11 nm apart or more, so a row's centre names its order even when
+# the header does not. The grating relation m * lambda ~ const cannot: it
+# scatters by +-0.7 um against the ~1.6 um step to the next order.
+IGRINS_ORDER_CENTRES_UM = {
+    "H": {98: 1.82272, 99: 1.80477, 100: 1.78719, 101: 1.76996, 102: 1.75308,
+          103: 1.73652, 104: 1.72029, 105: 1.70437, 106: 1.68876, 107: 1.67344,
+          108: 1.65841, 109: 1.64366, 110: 1.62918, 111: 1.61497, 112: 1.60102,
+          113: 1.58731, 114: 1.57385, 115: 1.56063, 116: 1.54764, 117: 1.53488,
+          118: 1.52234, 119: 1.51001, 120: 1.49789, 121: 1.48597, 122: 1.47426,
+          123: 1.46274, 124: 1.45140, 125: 1.44026},
+    "K": {71: 2.50274, 72: 2.46843, 73: 2.43507, 74: 2.40261, 75: 2.37103,
+          76: 2.34028, 77: 2.31034, 78: 2.28118, 79: 2.25276, 80: 2.22505,
+          81: 2.19804, 82: 2.17169, 83: 2.14599, 84: 2.12090, 85: 2.09640,
+          86: 2.07248, 87: 2.04912, 88: 2.02629, 89: 2.00398, 90: 1.98217,
+          91: 1.96085, 92: 1.93999, 93: 1.91959, 94: 1.89963, 95: 1.88009,
+          96: 1.86100},
+}
+# Far above the 0.15 nm the centres move, far below the 11 nm between orders.
+_ORDER_CENTRE_TOLERANCE_UM = 0.002
+# IRAF writes each WAT2 card as a 68-character slice of one long string, and a
+# FITS reader strips a slice's trailing blanks -- which may be the space
+# between two numbers. Every slice is padded back before joining.
+_WAT_CARD_WIDTH = 68
+
+
+@dataclass(frozen=True)
+class WatSpec:
+    """One ``specN`` entry of an IRAF multispec WAT2 header.
+
+    ``order`` is the entry's ``beam`` field, which the IGRINS PLP sets to the
+    physical echelle order. ``aperture`` is only the entry's position in the
+    list and says nothing about which data row it describes: the PLP reverses
+    rows and renumbers the entries when it writes wavelength-ascending files,
+    and drops the cards altogether when a custom order range was extracted.
+    """
+
+    aperture: int
+    order: int
+    w1_angstrom: float
+    dw_angstrom: float
+    nw: int
+    text: str
+
+    @property
+    def centre_um(self) -> float:
+        return (self.w1_angstrom + self.dw_angstrom * (self.nw - 1) / 2.0) * 1.0e-4
+
+
+def parse_wat_specs(header: Mapping[str, object]) -> tuple[WatSpec, ...]:
+    """Every ``specN`` entry in a header's WAT2 cards; empty if there are none."""
+
+    import re
+
+    items = header.items() if hasattr(header, "items") else header
+    cards = sorted((str(key), str(value)) for key, value in items
+                   if str(key).upper().startswith("WAT2_"))
+    if not cards:
+        return ()
+    text = "".join(value.ljust(_WAT_CARD_WIDTH) for _, value in cards)
+    specs = []
+    for aperture, body in re.findall(r'spec(\d+)\s*=\s*"([^"]*)"', text):
+        fields = body.split()
+        if len(fields) < 6:
+            raise ValueError(f"WAT entry spec{aperture} is truncated: {body!r}")
+        specs.append(WatSpec(aperture=int(aperture), order=int(float(fields[1])),
+                             w1_angstrom=float(fields[3]), dw_angstrom=float(fields[4]),
+                             nw=int(float(fields[5])), text=body.strip()))
+    return tuple(specs)
+
+
+def format_wat2_cards(specs) -> list[tuple[str, str]]:
+    """WAT2 ``(keyword, value)`` cards describing ``specs`` in this order.
+
+    Entries are renumbered ``spec1``... in the order given, which must be the
+    order of the data rows they describe; each keeps its own beam, dispersion
+    and function. Mirrors the PLP's ``get_wat2_spec_cards``.
+    """
+
+    entries = []
+    for aperture, spec in enumerate(specs, start=1):
+        fields = spec.text.split()
+        fields[0] = str(aperture)
+        entries.append(f'spec{aperture} = "{" ".join(fields)}"')
+    text = "wtype=multispec " + " ".join(entries)
+    return [(f"WAT2_{i // _WAT_CARD_WIDTH + 1:03d}", text[i:i + _WAT_CARD_WIDTH])
+            for i in range(0, len(text), _WAT_CARD_WIDTH)]
+
+
+def _row_centres_um(wavelength_um: np.ndarray) -> np.ndarray:
+    centres = np.full(wavelength_um.shape[0], np.nan)
+    pixels = np.arange(wavelength_um.shape[1], dtype=float)
+    middle = (wavelength_um.shape[1] - 1) / 2.0
+    for row, values in enumerate(wavelength_um):
+        finite = np.isfinite(values)
+        if np.count_nonzero(finite) >= 2:
+            centres[row] = float(np.interp(middle, pixels[finite], values[finite]))
+    return centres
+
+
+def identify_orders(
+    band: str, wavelength_um: np.ndarray, header: Mapping[str, object] | None = None,
+) -> tuple[tuple[int | None, ...], str]:
+    """The physical echelle order of every row of an (order, pixel) array.
+
+    Row position means nothing across IGRINS files: the number of orders in a
+    band differs between reductions (K ships 24, 25 or 26), a wavelength-
+    ascending file reverses them, and a custom extraction range drops some.
+    So each row is matched to a WAT entry *by wavelength* -- the entry's centre
+    against the row's -- never by position, and every match is then checked
+    against :data:`IGRINS_ORDER_CENTRES_UM`. Without usable WAT cards the table
+    alone names the rows. A row with no finite wavelength -- the PLP fills
+    orders it did not extract with NaN -- is ``None``.
+
+    Returns the orders and how they were found: ``"wat"``, ``"wavelength"``, or
+    ``"wavelength; wat inconsistent"`` when cards were present but described
+    other rows, as a header copied onto a subset of a frame's rows does.
+    """
+
+    wavelength_um = np.asarray(wavelength_um, dtype=float)
+    centres = _row_centres_um(wavelength_um)
+    table = IGRINS_ORDER_CENTRES_UM.get(str(band).strip().upper(), {})
+    tolerance = _ORDER_CENTRE_TOLERANCE_UM
+
+    def from_table(centre):
+        close = [m for m, c in table.items() if abs(c - centre) < tolerance]
+        return close[0] if len(close) == 1 else None
+
+    def unique(orders):
+        named = [m for m in orders if m is not None]
+        return len(named) == len(set(named))
+
+    specs = parse_wat_specs(header) if header is not None else ()
+    source = "wavelength"
+    if specs:
+        matched = []
+        for centre in centres:
+            if not np.isfinite(centre):
+                matched.append(None)
+                continue
+            close = [s.order for s in specs if abs(s.centre_um - centre) < tolerance]
+            matched.append(close[0] if len(close) == 1 else "unmatched")
+        agrees = all(m != "unmatched" for m in matched) and unique(matched) and all(
+            m is None or m not in table or abs(table[m] - c) < tolerance
+            for m, c in zip(matched, centres))
+        if agrees:
+            return tuple(matched), "wat"
+        source = "wavelength; wat inconsistent"
+        warnings.warn("the WAT cards do not describe these rows; naming orders by wavelength",
+                      stacklevel=2)
+
+    orders = tuple(None if not np.isfinite(c) else from_table(c) for c in centres)
+    missing = [row for row, (m, c) in enumerate(zip(orders, centres))
+               if m is None and np.isfinite(c)]
+    if missing:
+        raise ValueError(
+            f"cannot name the physical order of row(s) {missing} in band {band!r}: no WAT "
+            f"entry matches and no known {band} order is centred within "
+            f"{tolerance * 1e3:.0f} nm of {[round(float(centres[r]), 5) for r in missing]} um")
+    if not unique(orders):
+        raise ValueError(f"two rows name the same physical order: {orders}")
+    return orders, source
 
 
 @dataclass(frozen=True)
@@ -61,6 +233,8 @@ class Site:
 
     name: str
     altitude_km: float
+    latitude_deg: float
+    longitude_deg: float  # east positive
     temperature_unit: str  # "C" or "F"
     pressure_unit: str  # "hPa" or "inHg"
     pressure_reference: str  # "station" or "sea_level"
@@ -69,6 +243,11 @@ class Site:
     # Smith' and OBSERVAT='McDonald Observatory', an older one says
     # '2.7-m Harlen J. Smith' and plain 'McDonald'.
     aliases: tuple[str, ...] = ()
+    # Other (temperature_unit, pressure_unit) pairs this site has used. The
+    # header never says which is in force, so surface_conditions keeps only
+    # the ones the frame's own numbers are consistent with and refuses if that
+    # leaves more than one.
+    alternatives: tuple[tuple[str, str], ...] = ()
 
 
 # Keyed on the TELESCOP card. The conventions are measured, not documented:
@@ -76,16 +255,20 @@ class Site:
 # mercury (23.6 inHg = 799 hPa, right for Mt Locke); DCT reports 1025 hPa,
 # which is impossible at 2360 m and is therefore reduced to sea level; Gemini
 # South reports 730 hPa, which is the true station pressure at Cerro Pachon.
+# McDonald has used both: 2015-12-03 reports 5.6/799.5 with a dewpoint of -8.7
+# and 34% humidity, which is Celsius and station hectopascals (and consistent
+# only in Celsius); 2017 is the Fahrenheit/inHg above.
 SITES: Mapping[str, Site] = {
-    "McDonald": Site("McDonald Observatory", 2.077, "F", "inHg", "station",
-                     ("mcdonald", "harlen j. smith", "otto struve")),
-    "DCT": Site("Lowell Discovery Telescope", 2.360, "C", "hPa", "sea_level",
+    "McDonald": Site("McDonald Observatory", 2.077, 30.6714, -104.0225, "F", "inHg", "station",
+                     ("mcdonald", "harlen j. smith", "otto struve"),
+                     alternatives=(("C", "hPa"),)),
+    "DCT": Site("Lowell Discovery Telescope", 2.360, 34.7444, -111.4222, "C", "hPa", "sea_level",
                 ("discovery channel", "lowell", "dct")),
     # Deliberately not aliased to a bare "gemini observatory": that card cannot
     # tell South from North, and IGRINS-2 is at Gemini North on a different
     # mountain. An unrecognised Gemini frame should raise, not be placed on
     # Cerro Pachon by default.
-    "Gemini South": Site("Gemini South", 2.722, "C", "hPa", "station",
+    "Gemini South": Site("Gemini South", 2.722, -30.2407, -70.7366, "C", "hPa", "station",
                          ("gemini south", "cerro pachon")),
 }
 
@@ -282,32 +465,54 @@ def surface_conditions(header: Mapping[str, object]) -> dict:
     """
 
     site = site_for(header)
-    temperature = _card(header, "AIRTEMP")
-    if temperature is not None:
-        if site.temperature_unit == "F":
-            temperature = (temperature - 32.0) * 5.0 / 9.0
-        temperature += 273.15
+    cards = {key: _card(header, key) for key in ("AIRTEMP", "BARPRESS", "DEWPOINT", "HUMIDITY")}
+    # 2015-12-01 McDonald writes -1 in all four when the weather station is
+    # down. -1 is a possible temperature but not a pressure or a humidity, so
+    # the four together are the sentinel.
+    if all(value == -1.0 for value in cards.values()):
+        cards = dict.fromkeys(cards)
+    ratio = _station_pressure_ratio(site.altitude_km)
+    expected = _SEA_LEVEL_PRESSURE_HPA * ratio
 
-    pressure = _card(header, "BARPRESS")
-    if pressure is not None:
-        if site.pressure_unit == "inHg":
-            pressure *= _HECTOPASCAL_PER_INCH_HG
-        ratio = _station_pressure_ratio(site.altitude_km)
-        if site.pressure_reference == "sea_level":
-            pressure *= ratio
-        expected = _SEA_LEVEL_PRESSURE_HPA * ratio
-        if abs(pressure / expected - 1.0) > _PRESSURE_TOLERANCE:
-            raise ValueError(
-                f"{site.name} reports BARPRESS={header.get('BARPRESS')!r}, which normalizes "
-                f"to {pressure:.1f} hPa against {expected:.1f} hPa expected at "
-                f"{site.altitude_km:.3f} km -- the header convention has changed"
-            )
+    def celsius(value, unit):
+        return None if value is None else ((value - 32.0) * 5.0 / 9.0 if unit == "F" else value)
 
-    dewpoint = _card(header, "DEWPOINT")
-    if dewpoint is not None and site.temperature_unit == "F":
-        dewpoint = (dewpoint - 32.0) * 5.0 / 9.0
+    def station_hpa(value, unit):
+        if value is None:
+            return None
+        value = value * _HECTOPASCAL_PER_INCH_HG if unit == "inHg" else value
+        return value * ratio if site.pressure_reference == "sea_level" else value
 
-    humidity = _card(header, "HUMIDITY")
+    def consistent(temperature_unit, pressure_unit):
+        pressure = station_hpa(cards["BARPRESS"], pressure_unit)
+        if pressure is not None and abs(pressure / expected - 1.0) > _PRESSURE_TOLERANCE:
+            return False
+        air, dew = celsius(cards["AIRTEMP"], temperature_unit), celsius(cards["DEWPOINT"], temperature_unit)
+        if None not in (air, dew, cards["HUMIDITY"]):
+            # Magnus: the humidity the temperature and dewpoint imply.
+            implied = 100.0 * np.exp(17.62 * dew / (243.12 + dew) - 17.62 * air / (243.12 + air))
+            return abs(implied - cards["HUMIDITY"]) <= _HUMIDITY_TOLERANCE
+        return True
+
+    conventions = ((site.temperature_unit, site.pressure_unit),) + site.alternatives
+    passing = [c for c in conventions if consistent(*c)]
+    if not passing:
+        raise ValueError(
+            f"{site.name} reports BARPRESS={header.get('BARPRESS')!r}, AIRTEMP="
+            f"{header.get('AIRTEMP')!r}, DEWPOINT={header.get('DEWPOINT')!r}, HUMIDITY="
+            f"{header.get('HUMIDITY')!r}, which no known convention makes consistent with "
+            f"{expected:.1f} hPa at {site.altitude_km:.3f} km -- the header convention has changed"
+        )
+    if len(passing) > 1 and site.alternatives and any(
+            cards[key] is not None for key in ("AIRTEMP", "BARPRESS", "DEWPOINT")):
+        raise ValueError(f"{site.name}: the weather cards fit {passing} alike; "
+                         "cannot tell which units the header uses")
+    temperature_unit, pressure_unit = passing[0]
+    air = celsius(cards["AIRTEMP"], temperature_unit)
+    temperature = None if air is None else air + 273.15
+    pressure = station_hpa(cards["BARPRESS"], pressure_unit)
+    dewpoint = celsius(cards["DEWPOINT"], temperature_unit)
+    humidity = cards["HUMIDITY"]
     return {
         "site": site.name,
         "altitude_km": site.altitude_km,
@@ -318,6 +523,23 @@ def surface_conditions(header: Mapping[str, object]) -> dict:
     }
 
 
+# No object's zenith distance changes faster than the sky turns.
+_SIDEREAL_DEG_PER_S = 360.0 / 86164.0905
+
+
+def _exposure_seconds(header: Mapping[str, object]) -> float | None:
+    """DATE-END minus DATE-OBS; negative when the cards contradict each other."""
+
+    from datetime import datetime
+
+    try:
+        start = datetime.fromisoformat(str(header["DATE-OBS"]).strip())
+        end = datetime.fromisoformat(str(header["DATE-END"]).strip())
+    except (KeyError, ValueError):
+        return None
+    return (end - start).total_seconds()
+
+
 def zenith_angle_deg(header: Mapping[str, object]) -> float:
     """The mean zenith distance of an exposure, in degrees.
 
@@ -326,11 +548,33 @@ def zenith_angle_deg(header: Mapping[str, object]) -> float:
     two ends is good to better than a degree for IGRINS exposure times, and the
     residual curvature of sec(z) over one exposure is far below the accuracy of
     the atmosphere profile.
+
+    The *end* cards are not always this exposure's. In 6 of 111 archive files
+    -- all K band -- ``ZDEND``, ``HAEND`` and often ``DATE-END`` describe some
+    other frame: ``DATE-END`` precedes ``DATE-OBS`` in four, and one has the
+    zenith distance moving 5.2 deg in 61 s. The H file of the same exposure is
+    self-consistent and ``ZDSTART`` agrees with the geometry of ``HASTART`` and
+    ``TELDEC`` to 0.1 deg in every one. Averaging a foreign ``ZDEND`` put the K
+    slant path 4-5% short, which the fit then absorbed into every column. So
+    ``ZDEND`` is used only if no faster than the sidereal rate over the
+    exposure could produce it; otherwise ``ZDSTART`` alone, which is within a
+    quarter of a degree for a minute's exposure.
     """
 
     start, end = _card(header, "ZDSTART"), _card(header, "ZDEND")
     if start is not None and end is not None:
-        angle = 0.5 * (start + end)
+        duration = _exposure_seconds(header)
+        if duration is None:
+            exposure = _card(header, "EXPTIME")
+            combined = _card(header, "NCOMBINE") or 1.0
+            duration = None if exposure is None else exposure * max(combined, 1.0) + 120.0
+        # 10% and 0.05 deg of slack for rounding in the cards themselves.
+        plausible = duration is None or (
+            duration >= 0.0
+            and abs(end - start) <= 1.1 * _SIDEREAL_DEG_PER_S * duration + 0.05)
+        angle = 0.5 * (start + end) if plausible else start
+    elif start is not None:
+        angle = start
     else:
         airmass = [_card(header, key) for key in ("AMSTART", "AMEND")]
         usable = [value for value in airmass if value is not None and value >= 1.0]
@@ -342,11 +586,48 @@ def zenith_angle_deg(header: Mapping[str, object]) -> float:
     return float(angle)
 
 
+# Written by scripts/igrins_pointing.py beside a frame whose header pointing
+# cannot be used; read_igrins_observation prefers it to the header.
+POINTING_SIDECAR = "pointing.json"
+
+
+def geometric_zenith_angle_deg(ra_deg: float, dec_deg: float, date_obs: str, date_end: str,
+                               site: Site) -> float:
+    """The mean zenith distance of a target over DATE-OBS..DATE-END, from geometry.
+
+    For frames whose pointing cards are missing or wrong. On DCT 2018, DCT
+    2016, McDonald 2017 and Gemini South 2021 it agrees with the header's
+    ZDSTART/ZDEND to 0.2 deg; McDonald 2015-12 writes -1, or a value 5-24 deg
+    off, in half its frames.
+    """
+
+    import astropy.units as u
+    from astropy.coordinates import AltAz, EarthLocation, SkyCoord
+    from astropy.time import Time
+
+    location = EarthLocation(lat=site.latitude_deg * u.deg, lon=site.longitude_deg * u.deg,
+                             height=site.altitude_km * u.km)
+    target = SkyCoord(ra_deg * u.deg, dec_deg * u.deg)
+    angles = [90.0 - target.transform_to(AltAz(obstime=Time(t.strip(), scale="utc"),
+                                                 location=location)).alt.deg
+              for t in (date_obs, date_end)]
+    angle = float(np.mean(angles))
+    if not 0.0 <= angle < 90.0:
+        raise ValueError(f"the target is not above the horizon: zenith distance {angle:.3f} deg")
+    return angle
+
+
 @dataclass(frozen=True)
 class IGRINSOrder:
-    """One echelle order, ascending in vacuum wavelength."""
+    """One echelle order, ascending in vacuum wavelength.
 
-    index: int
+    ``number`` is the physical echelle order -- what the order *is*, and the
+    only name that means the same thing in every IGRINS file. ``row`` is where
+    it sat in this file and is kept for provenance only.
+    """
+
+    number: int
+    row: int
     band: str
     wavelength_vacuum_nm: np.ndarray
     flux: np.ndarray
@@ -355,11 +636,20 @@ class IGRINSOrder:
     telluric_model: np.ndarray | None = None
     plp_continuum: np.ndarray | None = None
     meta: Mapping[str, object] = field(default_factory=dict)
+    # The detector column each sample came from. Wavelength drifts by a few
+    # pixels between nights; anything fixed on the detector -- the blaze, the
+    # flat -- has to be looked up here, not by wavelength.
+    pixel: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         wavelength = np.asarray(self.wavelength_vacuum_nm, dtype=float)
         if wavelength.ndim != 1 or wavelength.size < 8:
             raise ValueError("an order needs at least eight pixels")
+        if self.pixel is not None:
+            pixel = np.asarray(self.pixel, dtype=int)
+            if pixel.shape != wavelength.shape:
+                raise ValueError("pixel must match the order's wavelength grid")
+            object.__setattr__(self, "pixel", pixel)
         if np.any(~np.isfinite(wavelength)) or np.any(np.diff(wavelength) <= 0.0):
             raise ValueError("order wavelengths must be finite and strictly increasing")
         for name in ("flux", "variance", "telluric_model", "plp_continuum"):
@@ -381,7 +671,7 @@ class IGRINSOrder:
 
     @property
     def name(self) -> str:
-        return f"{self.band}{self.index:02d}"
+        return f"{self.band}{self.number}"
 
 
 @dataclass(frozen=True)
@@ -404,11 +694,25 @@ class IGRINSObservation:
     surface: Mapping[str, object]
     telluric_model: np.ndarray | None = None
     plp_continuum: np.ndarray | None = None
+    # The physical order of every row (None for a row the PLP left empty) and
+    # how it was found; see identify_orders.
+    order_numbers: tuple = ()
+    order_source: str = ""
+    # "header", or "geometry" when a pointing sidecar overrode the header.
+    zenith_source: str = "header"
 
     def __post_init__(self) -> None:
         wavelength = np.asarray(self.wavelength_vacuum_nm, dtype=float)
         if wavelength.ndim != 2:
             raise ValueError("an IGRINS band is an (order, pixel) array")
+        if not self.order_numbers:
+            numbers, source = identify_orders(self.band, wavelength * 1.0e-3)
+            object.__setattr__(self, "order_numbers", numbers)
+            object.__setattr__(self, "order_source", source)
+        if len(self.order_numbers) != wavelength.shape[0]:
+            raise ValueError("order_numbers must name every row")
+        object.__setattr__(self, "order_numbers", tuple(
+            None if m is None else int(m) for m in self.order_numbers))
         for name in ("flux", "variance", "telluric_model", "plp_continuum"):
             values = getattr(self, name)
             if values is None:
@@ -421,10 +725,11 @@ class IGRINSObservation:
         object.__setattr__(self, "path", Path(self.path))
 
     @property
-    def orders(self) -> int:
-        return int(self.wavelength_vacuum_nm.shape[0])
+    def orders(self) -> tuple[int, ...]:
+        """The physical orders present, in row order."""
+        return tuple(m for m in self.order_numbers if m is not None)
 
-    def order(self, index: int) -> IGRINSOrder:
+    def order(self, number: int) -> IGRINSOrder:
         """One order, with its non-finite edges trimmed away.
 
         The PLP leaves the first and last pixels of an order undefined where
@@ -434,14 +739,17 @@ class IGRINSObservation:
         masked instead.
         """
 
-        if not 0 <= index < self.orders:
-            raise ValueError(f"order {index} is outside 0-{self.orders - 1}")
+        number = int(number)
+        if number not in self.orders:
+            raise ValueError(f"{self.path.name} has no {self.band} order {number}; "
+                             f"it holds {self.orders}")
+        index = self.order_numbers.index(number)
         wavelength = self.wavelength_vacuum_nm[index]
         flux = self.flux[index]
         variance = self.variance[index]
         usable = np.isfinite(wavelength) & np.isfinite(flux) & np.isfinite(variance)
         if np.count_nonzero(usable) < 8:
-            raise ValueError(f"order {index} has too few usable pixels")
+            raise ValueError(f"order {self.band}{number} has too few usable pixels")
         first, last = int(np.argmax(usable)), int(usable.size - np.argmax(usable[::-1]))
         cut = slice(first, last)
         # The wavelength solution descends with order index in half the bands;
@@ -453,7 +761,8 @@ class IGRINSObservation:
             return None if values is None else np.asarray(values[index][cut][step], dtype=float)
 
         return IGRINSOrder(
-            index=index,
+            number=number,
+            row=index,
             band=self.band,
             wavelength_vacuum_nm=wavelength[cut][step],
             flux=flux[cut][step],
@@ -461,12 +770,15 @@ class IGRINSObservation:
             zenith_angle_deg=self.zenith_angle_deg,
             telluric_model=take(self.telluric_model),
             plp_continuum=take(self.plp_continuum),
+            pixel=np.arange(wavelength.size)[cut][step],
             meta={
                 "object": self.object_name,
                 "telescope": self.telescope,
                 "date_obs": self.date_obs,
                 "mjd": self.mjd,
                 "band": self.band,
+                "order_source": self.order_source,
+                "zenith_source": self.zenith_source,
                 "surface": dict(self.surface),
             },
         )
@@ -490,6 +802,10 @@ def read_igrins_observation(
     wavelength solution, in microns, in the first extension. The variance and
     the ``spec_flattened`` products are found beside it unless given.
 
+    A ``pointing.json`` beside the spectrum (``scripts/igrins_pointing.py``)
+    supplies the zenith distance from geometry and takes precedence over the
+    header's pointing cards, which some nights write as -1 or get wrong.
+
     The flattened product is read for its ``MODEL_TELTRANS`` and
     ``FITTED_CONTINUUM`` only. Neither enters the fit: they are the PLP's own
     telluric model and its own continuum, and the point of fitting the raw
@@ -511,9 +827,25 @@ def read_igrins_observation(
         wavelength_um = np.asarray(handle[1].data, dtype=float)
     if flux.ndim != 2 or wavelength_um.shape != flux.shape:
         raise ValueError(f"{spec_path} is not a PLP (order, pixel) spectrum with a wavelength HDU")
+    band = str(header.get("BAND", spec_path.name[3:4])).strip()
+    order_numbers, order_source = identify_orders(band, wavelength_um, header)
+
+    def same_orders(path, companion_header):
+        # A companion carries its own WAT cards. If it names its rows
+        # differently, its data rows are not the spectrum's and must not be
+        # paired with them.
+        if not parse_wat_specs(companion_header):
+            return
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            theirs, _ = identify_orders(band, wavelength_um, companion_header)
+        if theirs != order_numbers:
+            raise ValueError(f"{path} names its rows {theirs}, {spec_path} names them "
+                             f"{order_numbers}")
 
     with fits.open(variance_path) as handle:
         variance = np.asarray(handle[0].data, dtype=float)
+        same_orders(variance_path, dict(handle[0].header))
     if variance.shape != flux.shape:
         raise ValueError(f"{variance_path} does not match the shape of {spec_path}")
 
@@ -521,22 +853,32 @@ def read_igrins_observation(
     digests = {"spec": file_sha256(spec_path), "variance": file_sha256(variance_path)}
     if flattened_path.exists():
         with fits.open(flattened_path) as handle:
+            same_orders(flattened_path, dict(handle[0].header))
             if "MODEL_TELTRANS" in handle:
                 telluric_model = np.asarray(handle["MODEL_TELTRANS"].data, dtype=float)
             if "FITTED_CONTINUUM" in handle:
                 plp_continuum = np.asarray(handle["FITTED_CONTINUUM"].data, dtype=float)
         digests["flattened"] = file_sha256(flattened_path)
 
+    sidecar = spec_path.parent / POINTING_SIDECAR
+    if sidecar.exists():
+        pointing = json.loads(sidecar.read_text())
+        zenith, zenith_source = float(pointing["zenith_angle_deg"]), "geometry"
+        if not 0.0 <= zenith < 90.0:
+            raise ValueError(f"{sidecar}: zenith distance {zenith} is outside [0, 90)")
+    else:
+        zenith, zenith_source = zenith_angle_deg(header), "header"
+
     return IGRINSObservation(
         path=spec_path,
-        band=str(header.get("BAND", spec_path.name[3:4])).strip(),
+        band=band,
         object_name=str(header.get("OBJECT", "")).strip(),
         object_type=str(header.get("OBJTYPE", "")).strip(),
         telescope=str(header.get("TELESCOP", "")).strip(),
         date_obs=str(header.get("DATE-OBS", "")).strip(),
         mjd=_number(header.get("MJD-OBS")),
         exposure_time_s=_number(header.get("EXPTIME")),
-        zenith_angle_deg=zenith_angle_deg(header),
+        zenith_angle_deg=zenith,
         wavelength_vacuum_nm=wavelength_um * 1000.0,
         flux=flux,
         variance=variance,
@@ -544,6 +886,9 @@ def read_igrins_observation(
         surface=surface_conditions(header),
         telluric_model=telluric_model,
         plp_continuum=plp_continuum,
+        order_numbers=order_numbers,
+        order_source=order_source,
+        zenith_source=zenith_source,
     )
 
 
@@ -601,27 +946,38 @@ def leave_one_out_patterns(fractional, minimum_frames=3, smooth_pixels=51):
     """
 
     stack = np.asarray(fractional, dtype=float)
-    patterns = []
-    for index in range(stack.shape[0]):
-        others = np.delete(stack, index, axis=0)
-        with warnings.catch_warnings():
-            # A pixel no frame measured is an all-NaN slice; that is the
-            # ordinary case at an order edge, and it is handled below.
-            warnings.simplefilter("ignore", RuntimeWarning)
-            pattern = np.nanmedian(others, axis=0)
-        enough = np.sum(np.isfinite(others), axis=0) >= minimum_frames
-        pattern = np.where(enough & np.isfinite(pattern), np.nan_to_num(pattern), 0.0)
-        if smooth_pixels and smooth_pixels > 1:
-            if smooth_pixels % 2 == 0:
-                raise ValueError("smooth_pixels must be odd so the boxcar is centred")
-            kernel = np.ones(smooth_pixels) / smooth_pixels
-            weight = np.convolve(enough.astype(float), kernel, mode="same")
-            total = np.convolve(np.where(enough, pattern, 0.0), kernel, mode="same")
-            # Where nothing was measured the correction stays exactly zero
-            # rather than bleeding in from a neighbour.
-            pattern = np.where(enough, total / np.maximum(weight, 1e-9), 0.0)
-        patterns.append(pattern)
-    return patterns
+    return [smoothed_frame_median(np.delete(stack, index, axis=0), minimum_frames, smooth_pixels)
+            for index in range(stack.shape[0])]
+
+
+def smoothed_frame_median(stack, minimum_frames=3, smooth_pixels=51):
+    """The median over frames of a (frame, pixel) stack, smoothed along pixels.
+
+    A pixel fewer than ``minimum_frames`` frames measured is zero, before and
+    after the boxcar, so an order edge nothing measured is left uncorrected
+    rather than filled in from its neighbours. This is the whole of
+    :func:`leave_one_out_patterns` for one frame's "others"; a science frame,
+    which is none of the standards, takes it over all of them.
+    """
+
+    stack = np.asarray(stack, dtype=float)
+    with warnings.catch_warnings():
+        # A pixel no frame measured is an all-NaN slice; that is the
+        # ordinary case at an order edge, and it is handled below.
+        warnings.simplefilter("ignore", RuntimeWarning)
+        pattern = np.nanmedian(stack, axis=0)
+    enough = np.sum(np.isfinite(stack), axis=0) >= minimum_frames
+    pattern = np.where(enough & np.isfinite(pattern), np.nan_to_num(pattern), 0.0)
+    if smooth_pixels and smooth_pixels > 1:
+        if smooth_pixels % 2 == 0:
+            raise ValueError("smooth_pixels must be odd so the boxcar is centred")
+        kernel = np.ones(smooth_pixels) / smooth_pixels
+        weight = np.convolve(enough.astype(float), kernel, mode="same")
+        total = np.convolve(np.where(enough, pattern, 0.0), kernel, mode="same")
+        # Where nothing was measured the correction stays exactly zero
+        # rather than bleeding in from a neighbour.
+        pattern = np.where(enough, total / np.maximum(weight, 1e-9), 0.0)
+    return pattern
 
 
 def run_provenance(root: Path, args, observations, profile_path: Path) -> tuple[dict, dict]:

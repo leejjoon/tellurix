@@ -15,90 +15,90 @@
   "note": "log_column_scale scales the VERTICAL column; the model already divides optical depth by cos(z) with the measured zenith angle. A slope against airmass is therefore a model error, not a geometry term. For the well-mixed species it cannot be anything else, because their abundances do not vary.",
   "column_vs_airmass": {
     "H2O": {
-      "slope": 0.21796609786399182,
-      "slope_error": 0.23779552998475809,
-      "intercept": -0.4808275421304614,
+      "slope": 0.2349939922882459,
+      "slope_error": 0.17347075013378022,
+      "intercept": -0.5058913753612743,
       "points": 8,
-      "scatter": 0.27056425883911334,
+      "scatter": 0.26988576822650917,
       "vs_time": {
-        "slope": -0.10597523070578982,
-        "slope_error": 0.012452782776040462,
-        "intercept": 0.35978464599491716,
+        "slope": -0.09666435673226592,
+        "slope_error": 0.013049999812326758,
+        "intercept": 0.3048787763061069,
         "points": 8,
-        "scatter": 0.10160479857123783
+        "scatter": 0.09488186009191821
       },
-      "joint_slope_per_airmass": -0.11458475961385542,
-      "joint_slope_per_hour": -0.11702930748572055,
-      "joint_scatter": 0.08683454395718887,
-      "mean_log_column": -0.10583289123768425,
-      "scatter_between_frames": 0.3159204958802022,
+      "joint_slope_per_airmass": -0.10048573996240046,
+      "joint_slope_per_hour": -0.11759074854481752,
+      "joint_scatter": 0.08122840072934615,
+      "mean_log_column": -0.10058747534532081,
+      "scatter_between_frames": 0.320622961627653,
       "median_orders_per_frame": 43.0
     },
     "CO2": {
-      "slope": 0.03895698917267704,
-      "slope_error": 0.027319527400487414,
-      "intercept": -0.07549518717995543,
+      "slope": 0.04690270192047456,
+      "slope_error": 0.022662639844665128,
+      "intercept": -0.08880397050860743,
       "points": 8,
-      "scatter": 0.029156836937746667,
+      "scatter": 0.02997070555654798,
       "vs_time": {
-        "slope": -0.009988352602052195,
-        "slope_error": 0.004314223078345451,
-        "intercept": 0.03366127291510384,
+        "slope": -0.011789434723181643,
+        "slope_error": 0.0041805159289960685,
+        "intercept": 0.04213449383471709,
         "points": 8,
-        "scatter": 0.024685243092486805
+        "scatter": 0.026265161487368127
       },
-      "joint_slope_per_airmass": -0.0003002422050353889,
-      "joint_slope_per_hour": -0.006978655725303569,
-      "joint_scatter": 0.02297028874793078,
-      "mean_log_column": -0.005941926343995453,
-      "scatter_between_frames": 0.030820868642682367,
+      "joint_slope_per_airmass": 0.012266709537006766,
+      "joint_slope_per_hour": -0.007478451233045846,
+      "joint_scatter": 0.024510829343445232,
+      "mean_log_column": -0.0011093340545957966,
+      "scatter_between_frames": 0.03701941091247314,
       "median_orders_per_frame": 18.0
     },
     "CH4": {
-      "slope": 0.027449133470814676,
-      "slope_error": 0.018099906152011028,
-      "intercept": -0.04566639577414766,
+      "slope": 0.04559069656003174,
+      "slope_error": 0.022619201951540543,
+      "intercept": -0.07690041835589832,
       "points": 8,
-      "scatter": 0.027268057718622115,
+      "scatter": 0.029119080885555468,
       "vs_time": {
-        "slope": -0.0070680621764263795,
-        "slope_error": 0.0029834693508761414,
-        "intercept": 0.03773376218240469,
+        "slope": -0.009610521375484637,
+        "slope_error": 0.003621057103998486,
+        "intercept": 0.05303477518155595,
         "points": 8,
-        "scatter": 0.023337584098474494
+        "scatter": 0.02569737553421048
       },
-      "joint_slope_per_airmass": 0.003394268176158531,
-      "joint_slope_per_hour": -0.006507008321090996,
-      "joint_scatter": 0.02328763553616438,
-      "mean_log_column": 0.009594684911273207,
-      "scatter_between_frames": 0.031176558204661704,
+      "joint_slope_per_airmass": 0.01678288833938112,
+      "joint_slope_per_hour": -0.007035495651510442,
+      "joint_scatter": 0.0245888499201711,
+      "mean_log_column": 0.014712622975712113,
+      "scatter_between_frames": 0.037816706758325054,
       "median_orders_per_frame": 19.0
     }
   },
   "leave_one_object_out": {
     "H2O": {
-      "slope": 0.21796609786399182,
-      "slope_error": 0.23779552998475809,
-      "worst_without_one_object": 0.498007988324051,
+      "slope": 0.2349939922882459,
+      "slope_error": 0.17347075013378022,
+      "worst_without_one_object": 0.39795464962833166,
       "object_dropped": "HD 99966",
-      "slope_error_without": 0.24816827563572016,
-      "shift_in_sigma": 1.1776583457141057
+      "slope_error_without": 0.1754882663239817,
+      "shift_in_sigma": 0.9394128820819123
     },
     "CO2": {
-      "slope": 0.03895698917267704,
-      "slope_error": 0.027319527400487414,
-      "worst_without_one_object": -1.3891113577444214e-05,
-      "object_dropped": "HD 53205",
-      "slope_error_without": 0.024244897240823356,
-      "shift_in_sigma": 1.4264844232100147
+      "slope": 0.04690270192047456,
+      "slope_error": 0.022662639844665128,
+      "worst_without_one_object": 0.06421856343480499,
+      "object_dropped": "HD 99966",
+      "slope_error_without": 0.026000432202031666,
+      "shift_in_sigma": 0.7640708069764718
     },
     "CH4": {
-      "slope": 0.027449133470814676,
-      "slope_error": 0.018099906152011028,
-      "worst_without_one_object": 0.03862967703483068,
+      "slope": 0.04559069656003174,
+      "slope_error": 0.022619201951540543,
+      "worst_without_one_object": 0.06662592036186078,
       "object_dropped": "HD 99966",
-      "slope_error_without": 0.021702446761927126,
-      "shift_in_sigma": 0.6177127919955412
+      "slope_error_without": 0.025433855959525034,
+      "shift_in_sigma": 0.929971970138247
     }
   },
   "objects_by_airmass": [
@@ -136,11 +136,11 @@
     }
   ],
   "quality_vs_airmass": {
-    "slope": 0.40481286226135765,
-    "slope_error": 0.11366289719464168,
-    "intercept": 1.240596467312128,
+    "slope": 0.40492226070009973,
+    "slope_error": 0.11809540437984518,
+    "intercept": 1.235569798911133,
     "points": 8,
-    "scatter": 0.16837103752761504
+    "scatter": 0.17493699574301502
   },
   "repeat_observations": [
     {
@@ -156,7 +156,7 @@
       ],
       "delta_log_column": {
         "CH4": -0.0296,
-        "CO2": -0.0252,
+        "CO2": -0.0253,
         "H2O": 0.26
       }
     }
@@ -171,7 +171,7 @@
       "zenith_angle_deg": 11.33915,
       "airmass": 1.0199080541191592,
       "orders": 52,
-      "median_rms_over_noise": 1.469234411466506,
+      "median_rms_over_noise": 1.4693181926148735,
       "surface": {
         "site": "McDonald Observatory",
         "altitude_km": 2.077,
@@ -181,18 +181,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.7034381170951403,
-          "error": 0.00722982636744651,
+          "log_column": -0.7039680443148928,
+          "error": 0.006899556807499468,
           "orders": 46
         },
         "CO2": {
-          "log_column": -0.0233695082342774,
-          "error": 0.009188479375207602,
+          "log_column": -0.023307055481764483,
+          "error": 0.0091825951529598,
           "orders": 18
         },
         "CH4": {
-          "log_column": -0.0089125828883217,
-          "error": 0.013582058196732907,
+          "log_column": -0.008912373899494895,
+          "error": 0.013544836483364407,
           "orders": 19
         }
       },
@@ -207,7 +207,7 @@
       "zenith_angle_deg": 28.95355,
       "airmass": 1.1428408721040473,
       "orders": 49,
-      "median_rms_over_noise": 1.8403060520239451,
+      "median_rms_over_noise": 1.837416244668908,
       "surface": {
         "site": "McDonald Observatory",
         "altitude_km": 2.077,
@@ -218,17 +218,17 @@
       "columns": {
         "H2O": {
           "log_column": 0.13776414483202956,
-          "error": 0.0052727386959398725,
+          "error": 0.005281489430485991,
           "orders": 43
         },
         "CO2": {
-          "log_column": 0.0020639490983942067,
-          "error": 0.006563195653528863,
+          "log_column": 0.0021230402914583944,
+          "error": 0.005770184207037309,
           "orders": 17
         },
         "CH4": {
-          "log_column": 0.010948498110596873,
-          "error": 0.006921018206618673,
+          "log_column": 0.010956156600534813,
+          "error": 0.006923623102334095,
           "orders": 19
         }
       },
@@ -243,7 +243,7 @@
       "zenith_angle_deg": 55.3127,
       "airmass": 1.7571688406244446,
       "orders": 49,
-      "median_rms_over_noise": 2.1597577726171617,
+      "median_rms_over_noise": 2.159943285673462,
       "surface": {
         "site": "McDonald Observatory",
         "altitude_km": 2.077,
@@ -254,12 +254,12 @@
       "columns": {
         "H2O": {
           "log_column": -0.25418332973227764,
-          "error": 0.006047856268218942,
+          "error": 0.006001832602608268,
           "orders": 43
         },
         "CO2": {
-          "log_column": -0.027882230188315357,
-          "error": 0.006900972409266504,
+          "log_column": -0.027879617507765332,
+          "error": 0.006472463331875326,
           "orders": 18
         },
         "CH4": {
@@ -289,13 +289,13 @@
       },
       "columns": {
         "H2O": {
-          "log_column": 0.13865973845897064,
-          "error": 0.004005077868480036,
+          "log_column": 0.13843684670927855,
+          "error": 0.003948689908582011,
           "orders": 43
         },
         "CO2": {
           "log_column": 0.0007256761894845973,
-          "error": 0.0030972778028962983,
+          "error": 0.0031175599815429418,
           "orders": 18
         },
         "CH4": {
@@ -315,7 +315,7 @@
       "zenith_angle_deg": 58.57215,
       "airmass": 1.9178233436827965,
       "orders": 50,
-      "median_rms_over_noise": 1.7566897119113856,
+      "median_rms_over_noise": 1.7225007383780488,
       "surface": {
         "site": "McDonald Observatory",
         "altitude_km": 2.077,
@@ -325,18 +325,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": -0.4894731609330027,
-          "error": 0.004683639353721908,
+          "log_column": -0.48946639956344024,
+          "error": 0.0049902617361593125,
           "orders": 44
         },
         "CO2": {
-          "log_column": -0.020450238602040552,
-          "error": 0.0061372719859569755,
+          "log_column": -0.020453642598380256,
+          "error": 0.006136082452045096,
           "orders": 18
         },
         "CH4": {
-          "log_column": -0.00483443513355756,
-          "error": 0.005059881024507779,
+          "log_column": -0.0048347103380014965,
+          "error": 0.00506753983398853,
           "orders": 19
         }
       },
@@ -361,13 +361,13 @@
       },
       "columns": {
         "H2O": {
-          "log_column": 0.005834715430496528,
-          "error": 0.004705028711409574,
+          "log_column": 0.005847042344464432,
+          "error": 0.004665114436023696,
           "orders": 42
         },
         "CO2": {
           "log_column": -0.05313080816243815,
-          "error": 0.0049416236853095565,
+          "error": 0.004853436011055845,
           "orders": 17
         },
         "CH4": {
@@ -387,7 +387,7 @@
       "zenith_angle_deg": 66.20689999999999,
       "airmass": 2.478713386228455,
       "orders": 47,
-      "median_rms_over_noise": 2.2490018217109604,
+      "median_rms_over_noise": 2.248140605734798,
       "surface": {
         "site": "McDonald Observatory",
         "altitude_km": 2.077,
@@ -398,17 +398,17 @@
       "columns": {
         "H2O": {
           "log_column": 0.16846840698502802,
-          "error": 0.004935732715110722,
+          "error": 0.00493631388395802,
           "orders": 41
         },
         "CO2": {
           "log_column": 0.05363561619301015,
-          "error": 0.0037159841864443303,
+          "error": 0.00371877841451362,
           "orders": 18
         },
         "CH4": {
-          "log_column": 0.07074862171179004,
-          "error": 0.0067978321131282465,
+          "log_column": 0.07076086600380192,
+          "error": 0.006801996785806359,
           "orders": 19
         }
       },
@@ -423,7 +423,7 @@
       "zenith_angle_deg": 70.46645000000001,
       "airmass": 2.990799345291239,
       "orders": 47,
-      "median_rms_over_noise": 2.452323270883087,
+      "median_rms_over_noise": 2.451450123009255,
       "surface": {
         "site": "McDonald Observatory",
         "altitude_km": 2.077,
@@ -433,18 +433,18 @@
       },
       "columns": {
         "H2O": {
-          "log_column": 0.14970447215242186,
-          "error": 0.010513294998789873,
+          "log_column": 0.19240152997724366,
+          "error": 0.004260599373793726,
           "orders": 41
         },
         "CO2": {
-          "log_column": 0.02087213295421889,
-          "error": 0.009046420505768114,
+          "log_column": 0.05941211863962871,
+          "error": 0.004973582427996925,
           "orders": 18
         },
         "CH4": {
-          "log_column": 0.036453045070769935,
-          "error": 0.004816420932733429,
+          "log_column": 0.0773767130199485,
+          "error": 0.006786606048167147,
           "orders": 19
         }
       },

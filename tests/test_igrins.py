@@ -4,8 +4,13 @@ import numpy as np
 import pytest
 
 from tellurix import (
+    IGRINS_ORDER_CENTRES_UM,
+    WatSpec,
     continuum_level,
+    format_wat2_cards,
     hydrogen_series_um,
+    identify_orders,
+    parse_wat_specs,
     igrins_spectral_order,
     read_igrins_observation,
     site_for,
@@ -35,7 +40,9 @@ def test_a_real_plp_product_round_trips(observation):
     assert observation.band == "H"
     assert observation.object_type == "STD"
     assert observation.telescope == "Gemini South"
-    assert observation.orders == 2
+    # Cut from a 28-order frame: its rows are physical orders 100 and 109.
+    assert observation.orders == (100, 109)
+    assert observation.order_source == "wat"
     assert set(observation.sha256) == {"spec", "variance", "flattened"}
     assert all(len(digest) == 64 for digest in observation.sha256.values())
     # The flattened product is read for comparison only, never for the fit.
@@ -44,8 +51,8 @@ def test_a_real_plp_product_round_trips(observation):
 
 
 def test_an_order_is_ascending_and_finite(observation):
-    for index in range(observation.orders):
-        order = observation.order(index)
+    for number in observation.orders:
+        order = observation.order(number)
         wavelength = order.wavelength_vacuum_nm
         assert np.all(np.isfinite(wavelength))
         assert np.all(np.diff(wavelength) > 0.0), "SpectralOrder requires ascending wavelength"
@@ -57,7 +64,7 @@ def test_an_order_is_ascending_and_finite(observation):
 def test_the_uncertainty_is_the_measured_variance(observation):
     """The atlas had to estimate its noise; this does not, and must not."""
 
-    order = observation.order(0)
+    order = observation.order(100)
     fitted = igrins_spectral_order(order, normalize=False, throughput_floor=0.0,
                                    mask_hydrogen_kms=None)
     mask = np.asarray(fitted.mask)
@@ -69,7 +76,7 @@ def test_the_uncertainty_is_the_measured_variance(observation):
 def test_masked_pixels_keep_a_finite_but_worthless_uncertainty(observation):
     """SpectralOrder demands a positive sigma everywhere, including where it is junk."""
 
-    fitted = igrins_spectral_order(observation.order(0))
+    fitted = igrins_spectral_order(observation.order(100))
     sigma = np.asarray(fitted.uncertainty)
     mask = np.asarray(fitted.mask)
     assert np.all(np.isfinite(sigma)) and np.all(sigma > 0.0)
@@ -80,7 +87,7 @@ def test_masked_pixels_keep_a_finite_but_worthless_uncertainty(observation):
 def test_normalizing_puts_the_continuum_near_one(observation):
     """The fitted continuum's constant term is a log flux, so the scale matters."""
 
-    order = observation.order(0)
+    order = observation.order(100)
     level = continuum_level(order)
     assert level > 1.0e3, "PLP counts run to tens of thousands"
 
@@ -97,7 +104,7 @@ def test_normalizing_puts_the_continuum_near_one(observation):
 def test_the_throughput_cut_removes_the_blaze_roll_off(observation):
     """It is asymmetric: the roll-off is at the start of an order, not both ends."""
 
-    order = observation.order(0)
+    order = observation.order(100)
     without = np.asarray(igrins_spectral_order(order, throughput_floor=0.0).mask)
     with_cut = np.asarray(igrins_spectral_order(order, throughput_floor=0.25).mask)
     assert with_cut.sum() < without.sum()
@@ -113,7 +120,7 @@ def test_the_throughput_cut_removes_the_blaze_roll_off(observation):
 def test_the_plp_mask_is_not_used(observation):
     """It flags over half the band by its own flattening criterion, not ours."""
 
-    fitted = igrins_spectral_order(observation.order(0), mask_hydrogen_kms=None)
+    fitted = igrins_spectral_order(observation.order(100), mask_hydrogen_kms=None)
     assert np.mean(np.asarray(fitted.mask)) > 0.4
 
 
@@ -142,10 +149,10 @@ def test_the_series_sum_has_to_be_bounded():
 
 
 def test_the_mask_removes_a_brackett_line_and_leaves_a_clean_order(observation):
-    """Order 11 of this frame carries Br12 at 1.6403 um; order 2 carries none."""
+    """Order H109 carries Br12 at 1.6403 um; order H100 carries none."""
 
-    with_line = stellar_line_mask(observation.order(1).wavelength_vacuum_nm)
-    clean = stellar_line_mask(observation.order(0).wavelength_vacuum_nm)
+    with_line = stellar_line_mask(observation.order(109).wavelength_vacuum_nm)
+    clean = stellar_line_mask(observation.order(100).wavelength_vacuum_nm)
     assert np.count_nonzero(~with_line) > 200
     assert np.all(clean)
 
@@ -185,6 +192,61 @@ def test_a_changed_convention_fails_loudly():
         surface_conditions({**DCT, "BARPRESS": 763.0})
 
 
+def test_mcdonald_2015_reports_metric_and_the_frame_says_so():
+    """Same telescope, other units: 2015-12-03 is Celsius and station hPa.
+
+    Pressure alone rules out inHg; the dewpoint and humidity agree only in
+    Celsius. The 2017 frame, read the same way, still comes out Fahrenheit.
+    """
+
+    metric = {"TELESCOP": "Harlen J. Smith", "OBSERVAT": "McDonald Observatory",
+              "AIRTEMP": 5.6, "BARPRESS": 799.5, "HUMIDITY": 34.0, "DEWPOINT": -8.7}
+    conditions = surface_conditions(metric)
+    assert conditions["temperature_k"] == pytest.approx(278.75)
+    assert conditions["pressure_hpa"] == pytest.approx(799.5)
+    assert conditions["dewpoint_c"] == pytest.approx(-8.7)
+    imperial = surface_conditions({**metric, "AIRTEMP": 66.0, "BARPRESS": 23.4,
+                                   "HUMIDITY": 37.0, "DEWPOINT": 38.6})
+    assert imperial["temperature_k"] == pytest.approx(292.04, abs=0.01)
+    # a humidity neither unit reproduces is refused, not guessed
+    with pytest.raises(ValueError, match="convention has changed"):
+        surface_conditions({**metric, "HUMIDITY": 80.0})
+
+
+def test_geometry_reproduces_a_header_zenith_distance():
+    """DCT 2018-12-20 frame 0045, HD 31069 (SIMBAD): ZDSTART/ZDEND 49.30/49.08."""
+
+    from tellurix.igrins import SITES, geometric_zenith_angle_deg
+
+    angle = geometric_zenith_angle_deg(73.71351218, 44.06086201, "2018-12-21T02:05:43.189",
+                                       "2018-12-21T02:06:54.301", SITES["DCT"])
+    assert angle == pytest.approx(0.5 * (49.30 + 49.08), abs=0.15)
+
+
+def test_a_pointing_sidecar_overrides_the_header(tmp_path):
+    import json
+    import shutil
+
+    for suffix in ("spec.fits", "variance.fits"):
+        shutil.copy(FIXTURE.replace("spec.fits", suffix), tmp_path)
+    spec = tmp_path / "SDCH_test_0001.spec.fits"
+    assert read_igrins_observation(spec).zenith_source == "header"
+    (tmp_path / "pointing.json").write_text(json.dumps({"zenith_angle_deg": 42.5}))
+    observation = read_igrins_observation(spec)
+    assert observation.zenith_angle_deg == 42.5
+    assert observation.zenith_source == "geometry"
+    assert observation.order(observation.orders[0]).meta["zenith_source"] == "geometry"
+
+
+def test_the_all_minus_one_sentinel_is_missing_weather():
+    """2015-12-01 McDonald writes -1 in every weather card."""
+
+    blank = surface_conditions({"TELESCOP": "Harlen J. Smith", "AIRTEMP": -1.0,
+                                "BARPRESS": -1.0, "HUMIDITY": -1.0, "DEWPOINT": -1.0})
+    assert all(blank[key] is None for key in
+               ("temperature_k", "pressure_hpa", "relative_humidity_percent", "dewpoint_c"))
+
+
 def test_an_unknown_telescope_is_refused():
     with pytest.raises(ValueError, match="unknown IGRINS telescope"):
         surface_conditions({**GEMINI, "TELESCOP": "Subaru"})
@@ -210,6 +272,35 @@ def test_the_zenith_angle_prefers_the_measured_distance():
     assert zenith_angle_deg(GEMINI) == pytest.approx(15.8)
 
 
+# The H and K files of one DCT exposure, GJ 281 on 2018-12-20: the K file's end
+# cards describe another frame -- it ends before it starts -- and averaging its
+# ZDEND put the K slant path 5.8% short of the H file's.
+GJ281_H = {"ZDSTART": 45.85, "ZDEND": 45.59, "DATE-OBS": "2018-12-21T06:47:50.045",
+           "DATE-END": "2018-12-21T06:49:20.051", "EXPTIME": 60.0, "NCOMBINE": 8}
+GJ281_K = {**GJ281_H, "ZDEND": 39.18, "DATE-END": "2018-12-21T06:45:53.214"}
+
+
+def test_a_self_consistent_exposure_averages_its_ends():
+    assert zenith_angle_deg(GJ281_H) == pytest.approx(0.5 * (45.85 + 45.59))
+
+
+def test_end_cards_from_another_frame_are_not_averaged():
+    assert zenith_angle_deg(GJ281_K) == pytest.approx(45.85)
+
+
+def test_a_zenith_distance_faster_than_the_sky_is_refused():
+    """Gemini South 2021-03-16 frame 162, K: 0.71 deg in 90 s; the sky allows 0.38."""
+
+    header = {"ZDSTART": 40.5388, "ZDEND": 41.2459, "DATE-OBS": "2021-03-17T08:04:08.002",
+              "DATE-END": "2021-03-17T08:05:37.959"}
+    assert zenith_angle_deg(header) == pytest.approx(40.5388)
+    # Without DATE-END, the exposure time bounds it instead.
+    loose = {"ZDSTART": 40.0, "ZDEND": 40.4, "EXPTIME": 60.0}
+    assert zenith_angle_deg(loose) == pytest.approx(40.2)
+    tight = {"ZDSTART": 40.0, "ZDEND": 45.0, "EXPTIME": 60.0}
+    assert zenith_angle_deg(tight) == pytest.approx(40.0)
+
+
 def test_the_airmass_is_the_fallback():
     header = {"TELESCOP": "Gemini South", "AMSTART": 2.0, "AMEND": 2.0}
     assert zenith_angle_deg(header) == pytest.approx(np.degrees(np.arccos(0.5)))
@@ -223,7 +314,7 @@ def test_a_sentinel_airmass_is_not_a_measurement():
 
 
 def test_the_order_carries_the_slant_path(observation):
-    order = observation.order(0)
+    order = observation.order(100)
     fitted = igrins_spectral_order(order)
     assert fitted.zenith_angle_deg == pytest.approx(observation.zenith_angle_deg)
     assert 0.0 <= fitted.zenith_angle_deg < 90.0
@@ -232,20 +323,23 @@ def test_the_order_carries_the_slant_path(observation):
 # --- refusals ---
 
 
-def test_an_order_outside_the_band_is_refused(observation):
-    with pytest.raises(ValueError, match="outside"):
-        observation.order(observation.orders)
+def test_an_order_the_file_does_not_hold_is_refused(observation):
+    # H98 exists on the instrument but not in this cut-down file; 0 is a row
+    # index, which is exactly the name this reader must not accept.
+    for number in (98, 0, 1):
+        with pytest.raises(ValueError, match="has no H order"):
+            observation.order(number)
 
 
 @pytest.mark.parametrize("floor", [-0.1, 1.0, 2.0])
 def test_an_impossible_floor_is_refused(observation, floor):
     with pytest.raises(ValueError, match="floor must be in"):
-        igrins_spectral_order(observation.order(0), saturation_floor=floor)
+        igrins_spectral_order(observation.order(100), saturation_floor=floor)
 
 
 def test_masking_everything_is_an_error_not_an_empty_fit(observation):
     with pytest.raises(ValueError, match="keeps too few pixels"):
-        igrins_spectral_order(observation.order(1), mask_hydrogen_kms=50_000.0)
+        igrins_spectral_order(observation.order(109), mask_hydrogen_kms=50_000.0)
 
 
 def test_a_missing_variance_file_is_refused(tmp_path):
@@ -468,3 +562,108 @@ def test_the_estimate_lands_within_a_factor_of_two_on_the_fitted_nights():
         estimate = precipitable_water_mm(
             {"temperature_k": temperature, "dewpoint_c": dewpoint})
         assert 0.5 < estimate / fitted < 2.0, f"{estimate:.2f} against {fitted:.2f}"
+
+
+# --- physical order numbers ---
+#
+# Row position means nothing across IGRINS files -- K ships 24, 25 or 26 orders,
+# a wavelength-ascending file reverses them, a custom extraction drops some --
+# so orders are named by the WAT beam, matched to rows by wavelength.
+
+
+def _fixture_arrays():
+    from astropy.io import fits
+
+    with fits.open(FIXTURE) as handle:
+        return dict(handle[0].header), np.asarray(handle[1].data, dtype=float)
+
+
+def test_wat_cards_round_trip():
+    header, _ = _fixture_arrays()
+    specs = parse_wat_specs(header)
+    assert [s.order for s in specs] == [100, 109]
+    rebuilt = parse_wat_specs(dict(format_wat2_cards(specs)))
+    assert [(s.order, s.w1_angstrom, s.dw_angstrom, s.nw) for s in rebuilt] == \
+        [(s.order, s.w1_angstrom, s.dw_angstrom, s.nw) for s in specs]
+    # Every card fits the 68-character slices IRAF writes.
+    assert all(len(value) <= 68 for _, value in format_wat2_cards(specs))
+
+
+def test_a_card_split_on_a_space_survives_the_stripped_blank():
+    """A FITS reader strips a slice's trailing blank; it may be a separator."""
+
+    header, _ = _fixture_arrays()
+    specs = parse_wat_specs(header)
+    cards = format_wat2_cards(specs)
+    stripped = {key: value.rstrip() for key, value in cards}
+    assert [s.text for s in parse_wat_specs(stripped)] == [s.text for s in specs]
+
+
+def test_reversed_rows_keep_their_physical_orders():
+    """What the PLP's invert_order writes: rows and WAT entries both reversed."""
+
+    header, wavelength = _fixture_arrays()
+    specs = parse_wat_specs(header)
+    flipped = {k: v for k, v in header.items() if not k.startswith("WAT2_")}
+    flipped.update(format_wat2_cards(specs[::-1]))
+    assert identify_orders("H", wavelength[::-1], flipped) == ((109, 100), "wat")
+
+
+def test_wat_entries_are_matched_by_wavelength_not_position():
+    header, wavelength = _fixture_arrays()
+    specs = parse_wat_specs(header)
+    # Entries listed in the opposite order to the rows they describe.
+    swapped = {k: v for k, v in header.items() if not k.startswith("WAT2_")}
+    swapped.update(format_wat2_cards(specs[::-1]))
+    assert identify_orders("H", wavelength, swapped) == ((100, 109), "wat")
+
+
+def test_without_wat_the_wavelength_names_the_order():
+    header, wavelength = _fixture_arrays()
+    bare = {k: v for k, v in header.items() if not k.startswith("WAT2_")}
+    assert identify_orders("H", wavelength, bare) == ((100, 109), "wavelength")
+
+
+def test_wat_describing_other_rows_is_caught():
+    """The fixture's own history: a full frame's cards kept on two of its rows."""
+
+    header, wavelength = _fixture_arrays()
+    specs = parse_wat_specs(header)
+    wrong = [WatSpec(aperture=s.aperture, order=s.order - 2,
+                     w1_angstrom=s.w1_angstrom + 356.0, dw_angstrom=s.dw_angstrom,
+                     nw=s.nw, text=s.text) for s in specs]
+    moved = []
+    for spec in wrong:
+        fields = spec.text.split()
+        fields[1], fields[3] = str(spec.order), repr(spec.w1_angstrom)
+        moved.append(spec.__class__(**{**spec.__dict__, "text": " ".join(fields)}))
+    lied = {k: v for k, v in header.items() if not k.startswith("WAT2_")}
+    lied.update(format_wat2_cards(moved))
+    with pytest.warns(UserWarning, match="do not describe these rows"):
+        assert identify_orders("H", wavelength, lied) == \
+            ((100, 109), "wavelength; wat inconsistent")
+
+
+def test_an_empty_row_has_no_order():
+    """The PLP fills an order it did not extract with NaN."""
+
+    _, wavelength = _fixture_arrays()
+    padded = np.vstack([wavelength, np.full((1, wavelength.shape[1]), np.nan)])
+    assert identify_orders("H", padded) == ((100, 109, None), "wavelength")
+
+
+def test_a_row_no_known_order_matches_is_refused():
+    _, wavelength = _fixture_arrays()
+    with pytest.raises(ValueError, match="cannot name the physical order"):
+        identify_orders("H", wavelength + 0.008)
+
+
+def test_the_centre_table_is_ordered_like_an_echelle():
+    """Higher order, shorter wavelength, and m * lambda roughly constant."""
+
+    for band, table in IGRINS_ORDER_CENTRES_UM.items():
+        numbers = sorted(table)
+        assert numbers == list(range(numbers[0], numbers[-1] + 1))
+        assert np.all(np.diff([table[m] for m in numbers]) < 0)
+        product = np.array([m * table[m] for m in numbers])
+        assert np.ptp(product) / np.median(product) < 0.01

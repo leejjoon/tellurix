@@ -88,7 +88,7 @@ default that looks like a measurement.
   term is a *log* flux, so raw PLP counts put it near 10 and its bound has to
   span the counts scale — and L-BFGS-B rescales its variables onto that bound,
   so a first step of a fraction of a 60-unit range drives the continuum to
-  zero. Measured on order 10 of the reference frame, leaving the order
+  zero. Measured on order H108 of the reference frame, leaving the order
   unnormalized gave a residual of 220 sigma against 2.7 once normalized.
 - **Continuum degree 9, not 3.** An IGRINS order spans 77–96 cm-1 against an
   atlas page's 20 and carries the blaze. With the PLP's own telluric model
@@ -208,6 +208,14 @@ Two confounds have to be handled before any of that is readable.
 so a trend fitted against airmass alone absorbs anything that varies with time.
 Everything below is fitted against airmass, against time, and against both.
 
+**Revised after a header defect was found.** Every number in the ladder sections
+of this document was recomputed on 2026-09-30, after `zenith_angle_deg` stopped
+averaging `ZDEND` cards that belong to another frame (9 of 111 archive files,
+all K band; see CLAUDE.md). On this night it was one K frame, HD 53205 at
+airmass 1.31, read as 1.37: the fit put the 3.8% slant-path error into every
+column and its residual did not move, but it was this night's CO2 and CH4
+outlier -- the frame-to-frame scatter of both halves without it.
+
 **The stars themselves.** A night observes a handful of targets, each over a
 limited span of airmass, so star identity and airmass are partly confounded.
 On this night they are *completely* confounded at the top: chi Cap is the only
@@ -215,9 +223,9 @@ target above airmass 1.82.
 
 | species | orders/frame | per airmass | per hour | joint d/dAM | frame scatter |
 |---|---:|---:|---:|---:|---:|
-| H2O | 39 | +0.1280 ± 0.0534 (2.4σ) | **-0.0342 ± 0.0058 (5.9σ)** | -0.0254 | 0.1164 |
-| CO2 | 18 | -0.0014 ± 0.0059 (0.2σ) | +0.0013 ± 0.0009 (1.5σ) | +0.0078 | 0.0110 |
-| CH4 | 19 | +0.0153 ± 0.0080 (1.9σ) | -0.0018 ± 0.0015 (1.2σ) | +0.0165 | 0.0111 |
+| H2O | 39 | +0.1328 ± 0.0535 (2.5σ) | **-0.0337 ± 0.0056 (6.0σ)** | -0.0253 | 0.1148 |
+| CO2 | 18 | -0.0010 ± 0.0044 (0.2σ) | +0.0013 ± 0.0006 (2.0σ) | +0.0087 | 0.0049 |
+| CH4 | 19 | +0.0088 ± 0.0066 (1.3σ) | -0.0005 ± 0.0011 (0.5σ) | +0.0175 | 0.0063 |
 
 ### One target carries every slope
 
@@ -225,38 +233,41 @@ Refitting with each object dropped in turn:
 
 | species | slope, all 10 frames | without chi Cap | shift |
 |---|---:|---:|---:|
-| H2O | +0.1280 | +0.3088 | 3.4σ |
-| CO2 | -0.0014 | -0.0218 | 3.5σ |
-| CH4 | +0.0153 | +0.0045 | 1.3σ |
+| H2O | +0.1328 | +0.3243 | 3.6σ |
+| CO2 | -0.0010 | -0.0198 | 4.2σ |
+| CH4 | +0.0088 | -0.0038 | 1.9σ |
 
-Dropping chi Cap still moves the water slope by 3.4 sigma — but water genuinely
-varies, so that is weather. For the well-mixed species the correction above
-largely cured it: CH4's leave-one-out shift is 1.3σ and CO2's 3.5σ.
+Dropping chi Cap still moves the water slope by 3.6 sigma — but water genuinely
+varies, so that is weather. For the well-mixed species it is not: CO2 moves by
+4.2σ and CH4 by 1.9σ, because with the HD 53205 outlier gone the full-night
+errors shrank and chi Cap's lever arm is what is left.
 
 **The defensible statement is still narrower than the table alone suggests.**
 chi Cap is the only target above airmass 1.82, so star identity and airmass stay
-confounded at the top and no slope across that gap is purely atmospheric. What
-the night supports is that the well-mixed columns are flat to
-CO2 −0.0006 ± 0.0052 and CH4 +0.0030 ± 0.0071 per unit airmass, both under 0.5σ,
-with a leave-one-out excursion no larger than the quoted error for CH4.
+confounded at the top and no slope across that gap is purely atmospheric. With
+every frame the well-mixed columns are flat -- CO2 −0.0010 ± 0.0044 and CH4
++0.0088 ± 0.0066 per unit airmass -- but without chi Cap CO2 reads
+−0.0198 ± 0.0079, so the flatness at the top rests on one star.
 
 An earlier version of this document quoted a 2.4% bound out to airmass 2.5 from
 a fit with the same confounding, before the instrument response was corrected.
 A ladder needs *several* stars at high airmass, not several frames of one; see
 `leave_one_object_out`, which the analysis now reports by default.
 
-**The water trend is the sky, not the model.** Against airmass H2O is 2.0σ;
-against time it is 5.2σ, and the residual scatter halves. In a joint fit the
-airmass term collapses to -0.0320 while the time term survives at
--0.0411 per hour. The retrieved precipitable water falls monotonically
+**The water trend is the sky, not the model.** Against airmass H2O is 2.5σ;
+against time it is 6.0σ, and the residual scatter nearly halves. In a joint fit
+the airmass term collapses to -0.0253 while the time term survives at
+-0.0391 per hour. The retrieved precipitable water falls monotonically
 through the night — an ordinary drying night, recovered from the spectra alone.
 
 **Repeatability.** chi Cap's two frames 3.7 minutes apart differ by CH4
-+0.002, CO2 +0.001, H2O -0.027 — so a few tenths of a percent is the
-noise floor for the well-mixed species, and H2O's 12% frame-to-frame
-scatter is real weather.
++0.007, CO2 -0.005, H2O -0.023, and HD 53205's two, 42 minutes apart, by
+CH4 +0.005 and CO2 +0.005 -- they differed by 3.4% and 3.6% before the header
+fix, which is what the defect looked like from here. Half a percent is the
+noise floor for the well-mixed species, and H2O's 11% frame-to-frame scatter
+is real weather.
 
-**Fit quality does not degrade with airmass**: +0.111 ± 0.096 sigma per unit
+**Fit quality does not degrade with airmass**: +0.169 ± 0.129 sigma per unit
 airmass, consistent with flat.
 
 ### What IGRINS can and cannot measure
@@ -298,10 +309,10 @@ uncertainty:
 
 | order | line | pixels | no-star model | A0V model | gain |
 |---|---|---:|---:|---:|---:|
-| H05 | Br10 | 594 | 17.09 | 2.56 | 6.7 |
-| H11 | Br12 | 576 | 2.88 | 2.14 | 1.4 |
-| H15 | Br14 | 602 | 6.43 | 1.87 | 3.4 |
-| H19 | Br18/19 | 912 | 20.95 | 2.66 | 7.9 |
+| H103 | Br10 | 594 | 17.09 | 2.56 | 6.7 |
+| H109 | Br12 | 576 | 2.88 | 2.14 | 1.4 |
+| H113 | Br14 | 602 | 6.43 | 1.87 | 3.4 |
+| H117 | Br18/19 | 912 | 20.95 | 2.66 | 7.9 |
 | **pooled** | | 2684 | **13.97** | **2.33** | **6.0** |
 
 The A0V model removes a factor of six, and leaves 2.33 sigma — slightly *better*
@@ -398,8 +409,8 @@ found one cause and two dead ends.
 `lsf_sigma_kms` is fitted per order but is a single constant within one.
 Splitting orders into six x-segments, with five Chebyshev coefficients free per
 segment so the blaze cannot leak into the width, the fitted R varies
-monotonically with pixel: 29,400 to 40,400 across order 2 (33%), 42,600 to
-47,200 across order 24 (10%), always narrower at high x. But freeing the width
+monotonically with pixel: 29,400 to 40,400 across order H100 (33%), 42,600 to
+47,200 across order H122 (10%), always narrower at high x. But freeing the width
 per segment improves the residual by a median of 1.02, best 1.55. Velocity per
 pixel is constant to 3.1% across the band, so a constant sigma in km/s is
 already nearly a constant sigma in *pixels*. The calibration products cannot
@@ -425,7 +436,7 @@ It is the same pattern in every frame:
 
 - 56–76% of each frame's residual variance is **common across all ten frames**,
   five different stars spanning airmass 1.07 to 2.50.
-- It is strongest in orders with no telluric absorption (H10, median T 0.998,
+- It is strongest in orders with no telluric absorption (H108, median T 0.998,
   71% common), so it is not the line list.
 - Its amplitude is 0.13–0.21 with only 0.012–0.021 scatter, and the sign of its
   airmass dependence is **inconsistent between orders**. A telluric-model error
@@ -507,9 +518,9 @@ Coverage varies a lot between orders, and almost all of it is two cuts of ours.
 | **hydrogen mask** | **0–1151** | **yes; this is what makes coverage vary** |
 | saturation floor, T < 0.15, model < 0.2 continuum | 0–170 | mostly negligible |
 
-An order with no Brackett line (H02, H03, H04, H06, H07, H10, H24, H25) loses
+An order with no Brackett line (H100, H101, H102, H104, H105, H108, H122, H123) loses
 nothing to the mask and keeps 73–77% of its columns. An order with one loses
-about 590, and H20, which holds Br19 and Br20, loses 1151 — 56% of the order,
+about 590, and H118, which holds Br19 and Br20, loses 1151 — 56% of the order,
 leaving 14%.
 
 That is arithmetic: ±600 km/s at 2.04 km/s per pixel is ±294 pixels per line.
@@ -566,17 +577,19 @@ no mask fixes that, and costs about 1.4x in runtime.
 Fitting with a real stellar source needs one more thing: a **stellar stage**.
 These are five different A0V stars with radial velocities tens of km/s apart, so
 `stellar_velocity_kms` has to be fitted or the Brackett lines land in the wrong
-place. `stages_for()` adds it whenever `--stellar` is not `flat`. The fitted
-velocities are self-consistent per star -- chi Cap +58.9 and +57.6, k Tau +42.7
-and +43.8, HD 53205 +9.2 and +7.4 km/s -- which is a check on the whole
-arrangement that the flat source cannot provide.
+place. `stages_for()` adds it whenever `--stellar` is not `flat`. In order H109
+(Br12) the fitted velocities are self-consistent per star -- chi Cap +58.9 and
++57.6, k Tau +42.7 and +43.8, HD 53205 +9.2 and +7.4 km/s -- which is a check
+on the whole arrangement that the flat source cannot provide. **Most other
+orders do not measure it:** 42% of order-frames rail at +-60 km/s, in a pattern
+set by the order rather than the star (`docs/igrins_transfer.md`).
 
 | | rows | reliable pixels | median residual |
 |---|---:|---:|---:|
 | H, flat + ±600 km/s mask | 248 | 261,053 | 1.30σ |
 | **H, A0V model, no mask** | **270** | **367,810 (+41%)** | 1.33σ |
-| K, flat + mask | 237 | 318,800 | 1.29σ |
-| **K, A0V model** | **246** | **377,645 (+18%)** | 1.31σ |
+| K, flat + mask | 237 | 318,851 | 1.29σ |
+| **K, A0V model** | **246** | **377,660 (+18%)** | 1.31σ |
 
 Fitting 41% more pixels in H — including the Brackett cores, the hardest pixels
 in the band — moves the residual by 0.03σ. That is the strongest statement
@@ -584,25 +597,25 @@ available that the A0V model is good enough to use.
 
 | species | per airmass | per hour | joint d/dAM | leave-one-out shift |
 |---|---:|---:|---:|---:|
-| H2O | +0.1237 ± 0.0628 (2.0σ) | **-0.0348 ± 0.0067 (5.2σ)** | -0.0322 | 3.9σ (chi Cap V ) |
-| CO2 | +0.0054 ± 0.0039 (1.4σ) | -0.0008 ± 0.0008 (1.0σ) | +0.0061 | 2.5σ (chi Cap V ) |
-| CH4 | +0.0129 ± 0.0052 (2.5σ) | -0.0023 ± 0.0010 (2.4σ) | +0.0087 | **0.4σ (HR 1558)** |
+| H2O | +0.1251 ± 0.0626 (2.0σ) | **-0.0348 ± 0.0066 (5.3σ)** | -0.0318 | 3.9σ (chi Cap) |
+| CO2 | +0.0049 ± 0.0033 (1.5σ) | -0.0006 ± 0.0006 (1.0σ) | +0.0071 | 3.2σ (chi Cap) |
+| CH4 | +0.0102 ± 0.0051 (2.0σ) | -0.0015 ± 0.0009 (1.7σ) | +0.0095 | **0.5σ (chi Cap)** |
 
-Water is unchanged: 2.0σ against airmass, 5.2σ against time, the airmass term
+Water is unchanged: 2.0σ against airmass, 5.3σ against time, the airmass term
 collapsing in a joint fit. The sky dried; the model is fine.
 
-**CO2 stays flat** at +0.0054 ± 0.0039 per unit airmass, 0.8% across the observed
-range with a 2σ bound of 1.9%.
+**CO2 stays flat** at +0.0049 ± 0.0033 per unit airmass, 0.7% across the observed
+range with a 2σ bound of 1.7%.
 
-**CH4 changes status.** Its slope is much the same as the flat run's
-(+0.0153 ± 0.0080 there, +0.0129 ± 0.0052 here) but the extra pixels halve the error, so
-it is now 2.5σ — and, unlike before, it no longer rests on chi Cap: dropping
-any single target moves it by 0.4σ. That is 1.8% across the range, 3.3% at 2σ.
+**CH4 is the one worth watching.** Its slope is much the same as the flat run's
+(+0.0088 ± 0.0066 there, +0.0102 ± 0.0051 here) but the extra pixels shrink the
+error, so it is 2.0σ -- and, unlike CO2, it does not rest on chi Cap: dropping
+any single target moves it by 0.5σ. That is 1.5% across the range, 2.9% at 2σ.
 
-Three reasons not to call that a detection yet. It is one of three species, so
-the multiple-comparison penalty is real. CH4 shows a 2.4σ dependence on *time*
+Three reasons not to call that a detection. It is one of three species, so
+the multiple-comparison penalty is real. CH4 shows a 1.7σ dependence on *time*
 as well, which it cannot physically have, and airmass and time correlate at
--0.788 here; in a joint fit the airmass term falls to +0.0087. And it is one
+-0.788 here; in a joint fit the airmass term is +0.0095. And it is one
 night at one site. It is the most interesting thing in this dataset and the
 clearest argument for a second night.
 
@@ -622,20 +635,26 @@ against 787.4 expected at Mt Locke, 0.6% out.
 
 | species | DCT (A0V) | McDonald (A0V) | joint d/dAM, McDonald | leave-one-out |
 |---|---:|---:|---:|---:|
-| H2O | +0.1237 ± 0.0628 (2.0σ) | +0.2180 ± 0.2378 (0.9σ) | -0.1146 | 1.2σ |
-| CO2 | +0.0054 ± 0.0039 (1.4σ) | +0.0390 ± 0.0273 (1.4σ) | -0.0003 | 1.4σ |
-| CH4 | +0.0129 ± 0.0052 (2.5σ) | +0.0274 ± 0.0181 (1.5σ) | +0.0034 | 0.6σ |
+| H2O | +0.1251 ± 0.0626 (2.0σ) | +0.2350 ± 0.1735 (1.4σ) | -0.1005 | 0.9σ |
+| CO2 | +0.0049 ± 0.0033 (1.5σ) | +0.0469 ± 0.0227 (2.1σ) | +0.0123 | 0.8σ |
+| CH4 | +0.0102 ± 0.0051 (2.0σ) | +0.0456 ± 0.0226 (2.0σ) | +0.0168 | 0.9σ |
 
-**CH4 is not settled.** McDonald's slope has the same sign and a consistent
-magnitude, and this time it does not rest on one star — dropping any target
-moves it by 0.6 sigma. But its error is three and a half times DCT's, so it
-neither confirms nor refutes: the two are consistent with each other and both
-are consistent with zero at 1.5-2.5 sigma. In a joint fit against airmass *and*
-time, McDonald's airmass term falls to +0.0034 and DCT's to +0.0087. Two nights is
-still not enough; the question is worth a third.
+**CH4 is not settled.** McDonald's slope has the same sign, and this time it
+does not rest on one star -- dropping any target moves it by 0.9 sigma. But its
+error is four times DCT's and its value four times larger, so the two are
+consistent at 1.5 sigma and neither settles the other. In a joint fit
+against airmass *and* time, McDonald's airmass term falls to +0.0168 and DCT's
+is +0.0095. Two nights is still not enough; the question is worth a third.
 
-**Water behaves the same way at both sites**: 0.9 sigma against airmass and
-8.5 sigma against time here, the airmass term collapsing in a joint fit.
+The header fix moved McDonald the other way from DCT. Its top frame, k Tau at
+airmass 2.99, had been read as 3.16 in K; corrected, the CO2 and CH4 slopes
+*steepen* from about 1.4σ to 2.0-2.1σ. The wrong airmass had been hiding part
+of a real deficit at the top of the ladder -- one the transfer test
+(`igrins_transfer.md`) also sees, as K frames above airmass 2.4 on this night
+that a per-frame water scale cannot correct.
+
+**Water behaves the same way at both sites**: 1.4 sigma against airmass and
+7.4 sigma against time here, the airmass term collapsing in a joint fit.
 The sky changes; the model does not need to.
 
 ### A wetter site fits worse, everywhere
@@ -643,7 +662,7 @@ The sky changes; the model does not need to.
 McDonald carries about 10 mm of precipitable water against DCT's 2, and its
 median residual is 1.78 sigma in H and 2.37 in K against 1.33 and 1.31. Binned
 by transmission, using the median rather than the rms because two of DCT's 516
-order-frames are pathological (H09 at 115 sigma, H06 at 33, both unexplained):
+order-frames are pathological (H107 at 115 sigma, H104 at 33, both unexplained):
 
 | effective transmission | DCT, ~2 mm | McDonald, ~10 mm |
 |---|---:|---:|
@@ -717,17 +736,21 @@ stability test the response correction needed.
 
 | night | PWV | frames | airmass | CH4 per airmass | CO2 per airmass |
 |---|---|---:|---|---:|---:|
-| DCT 2018-12-20 | ~2 mm | 10 | 1.07–2.50 | +0.0129 ± 0.0052 (2.5σ) | +0.0054 ± 0.0039 (1.4σ) |
-| McDonald 2017-04-20 | ~10 mm | 8 | 1.02–2.99 | +0.0274 ± 0.0181 (1.5σ) | +0.0390 ± 0.0273 (1.4σ) |
-| DCT 2016-12-08 | ~7 mm | 11 | 1.06–2.59 | **-0.0303 ± 0.0167 (1.8σ)** | **-0.0309 ± 0.0155 (2.0σ)** |
+| DCT 2018-12-20 | ~2 mm | 10 | 1.07–2.50 | +0.0102 ± 0.0051 (2.0σ) | +0.0049 ± 0.0033 (1.5σ) |
+| McDonald 2017-04-20 | ~10 mm | 8 | 1.02–2.99 | +0.0456 ± 0.0226 (2.0σ) | +0.0469 ± 0.0227 (2.1σ) |
+| DCT 2016-12-08 | ~7 mm | 11 | 1.06–2.59 | **-0.0271 ± 0.0161 (1.7σ)** | **-0.0282 ± 0.0152 (1.9σ)** |
 
 **The signs disagree, so the trend is not real.** For CH4 the three nights give
-+0.013, +0.027, -0.030: chi-squared for a common value is 7.1 on two degrees
-of freedom. CO2 behaves the same way — +0.005, +0.039, -0.031, chi-squared
-6.8. The 2.5 sigma from one night was a per-night systematic.
++0.010, +0.046, -0.027: chi-squared for a common value is 7.7 on two degrees
+of freedom (p = 0.02). CO2 behaves the same way — +0.005, +0.047, -0.028,
+chi-squared 8.2. The single night's slope was a per-night systematic. Correcting
+the zenith angles did not remove it: before the fix the two chi-squareds were
+7.1 and 6.8, so the header defect was not the systematic and, at McDonald, was
+partly hiding it.
 
-The same night says it twice over. On DCT 2016 both CO2 and CH4 show a **4.4
-sigma** dependence on *time of night*, which neither can physically have — and
+The same night says it twice over. On DCT 2016 both CO2 and CH4 show a **3.4-3.6
+sigma** dependence on *time of night* (4.4 before the fix, whose one material
+correction there was to the night's last frame), which neither can physically have — and
 that night has the weakest airmass-time correlation of the three (-0.452, against
 -0.788 and -0.681), so the two axes are best separated exactly where the
 impossible trend is clearest. These systematics are real and are not a fitting
@@ -735,8 +758,8 @@ degeneracy between airmass and time.
 
 **So the slant-path bound is set by night-to-night scatter, not by any one
 night's formal error.** Across three nights the well-mixed columns scatter by
-0.0245 (CH4) and 0.0285 (CO2) per unit airmass, about **3%** over a
-typical range, against the 1.9% a single night's error bar suggested. That is
+0.0297 (CH4) and 0.0307 (CO2) per unit airmass, about **3-4%** over a
+typical range, against the 1.7% a single night's error bar suggested. That is
 the number to quote.
 
 Water is consistent throughout: no night shows a credible airmass dependence,
@@ -756,7 +779,7 @@ per instrument configuration and applied to nights carrying fewer than the five
 standards `--fixed-pattern-min-frames` requires. The remaining third is the
 genuinely per-night part — flexure, focus, and which frames were taken.
 
-The orders where the two nights agree least (H02 at r = 0.52, H05 at 0.65) are
+The orders where the two nights agree least (H100 at r = 0.52, H103 at 0.65) are
 the low-throughput ones with the fewest shared pixels.
 
 
@@ -800,14 +823,16 @@ Fitting against ERA5 leaves the water scale near unity (1.00, 1.22, 0.90 against
 
 | | analytic | ERA5 |
 |---|---:|---:|
-| **CO2** scatter between nights | 0.0285 | **0.0221** |
-| CO2 chi-squared for a common value (2 dof) | 6.8 | **3.4** |
-| **CH4** scatter | 0.0245 | 0.0229 |
-| CH4 chi-squared | 7.1 | 6.6 |
+| **CO2** scatter between nights | 0.0307 | **0.0262** |
+| CO2 chi-squared for a common value (2 dof) | 8.2 | **5.7** |
+| **CH4** scatter | 0.0297 | 0.0279 |
+| CH4 chi-squared | 7.7 | 7.8 |
 | residual, H band | 1.33 / 1.78 / 1.89 | 1.30 / 1.76 / 1.86 |
 
-**CO2 improves properly.** Its chi-squared halves, from inconsistent with a
-common value (p = 0.03) to consistent (p = 0.18). **CH4 barely moves** and its
+**CO2 improves, but less than it first seemed.** Its chi-squared falls from
+8.2 to 5.7, from inconsistent with a common value (p = 0.02) to borderline
+(p = 0.06). Before the zenith-angle fix this read as 6.8 to 3.4, p = 0.03 to
+0.18 -- the header defect had flattered ERA5. **CH4 does not move** and its
 signs still disagree. And the **residual does not improve at all** — a 6.5 K/km
 lapse rate and an exponential water profile fit the spectra just as well as the
 real atmosphere does.
@@ -937,21 +962,73 @@ record, because their `inputs` name different files — one record per band per
 night.
 
 
+## The stellar velocity belongs to the order, not the star
+
+The A0V fits free `stellar_velocity_kms` per order, and it does not behave
+like a star's velocity. In the full fits it rails at its +-60 km/s bound in 42%
+of order-frames, and among orders with a Brackett line well inside them the
+unrailed values of one frame scatter by 20-40 km/s. Frame medians repeat only
+loosely per star (HIP 82560 -40.2 and -40.9, k Tau +4.2 and +4.8, but chi Cap
+-12.8 and +8.9).
+
+The scatter is not noise. Each order's offset from its frame's median repeats
+across four nights, three telescopes and every star:
+
+| order | line position | offset, km/s | frames |
+|---|---|---:|---:|
+| H98 | Br9 at 0.28 | +8 +- 5 | 29 |
+| H103 | Br10 at 0.42 | -5 +- 3 | 43 |
+| H106 | Br11 at -0.07 | **-24 +- 4** | 25 |
+| H109 | Br12 at 0.23 | +13 +- 4 | 42 |
+| H111 | Br13 at 0.14 | **-23 +- 5** | 11 |
+| H113 | Br14 at 0.45 | **-25 +- 7** | 14 |
+| H114 | Br15 at 0.15 | -15 +- 3 | 29 |
+| H115 | Br15 at 1.02, Br16 at 0.06 | **+45 +- 4** | 32 |
+| H116 | Br16 at 0.93, Br17 at 0.14 | **-21 +- 3** | 42 |
+| H119 | Br20 at 1.03, Br21-22 inside | **+39 +- 5** | 21 |
+
+Line position is where the line falls in the order's usable pixels, 0 at the
+blue end and 1 at the red. The large offsets are almost all orders whose line
+sits at or past an edge of the usable data, so that only one wing is fitted,
+and the sign follows the edge: a line at the blue end is pushed blueward, one at
+the red end redward -- in both cases *out* of the window, which lowers the
+model's wing inside it. The likely reading is that the model's wings are too
+strong for the continuum-normalized data where the degree-9 continuum cannot
+tell a wing from the blaze, and a free shift is the cheapest way to weaken one.
+H113, a central line at -25, does not fit that story.
+
+Two consequences. Pinning one stellar velocity per frame is not neutral: it
+takes away the freedom that is absorbing a wing mismatch and would move it into
+those orders' residuals. And a star's velocity should come from orders with a
+central line (H98, H103, H109, H113, H120), not from all of them. The actual fix
+is the wing -- a fixed master blaze, so the continuum cannot trade against a
+wing -- which is also what fitting vsini would need, since rotation shapes the
+core and not the wings. None of this limits the telluric correction, whose
+residual at the Brackett lines is already at the noise.
+
 ## What is not done yet
 
-- **What is left of the per-night systematic.** ERA5 removes the CO2 half of
-  it; CH4's inconsistent slopes survive a real temperature and water profile, so
-  they are not the atmosphere's vertical structure.
+- **Science frames.** Whether a night's standards can set the telluric model of
+  a frame they do not include is measured in `docs/igrins_transfer.md`: yes,
+  with one velocity shift and one water scale fitted on the frame. Not yet on a
+  target with lines of its own.
+- **What is left of the per-night systematic.** ERA5 reduces CO2's part of it
+  to borderline (chi-squared 8.2 to 5.7); CH4's inconsistent slopes survive a
+  real temperature and water profile, so they are not the atmosphere's vertical
+  structure. Nor are they the zenith-angle header defect, which was corrected
+  and left them as inconsistent as before.
 - **Where the per-night systematic comes from.** Three nights agree that the
-  well-mixed columns wander by about 3% per unit airmass in inconsistent
-  directions, and that CO2 and CH4 can show a 4-sigma dependence on time of
+  well-mixed columns wander by 3-4% per unit airmass in inconsistent
+  directions, and that CO2 and CH4 can show a 3.5-sigma dependence on time of
   night, which is impossible. Something per-night moves them and it is not the
-  slant path. That is now the most interesting open question here.
+  slant path. That is now the most interesting open question here. McDonald's
+  high-airmass K frames, which a per-frame water scale cannot correct, are the
+  place to look first.
 - **Build and ship the master pattern.** The four nights above show it would
   capture 74-88% of each night's response and works across telescopes, so it is
   now a matter of measuring it from enough nights and storing it, not of
   establishing whether it is sound.
-- **Two unexplained order-frames**, H09 and H06 of the DCT A0V run, at 115 and
+- **Two unexplained order-frames**, H107 and H104 of the DCT A0V run, at 115 and
   33 sigma out of 516. They are excluded from the pooled statistics above by a
   cut rather than understood.
 - **A per-frame atmosphere.** One profile is built per night from the median
@@ -961,4 +1038,5 @@ night.
 - **`vsini` is fixed, not fitted.** The A0V run used 150 km/s for every
   standard. A0V rotation velocities range over roughly 100-250 km/s, and the
   Brackett lines are already hundreds of km/s wide from Stark broadening, so
-  this should be second order — but it is assumed, not measured.
+  this should be second order — but it is assumed, not measured. Fitting it,
+  or one stellar velocity per frame, waits on the wing mismatch above.

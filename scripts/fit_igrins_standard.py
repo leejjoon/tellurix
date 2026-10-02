@@ -15,11 +15,13 @@ data, and the differences are the point:
   Here that plot is a measurement of the telluric model.
 
     uv run python scripts/fit_igrins_standard.py \\
-        --spec data/igrins/20180402_0104/SDCH_20180402_0104.spec.fits --orders 2
+        --spec data/igrins/20180402_0104/SDCH_20180402_0104.spec.fits --orders 100
 
 Give several ``--spec`` paths to fit a whole night at once, which is far cheaper
 per frame than running them one at a time -- see below. ``--orders`` takes a
-comma-separated list; leave it out for all of them.
+comma-separated list of *physical* echelle orders -- the WAT header's beam
+numbers, H 98-125 and K 71-96 -- never row positions, which differ between
+reductions; leave it out for all of them.
 
 Why the loops are this way round
 --------------------------------
@@ -153,7 +155,7 @@ def stage_bounds(stage, model_species, free_species, parameters, degree, fit_ste
     return bounds
 
 
-def build_order_context(observation, index, args, root, profile, stellar):
+def build_order_context(observation, number, args, root, profile, stellar):
     """Everything about one echelle order that no frame can change.
 
     The window comes from one frame's wavelength solution, which within a night
@@ -176,7 +178,7 @@ def build_order_context(observation, index, args, root, profile, stellar):
         timing[name] = round(time.time() - started, 2)
         started = time.time()
 
-    extracted = observation.order(index)
+    extracted = observation.order(number)
     v1, v2 = extracted.wavenumber_range_cm1
 
     # Two different margins. Lines are selected over the full reach of their
@@ -201,7 +203,7 @@ def build_order_context(observation, index, args, root, profile, stellar):
                 raise
             absent.append(species)
     if not databases:
-        raise RuntimeError(f"no molecular lines in order {index}")
+        raise RuntimeError(f"no molecular lines in order {number}")
     mark("line_files")
 
     opacity = ExoJAXOpacityBackend.prepare(
@@ -251,7 +253,7 @@ def build_order_context(observation, index, args, root, profile, stellar):
     mark("species_scan")
 
     return {
-        "index": index, "v1": v1, "v2": v2, "grid": grid, "model": model,
+        "number": number, "v1": v1, "v2": v2, "grid": grid, "model": model,
         "fit_model": fit_model, "source": source, "profile": profile,
         "stellar": spectrum if stellar is not None else None,
         "databases": databases, "absent": absent, "optical_depth": optical_depth,
@@ -288,10 +290,10 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         timing[name] = round(time.time() - started, 2)
         started = time.time()
 
-    index = context["index"]
+    number = context["number"]
     model, fit_model = context["model"], context["fit_model"]
     profile, grid = context["profile"], context["grid"]
-    extracted = observation.order(index)
+    extracted = observation.order(number)
     level = continuum_level(extracted, ORDER["continuum_percentile"])
     order = igrins_spectral_order(
         extracted, source_flux_model_grid=context["source"],
@@ -303,8 +305,26 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         mask_hydrogen_kms=ORDER["mask_hydrogen_kms"] if args.stellar == "flat" else None)
     if int(np.count_nonzero(order.mask)) < ORDER["minimum_pixels"]:
         raise RuntimeError(
-            f"order {index} keeps {int(np.count_nonzero(order.mask))} pixels, "
+            f"order {number} keeps {int(np.count_nonzero(order.mask))} pixels, "
             f"below the {ORDER['minimum_pixels']} this driver requires")
+    blaze = None
+    if getattr(args, "flat_blaze", None) is not None:
+        # The lamp's blaze, by detector column. Dividing it out leaves the
+        # continuum only the lamp-to-star colour -- the steep order-end
+        # roll-off a degree-9 polynomial cannot follow is most of what the
+        # response pattern was absorbing (tellurix.flat).
+        blaze = args.flat_blaze.blaze_on(number, extracted.pixel)
+        if blaze is None:
+            raise RuntimeError(f"order {number} has no usable blaze in {args.blaze} "
+                               "(not traced, or the lamp's own absorption is too deep)")
+        usable_blaze = np.isfinite(blaze) & (blaze > 0.02)
+        blaze = np.where(usable_blaze, blaze, 1.0)
+        order = SpectralOrder(
+            order.wavelength_vacuum_nm, np.asarray(order.flux) / blaze,
+            np.asarray(order.uncertainty) / blaze,
+            mask=np.asarray(order.mask) & usable_blaze,
+            zenith_angle_deg=order.zenith_angle_deg,
+            source_flux_model_grid=order.source_flux_model_grid)
     if response is not None:
         scale = 1.0 + np.clip(np.asarray(response, dtype=float), -0.8, 5.0)
         order = SpectralOrder(
@@ -393,7 +413,7 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         # say -- is a legitimate outcome, but it has nothing to report. Skipping
         # it keeps a NaN row out of the record.
         raise RuntimeError(
-            f"order {index} leaves {int(reliable.sum())} pixels above a transmission of "
+            f"order {number} leaves {int(reliable.sum())} pixels above a transmission of "
             f"{args.min_transmission}; nothing to measure")
     corrected = (observed / np.maximum(np.abs(model_flux), 1e-6)) * star
 
@@ -448,13 +468,15 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
             arrays["plp_continuum"] = np.asarray(extracted.plp_continuum)[axis]
         if response is not None:
             arrays["response_pattern"] = np.asarray(response)[axis]
+        if blaze is not None:
+            arrays["blaze"] = np.asarray(blaze)[axis]
         np.savez_compressed(args.output_dir / f"{stem}_{extracted.name}.npz", **arrays)
 
     names = list(objective.codec.names)
     deviation = (np.sqrt(np.clip(np.diag(result.covariance), 0.0, None))
                  if result.covariance is not None else np.zeros(len(names)))
     row = {
-        "order": index,
+        "order": number,
         "band": extracted.band,
         "name": extracted.name,
         "v1": context["v1"], "v2": context["v2"],
@@ -482,6 +504,13 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         "pixel_sigma": pixel_sigma,
         "residual_rms": residual_rms,
         "residual_rms_over_noise": residual_rms / pixel_sigma,
+        # Per pixel, residual over its own uncertainty. residual_rms_over_noise
+        # divides by the *median* uncertainty, so it moves when anything
+        # reweights the order -- dividing out a blaze raised it 8% in K on
+        # DCT 2018 while this fell 10%. Compare runs with different continuum
+        # models by this one.
+        "residual_z_rms": (float(np.sqrt(np.mean((residual[reliable] / sigma[reliable]) ** 2)))
+                           if reliable.any() else float("nan")),
         "median_transmission": float(np.median(transmission[mask])),
         "all_stages_converged": all(s["success"] for s in stages),
         "mt_ckd_version": context["mt_ckd_version"],
@@ -512,6 +541,7 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         "log_jitter": row["log_jitter"], "pixel_sigma": pixel_sigma,
         "residual_rms": residual_rms,
         "residual_rms_over_noise": row["residual_rms_over_noise"],
+        "residual_z_rms": row["residual_z_rms"],
         "reduced_chi2": 0.0, "median_transmission": row["median_transmission"],
         "continuum_level": row["continuum_level_counts"], "continuum_level_pixels": 0,
         "condition_number": row["condition_number"] or 0.0,
@@ -522,7 +552,8 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         "sigma": deviation, "correlation": correlation,
         "ils_velocity_kms": ils_velocity, "ils_profile": ils_profile,
         # Columns the atlas had no use for.
-        "band": extracted.band, "order_index": index,
+        "band": extracted.band, "order_number": number,
+        "order_source": observation.order_source,
         "airmass": row["airmass"], "zenith_angle_deg": row["zenith_angle_deg"],
         "mjd": observation.mjd, "telescope": observation.telescope,
         "object": observation.object_name, "date_obs": observation.date_obs,
@@ -590,7 +621,8 @@ def main() -> None:
                         help="one or more PLP .spec.fits files; giving a whole night at once "
                              "shares the grid, the opacity and the compilations across frames")
     parser.add_argument("--orders", default=None,
-                        help="comma-separated order indices; default every order")
+                        help="comma-separated physical echelle orders (H 98-125, K 71-96), "
+                             "as the WAT header names them; default every order present")
     parser.add_argument("--profile", type=Path, default=Path("data/profiles/gemini_south_2018.csv"))
     parser.add_argument("--stellar", default="flat",
                         help="'flat' for a featureless source with the hydrogen series masked, "
@@ -637,6 +669,14 @@ def main() -> None:
                              "0 disables the guard and invalidates the residual as a test.")
     parser.add_argument("--fixed-pattern-min-frames", type=int, default=5,
                         help="below this many frames the pattern is too noisy to be a calibration")
+    parser.add_argument("--blaze", type=Path, default=None,
+                        help="a FlatBlaze (build_igrins_flat_blaze.py) to divide out before "
+                             "fitting, so the continuum only models the lamp-to-star colour; "
+                             "pair it with a low --continuum-degree")
+    parser.add_argument("--response-pattern", type=Path, default=None,
+                        help="a MasterPattern (build_igrins_master_pattern.py) to divide out "
+                             "instead of the night's own leave-one-out pattern -- for a night "
+                             "with fewer than --fixed-pattern-min-frames standards")
     parser.add_argument("--no-covariance", action="store_true",
                         help="skip the formal errors, and with them the 8.2 s Hessian compile")
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"),
@@ -662,16 +702,30 @@ def main() -> None:
                               read_igrins_observation)
 
     observations = [read_igrins_observation(path) for path in args.spec]
+    args.flat_blaze = None
+    if args.blaze is not None:
+        from tellurix import FlatBlaze
+
+        args.flat_blaze = FlatBlaze.load(args.blaze)
+        if {o.band for o in observations} != {args.flat_blaze.band}:
+            raise SystemExit(f"{args.blaze} is a {args.flat_blaze.band} blaze")
+    master = None
+    if args.response_pattern is not None:
+        from tellurix import MasterPattern
+
+        master = MasterPattern.load(args.response_pattern)
+        if {o.band for o in observations} != {master.band}:
+            raise SystemExit(f"{args.response_pattern} is a {master.band} pattern")
     profile = load_atmosphere_csv(root / args.profile)
     stellar = None if args.stellar == "flat" else StellarSpectrum.from_npz(args.stellar)
 
-    counts = {o.orders for o in observations}
-    if len(counts) != 1:
-        raise SystemExit(f"these frames disagree about how many orders they have: {counts}")
-    indices = (list(range(counts.pop())) if args.orders is None
+    # Physical echelle orders, never row positions: the number of orders a
+    # band ships differs between reductions, so row N of one frame need not be
+    # row N of the next. An order a frame lacks is skipped for that frame.
+    numbers = (sorted(set().union(*(o.orders for o in observations))) if args.orders is None
                else [int(value) for value in args.orders.split(",")])
 
-    print(f"{len(observations)} frame(s), {len(indices)} orders, "
+    print(f"{len(observations)} frame(s), orders {numbers[0]}-{numbers[-1]} ({len(numbers)}), "
           f"source {'flat' if stellar is None else args.stellar}")
     for observation in observations:
         print(f"  {observation.path.name.split('.')[0]:22s} {observation.object_name[:16]:16s} "
@@ -684,28 +738,28 @@ def main() -> None:
     started = time.time()
     setup_total = 0.0
 
-    for index in indices:
+    for number in numbers:
         context, objective = None, None
         first_pass = []
         for observation in observations:
             if context is None:
                 try:
-                    context = build_order_context(observation, index, args, root, profile, stellar)
+                    context = build_order_context(observation, number, args, root, profile, stellar)
                     setup_total += context["setup_seconds"]
                 except (RuntimeError, ValueError) as exc:
                     # The window belongs to the order, so a failure here is
                     # usually shared; try the next frame anyway, because a bad
                     # extraction in one frame is not a property of the order.
-                    failures[id(observation)].append({"order": index, "error": str(exc)})
-                    print(f"  order {index:2d}  {observation.path.name[5:18]}  skipped: {exc}")
+                    failures[id(observation)].append({"order": number, "error": str(exc)})
+                    print(f"  order {number:3d}  {observation.path.name[5:18]}  skipped: {exc}")
                     continue
             began = time.time()
             try:
                 row, objective = fit_one(context, observation, args, objective,
                                          write_arrays=not args.fixed_pattern)
             except (RuntimeError, ValueError) as exc:
-                failures[id(observation)].append({"order": index, "error": str(exc)})
-                print(f"  order {index:2d}  {observation.path.name[5:18]}  skipped: {exc}")
+                failures[id(observation)].append({"order": number, "error": str(exc)})
+                print(f"  order {number:3d}  {observation.path.name[5:18]}  skipped: {exc}")
                 continue
             row["seconds"] = round(time.time() - began, 1)
             first_pass.append((observation, row))
@@ -715,10 +769,19 @@ def main() -> None:
         # one pass cannot see it, because a single frame cannot tell a
         # repeatable response error from its own noise.
         corrected = None
-        if args.fixed_pattern and len(first_pass) >= args.fixed_pattern_min_frames:
-            patterns = leave_one_out_patterns(
-                [r["_fractional_residual"] for _, r in first_pass],
-                smooth_pixels=args.pattern_smooth_pixels)
+        use_master = master is not None and first_pass
+        if use_master or (args.fixed_pattern
+                          and len(first_pass) >= args.fixed_pattern_min_frames):
+            if use_master:
+                # A night too thin to measure its own response borrows the
+                # instrument's, measured on other nights. No leave-one-out is
+                # needed: none of these frames went into it.
+                patterns = [master.pattern_on(number, observation.order(number).wavelength_vacuum_nm)
+                            for observation, _ in first_pass]
+            else:
+                patterns = leave_one_out_patterns(
+                    [r["_fractional_residual"] for _, r in first_pass],
+                    smooth_pixels=args.pattern_smooth_pixels)
             corrected = []
             for (observation, previous), pattern in zip(first_pass, patterns):
                 began = time.time()
@@ -726,14 +789,14 @@ def main() -> None:
                     row, objective = fit_one(context, observation, args, objective,
                                              response=pattern)
                 except (RuntimeError, ValueError) as exc:
-                    failures[id(observation)].append({"order": index, "error": str(exc)})
+                    failures[id(observation)].append({"order": number, "error": str(exc)})
                     continue
                 row["seconds"] = round(previous["seconds"] + time.time() - began, 1)
                 row["residual_rms_over_noise_uncorrected"] = previous["residual_rms_over_noise"]
                 row["_record"]["response_pattern_rms"] = row["response_pattern_rms"]
                 corrected.append((observation, row))
         elif args.fixed_pattern:
-            print(f"  order {index:2d}  fewer than {args.fixed_pattern_min_frames} frames; "
+            print(f"  order {number:3d}  fewer than {args.fixed_pattern_min_frames} frames; "
                   "no fixed-pattern correction")
 
         for observation, row in (corrected if corrected is not None else first_pass):
@@ -741,7 +804,7 @@ def main() -> None:
             tag = "reused" if row["reused_compilation"] else "built "
             was = (f"  was {row['residual_rms_over_noise_uncorrected']:5.2f}"
                    if "residual_rms_over_noise_uncorrected" in row else "")
-            print(f"  order {index:2d}  {observation.path.name[5:18]}  "
+            print(f"  order {number:3d}  {observation.path.name[5:18]}  "
                   f"T={row['median_transmission']:.3f}  rms/sig={row['residual_rms_over_noise']:6.2f}  "
                   f"R={row['resolving_power_fitted']:6.0f}  v={row['velocity_kms']:+5.2f}  "
                   f"{tag} {row['seconds']:5.1f}s{was}")
@@ -758,6 +821,8 @@ def main() -> None:
                 "telescope": observation.telescope, "date_obs": observation.date_obs,
                 "mjd": observation.mjd, "exposure_time_s": observation.exposure_time_s,
                 "zenith_angle_deg": observation.zenith_angle_deg,
+                "orders": list(observation.orders), "order_source": observation.order_source,
+                "zenith_source": observation.zenith_source,
                 "sha256": dict(observation.sha256), "surface": dict(observation.surface),
             },
             "settings": {
@@ -774,6 +839,8 @@ def main() -> None:
                 "covariance": not args.no_covariance,
                 "fixed_pattern": args.fixed_pattern,
                 "fixed_pattern_min_frames": args.fixed_pattern_min_frames,
+                "response_pattern": None if master is None else str(args.response_pattern),
+                "blaze": None if args.blaze is None else str(args.blaze),
                 "pattern_smooth_pixels": args.pattern_smooth_pixels,
                 "frames_in_run": len(observations),
             },
@@ -828,6 +895,7 @@ def main() -> None:
                     "min_optical_depth": args.min_optical_depth,
                     "min_transmission": args.min_transmission,
                     "vsini_kms": args.vsini_kms, "stellar": args.stellar,
+                    "blaze": "" if args.blaze is None else str(args.blaze),
                     **ORDER},
             physics={**PHYSICS, "stages": list(stages_for(args.stellar))},
             inputs=inputs,
@@ -839,7 +907,8 @@ def main() -> None:
             # exposure. Shards of one band write separate records that
             # merge_records combines.
             key_fields=("frame", "order"),
-            extra_columns=(("band", "S256"), ("order_index", "i4"),
+            extra_columns=(("band", "S256"), ("order_number", "i4"),
+                           ("order_source", "S64"),
                            ("airmass", "f8"), ("zenith_angle_deg", "f8"),
                            ("mjd", "f8"), ("telescope", "S256"), ("object", "S256"),
                            ("date_obs", "S256"),
@@ -847,6 +916,7 @@ def main() -> None:
                            ("surface_pressure_hpa", "f8"),
                            ("surface_humidity_percent", "f8"),
                            ("response_pattern_rms", "f8"),
+                           ("residual_z_rms", "f8"),
                            ("reused_compilation", "?")),
         )
         print(f"wrote {record_path} ({record_path.stat().st_size / 1e6:.2f} MB)")

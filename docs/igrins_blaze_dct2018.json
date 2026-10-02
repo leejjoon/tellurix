@@ -1,0 +1,260 @@
+{
+ "H": {
+  "band": "H",
+  "orders": [
+   99,
+   100,
+   101,
+   102,
+   103,
+   104,
+   105,
+   106,
+   107,
+   108,
+   109,
+   110,
+   111,
+   112,
+   113,
+   114,
+   115,
+   116,
+   117,
+   118
+  ],
+  "runs": {
+   "degree 9 (committed)": {
+    "record": "data/corrected/igrins/ladder_a0v",
+    "cache": "/home/jjlee/work/lblrtm/data/corrected/igrins/ladder_a0v",
+    "order_frames": 200,
+    "median_pixel_z_rms": 1.4324816563816256,
+    "median_pixel_z_rms_interior": 1.0722239815887982,
+    "median_residual_with_pattern": 1.2479153198429553,
+    "median_residual_without_pattern": 1.9144776026273918,
+    "median_red_edge_rms": 3.0533904317244076,
+    "median_pattern_rms": 0.011625385177180494,
+    "interior_scaled_rms": {
+     "1": 1.0722239815887982,
+     "4": 1.4514484628973507,
+     "16": 1.817055714535734,
+     "64": 1.9535181666091135,
+     "256": 1.3114980095363076
+    },
+    "red_end_scaled_rms": {
+     "1": 2.387687863430679,
+     "4": 4.253087220443434,
+     "16": 7.094703214165996,
+     "64": 4.81839240594591,
+     "256": NaN
+    },
+    "brackett_stellar_velocity_spread_kms": 27.983254857309497,
+    "brackett_stellar_velocity_railed": 0.34444444444444444
+   },
+   "blaze + degree 9": {
+    "record": "data/corrected/igrins/blaze9_dct2018_h",
+    "cache": "data/corrected/igrins/blaze9_dct2018_h",
+    "order_frames": 200,
+    "median_pixel_z_rms": 1.226897183335923,
+    "median_pixel_z_rms_interior": 1.182512015232076,
+    "median_residual_with_pattern": 1.2996525555431948,
+    "median_residual_without_pattern": 1.5123912668688884,
+    "median_red_edge_rms": 1.5164235828160688,
+    "median_pattern_rms": 0.003879771474652862,
+    "interior_scaled_rms": {
+     "1": 1.182512015232076,
+     "4": 1.790034853117552,
+     "16": 2.27572436071412,
+     "64": 1.9184341868764103,
+     "256": 1.1520865614224394
+    },
+    "red_end_scaled_rms": {
+     "1": 1.4574599228071885,
+     "4": 2.266594482035848,
+     "16": 2.792820644419516,
+     "64": 1.8883682817999918,
+     "256": NaN
+    },
+    "brackett_stellar_velocity_spread_kms": 16.13774522457066,
+    "brackett_stellar_velocity_railed": 0.28888888888888886
+   },
+   "blaze + degree 5": {
+    "record": "data/corrected/igrins/blaze5_dct2018_h",
+    "cache": "data/corrected/igrins/blaze5_dct2018_h",
+    "order_frames": 200,
+    "median_pixel_z_rms": 1.2756294549566185,
+    "median_pixel_z_rms_interior": 1.2061715721520023,
+    "median_residual_with_pattern": 1.3554315280116076,
+    "median_residual_without_pattern": 1.9352059428531407,
+    "median_red_edge_rms": 1.7470318418761044,
+    "median_pattern_rms": 0.007854875052941373,
+    "interior_scaled_rms": {
+     "1": 1.2061715721520023,
+     "4": 1.8044912766068304,
+     "16": 2.3928717316719643,
+     "64": 2.2904729272113666,
+     "256": 2.1053356320331877
+    },
+    "red_end_scaled_rms": {
+     "1": 1.5411714822157574,
+     "4": 2.5652352955990887,
+     "16": 3.724962326842296,
+     "64": 2.6700508943110073,
+     "256": NaN
+    },
+    "brackett_stellar_velocity_spread_kms": 26.36339069445692,
+    "brackett_stellar_velocity_railed": 0.28888888888888886
+   },
+   "blended blaze + degree 9": {
+    "record": "data/corrected/igrins/blazeB9_dct2018_h",
+    "cache": "data/corrected/igrins/blazeB9_dct2018_h",
+    "order_frames": 200,
+    "median_pixel_z_rms": 1.1487027776052836,
+    "median_pixel_z_rms_interior": 1.0709500650484611,
+    "median_residual_with_pattern": 1.235205323400205,
+    "median_residual_without_pattern": 1.418735797515232,
+    "median_red_edge_rms": 1.506287042693804,
+    "median_pattern_rms": 0.003675547042635364,
+    "interior_scaled_rms": {
+     "1": 1.0709500650484611,
+     "4": 1.4493207128510937,
+     "16": 1.7765203789402166,
+     "64": 1.7693976905939273,
+     "256": 1.015098396324398
+    },
+    "red_end_scaled_rms": {
+     "1": 1.431021105769609,
+     "4": 2.1618354039311183,
+     "16": 2.7766714946202753,
+     "64": 2.097882753836186,
+     "256": NaN
+    },
+    "brackett_stellar_velocity_spread_kms": 21.870258252381667,
+    "brackett_stellar_velocity_railed": 0.24444444444444444
+   }
+  }
+ },
+ "K": {
+  "band": "K",
+  "orders": [
+   74,
+   75,
+   76,
+   77,
+   78,
+   79,
+   80,
+   81,
+   82,
+   83,
+   84,
+   85,
+   86,
+   87,
+   88,
+   90
+  ],
+  "runs": {
+   "degree 9 (committed)": {
+    "record": "data/corrected/igrins/ladder_k_a0v",
+    "cache": "data/corrected/igrins/ladder_k_a0v",
+    "order_frames": 160,
+    "median_pixel_z_rms": 1.5764791856439875,
+    "median_pixel_z_rms_interior": 1.2572001190069897,
+    "median_residual_with_pattern": 1.3181988734053682,
+    "median_residual_without_pattern": 1.9502432716991014,
+    "median_red_edge_rms": 2.53463068117968,
+    "median_pattern_rms": 0.013164231458354356,
+    "interior_scaled_rms": {
+     "1": 1.2572001190069897,
+     "4": 1.7728450296911942,
+     "16": 1.7060528652209248,
+     "64": 1.6973007442049917,
+     "256": 1.4291598693816525
+    },
+    "red_end_scaled_rms": {
+     "1": 2.0003963294289857,
+     "4": 3.4941891946570527,
+     "16": 5.672533512554459,
+     "64": 3.4741758367059976,
+     "256": NaN
+    }
+   },
+   "blaze + degree 9": {
+    "record": "data/corrected/igrins/blaze9_dct2018_k",
+    "cache": "data/corrected/igrins/blaze9_dct2018_k",
+    "order_frames": 160,
+    "median_pixel_z_rms": 1.4283307936178256,
+    "median_pixel_z_rms_interior": 1.3157661629602169,
+    "median_residual_with_pattern": 1.438283588372852,
+    "median_residual_without_pattern": 1.5374878653171402,
+    "median_red_edge_rms": 1.5143057855547455,
+    "median_pattern_rms": 0.004047839453210774,
+    "interior_scaled_rms": {
+     "1": 1.3157661629602169,
+     "4": 1.865882124463654,
+     "16": 1.8561593578655482,
+     "64": 1.6551085911931098,
+     "256": 1.3188695671142368
+    },
+    "red_end_scaled_rms": {
+     "1": 1.47609206611854,
+     "4": 2.211578229865261,
+     "16": 2.1764790713241915,
+     "64": 1.5701860968810737,
+     "256": NaN
+    }
+   },
+   "blaze + degree 5": {
+    "record": "data/corrected/igrins/blaze5_dct2018_k",
+    "cache": "data/corrected/igrins/blaze5_dct2018_k",
+    "order_frames": 160,
+    "median_pixel_z_rms": 1.4502281604649703,
+    "median_pixel_z_rms_interior": 1.3346479006582204,
+    "median_residual_with_pattern": 1.5084405198122077,
+    "median_residual_without_pattern": 1.6626918420070136,
+    "median_red_edge_rms": 1.6318613934979933,
+    "median_pattern_rms": 0.005739261636944128,
+    "interior_scaled_rms": {
+     "1": 1.3346479006582204,
+     "4": 1.8980883822161576,
+     "16": 1.9339332417238295,
+     "64": 1.982958714458365,
+     "256": 2.1885343662816155
+    },
+    "red_end_scaled_rms": {
+     "1": 1.5281866552903334,
+     "4": 2.3467607644381414,
+     "16": 2.5189804800448323,
+     "64": 1.9327819920787925,
+     "256": NaN
+    }
+   },
+   "blended blaze + degree 9": {
+    "record": "data/corrected/igrins/blazeB9_dct2018_k",
+    "cache": "data/corrected/igrins/blazeB9_dct2018_k",
+    "order_frames": 160,
+    "median_pixel_z_rms": 1.4115681552604404,
+    "median_pixel_z_rms_interior": 1.3162214428560344,
+    "median_residual_with_pattern": 1.4236304764356782,
+    "median_residual_without_pattern": 1.5342195232494726,
+    "median_red_edge_rms": 1.5101559239663516,
+    "median_pattern_rms": 0.003969289232868486,
+    "interior_scaled_rms": {
+     "1": 1.3162214428560344,
+     "4": 1.8284984528138557,
+     "16": 1.6909947690915956,
+     "64": 1.6465500797647994,
+     "256": 1.2966898447481923
+    },
+    "red_end_scaled_rms": {
+     "1": 1.4766653195619226,
+     "4": 2.202897266536425,
+     "16": 2.232000473188847,
+     "64": 1.6138843711316133,
+     "256": NaN
+    }
+   }
+  }
+ }
+}
