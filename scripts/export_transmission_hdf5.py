@@ -177,6 +177,12 @@ def main() -> None:
         continuum = None if physics["accuracy_mode"] == "fast" else MTCKDWaterContinuum.from_netcdf(
             verified("mt_ckd", Path(inputs.get("mt_ckd")
                      or root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc")), grid)
+        if physics.get("o2_cia"):
+            from tellurix import ContinuumSum, O2CollisionInducedContinuum
+
+            o2 = O2CollisionInducedContinuum(grid)
+            if o2.terms:
+                continuum = o2 if continuum is None else ContinuumSum((continuum, o2))
         model = TelluricModel(profile, grid, opacity, continuum=continuum,
                               accuracy_mode=physics["accuracy_mode"],
                               max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),

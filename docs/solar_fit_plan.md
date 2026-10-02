@@ -1184,14 +1184,11 @@ lower at dawn. Computed from the timestamps that predicts O2 scales of 0.961 (`_
   cleanly are few and scatter 0.94-1.49.
 - **The slant path scales correctly between the files**: on the A-band `_2`/`_3` =
   0.982 against a predicted 0.975.
-- **The excess is band-dependent, so it is spectroscopy, not geometry.** An air-mass or
-  pressure error scales every O2 band alike; here the B-band stands 4% above the A-band
-  in both files. B-band line intensities or line mixing in the line list or the line
-  shape is the candidate. Not tested.
-- **It qualifies §4k's air mass.** niratl's 1.10 was read off the same A-band. If that
-  band needs 2-4% more column than it should, niratl's true air mass is nearer
-  1.06-1.08 -- closer to the crude 1.06-1.10 and the README's "1.0". Recorded as a
-  caveat, not refitted on.
+- **The excess is band-dependent.** The B-band stands 4% above the A-band in both
+  files. §4n traces it: the A-band is O2 collision-induced absorption tellurix does not
+  model, and the B-band is not explained by any model physics.
+- **It qualifies §4k's air mass**, by 1.6% rather than the 2-4% first guessed: niratl is
+  at air mass ~1.08, not 1.10 (§4n).
 
 Products: the records `solar/ftsspec_830626_{2,3}.h5` with their summaries, and
 `ftsspec_830626_{2,3}_transmission.h5`.
@@ -1231,6 +1228,73 @@ has an upper-bound window.
 
 What it does not catch: a column far too high but short of the bound -- the edge
 window at 5.9x. That is stated rather than thresholded.
+
+### 4n. The O2 excess, against LBLRTM: the line physics agree, and the excess stays
+
+`scripts/compare_o2_lblrtm.py` puts tellurix and LBLRTM 12.17 on the same AER v3.9 O2
+lines and the same O2-only June 1983 profile, and reports the O2 column scale tellurix
+needs to reproduce LBLRTM's equivalent width (`docs/o2_lblrtm_comparison.json`; LNFL
+line files with and without AER's line coupling, recipe in the script's docstring):
+
+| | A-band | B-band |
+|---|---|---|
+| lines only, vertical | 0.982 | 0.974 |
+| lines only, air mass 1.10 | 0.981 | 0.977 |
+| lines only, zenith angle of air mass 5.37 | 0.949 | 0.971 |
+| what the fit of `_2` returned | 1.018 | 1.058 |
+| what the fit of `_3` returned | 1.037 | 1.064 |
+
+- **The line physics agree to 2-3%,** at vertical and at air mass 1.10. The 0.949 at
+  5.37 is not a tellurix error: LBLRTM was given the same zenith *angle*, and its
+  curved, refracted path at that angle holds ~3% less air than an air mass of 5.37 --
+  while the data's air mass is the header's Kasten & Young value, which already
+  includes curvature, so tellurix's 1/cos z at that air mass is the right path.
+- **Line coupling is worth nothing here**: coupled and uncoupled agree to 0.01%.
+- **The excess is real and band-dependent**: against the ~0.98 the line physics
+  predict, the fits ask for about 5% more A-band and 9% more B-band absorption. Not
+  explained. Candidates, untested: AER's intensities in both bands (the B more), and
+  the header air masses themselves, which would move both bands alike.
+- **O2's collision-induced continuum does not explain any of it** -- §4o measured that
+  directly. A first version of this section said it explained the A-band, from
+  LBLRTM's equivalent widths with and without its continua (1.016 against the fitted
+  1.018); that assumed the continuum's absorption would surface as O2 column, and a fit
+  with the continuum shows it does not.
+- **niratl's air mass is 1.05-1.12, not pinned.** Its 1.10 came from the A-band at
+  zenith 0; correcting for the line physics alone gives ~1.12, and if the A-band excess
+  above is in the line intensities it is nearer 1.05.
+
+### 4o. O2's collision-induced continuum, ported from LBLRTM
+
+`tellurix.o2_cia.O2CollisionInducedContinuum` carries the four terms LBLRTM 12.17's
+`contnm.f90` applies in the fitted range: 1.27 um (Mate et al. 1999, 7536-8500 cm-1),
+1.06 um (Mlawer et al. 1998, analytic, 9100-11000), the A-band (Mlawer, from solar FTS,
+12961.5-13221.5) and the visible O2-O2 bands (Greenblatt et al. 1990, 15140-29870); the
+1340-1850 cm-1 fundamental is outside every fitted range but photatl's last 2 cm-1 and
+is not carried. Tables extracted by `scripts/extract_o2_cia.py` into
+`_o2_cia_tables.py` with AER's notice; each term's formula, layer quantities, radiation
+term and XINT interpolation as LBLRTM applies them. `ContinuumSum` puts it beside
+MT_CKD; the fitted O2 scale reaches it through the scaled VMR, so the O2-O2 terms go as
+its square and the A-band term linearly (tests/test_o2_cia.py).
+
+**Validated against LBLRTM to 0.13%** (`scripts/validate_o2_cia.py`,
+`docs/o2_cia_validation.json`): vertical optical depth from LBLRTM's continua-on minus
+continua-off runs on an O2-only profile, against tellurix's, integrated ratio 1.0013 in
+all five windows (1.27 um, 1.06 um, A-band, 630 and 577 nm), worst point 0.54% of the
+peak. The uniform 0.13% is the two codes' layer averaging. LBLRTM's single-precision
+transmission underflows in the A-band's saturated cores, where a difference of depths
+means nothing, so those pixels (T < 1e-8) are excluded.
+
+**What it changes is the corrected spectrum, not the fit.** Refitting the O2 windows of
+both 1983 files and niratl's A-band pages with it: every O2 column moves by <0.4% and
+every residual by <0.4%. The term is smooth enough across a 30 cm-1 window that the
+fitted Chebyshev continuum had been absorbing it -- which means the corrected spectrum
+had been keeping it: the fitted continuum rises by exactly 1/T of the O2 continuum, and
+so does the corrected spectrum, by 1.1-6.7% at air mass 5.37 in the A-band and 5.6% at
+1.07 um. With the term, that dimming is divided out with the atmosphere.
+
+`--o2-cia` turns it on in the batch driver; it is off by default so a rerun reproduces
+the records written before it, and each record states which (`physics.o2_cia`; a record
+without the key had none). `export_transmission_hdf5.py` rebuilds accordingly.
 
 ## One decision left before writing code
 

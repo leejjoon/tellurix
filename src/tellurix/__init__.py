@@ -35,6 +35,7 @@ from .ils import (
     interferogram_envelope,
     measure_mopd,
 )
+from .o2_cia import ContinuumSum, O2CollisionInducedContinuum
 from .nso import (
     FTSSpectrum,
     PhotatlPage,
@@ -179,6 +180,8 @@ __all__ = [
     "read_igrins_observation",
     "read_photatl_page",
     "read_solar_spectrum",
+    "ContinuumSum",
+    "O2CollisionInducedContinuum",
     "photatl_as_fts_spectrum",
     "read_niratl_page",
     "niratl_as_fts_spectrum",

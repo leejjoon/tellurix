@@ -205,7 +205,8 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
     return entries
 
 
-def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd") -> dict:
+def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
+                   o2_cia: bool = False) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     Both drivers' hashes, because this one delegates the fit to the other and a
@@ -225,6 +226,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd") -
         # window on the wrong grid (export_transmission_hdf5 reads this).
         "fwhm_cm1": float(fwhm_cm1),
         "accuracy_mode": accuracy_mode,
+        # A record without the key predates the option and had no O2 continuum.
+        "o2_cia": bool(o2_cia),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "fitter": fitter.name,
@@ -281,6 +284,7 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=[],
         zenith_angle_deg=args.zenith_angle_deg,
         accuracy_mode=args.accuracy_mode, correction=None, gaussian_ils=False,
+        o2_cia=args.o2_cia,
         vectorize_layers=True, mixed_precision=True,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
         layer_chunk_size=args.layer_chunk_size,
@@ -452,6 +456,10 @@ def main() -> None:
                         help="optical depth discarded by dropping weak lines; two orders "
                              "below --scan-threshold so it cannot move a species across it")
     parser.add_argument("--scan-samples-per-resolution", type=float, default=2.0)
+    parser.add_argument("--o2-cia", action=argparse.BooleanOptionalAction, default=False,
+                        help="add LBLRTM's O2 collision-induced continua (1.27 um, 1.06 um, "
+                             "A-band, visible; tellurix.o2_cia). Off by default so a rerun "
+                             "reproduces the records written before it existed.")
     parser.add_argument("--accuracy-mode", choices=("mt_ckd", "fast"), default="mt_ckd",
                         help="'fast' drops the water continuum: only for windows past the end "
                              "of the MT_CKD table at 20000 cm-1, and as its own run with its "
@@ -565,7 +573,7 @@ def main() -> None:
             {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
              "spectrum": str(args.spectrum), "spectrum_sha256": spectrum.sha256,
              "profile": str(args.profile),
-             "physics": physics_record(root, args.fwhm_cm1, args.accuracy_mode),
+             "physics": physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia),
              "settings": {"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,
@@ -607,7 +615,7 @@ def main() -> None:
         write_record(
             args.record,
             run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                 **{k: v for k, v in physics_record(root, args.fwhm_cm1, args.accuracy_mode).items()
+                 **{k: v for k, v in physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia).items()
                     if k in ("driver", "driver_sha256", "fitter", "fitter_sha256", "tellurix")}},
             config={"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                     "samples_per_resolution": args.samples_per_resolution,
@@ -617,7 +625,7 @@ def main() -> None:
                     "scan_threshold": args.scan_threshold, "scan_fwhm_cm1": args.scan_fwhm_cm1,
                     "species_threshold": args.species_threshold,
                     "scan_line_budget": args.scan_line_budget, "airmass": airmass},
-            physics=physics_record(root, args.fwhm_cm1, args.accuracy_mode),
+            physics=physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia),
             inputs=input_hashes(root, args, spectrum, species),
             parameter_names=codec.names, species=species, pages=rows,
             continuum_degree=args.continuum_degree,

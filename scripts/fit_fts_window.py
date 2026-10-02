@@ -63,6 +63,8 @@ from tellurix import (
     prepare_stellar_source,
     read_solar_spectrum,
     resample_stellar_continuum,
+    ContinuumSum,
+    O2CollisionInducedContinuum,
     trim_wavenumber_grid,
     zenith_angle_deg_for_airmass,
 )
@@ -291,6 +293,12 @@ def prepare_window(args, root: Path, *, spectrum=None):
         correction = None
         continuum = MTCKDWaterContinuum.from_netcdf(
             root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc", grid)
+    if getattr(args, "o2_cia", False):
+        # LBLRTM's O2 collision-induced bands (tellurix.o2_cia). Without them the
+        # A-band's O2 column absorbs a structured continuum it cannot represent.
+        o2 = O2CollisionInducedContinuum(grid)
+        if o2.terms:
+            continuum = o2 if continuum is None else ContinuumSum((continuum, o2))
 
     mopd_cm = None if args.gaussian_ils else 1.20671 / (2.0 * args.fwhm_cm1)
     instrument = None if args.gaussian_ils else BoxcarFTSInstrumentProfile(

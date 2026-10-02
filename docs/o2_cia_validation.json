@@ -1,0 +1,42 @@
+{
+ "about": "tellurix's O2 collision-induced continuum against LBLRTM 12.17's, band by band.",
+ "profile": "kitt_peak_19830626_file3.csv, O2 only",
+ "path": "vertical",
+ "windows": {
+  "O2INF1 1.27um": {
+   "pixels_compared": 1501,
+   "lblrtm_peak_tau": 0.04287209023741869,
+   "tellurix_peak_tau": 0.042930642496969006,
+   "integrated_ratio": 1.001295946903304,
+   "max_abs_difference_over_peak": 0.001997122461345576
+  },
+  "O2INF2 1.06um": {
+   "pixels_compared": 1501,
+   "lblrtm_peak_tau": 0.011131239740751675,
+   "tellurix_peak_tau": 0.011146094715888507,
+   "integrated_ratio": 1.0013371268938769,
+   "max_abs_difference_over_peak": 0.001404017398907653
+  },
+  "O2INF3 A-band": {
+   "pixels_compared": 1436,
+   "lblrtm_peak_tau": 0.021956667471108693,
+   "tellurix_peak_tau": 0.02198534892133394,
+   "integrated_ratio": 1.0012735516342488,
+   "max_abs_difference_over_peak": 0.005417647628339635
+  },
+  "O2_VIS 630nm": {
+   "pixels_compared": 1501,
+   "lblrtm_peak_tau": 0.0058328085256162555,
+   "tellurix_peak_tau": 0.005840477551247933,
+   "integrated_ratio": 1.00133838940419,
+   "max_abs_difference_over_peak": 0.0013940000215991954
+  },
+  "O2_VIS 577nm": {
+   "pixels_compared": 1501,
+   "lblrtm_peak_tau": 0.008917795554660424,
+   "tellurix_peak_tau": 0.008929655760172458,
+   "integrated_ratio": 1.0013373443488534,
+   "max_abs_difference_over_peak": 0.0013709099216197178
+  }
+ }
+}

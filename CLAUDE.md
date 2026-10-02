@@ -107,9 +107,13 @@ file 5's; in flux units the fit is as good. The 1983 raw pair
 `ftsspec_830626_{2,3}` (8516-20735 cm-1, to 482 nm) is fitted too (§4l). Header air
 masses are **Kasten & Young 1989** at the Sun's position -- recomputing them from the
 UT times reproduces every header to 0.02 -- which is how `_3`, whose header prints
-`?.??`, gets 3.53 -> 2.64 (pass `--airmass 3.085`). Its O2 columns show a
-**band-dependent** excess (B-band 4% above A-band in both files), so the O2 line
-data, not the geometry, is off, and niratl's A-band air mass of 1.10 may be 2-4% high.
+`?.??`, gets 3.53 -> 2.64 (pass `--airmass 3.085`). Its O2 columns show an excess that LBLRTM on the same lines does not explain
+(§4n): the line physics agree to 2-3%, and the fits still ask for ~5% more A-band and
+~9% more B-band absorption -- so niratl's A-band air mass of 1.10 is uncertain, 1.05-1.12.
+**O2's collision-induced continuum is ported from LBLRTM** (`tellurix.o2_cia`,
+`--o2-cia`, validated to 0.13%, §4o). It does not move columns -- the fitted Chebyshev
+had been absorbing it -- but without it the corrected spectra keep its dimming, up to
+6.7% at air mass 5.4 in the A-band.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error
