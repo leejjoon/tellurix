@@ -18,7 +18,7 @@ import re
 
 import numpy as np
 
-from tellurix.ils import (
+from tellurix_fts.ils import (
     BOXCAR_FWHM_CONSTANT as _BOXCAR_FWHM_CONSTANT,
     interferogram_envelope,
     measure_mopd,

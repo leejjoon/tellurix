@@ -26,7 +26,7 @@ import json
 from pathlib import Path
 
 from tellurix import ScanIdentity, load_atmosphere_csv, load_scan, save_scan, scan_window
-from tellurix.nso import MEASURED_FWHM_CM1
+from tellurix_fts.nso import MEASURED_FWHM_CM1
 
 
 def main() -> None:

@@ -144,15 +144,13 @@ def run_one(window, epoch, args, root):
     """Fit one page-epoch and export its corrected spectrum."""
     import jax.numpy as jnp
     from tellurix import (
-        AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
-        chebyshev_continuum, file_sha256, ils_fingerprint,
-        select_significant_lines, trim_wavenumber_grid,
+        AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile, chebyshev_continuum,
+        file_sha256, ils_fingerprint, select_significant_lines, trim_wavenumber_grid,
         ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum, TelluricModel,
-        OrderObjective, TelluricParameters, arcturus_spectral_order, epoch_velocity_kms,
-        fit_order,
-        constant_velocity_grid, load_atmosphere_csv, prepare_stellar_source,
-        read_arcturus_page, resample_stellar_continuum,
+        OrderObjective, TelluricParameters, fit_order, constant_velocity_grid,
+        load_atmosphere_csv, prepare_stellar_source, resample_stellar_continuum,
     )
+    from tellurix_fts import arcturus_spectral_order, epoch_velocity_kms, read_arcturus_page
 
     v1, v2 = window["v1"], window["v2"]
     page = read_arcturus_page(args.atlas_root / window["page"], epoch).select(v1, v2)

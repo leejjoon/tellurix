@@ -146,7 +146,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=root / "data/review_igrins_targets")
     args = parser.parse_args()
 
-    from tellurix import read_igrins_observation
+    from tellurix_igrins import read_igrins_observation
     from tellurix.record import read_record
 
     args.output.mkdir(parents=True, exist_ok=True)

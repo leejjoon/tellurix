@@ -18,7 +18,7 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/measure_solar_ils.py --format ftssp
 
 Machine-readable results are in `docs/photatl_ils.json` (per page) and
 `docs/solar_fts_ils.json` (per 100 cm⁻¹ window). The method lives in
-`tellurix.ils` and is shared with `scripts/measure_atlas_ils.py`; moving it
+`tellurix_fts.ils` and is shared with `scripts/measure_atlas_ils.py`; moving it
 there reproduces all 598 committed Arcturus page-epoch measurements
 bit-for-bit.
 
@@ -44,7 +44,7 @@ make a real spread smaller.
 **Refuse an opaque window.** The interferogram of a window that passes no light
 is noise, and it returns a confident-looking MOPD that means nothing — the
 first pass on `ftsspec` produced 2.57 cm from a dead window this way. Windows
-below 30× continuum-to-noise are skipped (`tellurix.nso.window_continuum_snr`).
+below 30× continuum-to-noise are skipped (`tellurix_fts.nso.window_continuum_snr`).
 That costs 1 of 258 `photatl` pages (`wn2100`, at 23.9σ) and 15 of 400 ftsspec
 windows.
 
@@ -134,7 +134,7 @@ even consistent:**
 One file's header is exact, one is 22% off and two are out by almost exactly a
 factor of three. Whatever convention produced them, it cannot be inverted
 without knowing which file it was applied to — so measure the cut.
-`tellurix.nso.FTSSpectrum` records the value as `stated_resolution_cm1` and
+`tellurix_fts.nso.FTSSpectrum` records the value as `stated_resolution_cm1` and
 nothing consumes it.
 
 ## Apodization
@@ -150,7 +150,7 @@ kernel is invalid for a sinc at any width.
 
 ## What a fit should use
 
-One atlas-wide constant, **FWHM = 0.01753 cm⁻¹** (`tellurix.nso.MEASURED_FWHM_CM1`),
+One atlas-wide constant, **FWHM = 0.01753 cm⁻¹** (`tellurix_fts.nso.MEASURED_FWHM_CM1`),
 equivalently MOPD 34.41 cm, for `photatl` and for the 1990 `ftsspec` pair. Not
 a per-page measurement: the page-to-page spread of 1.010 is within the FFT bin,
 so a per-page value would be fitting noise. That also removes the free

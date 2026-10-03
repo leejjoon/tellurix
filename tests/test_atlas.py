@@ -1,11 +1,7 @@
 import numpy as np
 import pytest
 
-from tellurix import (
-    arcturus_spectral_order,
-    epoch_velocity_kms,
-    read_arcturus_page,
-)
+from tellurix_fts import arcturus_spectral_order, epoch_velocity_kms, read_arcturus_page
 
 
 FIXTURE = "tests/data/arcturus_page_sample.txt"

@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from tellurix import FlatBlaze
-from tellurix.flat import collapse, name_bands, smooth_blaze, trace_bands
+from tellurix_igrins import FlatBlaze
+from tellurix_igrins.flat import collapse, name_bands, smooth_blaze, trace_bands
 
 NX = NY = 512
 
@@ -76,7 +76,7 @@ def test_the_blaze_round_trips_and_is_read_by_pixel(tmp_path):
 
 
 def test_the_blend_is_narrow_at_the_ends_and_wide_inside():
-    from tellurix.flat import edge_blended_blaze
+    from tellurix_igrins.flat import edge_blended_blaze
 
     x = np.arange(NX, dtype=float)
     blaze = 1000 * _blaze(x) + 1.0

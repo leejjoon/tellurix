@@ -3,20 +3,10 @@
 import numpy as np
 import pytest
 
-from tellurix import (
-    IGRINS_ORDER_CENTRES_UM,
-    WatSpec,
-    continuum_level,
-    format_wat2_cards,
-    hydrogen_series_um,
-    identify_orders,
-    parse_wat_specs,
-    igrins_spectral_order,
-    read_igrins_observation,
-    site_for,
-    stellar_line_mask,
-    surface_conditions,
-    zenith_angle_deg,
+from tellurix_igrins import (
+    IGRINS_ORDER_CENTRES_UM, WatSpec, continuum_level, format_wat2_cards, hydrogen_series_um,
+    identify_orders, parse_wat_specs, igrins_spectral_order, read_igrins_observation, site_for,
+    stellar_line_mask, surface_conditions, zenith_angle_deg,
 )
 
 FIXTURE = "tests/data/igrins/SDCH_test_0001.spec.fits"
@@ -216,7 +206,7 @@ def test_mcdonald_2015_reports_metric_and_the_frame_says_so():
 def test_geometry_reproduces_a_header_zenith_distance():
     """DCT 2018-12-20 frame 0045, HD 31069 (SIMBAD): ZDSTART/ZDEND 49.30/49.08."""
 
-    from tellurix.igrins import SITES, geometric_zenith_angle_deg
+    from tellurix_igrins.igrins import SITES, geometric_zenith_angle_deg
 
     angle = geometric_zenith_angle_deg(73.71351218, 44.06086201, "2018-12-21T02:05:43.189",
                                        "2018-12-21T02:06:54.301", SITES["DCT"])
@@ -393,7 +383,7 @@ def test_a_bare_gemini_card_is_refused_because_it_cannot_tell_north_from_south()
 
 def test_blank_numeric_cards_do_not_break_the_reader():
     """The 2014 schema leaves several numeric cards as empty strings."""
-    from tellurix.igrins import _number
+    from tellurix_igrins.igrins import _number
 
     assert np.isnan(_number(""))
     assert np.isnan(_number(None))
@@ -412,7 +402,7 @@ def test_blank_numeric_cards_do_not_break_the_reader():
 
 def test_a_frames_pattern_never_uses_that_frame():
     """The whole validity of the correction rests on this."""
-    from tellurix import leave_one_out_patterns
+    from tellurix_igrins import leave_one_out_patterns
 
     common = np.array([0.01, -0.02, 0.03, 0.00])
     stack = np.array([common + 0.001 * i for i in range(6)])
@@ -428,7 +418,7 @@ def test_a_frames_pattern_never_uses_that_frame():
 
 
 def test_the_pattern_recovers_an_injected_response():
-    from tellurix import leave_one_out_patterns
+    from tellurix_igrins import leave_one_out_patterns
 
     rng = np.random.default_rng(0)
     truth = np.array([0.05, -0.03, 0.10, -0.08, 0.00])
@@ -439,7 +429,7 @@ def test_the_pattern_recovers_an_injected_response():
 
 def test_too_few_frames_leave_a_pixel_uncorrected():
     """A pattern from one or two frames is that frame's noise, not a calibration."""
-    from tellurix import leave_one_out_patterns
+    from tellurix_igrins import leave_one_out_patterns
 
     stack = np.full((4, 3), 0.2)
     stack[:, 1] = np.nan          # nothing measures this pixel
@@ -466,7 +456,7 @@ def test_dividing_by_the_response_is_the_same_as_scaling_the_model():
 def test_the_pattern_keeps_the_broad_response_and_drops_line_scale_structure():
     """Leave-one-out stops the pattern eating one frame's noise. Smoothing stops
     it eating the telluric model error that every frame shares."""
-    from tellurix import leave_one_out_patterns
+    from tellurix_igrins import leave_one_out_patterns
 
     rng = np.random.default_rng(0)
     x = np.arange(400)
@@ -482,14 +472,14 @@ def test_the_pattern_keeps_the_broad_response_and_drops_line_scale_structure():
 
 
 def test_an_even_smoothing_window_is_refused():
-    from tellurix import leave_one_out_patterns
+    from tellurix_igrins import leave_one_out_patterns
 
     with pytest.raises(ValueError, match="odd"):
         leave_one_out_patterns(np.zeros((5, 50)), smooth_pixels=50)
 
 
 def test_smoothing_never_invents_a_correction_where_nothing_was_measured():
-    from tellurix import leave_one_out_patterns
+    from tellurix_igrins import leave_one_out_patterns
 
     stack = np.full((6, 60), 0.05)
     stack[:, 20:30] = np.nan          # a gap no frame measured
@@ -502,7 +492,7 @@ def test_smoothing_never_invents_a_correction_where_nothing_was_measured():
 
 
 def test_the_magnus_formula_matches_known_values():
-    from tellurix import saturation_vapour_pressure_hpa as es
+    from tellurix_igrins import saturation_vapour_pressure_hpa as es
 
     # Standard table values, good to a few tenths of a percent.
     assert es(0.0) == pytest.approx(6.112, rel=1e-3)
@@ -513,7 +503,7 @@ def test_the_magnus_formula_matches_known_values():
 
 def test_the_water_column_comes_from_the_dewpoint_not_the_humidity():
     """The dewpoint *is* the vapour pressure; humidity needs the temperature too."""
-    from tellurix import precipitable_water_mm, saturation_vapour_pressure_hpa
+    from tellurix_igrins import precipitable_water_mm, saturation_vapour_pressure_hpa
 
     surface = {"temperature_k": 280.0, "dewpoint_c": -7.4,
                "relative_humidity_percent": 34.0}
@@ -526,7 +516,7 @@ def test_the_water_column_comes_from_the_dewpoint_not_the_humidity():
 
 
 def test_the_humidity_is_the_fallback_when_there_is_no_dewpoint():
-    from tellurix import precipitable_water_mm
+    from tellurix_igrins import precipitable_water_mm
 
     with_dew = precipitable_water_mm({"temperature_k": 280.0, "dewpoint_c": -7.4})
     # 34% at 280 K is very nearly a dewpoint of -7.4 C, so the two should agree.
@@ -536,7 +526,7 @@ def test_the_humidity_is_the_fallback_when_there_is_no_dewpoint():
 
 
 def test_no_water_information_returns_none_rather_than_a_guess():
-    from tellurix import precipitable_water_mm
+    from tellurix_igrins import precipitable_water_mm
 
     assert precipitable_water_mm({"temperature_k": 280.0, "dewpoint_c": None,
                                   "relative_humidity_percent": None}) is None
@@ -554,7 +544,7 @@ def test_the_dewpoint_is_converted_from_fahrenheit_at_mcdonald():
 
 def test_the_estimate_lands_within_a_factor_of_two_on_the_fitted_nights():
     """The seed only has to be close enough for the self-broadening expansion."""
-    from tellurix import precipitable_water_mm
+    from tellurix_igrins import precipitable_water_mm
 
     # Median surface conditions and the fitted column, from the three nights.
     for dewpoint, temperature, fitted in ((-7.4, 281.15, 2.36), (5.9, 290.09, 9.99),

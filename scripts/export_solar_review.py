@@ -35,10 +35,9 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from tellurix import (  # noqa: E402
-    TelluricParameters, read_niratl_page, read_photatl_page, read_scan, read_solar_spectrum,
-)
-from tellurix.nso import MEASURED_FWHM_CM1, is_niratl_page, is_photatl_page  # noqa: E402
+from tellurix import TelluricParameters, read_scan  # noqa: E402
+from tellurix_fts import read_niratl_page, read_photatl_page, read_solar_spectrum  # noqa: E402
+from tellurix_fts.nso import MEASURED_FWHM_CM1, is_niratl_page, is_photatl_page  # noqa: E402
 
 from fit_fts_window import prepare_window  # noqa: E402
 

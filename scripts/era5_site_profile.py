@@ -76,7 +76,7 @@ def _named_sites():
     come from ERA5.
     """
 
-    from tellurix.nso import (
+    from tellurix_fts.nso import (
         KITT_PEAK_ALTITUDE_KM, KITT_PEAK_LATITUDE_DEG, KITT_PEAK_LONGITUDE_DEG,
     )
 
@@ -237,7 +237,7 @@ def main() -> None:
 
     pressures: list[float] = []
     if args.spec:
-        from tellurix import read_igrins_observation
+        from tellurix_igrins import read_igrins_observation
 
         sites, times = set(), []
         for path in args.spec:
@@ -256,7 +256,7 @@ def main() -> None:
         latitude, longitude = SITE_COORDINATES[site]
         span = f"{len(args.spec)} frames spanning {min(times):%H:%M}-{max(times):%H:%M} UT"
     elif args.fts:
-        from tellurix import read_fts_spectrum
+        from tellurix_fts import read_fts_spectrum
 
         site = args.site or "Kitt Peak"
         named = _named_sites()

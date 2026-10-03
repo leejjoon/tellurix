@@ -30,8 +30,8 @@ from typing import Mapping
 
 import numpy as np
 
-from .record import file_sha256
-from .types import SpectralOrder
+from tellurix.record import file_sha256
+from tellurix.types import SpectralOrder
 
 
 RRISA_REFERENCE = "Kaplan, K. F., et al. 2024, RRISA, https://igrinscontact.github.io/"

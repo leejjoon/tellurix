@@ -50,13 +50,12 @@ def main() -> None:
     import numpy as np
 
     from tellurix import (
-        AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
-        ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum, TelluricModel,
-        arcturus_spectral_order, chebyshev_continuum, file_sha256,
-        constant_velocity_grid, ils_fingerprint, load_atmosphere_csv,
-        parameters_from_row, prepare_stellar_source, read_arcturus_page, read_record,
-        select_significant_lines, trim_wavenumber_grid,
+        AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile, ExoJAXOpacityBackend,
+        MTCKDWaterContinuum, StellarSpectrum, TelluricModel, chebyshev_continuum, file_sha256,
+        constant_velocity_grid, ils_fingerprint, load_atmosphere_csv, parameters_from_row,
+        prepare_stellar_source, read_record, select_significant_lines, trim_wavenumber_grid,
     )
+    from tellurix_fts import arcturus_spectral_order, read_arcturus_page
     from tellurix.record import text
 
     record = read_record(args.record)

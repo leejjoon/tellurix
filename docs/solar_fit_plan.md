@@ -326,7 +326,7 @@ band, at the r-grid that band's measured MOPD requires, and cache it.
 
 ## Phase 2 -- reader, ILS, site profile
 
-`src/tellurix/nso.py` -- **built**, with `tests/test_nso.py` -- self-contained
+`src/tellurix_fts/nso.py` -- **built**, with `tests/test_nso.py` -- self-contained
 in the way `atlas.py` is:
 
 - `read_fts_spectrum(path)` -- parse the 15-line header (source name, comment,

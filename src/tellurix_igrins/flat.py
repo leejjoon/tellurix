@@ -30,7 +30,7 @@ from typing import Mapping
 
 import numpy as np
 
-from .record import file_sha256, text
+from tellurix.record import file_sha256, text
 
 FORMAT_VERSION = 1
 # How deep the lamp's own telluric lines may go -- the 1st percentile of the

@@ -3,7 +3,8 @@
 import numpy as np
 import pytest
 
-from tellurix import MasterPattern, NightCalibration, OrderCalibration, write_record
+from tellurix import write_record
+from tellurix_igrins import MasterPattern, NightCalibration, OrderCalibration
 
 NU = np.linspace(6000.0, 6080.0, 400)
 TRUE_PATTERN = 0.02 * np.sin(np.linspace(0.0, 3.0, NU.size))

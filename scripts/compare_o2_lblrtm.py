@@ -28,7 +28,7 @@ from pathlib import Path
 import numpy as np
 from tellurix import (AERLineDatabase, ExoJAXOpacityBackend, LBLRTMRunConfig, TelluricModel,
     TelluricParameters, constant_velocity_grid, load_atmosphere_csv, run_lblrtm, trim_wavenumber_grid)
-from tellurix.nso import zenith_angle_deg_for_airmass
+from tellurix_fts.nso import zenith_angle_deg_for_airmass
 
 ROOT = Path("/home/jjlee/work/lblrtm"); REF = ROOT / "data/lblrtm"
 AIRMASS = float(sys.argv[2]) if len(sys.argv) > 2 else 5.37; ZEN = zenith_angle_deg_for_airmass(AIRMASS); FWHM = 0.04167

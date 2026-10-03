@@ -3,8 +3,8 @@
 
 Reads the night's calibration bundle (RRISA ``CAL_URL``: ``flat_on``,
 ``flat_off``) and one extracted spectrum of the same night to name the orders,
-and writes a :class:`tellurix.FlatBlaze` that the fitting drivers divide out
-with ``--blaze``. See :mod:`tellurix.flat` for why.
+and writes a :class:`tellurix_igrins.FlatBlaze` that the fitting drivers divide out
+with ``--blaze``. See :mod:`tellurix_igrins.flat` for why.
 
     uv run python scripts/build_igrins_flat_blaze.py \\
         --cal-dir data/igrins/cals/20181220 --band H \\
@@ -35,7 +35,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    from tellurix import FlatBlaze
+    from tellurix_igrins import FlatBlaze
 
     on = sorted(args.cal_dir.glob(f"SDC{args.band}_*.flat_on.fits"))
     off = sorted(args.cal_dir.glob(f"SDC{args.band}_*.flat_off.fits"))

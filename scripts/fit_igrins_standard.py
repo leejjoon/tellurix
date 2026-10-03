@@ -278,10 +278,10 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
     """
 
     from tellurix import (
-        ArrayOpacityBackend, OrderObjective, TelluricModel, TelluricParameters,
-        SpectralOrder, chebyshev_continuum, continuum_level, fit_order,
-        igrins_spectral_order, ils_fingerprint, resample_stellar_continuum,
+        ArrayOpacityBackend, OrderObjective, TelluricModel, TelluricParameters, SpectralOrder,
+        chebyshev_continuum, fit_order, ils_fingerprint, resample_stellar_continuum,
     )
+    from tellurix_igrins import continuum_level, igrins_spectral_order
 
     timing, started = {}, time.time()
 
@@ -312,7 +312,7 @@ def fit_one(context, observation, args, objective, response=None, write_arrays=T
         # The lamp's blaze, by detector column. Dividing it out leaves the
         # continuum only the lamp-to-star colour -- the steep order-end
         # roll-off a degree-9 polynomial cannot follow is most of what the
-        # response pattern was absorbing (tellurix.flat).
+        # response pattern was absorbing (tellurix_igrins.flat).
         blaze = args.flat_blaze.blaze_on(number, extracted.pixel)
         if blaze is None:
             raise RuntimeError(f"order {number} has no usable blaze in {args.blaze} "
@@ -698,20 +698,20 @@ def main() -> None:
         jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
         jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
-    from tellurix import (StellarSpectrum, leave_one_out_patterns, load_atmosphere_csv,
-                              read_igrins_observation)
+    from tellurix import StellarSpectrum, load_atmosphere_csv
+    from tellurix_igrins import leave_one_out_patterns, read_igrins_observation
 
     observations = [read_igrins_observation(path) for path in args.spec]
     args.flat_blaze = None
     if args.blaze is not None:
-        from tellurix import FlatBlaze
+        from tellurix_igrins import FlatBlaze
 
         args.flat_blaze = FlatBlaze.load(args.blaze)
         if {o.band for o in observations} != {args.flat_blaze.band}:
             raise SystemExit(f"{args.blaze} is a {args.flat_blaze.band} blaze")
     master = None
     if args.response_pattern is not None:
-        from tellurix import MasterPattern
+        from tellurix_igrins import MasterPattern
 
         master = MasterPattern.load(args.response_pattern)
         if {o.band for o in observations} != {master.band}:

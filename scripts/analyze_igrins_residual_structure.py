@@ -158,7 +158,7 @@ def summaries(run: Path):
 
 def load_run(run: Path, band: str, repo: Path, pixels_from=None):
     """Per frame and order: the arrays the analysis needs, on the order's detector pixels."""
-    from tellurix import read_igrins_observation
+    from tellurix_igrins import read_igrins_observation
 
     frames, meta = {}, {}
     pixel_cache = {}
@@ -744,8 +744,8 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    from tellurix import FlatBlaze
-    from tellurix.flat import lamp_spectra
+    from tellurix_igrins import FlatBlaze
+    from tellurix_igrins.flat import lamp_spectra
 
     on = sorted(args.cal_dir.glob(f"SDC{args.band}_*.flat_on.fits"))
     off = sorted(args.cal_dir.glob(f"SDC{args.band}_*.flat_off.fits"))

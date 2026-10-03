@@ -56,15 +56,11 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tellurix import (  # noqa: E402
-    AER_MOLECULE_IDS,
-    ScanIdentity,
-    cached_scan,
-    file_sha256,
-    load_atmosphere_csv,
-    read_solar_spectrum,
+    AER_MOLECULE_IDS, ScanIdentity, cached_scan, file_sha256, load_atmosphere_csv,
     species_above,
 )
-from tellurix.nso import MEASURED_FWHM_CM1, is_atlas_page, window_continuum_snr  # noqa: E402
+from tellurix_fts import read_solar_spectrum  # noqa: E402
+from tellurix_fts.nso import MEASURED_FWHM_CM1, is_atlas_page, window_continuum_snr  # noqa: E402
 
 from fit_fts_window import fit_window  # noqa: E402
 

@@ -31,7 +31,7 @@ import numpy as np
 
 from .atlas import robust_noise
 from .ils import running_median as _running_median
-from .types import SpectralOrder
+from tellurix.types import SpectralOrder
 
 
 NSO_ACKNOWLEDGEMENT = "NSO/Kitt Peak FTS data used here were produced by NSF/NOAO."

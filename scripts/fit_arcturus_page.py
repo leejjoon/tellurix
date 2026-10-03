@@ -20,26 +20,12 @@ import jax
 import numpy as np
 
 from tellurix import (
-    AERLineDatabase,
-    ArrayOpacityBackend,
-    BoxcarFTSInstrumentProfile,
-    ExoJAXOpacityBackend,
-    MTCKDWaterContinuum,
-    StellarSpectrum,
-    TelluricModel,
-    TelluricParameters,
-    arcturus_spectral_order,
-    epoch_velocity_kms,
-    OrderObjective,
-    chebyshev_continuum,
-    trim_wavenumber_grid,
-    fit_order,
-    constant_velocity_grid,
-    load_atmosphere_csv,
-    prepare_stellar_source,
-    read_arcturus_page,
-    resample_stellar_continuum,
+    AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile, ExoJAXOpacityBackend,
+    MTCKDWaterContinuum, StellarSpectrum, TelluricModel, TelluricParameters, OrderObjective,
+    chebyshev_continuum, trim_wavenumber_grid, fit_order, constant_velocity_grid,
+    load_atmosphere_csv, prepare_stellar_source, resample_stellar_continuum,
 )
+from tellurix_fts import arcturus_spectral_order, epoch_velocity_kms, read_arcturus_page
 
 MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
 DEFAULT_PAGE = (

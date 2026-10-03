@@ -40,7 +40,7 @@ def main() -> None:
     from astropy.coordinates import SkyCoord
     from astropy.io import fits
 
-    from tellurix.igrins import (POINTING_SIDECAR, geometric_zenith_angle_deg, site_for,
+    from tellurix_igrins.igrins import (POINTING_SIDECAR, geometric_zenith_angle_deg, site_for,
                                  zenith_angle_deg)
 
     rows = {(r["CIVIL"], int(r["FILENUMBER"])): r for r in csv.DictReader(args.catalog.open())}

@@ -30,7 +30,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    from tellurix import MasterPattern, NightCalibration
+    from tellurix_igrins import MasterPattern, NightCalibration
 
     master = MasterPattern.from_calibrations(
         [NightCalibration.load(path) for path in args.calibration],

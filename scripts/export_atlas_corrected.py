@@ -36,7 +36,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from tellurix import file_sha256, read_solar_spectrum  # noqa: E402
+from tellurix import file_sha256  # noqa: E402
+from tellurix_fts import read_solar_spectrum  # noqa: E402
 
 from quality_flags import UPPER_BOUND_NOTE, species_at_upper_bound  # noqa: E402
 

@@ -24,21 +24,11 @@ from pathlib import Path
 import numpy as np
 
 from tellurix import (
-    AERLineDatabase,
-    BoxcarFTSInstrumentProfile,
-    ExoJAXOpacityBackend,
-    MTCKDWaterContinuum,
-    SpectralOrder,
-    StellarSpectrum,
-    TelluricModel,
-    TelluricParameters,
-    arcturus_spectral_order,
-    fit_order,
-    constant_velocity_grid,
-    load_atmosphere_csv,
-    prepare_stellar_source,
-    read_arcturus_page,
+    AERLineDatabase, BoxcarFTSInstrumentProfile, ExoJAXOpacityBackend, MTCKDWaterContinuum,
+    SpectralOrder, StellarSpectrum, TelluricModel, TelluricParameters, fit_order,
+    constant_velocity_grid, load_atmosphere_csv, prepare_stellar_source,
 )
+from tellurix_fts import arcturus_spectral_order, read_arcturus_page
 
 MOLECULE_IDS = {"H2O": 1, "CO2": 2}
 

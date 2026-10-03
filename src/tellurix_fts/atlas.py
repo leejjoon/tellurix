@@ -22,7 +22,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .types import SpectralOrder
+from tellurix.types import SpectralOrder
 
 
 ARCTURUS_REFERENCE = "Hinkle, K., Wallace, L., & Livingston, W. 1995, PASP, 107, 1402"

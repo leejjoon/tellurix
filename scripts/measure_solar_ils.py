@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Measure the FTS instrument line shape of the NSO solar atlases from their data.
 
-The method is ``tellurix.ils``: the transform of a spectrum is its own
+The method is ``tellurix_fts.ils``: the transform of a spectrum is its own
 interferogram, so the truncation that sets the resolution is measurable and
 does not have to be assumed. ``scripts/measure_atlas_ils.py`` does the same for
 the Arcturus atlas and shares the implementation.
@@ -17,7 +17,7 @@ misreport their own resolution:
 
 Both are FTS products and both are zero-filled by a factor their sampling does
 not reveal, which is why the sibling project concluded the absolute scale was
-not obtainable. Zero-filling does not move the cut; see ``tellurix.ils``.
+not obtainable. Zero-filling does not move the cut; see ``tellurix_fts.ils``.
 
     UV_CACHE_DIR=.uv-cache uv run python scripts/measure_solar_ils.py --format photatl
     UV_CACHE_DIR=.uv-cache uv run python scripts/measure_solar_ils.py --format ftsspec
@@ -32,13 +32,9 @@ import re
 
 import numpy as np
 
-from tellurix import (
-    BOXCAR_FWHM_CONSTANT,
-    describe_truncation,
-    read_fts_spectrum,
-    read_niratl_page,
-    read_photatl_page,
-    window_continuum_snr,
+from tellurix_fts import (
+    BOXCAR_FWHM_CONSTANT, describe_truncation, read_fts_spectrum, read_niratl_page,
+    read_photatl_page, window_continuum_snr,
 )
 
 
@@ -235,7 +231,7 @@ def main() -> None:
         "format": args.format,
         "method": (
             "Hann-windowed real FFT of the observed column; MOPD located at the "
-            "steepest sustained drop of the smoothed log envelope. See tellurix.ils."
+            "steepest sustained drop of the smoothed log envelope. See tellurix_fts.ils."
         ),
         "boxcar_fwhm_constant": BOXCAR_FWHM_CONSTANT,
         "minimum_continuum_snr": MINIMUM_CONTINUUM_SNR,

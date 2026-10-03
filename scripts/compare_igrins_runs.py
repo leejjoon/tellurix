@@ -129,7 +129,7 @@ def main() -> None:
         present = {int(n) for n in h5py.File(record_dir / "record.h5", "r")["pages"]["order_number"]}
         orders = present if orders is None else orders & present
     if args.orders_from_blaze is not None:
-        from tellurix import FlatBlaze
+        from tellurix_igrins import FlatBlaze
 
         blaze = FlatBlaze.load(args.orders_from_blaze)
         orders = {n for n in orders if blaze.usable(n)}

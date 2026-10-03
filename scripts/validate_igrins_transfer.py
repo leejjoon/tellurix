@@ -103,7 +103,7 @@ def read_run(run_dir: Path, record: Path | None = None):
 def calibration(night, number, mjd):
     """This order's telluric parameters, from a night calibrated without the frame.
 
-    ``night`` is the :class:`~tellurix.NightCalibration` a science frame would
+    ``night`` is the :class:`~tellurix_igrins.NightCalibration` a science frame would
     get, built with the held-out standard excluded -- so this tests the code a
     science fit runs, not a copy of it.
     """
@@ -297,11 +297,10 @@ def main() -> None:
 
     driver = load_driver(root)
     from tellurix import (
-        ArrayOpacityBackend, NightCalibration, OrderObjective, SpectralOrder, StellarSpectrum,
-        TelluricModel,
-        TelluricParameters, fit_order, igrins_spectral_order, load_atmosphere_csv,
-        read_igrins_observation,
+        ArrayOpacityBackend, OrderObjective, SpectralOrder, StellarSpectrum, TelluricModel,
+        TelluricParameters, fit_order, load_atmosphere_csv,
     )
+    from tellurix_igrins import NightCalibration, igrins_spectral_order, read_igrins_observation
 
     rows, inputs, config, physics, run_species = read_run(args.run_dir, args.record)
     for key in ("continuum_bound", "continuum_percentile", "saturation_floor",

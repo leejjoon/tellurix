@@ -9,6 +9,10 @@ The first validation target is LBLRTM 12.17 in representative IGRINS H- and
 K-band intervals. See `docs/lblrtm_exojax_research.md` for the rationale and
 `docs/validation.md` for the reference-data workflow.
 
+The core is `tellurix` and knows no instrument. Readers and calibrations for
+particular data are in `tellurix_fts` (the Arcturus and NSO solar FTS atlases)
+and `tellurix_igrins` (IGRINS reduced spectra), which build on it.
+
 ## Environment
 
 ```bash

@@ -16,7 +16,7 @@ standards measure is carried to it here, per physical echelle order:
 * the **instrument response pattern** -- the median over every standard of its
   fractional residual, smoothed. A science frame is none of the standards, so
   no leave-one-out is needed; the smoothing is still required, for the reason
-  :func:`~tellurix.igrins.leave_one_out_patterns` gives.
+  :func:`~tellurix_igrins.igrins.leave_one_out_patterns` gives.
 
 Build one with :meth:`NightCalibration.from_run` from a ``fit_igrins_standard.py``
 run -- its record and its npz cache -- and keep it as one HDF5 file.
@@ -33,7 +33,7 @@ from typing import Mapping, Sequence
 import numpy as np
 
 from .igrins import smoothed_frame_median
-from .record import file_sha256, text
+from tellurix.record import file_sha256, text
 
 FORMAT_VERSION = 1
 

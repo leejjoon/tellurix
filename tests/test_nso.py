@@ -3,15 +3,9 @@ import datetime as dt
 import numpy as np
 import pytest
 
-from tellurix import (
-    fts_spectral_order,
-    photatl_as_fts_spectrum,
-    photatl_spectral_order,
-    read_fts_spectrum,
-    read_niratl_page,
-    read_photatl_page,
-    read_solar_spectrum,
-    uniform_wavenumber_grid,
+from tellurix_fts import (
+    fts_spectral_order, photatl_as_fts_spectrum, photatl_spectral_order, read_fts_spectrum,
+    read_niratl_page, read_photatl_page, read_solar_spectrum, uniform_wavenumber_grid,
     zenith_angle_deg_for_airmass,
 )
 
@@ -130,7 +124,7 @@ def test_refuses_a_window_that_passes_no_light():
     # clears a fraction of it, so the relative saturation floor alone would
     # happily fit it. Measured on the real data, live windows reach 188-2702
     # sigma and dead ones 5-11.
-    from tellurix.nso import _saturation_mask
+    from tellurix_fts.nso import _saturation_mask
 
     rng = np.random.default_rng(0)
     noise = rng.normal(0.0, 1e-3, 512)
@@ -225,7 +219,7 @@ def test_a_window_is_normalized_before_it_is_fitted():
     exp(-2); 9046-9076 went from 293 times the noise to 2.0 once normalized."""
     import numpy as np
 
-    from tellurix import fts_continuum_level
+    from tellurix_fts import fts_continuum_level
 
     faint = np.full(512, 0.017)
     faint[::7] = 0.010
@@ -240,7 +234,7 @@ def test_a_window_is_normalized_before_it_is_fitted():
 def test_a_continuum_level_needs_positive_finite_pixels():
     import numpy as np
 
-    from tellurix import fts_continuum_level
+    from tellurix_fts import fts_continuum_level
 
     with pytest.raises(ValueError, match="too few finite pixels"):
         fts_continuum_level(np.full(4, np.nan))

@@ -43,32 +43,15 @@ import jax
 import numpy as np
 
 from tellurix import (
-    AER_MOLECULE_IDS,
-    AERLineDatabase,
-    ArrayOpacityBackend,
-    BoxcarFTSInstrumentProfile,
-    ExoJAXOpacityBackend,
-    LBLRTMOpticalDepthCorrection,
-    MTCKDWaterContinuum,
-    OrderObjective,
-    StellarSpectrum,
-    TelluricModel,
-    TelluricParameters,
-    chebyshev_continuum,
-    constant_velocity_grid,
-    fit_order,
-    fts_spectral_order,
-    ils_fingerprint,
-    load_atmosphere_csv,
-    prepare_stellar_source,
-    read_solar_spectrum,
-    resample_stellar_continuum,
-    ContinuumSum,
-    O2CollisionInducedContinuum,
-    trim_wavenumber_grid,
-    zenith_angle_deg_for_airmass,
+    AER_MOLECULE_IDS, AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
+    ExoJAXOpacityBackend, LBLRTMOpticalDepthCorrection, MTCKDWaterContinuum, OrderObjective,
+    StellarSpectrum, TelluricModel, TelluricParameters, chebyshev_continuum,
+    constant_velocity_grid, fit_order, ils_fingerprint, load_atmosphere_csv,
+    prepare_stellar_source, resample_stellar_continuum, ContinuumSum,
+    O2CollisionInducedContinuum, trim_wavenumber_grid,
 )
-from tellurix.nso import MEASURED_FWHM_CM1
+from tellurix_fts import fts_spectral_order, read_solar_spectrum, zenith_angle_deg_for_airmass
+from tellurix_fts.nso import MEASURED_FWHM_CM1
 
 # Every molecule AER ships, from the package rather than a local copy: keeping
 # a second list here is what let O3 be 'unknown' after OCS had been added, and

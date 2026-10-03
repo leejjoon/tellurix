@@ -4,7 +4,7 @@
 Takes a ``fit_igrins_standard.py`` run -- one band of one night, fitted with the
 fixed-pattern pass -- and writes the per-order calibration a science frame of
 that night is fitted against (``fit_igrins_science.py``). See
-:mod:`tellurix.night` for what it holds and why.
+:mod:`tellurix_igrins.night` for what it holds and why.
 
     uv run python scripts/build_igrins_calibration.py \\
         --run-dir data/corrected/igrins/ladder_a0v --output data/calibration/dct2018_h.h5
@@ -38,7 +38,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    from tellurix import MasterPattern, NightCalibration
+    from tellurix_igrins import MasterPattern, NightCalibration
 
     calibration = NightCalibration.from_run(
         args.record or args.run_dir / "record.h5", args.run_dir,

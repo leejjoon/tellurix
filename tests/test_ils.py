@@ -1,8 +1,10 @@
 import numpy as np
 import pytest
 
-from tellurix import BOXCAR_FWHM_CONSTANT, describe_truncation, interferogram_envelope, measure_mopd
-from tellurix.ils import running_median
+from tellurix_fts import (
+    BOXCAR_FWHM_CONSTANT, describe_truncation, interferogram_envelope, measure_mopd,
+)
+from tellurix_fts.ils import running_median
 
 
 def _truncated_spectrum(mopd_cm, spacing_cm1=0.0094771, samples=4096, seed=0):

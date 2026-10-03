@@ -12,6 +12,24 @@ bounded MAP fitter. LBLRTM 12.17 is the accuracy reference, not a runtime
 dependency — LBLRTM is only executed offline to produce fixtures and
 correction templates.
 
+The repository carries three packages, all in one distribution for now:
+
+- `tellurix` (`src/tellurix/`) -- the core: forward model, opacity, continua,
+  fitter, stellar source, run records, species scans, and the LBLRTM reference
+  tooling. It knows no instrument.
+- `tellurix_fts` (`src/tellurix_fts/`) -- FTS atlases: `atlas.py` (Arcturus),
+  `nso.py` (NSO Kitt Peak solar atlases), `ils.py` (MOPD measured from the
+  spectrum).
+- `tellurix_igrins` (`src/tellurix_igrins/`) -- `igrins.py` (RRISA reader),
+  `night.py` (night calibration), `flat.py` (lamp-flat blaze).
+
+The direction is one way: an instrument package imports `tellurix`, never the
+reverse, and neither instrument imports the other.
+`tests/test_package_boundary.py` enforces it, including imports inside function
+bodies. Put new instrument-specific code in its package, not in the core, and
+import moved names from their package (`from tellurix_igrins import
+read_igrins_observation`) -- the core does not re-export them.
+
 ## Commands
 
 ```bash
@@ -790,7 +808,8 @@ off by default: it discards the weakest lines whose bounded contributions sum to
 amount. It buys little once the opacity is precomputed — see
 `docs/performance.md` for when it does.
 
-Observed data and the stellar source enter through two adapters: `atlas.py`
+Observed data and the stellar source enter through two adapters: an instrument
+reader such as `tellurix_fts.atlas`
 (`read_arcturus_page` / `arcturus_spectral_order`, a self-contained reader for the
 Hinkle, Wallace & Livingston 1995 IR atlas) and `stellar.py` (`StellarSpectrum`,
 `prepare_stellar_source` — resample onto the model grid, broaden, normalize).
@@ -868,7 +887,9 @@ opt-in to keep the default numerically identical to ExoJAX.
 ## Conventions
 
 - `tellurix/__init__.py` enables `jax_enable_x64` at import. Import
-  `tellurix` **before** ExoJAX so calculators are built in float64.
+  `tellurix` **before** ExoJAX so calculators are built in float64. The
+  instrument packages import `tellurix` first in their own `__init__` for the
+  same reason.
 - Public data classes are frozen dataclasses/NamedTuples that validate and
   normalize in `__post_init__` (species names uppercased, arrays coerced,
   physical ordering checked) and raise `ValueError` with a short message.

@@ -147,7 +147,7 @@ fitted.
 """)
 
 code(r"""
-from tellurix import read_arcturus_page
+from tellurix_fts import read_arcturus_page
 
 page = read_arcturus_page(Path(record.inputs["atlas_root"]) / PAGE, EPOCH).select(V1, V2)
 nu_page = page.wavenumber_vacuum_cm1
@@ -667,7 +667,8 @@ approximately.
 """)
 
 code(r"""
-from tellurix import arcturus_spectral_order, parameters_from_row, chebyshev_continuum
+from tellurix import parameters_from_row, chebyshev_continuum
+from tellurix_fts import arcturus_spectral_order
 
 order = arcturus_spectral_order(
     page, column=config["column"], source_flux_model_grid=source,

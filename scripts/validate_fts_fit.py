@@ -35,20 +35,12 @@ import time
 import numpy as np
 
 from tellurix import (
-    AERLineDatabase,
-    BoxcarFTSInstrumentProfile,
-    ExoJAXOpacityBackend,
-    MTCKDWaterContinuum,
-    SpectralOrder,
-    TelluricModel,
-    TelluricParameters,
-    constant_velocity_grid,
-    fit_order,
-    load_atmosphere_csv,
-    trim_wavenumber_grid,
-    zenith_angle_deg_for_airmass,
+    AERLineDatabase, BoxcarFTSInstrumentProfile, ExoJAXOpacityBackend, MTCKDWaterContinuum,
+    SpectralOrder, TelluricModel, TelluricParameters, constant_velocity_grid, fit_order,
+    load_atmosphere_csv, trim_wavenumber_grid,
 )
-from tellurix.nso import MEASURED_FWHM_CM1
+from tellurix_fts import zenith_angle_deg_for_airmass
+from tellurix_fts.nso import MEASURED_FWHM_CM1
 
 # 1.67 um: H2O against the CH4 2nu3 band, which is the strongest absorber here
 # (max logSij0 -48.3 against H2O's -55.4). A different pair from the Arcturus

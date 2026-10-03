@@ -121,10 +121,10 @@ def main() -> None:
 
     driver = load_driver(root)
     from tellurix import (
-        ArrayOpacityBackend, NightCalibration, OrderObjective, SpectralOrder, StellarSpectrum,
-        TelluricModel, TelluricParameters, chebyshev_continuum, fit_order,
-        igrins_spectral_order, load_atmosphere_csv, read_igrins_observation,
+        ArrayOpacityBackend, OrderObjective, SpectralOrder, StellarSpectrum, TelluricModel,
+        TelluricParameters, chebyshev_continuum, fit_order, load_atmosphere_csv,
     )
+    from tellurix_igrins import NightCalibration, igrins_spectral_order, read_igrins_observation
 
     calibrations = {}
     for path in args.calibration:

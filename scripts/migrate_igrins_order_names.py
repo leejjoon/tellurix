@@ -55,7 +55,7 @@ def frame_orders(spec_path: Path) -> tuple[str, dict[int, int], str]:
     """Band, row -> physical order, and how the orders were found."""
 
     from astropy.io import fits
-    from tellurix import identify_orders
+    from tellurix_igrins import identify_orders
 
     with fits.open(spec_path) as handle:
         header = dict(handle[0].header)
@@ -95,7 +95,7 @@ class Frames:
 def check_npz(path: Path, band: str, number: int) -> None:
     """The cached wavenumbers must sit on the order they are being renamed to."""
 
-    from tellurix import IGRINS_ORDER_CENTRES_UM
+    from tellurix_igrins import IGRINS_ORDER_CENTRES_UM
 
     centre = IGRINS_ORDER_CENTRES_UM[band].get(number)
     if centre is None:

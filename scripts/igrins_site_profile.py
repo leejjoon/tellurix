@@ -46,7 +46,7 @@ def main() -> None:
 
     import numpy as np
 
-    from tellurix import precipitable_water_mm, read_igrins_observation
+    from tellurix_igrins import precipitable_water_mm, read_igrins_observation
 
     temperature, pressure, water, sites = [], [], [], set()
     for path in args.spec:

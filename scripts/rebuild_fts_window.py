@@ -24,21 +24,11 @@ from pathlib import Path
 import numpy as np
 
 from tellurix import (
-    AER_MOLECULE_IDS,
-    AERLineDatabase,
-    BoxcarFTSInstrumentProfile,
-    ExoJAXOpacityBackend,
-    MTCKDWaterContinuum,
-    StellarSpectrum,
-    TelluricModel,
-    TelluricParameters,
-    constant_velocity_grid,
-    fts_spectral_order,
-    load_atmosphere_csv,
-    prepare_stellar_source,
-    read_fts_spectrum,
-    trim_wavenumber_grid,
+    AER_MOLECULE_IDS, AERLineDatabase, BoxcarFTSInstrumentProfile, ExoJAXOpacityBackend,
+    MTCKDWaterContinuum, StellarSpectrum, TelluricModel, TelluricParameters,
+    constant_velocity_grid, load_atmosphere_csv, prepare_stellar_source, trim_wavenumber_grid,
 )
+from tellurix_fts import fts_spectral_order, read_fts_spectrum
 
 # Every molecule AER ships, from the package rather than a local copy: keeping
 # a second list here is what let O3 be 'unknown' after OCS had been added, and

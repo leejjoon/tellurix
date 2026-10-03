@@ -111,8 +111,8 @@ def export(args, root: Path) -> None:
         jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
         jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
-    from tellurix import (StellarSpectrum, TelluricParameters, load_atmosphere_csv,
-                          read_igrins_observation)
+    from tellurix import StellarSpectrum, TelluricParameters, load_atmosphere_csv
+    from tellurix_igrins import read_igrins_observation
     from fit_igrins_standard import build_order_context
 
     jobs = []

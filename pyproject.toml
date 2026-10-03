@@ -30,7 +30,7 @@ gpu = ["jax[cuda12]>=0.5,<0.7"]
 tellurix-download-data = "tellurix.download:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/tellurix"]
+packages = ["src/tellurix", "src/tellurix_fts", "src/tellurix_igrins"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
