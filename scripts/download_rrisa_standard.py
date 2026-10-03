@@ -106,10 +106,15 @@ def describe(row: dict) -> str:
             f"K {_number(row, 'SNRK_res'):5.0f}")
 
 
-def download(row: dict, output_root: Path, keep_archive: bool) -> Path | None:
+def download(row: dict, output_root: Path, keep_archive: bool,
+             extra: tuple[str, ...] = ()) -> Path | None:
     name = f"{row['CIVIL']}_{int(row['FILENUMBER']):04d}"
     target = output_root / name
-    if target.exists() and any(target.glob("*.spec.fits")):
+    wanted = WANTED + tuple(extra)
+    # A frame fetched before an --extra was asked for lacks it; fetch again
+    # rather than report it present.
+    if (target.exists() and any(target.glob("*.spec.fits"))
+            and all(any(target.glob(f"*.{suffix}")) for suffix in extra)):
         print(f"  {name}: already present")
         return target
 
@@ -123,7 +128,7 @@ def download(row: dict, output_root: Path, keep_archive: bool) -> Path | None:
     with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as archive:
         for member in archive.getmembers():
             stem = Path(member.name).name
-            if not member.isfile() or not stem.endswith(WANTED):
+            if not member.isfile() or not stem.endswith(wanted):
                 continue
             # Flatten: the archive's own directory layout varies across years.
             source = archive.extractfile(member)
@@ -161,6 +166,10 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--list", action="store_true", help="show what matches and stop")
     parser.add_argument("--keep-archive", action="store_true")
+    parser.add_argument("--extra", nargs="+", default=(), metavar="SUFFIX",
+                        help="also keep these products, e.g. spec_a0v.fits -- the PLP's own "
+                             "A0V-divided spectrum, which a science frame's tarball carries and "
+                             "the target review compares against")
     args = parser.parse_args()
 
     if args.catalog:
@@ -180,7 +189,7 @@ def main() -> None:
 
     print()
     for row in chosen:
-        download(row, args.output_root, args.keep_archive)
+        download(row, args.output_root, args.keep_archive, tuple(args.extra))
 
 
 if __name__ == "__main__":
