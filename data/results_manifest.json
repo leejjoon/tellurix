@@ -3,8 +3,8 @@
  "archive": "tellurix-results-2026-10-03.tar.gz",
  "sha256": "d60d07906620b5dcac627394b53213e06ac7c1a9ae572440f8501f73f23648ef",
  "bytes": 15089534,
- "url": "",
- "zenodo_record": "",
+ "url": "https://github.com/leejjoon/tellurix/releases/download/results-2026-10-03/tellurix-results-2026-10-03.tar.gz",
+ "release": "results-2026-10-03",
  "directories": [
   "data/corrected",
   "data/calibration",

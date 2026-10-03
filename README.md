@@ -178,8 +178,8 @@ for usage, assumptions, and reproduction.
 ## Fitted results
 
 The run records, night calibrations and species-scan cache the pipelines
-produced (`data/corrected/`, `data/calibration/`, `data/scans/`) are archived on
-Zenodo rather than kept in git. `data/results_manifest.json` pins the archive
+produced (`data/corrected/`, `data/calibration/`, `data/scans/`) are published as
+a GitHub release asset rather than kept in git. `data/results_manifest.json` pins the archive
 and every file in it; fetch and verify them with
 
 ```bash

@@ -3,8 +3,9 @@
 
 The run records, night calibrations and species-scan cache under
 ``data/corrected/``, ``data/calibration/`` and ``data/scans/`` are products,
-not source: they are archived on Zenodo and fetched into place, at the same
-paths the scripts and docs already use. What stays in git is
+not source: they are published as an asset of a GitHub release
+(``results-<date>``) and fetched into place, at the same paths the scripts and
+docs already use. What stays in git is
 ``data/results_manifest.json`` -- the archive's own sha256, where to download
 it, and the sha256 of every file in it -- so a fetched tree is checked file by
 file, and a result that changed locally is visible against the published one.
@@ -12,7 +13,8 @@ file, and a result that changed locally is visible against the published one.
     uv run python scripts/results_archive.py fetch            # download, verify, unpack
     uv run python scripts/results_archive.py fetch --archive tellurix-results.tar.gz
     uv run python scripts/results_archive.py check            # compare data/ with the manifest
-    uv run python scripts/results_archive.py pack --output dist/tellurix-results.tar.gz
+    uv run python scripts/results_archive.py pack --release results-2026-10-03 \\
+        --output dist/tellurix-results-2026-10-03.tar.gz
 
 ``pack`` takes the files the manifest lists, or with ``--from-git`` the files
 git tracks under those directories, which is how the first archive was made.
@@ -36,6 +38,7 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "data/results_manifest.json"
 DIRECTORIES = ("data/corrected", "data/calibration", "data/scans")
+REPOSITORY = "https://github.com/leejjoon/tellurix"
 
 
 def sha256(path: Path) -> str:
@@ -52,7 +55,7 @@ def _tracked_files() -> list[str]:
     return sorted(name for name in listed.split("\0") if name)
 
 
-def pack(output: Path, files: list[str], url: str, record: str) -> dict:
+def pack(output: Path, files: list[str], url: str, release: str) -> dict:
     """Write a deterministic tar.gz of ``files`` and return its manifest."""
 
     for name in files:
@@ -78,7 +81,7 @@ def pack(output: Path, files: list[str], url: str, record: str) -> dict:
         "sha256": sha256(output),
         "bytes": output.stat().st_size,
         "url": url,
-        "zenodo_record": record,
+        "release": release,
         "directories": list(DIRECTORIES),
         "files": {name: sha256(ROOT / name) for name in files},
     }
@@ -136,8 +139,9 @@ def main() -> None:
     pack_parser.add_argument("--output", type=Path, required=True)
     pack_parser.add_argument("--from-git", action="store_true",
                              help="pack the files git tracks under the result directories")
+    pack_parser.add_argument("--release", default="",
+                             help="the GitHub release tag the archive is attached to; sets --url")
     pack_parser.add_argument("--url", default="", help="where the archive will be downloaded from")
-    pack_parser.add_argument("--zenodo-record", default="", help="the Zenodo record's DOI or URL")
     args = parser.parse_args()
 
     if args.command == "pack":
@@ -145,7 +149,9 @@ def main() -> None:
             files = _tracked_files()
         else:
             files = sorted(json.loads(MANIFEST.read_text())["files"])
-        manifest = pack(args.output, files, args.url, args.zenodo_record)
+        url = args.url or (f"{REPOSITORY}/releases/download/{args.release}/{args.output.name}"
+                           if args.release else "")
+        manifest = pack(args.output, files, url, args.release)
         MANIFEST.write_text(json.dumps(manifest, indent=1, sort_keys=False) + "\n")
         print(f"wrote {args.output} ({manifest['bytes'] / 1e6:.1f} MB, {len(files)} files, "
               f"sha256 {manifest['sha256'][:16]}...) and {MANIFEST.relative_to(ROOT)}")

@@ -128,12 +128,13 @@ each package's `tests/data/` and JSON reports under `docs/` are committed.
 
 The fitted results -- run records, night calibrations, the species-scan cache
 under `data/corrected/`, `data/calibration/` and `data/scans/` -- are not in
-git either. They are archived on Zenodo and pinned by
+git either. They are published as a GitHub release asset (tag `results-<date>`) and pinned by
 `data/results_manifest.json` (the archive's sha256 and every file's), and
 `scripts/results_archive.py fetch` puts them back at the paths every script and
 doc uses; `check` compares the tree with the manifest. A run that writes a new
 product changes the tree, not git: when results are worth publishing, `pack`
-a new archive, upload it as a new Zenodo version, and commit the manifest.
+a new archive with `--release results-<date>`, commit the manifest, and attach
+the archive to a new release of that tag (`gh release create`).
 
 The package was `jax-telluric` until 0.2.0. The import is now `tellurix`, the
 console script `tellurix-download-data`, and the environment variable
