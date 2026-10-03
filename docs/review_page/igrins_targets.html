@@ -1,0 +1,1015 @@
+<title>IGRINS Target Correction Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.iife.min.js"></script>
+
+<style>
+  :root {
+    --ground: #eef2f3;
+    --panel: #ffffff;
+    --sunk: #e3e9eb;
+    --ink: #10181c;
+    --muted: #5b6b72;
+    --faint: #8a9aa1;
+    --line: #cfd9dd;
+    --hair: #dde5e8;
+
+    --observed: #10181c;
+    --telluric: #0e7c8c;
+    --solar: #c07b12;
+    --continuum: #6f5bb5;
+    --corrected: #a83f6b;
+    --plp: #5a7d1a;
+
+    --good: #2c7f56;
+    --warn: #a86a12;
+    --bad: #b4402c;
+
+    --focus: #0e7c8c;
+    --shadow: 0 1px 2px rgba(16, 40, 48, .07), 0 8px 24px rgba(16, 40, 48, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0c1216;
+      --panel: #141c21;
+      --sunk: #101a1f;
+      --ink: #e6edf0;
+      --muted: #93a6ad;
+      --faint: #6b7f87;
+      --line: #27343a;
+      --hair: #1d282d;
+
+      --observed: #e6edf0;
+      --telluric: #4bc3d4;
+      --solar: #e8a33c;
+      --continuum: #a48ff0;
+      --corrected: #f18cb4;
+    --plp: #a9cf5c;
+      --plp: #a9cf5c;
+
+      --good: #4cb583;
+      --warn: #d69a3a;
+      --bad: #e4705a;
+
+      --focus: #4bc3d4;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0c1216;
+    --panel: #141c21;
+    --sunk: #101a1f;
+    --ink: #e6edf0;
+    --muted: #93a6ad;
+    --faint: #6b7f87;
+    --line: #27343a;
+    --hair: #1d282d;
+
+    --observed: #e6edf0;
+    --telluric: #4bc3d4;
+    --solar: #e8a33c;
+    --continuum: #a48ff0;
+    --corrected: #f18cb4;
+
+    --good: #4cb583;
+    --warn: #d69a3a;
+    --bad: #e4705a;
+
+    --focus: #4bc3d4;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+  #app {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 252px minmax(0, 1fr) 312px;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0;
+  }
+
+  /* ---- top bar ------------------------------------------------------- */
+  header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 8px 18px;
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: 4px; }
+  .brand b { font-weight: 600; letter-spacing: -0.01em; }
+  .brand span { color: var(--faint); font-size: 12px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--sunk); border: 1px solid var(--hair);
+    font-size: 12px; white-space: nowrap;
+  }
+  .badge i { font-style: normal; color: var(--faint); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .badge b { font-weight: 600; }
+  .badge.is-good { border-color: color-mix(in srgb, var(--good) 45%, var(--hair)); }
+  .badge.is-warn { border-color: color-mix(in srgb, var(--warn) 55%, var(--hair)); }
+  .badge.is-bad  { border-color: color-mix(in srgb, var(--bad) 55%, var(--hair)); background: color-mix(in srgb, var(--bad) 10%, var(--sunk)); }
+  .spacer { flex: 1 1 24px; }
+
+  .ctl {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: var(--sunk); border: 1px solid var(--hair); border-radius: 8px; padding: 2px;
+  }
+  .ctl button {
+    border: 0; background: transparent; cursor: pointer;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--muted);
+  }
+  .ctl button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+  .ctl button:hover { color: var(--ink); }
+
+  /* ---- rails --------------------------------------------------------- */
+  aside {
+    background: var(--panel);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  aside.left { border-right: 1px solid var(--line); }
+  aside.right { border-left: 1px solid var(--line); }
+  .rail-head {
+    padding: 10px 12px 8px; border-bottom: 1px solid var(--hair);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .rail-title { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+  .filters { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip {
+    border: 1px solid var(--hair); background: var(--sunk); color: var(--muted);
+    border-radius: 999px; padding: 2px 9px; font-size: 11.5px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+  .list { overflow-y: auto; min-height: 0; flex: 1; }
+  .row {
+    width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer;
+    display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 9px;
+    padding: 7px 12px; border-bottom: 1px solid var(--hair);
+  }
+  .row:hover { background: var(--sunk); }
+  .row[aria-current="true"] { background: color-mix(in srgb, var(--telluric) 12%, var(--panel)); box-shadow: inset 3px 0 0 var(--telluric); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  .dot.warn { background: var(--warn); }
+  .dot.bad { background: var(--bad); }
+  .row .who { font-size: 12.5px; }
+  .row .who em { font-style: normal; color: var(--faint); }
+  .row .q { font-size: 12px; color: var(--muted); }
+  .row .marked { font-size: 11px; color: var(--faint); }
+
+  /* ---- centre -------------------------------------------------------- */
+  main { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 12px 14px 14px; gap: 10px; overflow: hidden; }
+  .plotwrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 4px; box-shadow: var(--shadow); }
+  .plotwrap.main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .plotwrap.resid { flex: 0 0 auto; }
+  /* Reserved, not left to the chart: both charts are destroyed before the main
+     one measures its space, so an empty strip here handed the main chart this
+     strip's 118 px and put its x axis on top of the residuals. */
+  #rplot { min-height: 118px; }
+  .plot-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 2px 2px 8px; }
+  .trace { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; background: none; border: 0; padding: 0; color: var(--muted); }
+  .trace[aria-pressed="true"] { color: var(--ink); }
+  .trace .swatch { width: 15px; height: 3px; border-radius: 2px; background: currentColor; flex: none; }
+  .trace[aria-pressed="false"] .swatch { opacity: .3; }
+
+  .hint { color: var(--faint); font-size: 11.5px; padding: 0 2px; }
+
+  /* ---- species ------------------------------------------------------- */
+  .species-groups { overflow-y: auto; min-height: 0; flex: 1; }
+  .group-title {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--panel); padding: 9px 12px 5px;
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint);
+    border-bottom: 1px solid var(--hair);
+  }
+  .sp {
+    display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 9px;
+    padding: 6px 12px; width: 100%; text-align: left; border: 0; background: transparent;
+    border-bottom: 1px solid var(--hair); font-size: 12.5px;
+  }
+  .sp.active { cursor: pointer; }
+  .sp.active:hover { background: var(--sunk); }
+  .sp.off { color: var(--faint); }
+  .sp .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--hair); }
+  .sp .name { font-weight: 500; }
+  .sp .why { font-size: 11.5px; color: var(--faint); }
+  .sp .num { font-size: 11.5px; color: var(--muted); }
+  .sp .flag { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--bad); }
+
+  /* ---- review -------------------------------------------------------- */
+  .review { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--sunk); }
+  .marks { display: flex; gap: 6px; }
+  .mark {
+    flex: 1; border: 1px solid var(--hair); background: var(--panel); color: var(--muted);
+    border-radius: 7px; padding: 5px 4px; font-size: 12px; cursor: pointer;
+  }
+  .mark[aria-pressed="true"][data-mark="good"]    { background: var(--good); border-color: var(--good); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="suspect"] { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="reject"]  { background: var(--bad);  border-color: var(--bad);  color: #fff; }
+  .review textarea {
+    width: 100%; min-height: 54px; resize: vertical;
+    background: var(--panel); border: 1px solid var(--hair); border-radius: 7px;
+    padding: 6px 8px; font-size: 12.5px; font-family: inherit;
+  }
+  .review .status { font-size: 11.5px; color: var(--faint); min-height: 1.2em; }
+
+  /* ---- uPlot --------------------------------------------------------- */
+  .uplot, .uplot *, .uplot *::before, .uplot *::after { box-sizing: border-box; }
+  .uplot { width: min-content; font-family: "IBM Plex Mono", ui-monospace, monospace; line-height: 1.5; }
+  .u-wrap { position: relative; user-select: none; }
+  .u-over, .u-under, .u-axis { position: absolute; }
+  .u-under { overflow: hidden; }
+  .uplot canvas { display: block; position: relative; width: 100%; height: 100%; }
+  .u-select { background: rgba(14, 124, 140, .12); position: absolute; pointer-events: none; }
+  .u-cursor-x, .u-cursor-y { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; z-index: 100; }
+  .u-hz .u-cursor-x, .u-vt .u-cursor-y { height: 100%; border-right: 1px dashed var(--faint); }
+  .u-hz .u-cursor-y, .u-vt .u-cursor-x { width: 100%; border-bottom: 1px dashed var(--faint); }
+  .u-cursor-pt { position: absolute; top: 0; left: 0; border-radius: 50%; border: 0 solid;
+    pointer-events: none; will-change: transform; z-index: 100;
+    /* uPlot sets `background` inline as a shorthand, so this must win. */
+    background-clip: padding-box !important; }
+  .u-axis.u-off, .u-select.u-off, .u-cursor-x.u-off, .u-cursor-y.u-off,
+  .u-cursor-pt.u-off { display: none; }
+  .u-legend { display: none; }
+  .fixed-tag { font-size: 12px; color: var(--muted); padding: 4px 10px; border: 1px solid var(--hair); border-radius: 8px; background: var(--sunk); }
+
+  .readout {
+    display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 2px 0;
+    font-size: 11.5px; color: var(--muted); min-height: 1.4em;
+  }
+  .readout b { color: var(--ink); font-weight: 500; }
+
+  #boot { padding: 40px 20px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
+
+  @media (max-width: 1080px) {
+    #app { grid-template-columns: 216px minmax(0, 1fr) 268px; }
+  }
+  @media (max-width: 900px) {
+    html, body { height: auto; }
+    #app { display: flex; flex-direction: column; }
+    main { order: 1; }
+    aside.right { order: 2; }
+    aside.left { order: 3; }
+    header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+    main { padding: 12px 16px; overflow: visible; }
+    .plotwrap.main { min-height: 340px; }
+    aside { border: 0 !important; border-top: 1px solid var(--line) !important; }
+    .list, .species-groups { max-height: 340px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  .plotwrap.band { flex: 0 0 auto; padding: 6px 10px 6px; }
+  .band-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 0 2px 4px; }
+  #overview { display: block; width: 100%; height: 104px; cursor: pointer; touch-action: manipulation; }
+  select.pick {
+    background: var(--sunk); border: 1px solid var(--hair); border-radius: 8px;
+    padding: 4px 8px; font-size: 12px; max-width: 300px;
+  }
+  label.pickl { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--faint);
+    letter-spacing: .04em; text-transform: uppercase; }
+  .facts { padding: 10px 12px; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 12.5px; }
+  .facts dt { color: var(--faint); font-size: 11.5px; }
+  .facts dd { margin: 0; text-align: right; }
+  .facts .sec { grid-column: 1 / -1; font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--faint); padding-top: 8px; border-top: 1px solid var(--hair); margin-top: 4px; }
+  .facts .sec:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+  .facts .note { grid-column: 1 / -1; color: var(--faint); font-size: 11.5px; line-height: 1.4; }
+  .flagtext { color: var(--bad); }
+  .scroll { overflow-y: auto; min-height: 0; flex: 1; }
+  .kind { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); }
+</style>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <b>IGRINS Target Correction Review</b>
+      <span class="mono" id="window-name">loading…</span>
+    </div>
+    <div class="badges" id="badges"></div>
+    <div class="spacer"></div>
+    <div class="ctl" role="group" aria-label="Band">
+      <button type="button" data-band="H" aria-pressed="true">H</button>
+      <button type="button" data-band="K" aria-pressed="false">K</button>
+    </div>
+    <label class="pickl" for="frame">frame <select class="pick mono" id="frame"></select></label>
+    <label class="pickl" for="variant">calibration <select class="pick mono" id="variant"></select></label>
+    <label class="pickl" for="overlay">overlay <select class="pick mono" id="overlay"></select></label>
+    <div class="ctl" role="group" aria-label="View options">
+      <button type="button" id="norm" aria-pressed="true">÷ continuum</button>
+    </div>
+  </header>
+
+  <aside class="left">
+    <div class="rail-head">
+      <div class="rail-title" id="list-count">orders</div>
+      <div class="filters" id="filters"></div>
+    </div>
+    <div class="list" id="list" role="listbox" aria-label="Orders"></div>
+  </aside>
+
+  <main>
+    <div class="plotwrap band">
+      <div class="band-head">
+        <span class="rail-title" id="band-title">whole band</span>
+        <span class="hint">corrected &divide; continuum (2&ndash;98% envelope, reliable pixels) over the operator divided out (shaded), every order of this frame. Click an order to open it; the box marks the zoom below.</span>
+      </div>
+      <canvas id="overview" aria-label="Every order of the band; click to open one"></canvas>
+    </div>
+    <div class="plotwrap main">
+      <div class="plot-legend" id="legend"></div>
+      <div id="plot" style="flex:1 1 auto; min-height:0;"></div>
+      <div class="readout mono" id="readout"></div>
+    </div>
+    <div class="plotwrap resid">
+      <div class="hint" id="resid-hint">fit residual (observed &minus; model) / &sigma; &mdash; on a target this is mostly the star&rsquo;s own lines.</div>
+      <div id="rplot"></div>
+    </div>
+  </main>
+
+  <aside class="right">
+    <div class="scroll"><dl class="facts" id="facts"></dl></div>
+    <div class="review">
+      <div class="rail-title">your verdict</div>
+      <div class="marks">
+        <button type="button" class="mark" data-mark="good" aria-pressed="false">good</button>
+        <button type="button" class="mark" data-mark="suspect" aria-pressed="false">suspect</button>
+        <button type="button" class="mark" data-mark="reject" aria-pressed="false">reject</button>
+      </div>
+      <textarea id="note" placeholder="What did you see?" maxlength="400"></textarea>
+      <div class="status" id="review-status">connecting…</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Series that are drawn as lines. The uncertainty band and the shading are
+  // separate: the band is a uPlot band, the shading a draw hook.
+  var TRACES = [
+    { key: "corrected", label: "telluric-corrected", token: "--corrected", width: 1.2, scale: "f" },
+    { key: "observed",  label: "observed",           token: "--faint",     width: 0.9, scale: "f" },
+    { key: "source",    label: "source model",       token: "--solar",     width: 1.1, scale: "f" },
+    { key: "neighbours", label: "neighbouring orders", token: "--continuum", width: 1.1, scale: "f", dash: [5, 3] },
+    { key: "overlay",   label: "overlay calibration", token: "--observed",  width: 1.0, scale: "f", dash: [2, 2] },
+    // The PLP's own A0V-divided spectrum, continuum-normalized by the PLP.
+    // It shares none of this package's machinery.
+    { key: "plp",       label: "PLP A0V-divided",    token: "--plp",       width: 1.0, scale: "f" },
+    { key: "effective", label: "transmission divided out (right axis)", token: "--telluric", width: 1.0, scale: "t" }
+  ];
+
+  var STATE = {
+    manifest: null, byKey: new Map(), frames: [], frameInfo: {}, orders: { H: [], K: [] },
+    chunks: new Map(), pending: new Map(), axes: null,
+    band: "H", order: null, frame: null, variant: "full", overlay: "", norm: true,
+    traces: { corrected: true, observed: false, source: true, neighbours: true, overlay: true, plp: true, effective: true },
+    filter: "all", marks: { H: {}, K: {} },
+    plot: null, rplot: null, plotKey: null, db: null, writing: Promise.resolve(), overviewHit: []
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function key(variant, band, order, frame) { return variant + "|" + band + "|" + order + "|" + frame; }
+  function entry(order, opts) {
+    opts = opts || {};
+    return STATE.byKey.get(key(opts.variant || STATE.variant, STATE.band, order, opts.frame || STATE.frame));
+  }
+  function um(nu) { return 1e4 / nu; }
+  function fmt(v, d) { return v == null || !isFinite(v) ? "—" : Number(v).toFixed(d); }
+  function signed(v, d) { return v == null || !isFinite(v) ? "—" : (v >= 0 ? "+" : "") + Number(v).toFixed(d); }
+
+  // ---- data ------------------------------------------------------------
+  function fetchBuffer(name) {
+    if (STATE.chunks.has(name)) return Promise.resolve(STATE.chunks.get(name));
+    if (STATE.pending.has(name)) return STATE.pending.get(name);
+    var p = fetch(name).then(function (r) {
+      if (!r.ok) throw new Error(name + " did not load (" + r.status + ")");
+      return r.arrayBuffer();
+    }).then(function (buf) { STATE.chunks.set(name, buf); STATE.pending.delete(name); return buf; });
+    STATE.pending.set(name, p);
+    return p;
+  }
+  function chunkName(n) { return "chunk_" + String(n).padStart(3, "0") + ".wasm"; }
+
+  function decode(buf, e, name) {
+    var meta = e.arrays[name];
+    if (!meta) return null;
+    var codes = new Uint16Array(buf, meta.offset, e.n), out = new Float64Array(e.n),
+        span = (meta.hi - meta.lo) / 65535;
+    for (var i = 0; i < e.n; i++) out[i] = meta.lo + codes[i] * span;
+    return out;
+  }
+  function bits(buf, offset, n) {
+    var bytes = new Uint8Array(buf, offset, Math.ceil(n / 8)), out = new Uint8Array(n);
+    for (var i = 0; i < n; i++) out[i] = (bytes[i >> 3] >> (7 - (i & 7))) & 1;
+    return out;
+  }
+
+  function load(e) {
+    return Promise.all([fetchBuffer(chunkName(e.chunk)), fetchBuffer("axes.wasm")]).then(function (bufs) {
+      var buf = bufs[0], ax = STATE.manifest.axes[e.band + e.order];
+      var pack = { entry: e, x: new Float64Array(bufs[1], ax.nu_offset, ax.n),
+                   column: new Uint16Array(bufs[1], ax.column_offset, ax.n),
+                   mask: bits(buf, e.mask_offset, e.n), reliable: bits(buf, e.reliable_offset, e.n),
+                   clip: bits(buf, e.clip_offset, e.n), s: {} };
+      ["corrected", "uncertainty", "effective", "continuum", "source", "model", "plp"].forEach(function (k) {
+        pack.s[k] = decode(buf, e, k);
+      });
+      if (pack.s.plp) for (var q = 0; q < e.n; q++) if (!pack.mask[q]) pack.s.plp[q] = NaN;
+      // Masked pixels decode to the array minimum; they are not data.
+      var n = e.n, s = pack.s;
+      ["corrected", "uncertainty", "continuum", "source", "model"].forEach(function (k) {
+        for (var i = 0; i < n; i++) if (!pack.mask[i]) s[k][i] = NaN;
+      });
+      s.observed = new Float64Array(n);
+      for (var i = 0; i < n; i++) s.observed[i] = s.corrected[i] * s.effective[i];
+      // Residual of the fit, against the uncertainty the products carry.
+      s.z = new Float64Array(n);
+      for (var j = 0; j < n; j++) {
+        var sig = s.uncertainty[j] * s.effective[j];
+        s.z[j] = pack.mask[j] && sig > 0 ? (s.observed[j] - s.model[j]) / sig : NaN;
+      }
+      return pack;
+    });
+  }
+
+  // Displayed values: normalized by the order's own continuum, or raw.
+  function view(pack, k) {
+    var a = pack.s[k], c = pack.s.continuum, out = new Float64Array(a.length);
+    // The PLP's product arrives already normalized by its own continuum; in
+    // flux view it is put on ours so the two can be laid over each other.
+    if (k === "plp") { for (var p = 0; p < a.length; p++) out[p] = STATE.norm ? a[p] : a[p] * c[p]; return out; }
+    for (var i = 0; i < a.length; i++) out[i] = STATE.norm ? a[i] / c[i] : a[i];
+    return out;
+  }
+
+  // A neighbouring order on this order's pixels: linear interpolation where it
+  // overlaps, on its reliable pixels only. The two copies went through
+  // different pixels, blaze and continuum, so agreement is a real check.
+  function onto(x, other) {
+    var ox = other.x, v = view(other, "corrected"), out = new Float64Array(x.length).fill(NaN);
+    var n = ox.length, j = 0;
+    for (var i = 0; i < x.length; i++) {
+      if (x[i] < ox[0] || x[i] > ox[n - 1]) continue;
+      while (j < n - 2 && ox[j + 1] < x[i]) j++;
+      if (!other.reliable[j] || !other.reliable[j + 1]) continue;
+      var f = (x[i] - ox[j]) / (ox[j + 1] - ox[j]);
+      out[i] = v[j] + f * (v[j + 1] - v[j]);
+    }
+    return out;
+  }
+
+  // ---- orders ----------------------------------------------------------
+  function fracReliable(e) { return e.quality.reliable / e.quality.pixels; }
+  function severity(e) {
+    var f = fracReliable(e);
+    return f < 0.4 ? "bad" : f < 0.8 ? "warn" : "";
+  }
+  var FILTERS = [
+    { key: "all", label: "all" },
+    { key: "telluric", label: "telluric (median T < 0.95)", test: function (e) { return e.quality.median_transmission < 0.95; } },
+    { key: "overlap", label: "has an overlay", test: function (e) { return !!overlayEntry(e.order); } },
+    { key: "marked", label: "marked", test: function (e) { return !!markFor(e.order); } }
+  ];
+  function visibleOrders() {
+    var all = STATE.orders[STATE.band].filter(function (o) { return !!entry(o); });
+    var f = FILTERS.find(function (x) { return x.key === STATE.filter; });
+    return f && f.test ? all.filter(function (o) { return f.test(entry(o)); }) : all;
+  }
+  function renderList() {
+    var shown = visibleOrders();
+    $("list-count").textContent = shown.length + " of " + STATE.orders[STATE.band].length + " " + STATE.band + " orders";
+    $("list").innerHTML = shown.map(function (o) {
+      var e = entry(o), mark = markFor(o);
+      return '<button type="button" class="row mono" role="option" data-order="' + o + '"' +
+        ' aria-current="' + (o === STATE.order) + '" aria-selected="' + (o === STATE.order) + '">' +
+        '<span class="dot ' + severity(e) + '"></span>' +
+        '<span class="who">' + e.name + ' <em>' + um(e.v2).toFixed(3) + '–' + um(e.v1).toFixed(3) + ' µm</em></span>' +
+        '<span class="q">T ' + e.quality.median_transmission.toFixed(2) + ' · ' + Math.round(100 * fracReliable(e)) + '%' +
+        (mark ? ' <span class="marked">' + ({ good: "✓", suspect: "!", reject: "✕" }[mark.mark] || "✎") + '</span>' : '') +
+        '</span></button>';
+    }).join("");
+  }
+
+  // ---- whole-band strip ------------------------------------------------
+  function unpack(b64, top) {
+    var s = atob(b64), out = new Float64Array(s.length);
+    for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); out[i] = c === 255 ? NaN : c / 254 * top; }
+    return out;
+  }
+  function drawOverview() {
+    var cv = $("overview"), dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (!w) return;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    var orders = STATE.orders[STATE.band].filter(function (o) { return !!entry(o); });
+    if (!orders.length) return;
+    var lo = Infinity, hi = -Infinity;
+    orders.forEach(function (o) { var e = entry(o); lo = Math.min(lo, um(e.v2)); hi = Math.max(hi, um(e.v1)); });
+    var pad = (hi - lo) * 0.008; lo -= pad; hi += pad;
+    var top = 16, bottom = h - 16, ph = bottom - top;
+    var X = function (u) { return (u - lo) / (hi - lo) * w; };
+    var Y = function (v) { return bottom - Math.min(Math.max(v, 0), 1.25) / 1.25 * ph; };
+    g.font = "10.5px 'IBM Plex Mono', monospace";
+    g.fillStyle = css("--faint"); g.strokeStyle = css("--hair"); g.lineWidth = 1;
+    var step = (hi - lo) > 0.4 ? 0.05 : 0.02;
+    for (var t = Math.ceil(lo / step) * step; t <= hi; t += step) {
+      var xt = X(t); g.beginPath(); g.moveTo(xt, top); g.lineTo(xt, bottom); g.stroke();
+      g.textAlign = "center"; g.fillText(t.toFixed(2), xt, h - 3);
+    }
+    g.textAlign = "left"; g.fillText("µm", 2, h - 3);
+    // unity line: a corrected, normalized spectrum should sit just under it
+    g.strokeStyle = css("--line"); g.setLineDash([3, 3]);
+    g.beginPath(); g.moveTo(0, Y(1)); g.lineTo(w, Y(1)); g.stroke(); g.setLineDash([]);
+
+    STATE.overviewHit = [];
+    orders.forEach(function (o, idx) {
+      var e = entry(o), ov = e.overview, nus = STATE.manifest.overview_nu[e.band + e.order];
+      var x1 = X(um(e.v1)), x0 = X(um(e.v2));
+      STATE.overviewHit.push({ order: o, x0: x0, x1: x1, mid: (x0 + x1) / 2 });
+      if (o === STATE.order) { g.fillStyle = css("--sunk"); g.fillRect(x0, top - 14, x1 - x0, ph + 14); }
+      var tr = unpack(ov.t, 1.0), elo = unpack(ov.lo, 1.3), ehi = unpack(ov.hi, 1.3);
+      g.fillStyle = css("--telluric"); g.globalAlpha = 0.2;
+      g.beginPath(); g.moveTo(X(um(nus[0])), Y(0));
+      for (var i = 0; i < nus.length; i++) g.lineTo(X(um(nus[i])), Y(isFinite(tr[i]) ? tr[i] : 0));
+      g.lineTo(X(um(nus[nus.length - 1])), Y(0)); g.closePath(); g.fill(); g.globalAlpha = 1;
+      g.strokeStyle = o === STATE.order ? css("--corrected") : css("--observed");
+      g.globalAlpha = o === STATE.order ? 1 : (idx % 2 ? 0.55 : 0.8);
+      g.beginPath();
+      for (var j = 0; j < nus.length; j++) {
+        if (!isFinite(elo[j])) continue;
+        var xx = X(um(nus[j])); g.moveTo(xx, Y(elo[j])); g.lineTo(xx, Y(ehi[j]) - 0.5);
+      }
+      g.stroke(); g.globalAlpha = 1;
+      var every = (w / orders.length) < 26 ? 2 : 1;
+      if (o === STATE.order || o % every === 0) {
+        g.fillStyle = o === STATE.order ? css("--ink") : css("--faint"); g.textAlign = "center";
+        g.fillText(String(o), (x0 + x1) / 2, top - 4);
+      }
+      var mark = markFor(o);
+      if (mark && mark.mark) {
+        g.fillStyle = css(mark.mark === "good" ? "--good" : mark.mark === "suspect" ? "--warn" : "--bad");
+        g.fillRect(x0 + 1, bottom + 1, Math.max(1, x1 - x0 - 2), 2);
+      }
+    });
+    if (STATE.plot) {
+      var sx = STATE.plot.scales.x;
+      if (sx.min != null) {
+        var a = X(um(sx.max)), b = X(um(sx.min));
+        g.strokeStyle = css("--corrected"); g.lineWidth = 1.5;
+        g.strokeRect(a, top - 1, Math.max(2, b - a), ph + 2);
+      }
+    }
+  }
+  function overviewClick(ev) {
+    var r = $("overview").getBoundingClientRect(), x = ev.clientX - r.left, best = null, dist = Infinity;
+    STATE.overviewHit.forEach(function (h) {
+      var d = Math.abs(x - h.mid) + (x >= h.x0 && x <= h.x1 ? 0 : 1e4);
+      if (d < dist) { dist = d; best = h.order; }
+    });
+    if (best != null) show(best);
+  }
+
+  // ---- plotting --------------------------------------------------------
+  function niceStep(span) {
+    var raw = span / 6, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+    return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
+  }
+  function fluxRange(values, reliable) {
+    var v = [];
+    for (var i = 0; i < values.length; i++) if (reliable[i] && isFinite(values[i])) v.push(values[i]);
+    if (v.length < 16) for (var j = 0; j < values.length; j++) if (isFinite(values[j])) v.push(values[j]);
+    if (!v.length) return [0, 1];
+    v.sort(function (a, b) { return a - b; });
+    var lo = v[Math.floor(0.002 * (v.length - 1))], hi = v[Math.floor(0.998 * (v.length - 1))];
+    return [Math.min(0, lo), hi * 1.12];
+  }
+
+  function overlayEntry(order) {
+    if (!STATE.overlay) return null;
+    return entry(order, { variant: STATE.overlay });
+  }
+
+  function buildPlots(pack, neighbours, overlay) {
+    var el = $("plot"), rel = $("rplot"), x = pack.x, n = x.length;
+    var keep = null, plotKey = STATE.band + STATE.order;
+    if (STATE.plot && STATE.plotKey === plotKey) {
+      var sx = STATE.plot.scales.x;
+      if (sx.min != null && sx.max != null) keep = [sx.min, sx.max];
+    }
+    if (typeof uPlot === "undefined") {
+      el.innerHTML = '<div style="padding:28px 8px;color:var(--muted);font-size:13px">The chart library did not load from <span class="mono">cdn.jsdelivr.net</span>, so the spectra cannot be drawn.</div>';
+      return;
+    }
+    if (STATE.plot) { STATE.plot.destroy(); STATE.plot = null; }
+    if (STATE.rplot) { STATE.rplot.destroy(); STATE.rplot = null; }
+
+    var corrected = view(pack, "corrected"), unc = new Float64Array(n);
+    for (var i = 0; i < n; i++) unc[i] = STATE.norm ? pack.s.uncertainty[i] / pack.s.continuum[i] : pack.s.uncertainty[i];
+    var up = new Float64Array(n), dn = new Float64Array(n);
+    for (var k = 0; k < n; k++) { up[k] = corrected[k] + unc[k]; dn[k] = corrected[k] - unc[k]; }
+    var flat = pack.entry.source === "flat";
+    var series = [{}, { stroke: "transparent", width: 0, scale: "f", points: { show: false } },
+                  { stroke: "transparent", width: 0, scale: "f", points: { show: false } }];
+    var data = [x, up, dn], idx = {};
+    function add(keyName, values, spec) {
+      idx[keyName] = data.length; data.push(values); series.push(spec);
+    }
+    TRACES.forEach(function (t) {
+      var values = null;
+      if (t.key === "corrected") values = corrected;
+      else if (t.key === "observed") values = view(pack, "observed");
+      else if (t.key === "source") values = flat ? null : view(pack, "source");
+      else if (t.key === "effective") values = pack.s.effective;
+      else if (t.key === "overlay") values = overlay ? view(overlay, "corrected") : null;
+      else if (t.key === "plp") values = pack.s.plp ? view(pack, "plp") : null;
+      if (t.key === "neighbours") {
+        if (!STATE.norm) return;
+        neighbours.forEach(function (nb) {
+          add("nb" + nb.entry.order, onto(x, nb), { label: nb.entry.name, stroke: css(t.token), width: t.width,
+            scale: "f", dash: t.dash, spanGaps: false, points: { show: false }, show: STATE.traces.neighbours });
+        });
+        return;
+      }
+      if (!values) return;
+      var spec = { label: t.label, stroke: css(t.token), width: t.width, scale: t.scale, spanGaps: false,
+                   points: { show: false }, show: STATE.traces[t.key] };
+      if (t.dash) spec.dash = t.dash;
+      add(t.key, values, spec);
+    });
+
+    var range = fluxRange(corrected, pack.reliable);
+    var col = pack.column;
+    function nuOfColumn(c) {
+      var asc = col[n - 1] > col[0], lo = 0, hi = n - 1;
+      while (hi - lo > 1) { var mid = (lo + hi) >> 1; if ((col[mid] < c) === asc) lo = mid; else hi = mid; }
+      var f = (c - col[lo]) / ((col[hi] - col[lo]) || 1);
+      return x[lo] + f * (x[hi] - x[lo]);
+    }
+    function columnOfNu(v) {
+      if (v <= x[0]) return col[0];
+      if (v >= x[n - 1]) return col[n - 1];
+      var lo = 0, hi = n - 1;
+      while (hi - lo > 1) { var mid = (lo + hi) >> 1; if (x[mid] < v) lo = mid; else hi = mid; }
+      return col[lo] + (v - x[lo]) / (x[hi] - x[lo]) * (col[hi] - col[lo]);
+    }
+
+    // Unreliable pixels shaded, the deepest telluric lines ticked along the
+    // top: over- or under-correction shows up exactly there.
+    function shade(u) {
+      var g = u.ctx, top = u.bbox.top, height = u.bbox.height, dpr = window.devicePixelRatio || 1;
+      g.save();
+      g.fillStyle = css("--sunk");
+      var start = -1;
+      for (var i = 0; i <= n; i++) {
+        var bad = i < n && !pack.reliable[i];
+        if (bad && start < 0) start = i;
+        if (!bad && start >= 0) {
+          var a = u.valToPos(x[Math.max(start - 1, 0)], "x", true), b = u.valToPos(x[Math.min(i, n - 1)], "x", true);
+          g.fillRect(a, top, b - a, height); start = -1;
+        }
+      }
+      g.strokeStyle = css("--telluric"); g.lineWidth = 1.5 * dpr;
+      pack.entry.ticks.forEach(function (i) {
+        var px = u.valToPos(x[i], "x", true), depth = 1 - pack.s.effective[i];
+        g.globalAlpha = Math.min(1, 0.35 + depth);
+        g.beginPath(); g.moveTo(px, top); g.lineTo(px, top + (6 + 10 * Math.min(depth, 1)) * dpr); g.stroke();
+      });
+      g.restore();
+    }
+
+    var axisFont = "11px 'IBM Plex Mono', monospace";
+    STATE.plot = new uPlot({
+      width: el.clientWidth || 800, height: Math.max(220, el.clientHeight || 320),
+      scales: { x: { time: false }, f: { range: range }, t: { range: [0, 1.04] } },
+      series: series, bands: [{ series: [1, 2], fill: css("--hair") }], legend: { show: false },
+      cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      axes: [
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") }, font: axisFont,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(0); }); } },
+        { scale: "f", stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") }, font: axisFont, size: 52 },
+        { scale: "t", side: 1, stroke: css("--muted"), grid: { show: false }, font: axisFont, size: 42,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(1); }); } },
+        { side: 0, scale: "x", stroke: css("--faint"), grid: { show: false }, ticks: { stroke: css("--hair") }, font: axisFont, size: 30,
+          splits: function (u, i, mn, mx) {
+            var a = columnOfNu(mn), b = columnOfNu(mx), c0 = Math.min(a, b), c1 = Math.max(a, b);
+            var st = niceStep(c1 - c0), out = [];
+            for (var c = Math.ceil(c0 / st) * st; c <= c1; c += st) out.push(nuOfColumn(c));
+            return out.sort(function (p, q) { return p - q; });
+          },
+          values: function (u, vs) { return vs.map(function (v) { return "px " + Math.round(columnOfNu(v)); }); } }
+      ],
+      hooks: {
+        drawClear: [shade],
+        setScale: [function (u, k) { if (k === "x") drawOverview(); }],
+        setCursor: [function (u) {
+          var i = u.cursor.idx, r = $("readout");
+          if (i == null) { r.innerHTML = ""; return; }
+          var b = ['<b>' + x[i].toFixed(3) + '</b> cm⁻¹', '<b>' + (1e4 / x[i]).toFixed(5) + '</b> µm',
+                   'column <b>' + pack.column[i] + '</b>', 'cache index <b>' + i + '</b>'];
+          if (pack.mask[i]) {
+            b.push('corrected <b>' + fmt(corrected[i], 4) + ' ± ' + fmt(unc[i], 4) + '</b>');
+            b.push('T<sub>eff</sub> <b>' + fmt(pack.s.effective[i], 4) + '</b>');
+            if (!pack.reliable[i]) b.push('<b>unreliable</b>');
+            if (pack.clip[i]) b.push('<b>clipped</b>');
+            if (overlay) b.push('overlay Δ <b>' + signed(view(overlay, "corrected")[i] - corrected[i], 4) + '</b>');
+            if (pack.s.plp) b.push('PLP <b>' + fmt(view(pack, "plp")[i], 4) + '</b>');
+          } else b.push('<b>masked</b>');
+          r.innerHTML = b.join("");
+        }]
+      }
+    }, data, el);
+
+    // Residual strip, with the pixels below 3 sigma marked.
+    var clipped = new Float64Array(n).fill(NaN), floor = new Float64Array(n).fill(-3);
+    for (var c2 = 0; c2 < n; c2++) if (pack.clip[c2]) clipped[c2] = pack.s.z[c2];
+    var zr = [];
+    for (var z = 0; z < n; z++) if (isFinite(pack.s.z[z])) zr.push(Math.abs(pack.s.z[z]));
+    zr.sort(function (a, b) { return a - b; });
+    var zt = Math.max(4, zr.length ? zr[Math.floor(0.99 * (zr.length - 1))] * 1.1 : 4);
+    STATE.rplot = new uPlot({
+      width: el.clientWidth || 800, height: 118, scales: { x: { time: false }, y: { range: [-zt, zt] } },
+      legend: { show: false }, cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      series: [{}, { stroke: css("--telluric"), width: 0.9, points: { show: false }, spanGaps: false },
+               { stroke: css("--bad"), width: 0, points: { show: true, size: 3, fill: css("--bad"), stroke: css("--bad") }, spanGaps: false },
+               { stroke: css("--line"), width: 1, dash: [3, 3], points: { show: false } }],
+      axes: [
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: axisFont,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(0); }); } },
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: axisFont, size: 52 }
+      ]
+    }, [x, pack.s.z, clipped, floor], rel);
+
+    if (keep) {
+      STATE.plot.setScale("x", { min: keep[0], max: keep[1] });
+      STATE.rplot.setScale("x", { min: keep[0], max: keep[1] });
+    }
+    STATE.plotKey = plotKey;
+    drawOverview();
+  }
+
+  // ---- facts panel -----------------------------------------------------
+  function sourceName(s) {
+    if (s === "flat") return "flat";
+    return s.split("/").pop().replace(/_payne_zero.*$/, "").replace(/_/g, " ") + " (Payne Zero)";
+  }
+  function renderFacts(e) {
+    var f = STATE.frameInfo[STATE.frame], v = (f.variants[STATE.variant] || {})[STATE.band] || {};
+    var ag = v.band_agreement, q = e.quality, rows = [];
+    function row(k, val, cls) { rows.push('<dt>' + k + '</dt><dd class="mono' + (cls ? " " + cls : "") + '">' + val + '</dd>'); }
+    rows.push('<div class="sec">frame ' + f.frame + '</div>');
+    row("object", f.object.replace(/\s+V\s+[\d.]+$/, "") + ' <span class="kind">' + (f.kind === "target" ? "target" : "held-out standard") + '</span>');
+    row("UT", f.date_obs.slice(11, 16));
+    row("air mass (" + STATE.band + ")", fmt(f.bands[STATE.band].airmass, 3));
+    row("source", sourceName(v.source || e.source));
+    row("calibration", STATE.manifest.variants[STATE.variant]);
+    if (v.standards && v.standards.length) row("its standards", v.standards.join(" "));
+    var plp = (f.plp || {})[STATE.band];
+    if (plp) row("PLP divided by", plp.object.replace(/\s+V\s+[\d.]+$/, "") + " · " + plp.date_obs.slice(11, 16) + " UT");
+    rows.push('<div class="sec">shifts this frame needed</div>');
+    row("velocity", signed(v.velocity_shift_kms, 3) + " km/s");
+    row("water (" + STATE.band + ")", signed(v.water_shift, 4) + " ln");
+    if (v.co2_shift != null) row("CO₂ + CH₄", signed(v.co2_shift, 4) + " ln");
+    if (ag) {
+      var flagged = ag.flag || Math.abs(ag.difference) > 0.02;
+      row("water H / K", signed(ag.H, 4) + " / " + signed(ag.K, 4));
+      row("H − K", signed(ag.difference, 4) + (flagged ? " · disagree" : ""), flagged ? "flagtext" : "");
+      rows.push('<div class="note">Both bands see the same water. Held-out standards agree to 0.005–0.009; past 0.02 one band&rsquo;s water is absorbing something else, usually the target&rsquo;s lines.</div>');
+    }
+    rows.push('<div class="sec">order ' + e.name + '</div>');
+    row("median T", fmt(q.median_transmission, 3));
+    row("reliable px", q.reliable + " / " + q.pixels);
+    row("fit residual", fmt(q.residual_rms_over_noise, 2) + " σ");
+    row("water this order", signed(q.log_column_H2O, 4) + (q.water_free ? "" : " (fixed)"));
+    row("· interpolated", signed(q.log_column_H2O_interpolated, 4));
+    row("· its own fit", signed(q.log_column_H2O_per_order, 4));
+    if (q.clipped_fraction != null) row("clipped (driver)", fmt(100 * q.clipped_fraction, 1) + "%");
+    if (e.clip_source === "saved") row("clipped (saved mask)", fmt(100 * e.clip_fraction, 1) + "%");
+    else if (e.clip_source === "recomputed") row("below 3σ (final model)", fmt(100 * e.clip_fraction, 1) + "%");
+    if (q.free_species) row("species", q.free_species || "none");
+    if (q.lsf_sigma_kms != null) row("LSF σ", fmt(q.lsf_sigma_kms, 2) + " km/s");
+    rows.push('<div class="note">&ldquo;its own fit&rdquo; is the water this order would choose alone. It is never used: with the target&rsquo;s lines in the data it chases them. The frame&rsquo;s shift is the median over orders.</div>');
+    $("facts").innerHTML = rows.join("");
+  }
+
+  function renderHeader(e) {
+    var f = STATE.frameInfo[STATE.frame];
+    $("window-name").textContent = e.name + " · " + um(e.v2).toFixed(4) + "–" + um(e.v1).toFixed(4) + " µm · " +
+      f.object.replace(/\s+V\s+[\d.]+$/, "") + " · frame " + STATE.frame;
+    var v = (f.variants[STATE.variant] || {})[STATE.band] || {}, ag = v.band_agreement;
+    var items = [
+      { k: f.kind === "target" ? "target" : "control", v: f.object.replace(/\s+V\s+[\d.]+$/, "") },
+      { k: "air mass", v: fmt(f.bands[STATE.band].airmass, 2) },
+      { k: "median T", v: fmt(e.quality.median_transmission, 3) },
+      { k: "reliable", v: Math.round(100 * fracReliable(e)) + "%", cls: severity(e) === "bad" ? "is-bad" : severity(e) ? "is-warn" : "" },
+      { k: "water shift", v: signed(v.water_shift, 3) }
+    ];
+    if (ag) {
+      var bad = ag.flag || Math.abs(ag.difference) > 0.02;
+      items.push({ k: "H − K", v: signed(ag.difference, 3), cls: bad ? "is-bad" : Math.abs(ag.difference) > 0.01 ? "is-warn" : "is-good" });
+    }
+    $("badges").innerHTML = items.map(function (b) {
+      return '<span class="badge ' + (b.cls || "") + '"><i>' + b.k + '</i><b class="mono">' + b.v + '</b></span>';
+    }).join("");
+  }
+
+  // ---- selectors -------------------------------------------------------
+  function frameLabel(f) {
+    return f.frame + " · " + f.object.replace(/\s+V\s+[\d.]+$/, "") + " · X " +
+      fmt((f.bands[STATE.band] || f.bands.H).airmass, 2) + " · " + f.date_obs.slice(11, 16) + " UT";
+  }
+  function renderSelectors() {
+    var groups = [["target", "targets"], ["standard", "held-out standards (controls)"]];
+    $("frame").innerHTML = groups.map(function (g) {
+      var list = STATE.frames.filter(function (f) { return f.kind === g[0]; });
+      return '<optgroup label="' + g[1] + '">' + list.map(function (f) {
+        return '<option value="' + f.frame + '"' + (f.frame === STATE.frame ? " selected" : "") + '>' + frameLabel(f) + '</option>';
+      }).join("") + '</optgroup>';
+    }).join("");
+    var f = STATE.frameInfo[STATE.frame], have = Object.keys(f.variants);
+    if (have.indexOf(STATE.variant) < 0) STATE.variant = have.indexOf("full") >= 0 ? "full" : have[0];
+    $("variant").innerHTML = have.map(function (k) {
+      return '<option value="' + k + '"' + (k === STATE.variant ? " selected" : "") + '>' + STATE.manifest.variants[k] + '</option>';
+    }).join("");
+    var others = have.filter(function (k) { return k !== STATE.variant; });
+    if (others.indexOf(STATE.overlay) < 0) STATE.overlay = "";
+    $("overlay").innerHTML = '<option value="">none</option>' + others.map(function (k) {
+      return '<option value="' + k + '"' + (k === STATE.overlay ? " selected" : "") + '>' + STATE.manifest.variants[k] + '</option>';
+    }).join("");
+    $("overlay").disabled = !others.length;
+    $("band-title").textContent = STATE.band + " band · frame " + STATE.frame;
+  }
+
+  // ---- marks -----------------------------------------------------------
+  function markKey(order) { return STATE.variant + ":" + STATE.frame + ":" + order; }
+  function markFor(order) { return (STATE.marks[STATE.band] || {})[markKey(order)] || null; }
+  function renderReview() {
+    var m = markFor(STATE.order);
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(!!m && m.mark === b.dataset.mark));
+    });
+    if (document.activeElement !== $("note")) $("note").value = (m && m.note) || "";
+  }
+  function saveMark(patch) {
+    if (!STATE.db) { $("review-status").textContent = "not saved — this view cannot store marks"; return; }
+    var band = STATE.band, k = markKey(STATE.order);
+    var next = Object.assign({}, markFor(STATE.order) || {}, patch, { at: new Date().toISOString() });
+    if (!next.mark && !next.note) next = null;
+    STATE.marks[band] = Object.assign({}, STATE.marks[band]);
+    if (next) STATE.marks[band][k] = next; else delete STATE.marks[band][k];
+    renderReview(); renderList(); drawOverview();
+    STATE.writing = STATE.writing.then(function () {
+      return STATE.db.doc("reviews/igrins_targets_dct2018_" + band).set({ marks: STATE.marks[band] });
+    }).then(function () { $("review-status").textContent = "saved " + new Date().toLocaleTimeString(); })
+      .catch(function (e) { $("review-status").textContent = "not saved (" + (e && e.code ? e.code : "error") + ")"; });
+  }
+  function connectStore() {
+    if (!(window.claude && window.claude.use)) { $("review-status").textContent = "marks unavailable here"; return; }
+    window.claude.use("db").then(function (db) {
+      if (!db) { $("review-status").textContent = "marks unavailable here"; return; }
+      STATE.db = db; $("review-status").textContent = "ready";
+      ["H", "K"].forEach(function (band) {
+        db.doc("reviews/igrins_targets_dct2018_" + band).onSnapshot(function (snap) {
+          STATE.marks[band] = (snap.exists && snap.data().marks) || {};
+          renderReview(); renderList(); drawOverview();
+        }, function (e) { $("review-status").textContent = "marks offline (" + e.code + ")"; });
+      });
+    }).catch(function () { $("review-status").textContent = "marks unavailable here"; });
+  }
+
+  // ---- orchestration ---------------------------------------------------
+  function show(order) {
+    var e = entry(order);
+    if (!e) {
+      var first = STATE.orders[STATE.band].find(function (o) { return !!entry(o); });
+      if (first == null) return;
+      order = first; e = entry(order);
+    }
+    STATE.order = order;
+    renderHeader(e); renderFacts(e); renderReview(); renderList(); drawOverview();
+    $("resid-hint").innerHTML = "fit residual (observed &minus; model) / &sigma; &mdash; on a target this is mostly the star&rsquo;s own lines. " +
+      (e.clip_source === "saved" ? "Red: the pixels the 3&sigma; clip set aside when it measured this frame&rsquo;s shifts (the driver&rsquo;s own mask)."
+       : e.clip_source === "recomputed" ? "Red: more than 3&sigma; below the final model &mdash; an estimate of the clip, which flags more than the driver did."
+       : "This run did not clip.");
+    var neighbours = [order - 1, order + 1].map(function (o) { return entry(o); }).filter(Boolean);
+    var ov = overlayEntry(order);
+    Promise.all([load(e), Promise.all(neighbours.map(load)), ov ? load(ov) : Promise.resolve(null)])
+      .then(function (r) { if (STATE.order === order) buildPlots(r[0], r[1], r[2]); })
+      .catch(function (err) { $("readout").textContent = String(err.message || err); });
+  }
+  function step(delta) {
+    var shown = visibleOrders(), at = shown.indexOf(STATE.order);
+    var next = shown[Math.min(Math.max(at + delta, 0), shown.length - 1)];
+    if (next != null && next !== STATE.order) show(next);
+  }
+  function stepFrame(delta) {
+    var at = STATE.frames.findIndex(function (f) { return f.frame === STATE.frame; });
+    var next = STATE.frames[Math.min(Math.max(at + delta, 0), STATE.frames.length - 1)];
+    if (next && next.frame !== STATE.frame) { STATE.frame = next.frame; renderSelectors(); show(STATE.order); }
+  }
+  function renderLegend() {
+    $("legend").innerHTML = TRACES.map(function (t) {
+      return '<button type="button" class="trace" data-trace="' + t.key + '" style="color:var(' + t.token + ')"' +
+        ' aria-pressed="' + STATE.traces[t.key] + '"><span class="swatch"></span>' +
+        '<span style="color:var(--ink)">' + t.label + '</span></button>';
+    }).join("") + '<span class="hint">grey band: ±1σ · shaded: T &lt; 0.15 · ticks: deepest telluric lines · ↑↓ order · ←→ frame</span>';
+  }
+  function renderFilters() {
+    $("filters").innerHTML = FILTERS.map(function (f) {
+      return '<button type="button" class="chip" data-filter="' + f.key + '" aria-pressed="' + (STATE.filter === f.key) + '">' + f.label + '</button>';
+    }).join("");
+  }
+
+  function wire() {
+    $("list").addEventListener("click", function (e) { var r = e.target.closest(".row"); if (r) show(Number(r.dataset.order)); });
+    $("filters").addEventListener("click", function (e) {
+      var c = e.target.closest(".chip"); if (!c) return;
+      STATE.filter = c.dataset.filter; renderFilters(); renderList();
+    });
+    $("legend").addEventListener("click", function (e) {
+      var b = e.target.closest(".trace"); if (!b) return;
+      STATE.traces[b.dataset.trace] = !STATE.traces[b.dataset.trace]; renderLegend(); show(STATE.order);
+    });
+    document.querySelectorAll("[data-band]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        STATE.band = b.dataset.band; STATE.plotKey = null;
+        document.querySelectorAll("[data-band]").forEach(function (o) { o.setAttribute("aria-pressed", String(o.dataset.band === STATE.band)); });
+        renderSelectors();
+        var orders = STATE.orders[STATE.band];
+        show(STATE.band === "H" ? (orders.indexOf(109) >= 0 ? 109 : orders[0]) : (orders.indexOf(80) >= 0 ? 80 : orders[0]));
+      });
+    });
+    $("frame").addEventListener("change", function () { STATE.frame = $("frame").value; renderSelectors(); show(STATE.order); });
+    $("variant").addEventListener("change", function () { STATE.variant = $("variant").value; renderSelectors(); show(STATE.order); });
+    $("overlay").addEventListener("change", function () { STATE.overlay = $("overlay").value; show(STATE.order); });
+    $("norm").addEventListener("click", function () {
+      STATE.norm = !STATE.norm; $("norm").setAttribute("aria-pressed", String(STATE.norm)); show(STATE.order);
+    });
+    $("overview").addEventListener("click", overviewClick);
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var m = markFor(STATE.order);
+        saveMark({ mark: m && m.mark === b.dataset.mark ? "" : b.dataset.mark });
+      });
+    });
+    var timer = null;
+    $("note").addEventListener("input", function () {
+      clearTimeout(timer); timer = setTimeout(function () { saveMark({ note: $("note").value.trim() }); }, 700);
+    });
+    document.addEventListener("keydown", function (e) {
+      var tag = e.target.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT" || tag === "SELECT") return;
+      if (e.key === "ArrowDown" || e.key === "j") { step(1); e.preventDefault(); }
+      if (e.key === "ArrowUp" || e.key === "k") { step(-1); e.preventDefault(); }
+      if (e.key === "ArrowRight" || e.key === "l") { stepFrame(1); e.preventDefault(); }
+      if (e.key === "ArrowLeft" || e.key === "h") { stepFrame(-1); e.preventDefault(); }
+    });
+    var resize = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(resize); resize = setTimeout(function () { if (STATE.order != null) show(STATE.order); }, 180);
+    });
+  }
+
+  fetch("manifest.json").then(function (r) { return r.json(); }).then(function (m) {
+    STATE.manifest = m;
+    m.entries.forEach(function (e) {
+      STATE.byKey.set(key(e.variant, e.band, e.order, e.frame), e);
+      if (STATE.orders[e.band].indexOf(e.order) < 0) STATE.orders[e.band].push(e.order);
+    });
+    STATE.orders.H.sort(function (a, b) { return a - b; });
+    STATE.orders.K.sort(function (a, b) { return a - b; });
+    STATE.frames = m.frames.slice().sort(function (a, b) {
+      return (a.kind === b.kind ? 0 : a.kind === "target" ? -1 : 1) || a.mjd - b.mjd;
+    });
+    STATE.frames.forEach(function (f) { STATE.frameInfo[f.frame] = f; });
+    // Open on LkCa 15, the target with a model run to overlay.
+    STATE.frame = STATE.frameInfo["0059"] ? "0059" : STATE.frames[0].frame;
+    renderFilters(); renderLegend(); renderSelectors(); wire(); connectStore();
+    show(STATE.orders.H.indexOf(109) >= 0 ? 109 : STATE.orders.H[0]);
+  }).catch(function (e) {
+    document.getElementById("app").innerHTML =
+      '<div id="boot">The correction bundle did not load.<br><span class="mono">' + String(e.message || e) + '</span></div>';
+  });
+})();
+</script>
