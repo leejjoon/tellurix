@@ -1,0 +1,1027 @@
+<title>IGRINS A0V Fit Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.iife.min.js"></script>
+
+<style>
+  :root {
+    --ground: #eef2f3;
+    --panel: #ffffff;
+    --sunk: #e3e9eb;
+    --ink: #10181c;
+    --muted: #5b6b72;
+    --faint: #8a9aa1;
+    --line: #cfd9dd;
+    --hair: #dde5e8;
+
+    --observed: #10181c;
+    --telluric: #0e7c8c;
+    --solar: #c07b12;
+    --continuum: #6f5bb5;
+    --corrected: #a83f6b;
+
+    --good: #2c7f56;
+    --warn: #a86a12;
+    --bad: #b4402c;
+
+    --focus: #0e7c8c;
+    --shadow: 0 1px 2px rgba(16, 40, 48, .07), 0 8px 24px rgba(16, 40, 48, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0c1216;
+      --panel: #141c21;
+      --sunk: #101a1f;
+      --ink: #e6edf0;
+      --muted: #93a6ad;
+      --faint: #6b7f87;
+      --line: #27343a;
+      --hair: #1d282d;
+
+      --observed: #e6edf0;
+      --telluric: #4bc3d4;
+      --solar: #e8a33c;
+      --continuum: #a48ff0;
+      --corrected: #f18cb4;
+
+      --good: #4cb583;
+      --warn: #d69a3a;
+      --bad: #e4705a;
+
+      --focus: #4bc3d4;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0c1216;
+    --panel: #141c21;
+    --sunk: #101a1f;
+    --ink: #e6edf0;
+    --muted: #93a6ad;
+    --faint: #6b7f87;
+    --line: #27343a;
+    --hair: #1d282d;
+
+    --observed: #e6edf0;
+    --telluric: #4bc3d4;
+    --solar: #e8a33c;
+    --continuum: #a48ff0;
+    --corrected: #f18cb4;
+
+    --good: #4cb583;
+    --warn: #d69a3a;
+    --bad: #e4705a;
+
+    --focus: #4bc3d4;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+  #app {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 252px minmax(0, 1fr) 312px;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0;
+  }
+
+  /* ---- top bar ------------------------------------------------------- */
+  header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 8px 18px;
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: 4px; }
+  .brand b { font-weight: 600; letter-spacing: -0.01em; }
+  .brand span { color: var(--faint); font-size: 12px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--sunk); border: 1px solid var(--hair);
+    font-size: 12px; white-space: nowrap;
+  }
+  .badge i { font-style: normal; color: var(--faint); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .badge b { font-weight: 600; }
+  .badge.is-good { border-color: color-mix(in srgb, var(--good) 45%, var(--hair)); }
+  .badge.is-warn { border-color: color-mix(in srgb, var(--warn) 55%, var(--hair)); }
+  .badge.is-bad  { border-color: color-mix(in srgb, var(--bad) 55%, var(--hair)); background: color-mix(in srgb, var(--bad) 10%, var(--sunk)); }
+  .spacer { flex: 1 1 24px; }
+
+  .ctl {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: var(--sunk); border: 1px solid var(--hair); border-radius: 8px; padding: 2px;
+  }
+  .ctl button {
+    border: 0; background: transparent; cursor: pointer;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--muted);
+  }
+  .ctl button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+  .ctl button:hover { color: var(--ink); }
+
+  /* ---- rails --------------------------------------------------------- */
+  aside {
+    background: var(--panel);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  aside.left { border-right: 1px solid var(--line); }
+  aside.right { border-left: 1px solid var(--line); }
+  .rail-head {
+    padding: 10px 12px 8px; border-bottom: 1px solid var(--hair);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .rail-title { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+  .filters { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip {
+    border: 1px solid var(--hair); background: var(--sunk); color: var(--muted);
+    border-radius: 999px; padding: 2px 9px; font-size: 11.5px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+  .list { overflow-y: auto; min-height: 0; flex: 1; }
+  .row {
+    width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer;
+    display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 9px;
+    padding: 7px 12px; border-bottom: 1px solid var(--hair);
+  }
+  .row:hover { background: var(--sunk); }
+  .row[aria-current="true"] { background: color-mix(in srgb, var(--telluric) 12%, var(--panel)); box-shadow: inset 3px 0 0 var(--telluric); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  .dot.warn { background: var(--warn); }
+  .dot.bad { background: var(--bad); }
+  .row .who { font-size: 12.5px; }
+  .row .who em { font-style: normal; color: var(--faint); }
+  .row .q { font-size: 12px; color: var(--muted); }
+  .row .marked { font-size: 11px; color: var(--faint); }
+
+  /* ---- centre -------------------------------------------------------- */
+  main { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 12px 14px 14px; gap: 10px; overflow: hidden; }
+  .plotwrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 4px; box-shadow: var(--shadow); }
+  .plotwrap.main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .plotwrap.resid { flex: 0 0 auto; }
+  /* Reserved, not left to the chart: both charts are destroyed before the main
+     one measures its space, so an empty strip here handed the main chart this
+     strip's 118 px and put its x axis on top of the residuals. */
+  #rplot { min-height: 118px; }
+  .plot-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 2px 2px 8px; }
+  .trace { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; background: none; border: 0; padding: 0; color: var(--muted); }
+  .trace[aria-pressed="true"] { color: var(--ink); }
+  .trace .swatch { width: 15px; height: 3px; border-radius: 2px; background: currentColor; flex: none; }
+  .trace[aria-pressed="false"] .swatch { opacity: .3; }
+
+  .hint { color: var(--faint); font-size: 11.5px; padding: 0 2px; }
+
+  /* ---- species ------------------------------------------------------- */
+  .species-groups { overflow-y: auto; min-height: 0; flex: 1; }
+  .group-title {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--panel); padding: 9px 12px 5px;
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint);
+    border-bottom: 1px solid var(--hair);
+  }
+  .sp {
+    display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 9px;
+    padding: 6px 12px; width: 100%; text-align: left; border: 0; background: transparent;
+    border-bottom: 1px solid var(--hair); font-size: 12.5px;
+  }
+  .sp.active { cursor: pointer; }
+  .sp.active:hover { background: var(--sunk); }
+  .sp.off { color: var(--faint); }
+  .sp .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--hair); }
+  .sp .name { font-weight: 500; }
+  .sp .why { font-size: 11.5px; color: var(--faint); }
+  .sp .num { font-size: 11.5px; color: var(--muted); }
+  .sp .flag { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--bad); }
+
+  /* ---- review -------------------------------------------------------- */
+  .review { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--sunk); }
+  .marks { display: flex; gap: 6px; }
+  .mark {
+    flex: 1; border: 1px solid var(--hair); background: var(--panel); color: var(--muted);
+    border-radius: 7px; padding: 5px 4px; font-size: 12px; cursor: pointer;
+  }
+  .mark[aria-pressed="true"][data-mark="good"]    { background: var(--good); border-color: var(--good); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="suspect"] { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="reject"]  { background: var(--bad);  border-color: var(--bad);  color: #fff; }
+  .review textarea {
+    width: 100%; min-height: 54px; resize: vertical;
+    background: var(--panel); border: 1px solid var(--hair); border-radius: 7px;
+    padding: 6px 8px; font-size: 12.5px; font-family: inherit;
+  }
+  .review .status { font-size: 11.5px; color: var(--faint); min-height: 1.2em; }
+
+  /* ---- uPlot --------------------------------------------------------- */
+  .uplot, .uplot *, .uplot *::before, .uplot *::after { box-sizing: border-box; }
+  .uplot { width: min-content; font-family: "IBM Plex Mono", ui-monospace, monospace; line-height: 1.5; }
+  .u-wrap { position: relative; user-select: none; }
+  .u-over, .u-under, .u-axis { position: absolute; }
+  .u-under { overflow: hidden; }
+  .uplot canvas { display: block; position: relative; width: 100%; height: 100%; }
+  .u-select { background: rgba(14, 124, 140, .12); position: absolute; pointer-events: none; }
+  .u-cursor-x, .u-cursor-y { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; z-index: 100; }
+  .u-hz .u-cursor-x, .u-vt .u-cursor-y { height: 100%; border-right: 1px dashed var(--faint); }
+  .u-hz .u-cursor-y, .u-vt .u-cursor-x { width: 100%; border-bottom: 1px dashed var(--faint); }
+  .u-cursor-pt { position: absolute; top: 0; left: 0; border-radius: 50%; border: 0 solid;
+    pointer-events: none; will-change: transform; z-index: 100;
+    /* uPlot sets `background` inline as a shorthand, so this must win. */
+    background-clip: padding-box !important; }
+  .u-axis.u-off, .u-select.u-off, .u-cursor-x.u-off, .u-cursor-y.u-off,
+  .u-cursor-pt.u-off { display: none; }
+  .u-legend { display: none; }
+  .fixed-tag { font-size: 12px; color: var(--muted); padding: 4px 10px; border: 1px solid var(--hair); border-radius: 8px; background: var(--sunk); }
+
+  .readout {
+    display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 2px 0;
+    font-size: 11.5px; color: var(--muted); min-height: 1.4em;
+  }
+  .readout b { color: var(--ink); font-weight: 500; }
+
+  #boot { padding: 40px 20px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
+
+  @media (max-width: 1080px) {
+    #app { grid-template-columns: 216px minmax(0, 1fr) 268px; }
+  }
+  @media (max-width: 900px) {
+    html, body { height: auto; }
+    #app { display: flex; flex-direction: column; }
+    main { order: 1; }
+    aside.right { order: 2; }
+    aside.left { order: 3; }
+    header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+    main { padding: 12px 16px; overflow: visible; }
+    .plotwrap.main { min-height: 340px; }
+    aside { border: 0 !important; border-top: 1px solid var(--line) !important; }
+    .list, .species-groups { max-height: 340px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* ---- whole-band strip --------------------------------------------- */
+  .plotwrap.band { flex: 0 0 auto; padding: 6px 10px 6px; }
+  .band-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 0 2px 4px; }
+  .band-head .rail-title { margin-right: 4px; }
+  #overview { display: block; width: 100%; height: 104px; cursor: pointer; touch-action: manipulation; }
+  select.pick {
+    background: var(--sunk); border: 1px solid var(--hair); border-radius: 8px;
+    padding: 4px 8px; font-size: 12px; max-width: 290px;
+  }
+  label.pickl { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--faint);
+    letter-spacing: .04em; text-transform: uppercase; }
+</style>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <b>IGRINS A0V Fit Review</b>
+      <span class="mono" id="window-name">loading…</span>
+    </div>
+    <div class="badges" id="badges"></div>
+    <div class="spacer"></div>
+    <div class="ctl" role="group" aria-label="Band">
+      <button type="button" data-band="H" aria-pressed="true">H</button>
+      <button type="button" data-band="K" aria-pressed="false">K</button>
+    </div>
+    <label class="pickl" for="frame">frame <select class="pick mono" id="frame"></select></label>
+    <label class="pickl" for="compare">compare <select class="pick mono" id="compare"></select></label>
+    <div class="ctl" role="group" aria-label="View options">
+      <button type="button" id="logy" aria-pressed="false">log flux</button>
+    </div>
+  </header>
+
+  <aside class="left">
+    <div class="rail-head">
+      <div class="rail-title" id="list-count">orders</div>
+      <div class="filters" id="filters"></div>
+    </div>
+    <div class="list" id="list" role="listbox" aria-label="Orders"></div>
+  </aside>
+
+  <main>
+    <div class="plotwrap band">
+      <div class="band-head">
+        <span class="rail-title" id="band-title">whole band</span>
+        <span class="hint">observed &divide; fitted continuum (envelope) over the modelled transmission (shaded) for every order of this frame. Click an order to open it; the box marks the zoom below.</span>
+      </div>
+      <canvas id="overview" aria-label="Every order of the band; click to open one"></canvas>
+    </div>
+    <div class="plotwrap main">
+      <div class="plot-legend" id="legend"></div>
+      <div class="hint" id="corrected-note" hidden>telluric-corrected = observed &divide; model &times; stellar model,
+        blanked where the modelled transmission falls below 0.15 (the driver&rsquo;s <span class="mono">reliable</span> cut).
+        Against the stellar model, what is left is the A0V model&rsquo;s own error plus the response the pattern did not remove.</div>
+      <div id="plot" style="flex:1 1 auto; min-height:0;"></div>
+      <div class="readout mono" id="readout"></div>
+    </div>
+    <div class="plotwrap resid">
+      <div class="hint">residual / per-pixel uncertainty &mdash; the shaded band is &plusmn;1&sigma;; top axis of the main panel is the detector column</div>
+      <div id="rplot"></div>
+    </div>
+  </main>
+
+  <aside class="right">
+    <div class="rail-head">
+      <div class="rail-title">species in this order</div>
+      <div class="hint" id="species-hint">click a fitted species to draw its transmission</div>
+    </div>
+    <div class="species-groups" id="species"></div>
+    <div class="review">
+      <div class="rail-title">your verdict</div>
+      <div class="marks">
+        <button type="button" class="mark" data-mark="good" aria-pressed="false">good</button>
+        <button type="button" class="mark" data-mark="suspect" aria-pressed="false">suspect</button>
+        <button type="button" class="mark" data-mark="reject" aria-pressed="false">reject</button>
+      </div>
+      <textarea id="note" placeholder="What did you see?" maxlength="400"></textarea>
+      <div class="status" id="review-status">connecting…</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TRACES = [
+    { key: "observed",     label: "observed",            token: "--observed",  width: 1.1, scale: "f" },
+    { key: "model",        label: "fitted model",        token: "--telluric",  width: 1.2, scale: "f" },
+    { key: "stellar",      label: "A0V model × continuum", token: "--solar",   width: 1.1, scale: "f" },
+    { key: "continuum",    label: "fitted continuum",    token: "--continuum", width: 1.6, scale: "f", dash: [6, 4] },
+    { key: "corrected",    label: "telluric-corrected",  token: "--corrected", width: 1.1, scale: "f" },
+    // The PLP's own telluric model, which the driver carries for comparison.
+    // On the right-hand transmission axis, like the species.
+    { key: "plp_telluric", label: "PLP telluric (right axis)", token: "--faint", width: 1.0, scale: "t", dash: [2, 3] }
+  ];
+  var MINIMUM_TRANSMISSION = 0.15;
+
+  var SPECIES_COLOR = {
+    H2O: "#2f7ad6", CO2: "#d1493f", CH4: "#4aa564", N2O: "#a35fd1", CO: "#d4881f",
+    O2: "#2a9d9d", continuum: "#8a9aa1"
+  };
+  function speciesColor(name) { return SPECIES_COLOR[name] || "#7f8f96"; }
+
+  var STATE = {
+    manifest: null, byKey: new Map(), orders: { H: [], K: [] }, frames: [], frameInfo: {},
+    chunks: new Map(), pending: new Map(),
+    band: "H", order: null, frame: null, compare: "", logy: false,
+    traces: { observed: true, model: true, stellar: true, continuum: true, corrected: false, plp_telluric: false },
+    species: new Set(), filter: "all", marks: { H: {}, K: {} },
+    plot: null, rplot: null, plotKey: null, db: null, writing: Promise.resolve(), overviewHit: []
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function key(band, order, frame) { return band + "|" + order + "|" + frame; }
+  function entry(order, frame) { return STATE.byKey.get(key(STATE.band, order, frame || STATE.frame)); }
+  function um(nu) { return 1e4 / nu; }
+
+  // ---- data ------------------------------------------------------------
+  function chunkBuffer(n) {
+    if (STATE.chunks.has(n)) return Promise.resolve(STATE.chunks.get(n));
+    if (STATE.pending.has(n)) return STATE.pending.get(n);
+    var p = fetch("chunk_" + String(n).padStart(3, "0") + ".wasm")
+      .then(function (r) {
+        if (!r.ok) throw new Error("chunk " + n + " did not load (" + r.status + ")");
+        return r.arrayBuffer();
+      })
+      .then(function (buf) { STATE.chunks.set(n, buf); STATE.pending.delete(n); return buf; });
+    STATE.pending.set(n, p);
+    return p;
+  }
+
+  function decode(buf, e, name) {
+    var meta = e.arrays[name];
+    if (!meta) return null;
+    var codes = new Uint16Array(buf, meta.offset, e.n);
+    var out = new Float64Array(e.n), span = (meta.hi - meta.lo) / 65535;
+    for (var i = 0; i < e.n; i++) out[i] = meta.lo + codes[i] * span;
+    return out;
+  }
+  function bits(buf, offset, n) {
+    var bytes = new Uint8Array(buf, offset, Math.ceil(n / 8)), out = new Uint8Array(n);
+    for (var i = 0; i < n; i++) out[i] = (bytes[i >> 3] >> (7 - (i & 7))) & 1;
+    return out;
+  }
+
+  function load(e) {
+    return chunkBuffer(e.chunk).then(function (buf) {
+      var off = new Float32Array(buf, e.axis_offset, e.n), x = new Float64Array(e.n);
+      for (var i = 0; i < e.n; i++) x[i] = e.nu0 + off[i];
+      var pack = { entry: e, x: x, column: new Uint16Array(buf, e.column_offset, e.n),
+                   mask: bits(buf, e.mask_offset, e.n), reliable: bits(buf, e.reliable_offset, e.n),
+                   series: {}, species: {} };
+      ["observed", "model", "stellar", "continuum", "transmission", "residual", "plp_telluric",
+       "response_pattern"].forEach(function (k) { pack.series[k] = decode(buf, e, k); });
+      Object.keys(e.arrays).forEach(function (k) {
+        if (k.indexOf("species:") === 0) pack.species[k.slice(8)] = decode(buf, e, k);
+      });
+      var obs = pack.series.observed, res = pack.series.residual;
+      // Masked pixels are written as code 0, which decodes to the array's
+      // minimum rather than to nothing; blank every flux-like series there.
+      ["observed", "residual", "model", "stellar", "continuum"].forEach(function (k) {
+        var a = pack.series[k];
+        if (a) for (var j = 0; j < e.n; j++) if (!pack.mask[j]) a[j] = NaN;
+      });
+      // Exactly the driver's own correction operator: observed / model x star.
+      var corrected = new Float64Array(e.n), m = pack.series.model, s = pack.series.stellar,
+          t = pack.series.transmission;
+      for (var k = 0; k < e.n; k++) {
+        corrected[k] = (pack.mask[k] && t[k] >= MINIMUM_TRANSMISSION)
+          ? obs[k] / Math.max(Math.abs(m[k]), 1e-6) * s[k] : NaN;
+      }
+      pack.series.corrected = corrected;
+      return pack;
+    });
+  }
+
+  // ---- quality ---------------------------------------------------------
+  function zrms(e) { var q = e.quality; return q.residual_z_rms != null ? q.residual_z_rms : q.residual_rms_over_noise; }
+  // A column at its UPPER bound is the fit absorbing a model error into that
+  // species; the lower bound is harmless (scripts/quality_flags.py).
+  function upperBound(e) {
+    return e.at_bound.filter(function (k) {
+      return e.log_column_scales[k] != null && e.log_column_scales[k] > 0;
+    });
+  }
+  // The per-order stellar velocity rails at +-60 km/s in a pattern set by the
+  // order, not the star (docs/igrins_transfer.md): a Brackett wing at the
+  // edge of the usable pixels. Worth seeing, not a reason to reject.
+  function railedStar(e) { return e.at_bound.indexOf("stellar_velocity_kms") >= 0; }
+  function severity(e) {
+    if (!e.quality.all_stages_converged || upperBound(e).length) return "bad";
+    if (zrms(e) > 3 || e.at_bound.length) return "warn";
+    return "";
+  }
+
+  // ---- list ------------------------------------------------------------
+  var FILTERS = [
+    { key: "all", label: "all" },
+    { key: "upper", label: "column at upper bound", test: function (e) { return upperBound(e).length > 0; } },
+    { key: "bound", label: "at a bound", test: function (e) { return e.at_bound.length > 0; } },
+    { key: "railed", label: "stellar v railed", test: railedStar },
+    { key: "unconverged", label: "not converged", test: function (e) { return !e.quality.all_stages_converged; } },
+    { key: "worst", label: "worst 8", test: null },
+    { key: "marked", label: "marked", test: function (e) { return !!markFor(e.order, STATE.frame); } }
+  ];
+
+  function visibleOrders() {
+    var all = STATE.orders[STATE.band].filter(function (o) { return !!entry(o); });
+    if (STATE.filter === "worst") {
+      return all.slice().sort(function (a, b) { return zrms(entry(b)) - zrms(entry(a)); })
+        .slice(0, 8).sort(function (a, b) { return a - b; });
+    }
+    var f = FILTERS.find(function (x) { return x.key === STATE.filter; });
+    if (!f || !f.test) return all;
+    return all.filter(function (o) { return f.test(entry(o)); });
+  }
+
+  function renderList() {
+    var shown = visibleOrders();
+    $("list-count").textContent = shown.length + " of " + STATE.orders[STATE.band].length + " " + STATE.band + " orders";
+    $("list").innerHTML = shown.map(function (o) {
+      var e = entry(o), mark = markFor(o, STATE.frame);
+      return '<button type="button" class="row mono" role="option" data-order="' + o + '"' +
+        ' aria-current="' + (o === STATE.order) + '" aria-selected="' + (o === STATE.order) + '">' +
+        '<span class="dot ' + severity(e) + '"></span>' +
+        '<span class="who">' + e.name + ' <em>' + um(e.v2).toFixed(3) + '–' + um(e.v1).toFixed(3) + ' µm</em></span>' +
+        '<span class="q">' + zrms(e).toFixed(2) + 'σ · T ' + e.quality.median_transmission.toFixed(2) +
+        (mark ? ' <span class="marked">' + (mark.mark === "good" ? "✓" : mark.mark === "suspect" ? "!" : mark.mark === "reject" ? "✕" : "✎") + '</span>' : '') +
+        '</span></button>';
+    }).join("");
+  }
+
+  // ---- whole-band strip ------------------------------------------------
+  function unpackOverview(b64, top) {
+    var s = atob(b64), out = new Float64Array(s.length);
+    for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); out[i] = c === 255 ? NaN : c / 254 * top; }
+    return out;
+  }
+
+  function drawOverview() {
+    var cv = $("overview"), dpr = window.devicePixelRatio || 1;
+    var w = cv.clientWidth, h = cv.clientHeight;
+    if (!w) return;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    var orders = STATE.orders[STATE.band].filter(function (o) { return !!entry(o); });
+    if (!orders.length) return;
+    var lo = Infinity, hi = -Infinity;
+    orders.forEach(function (o) { var e = entry(o); lo = Math.min(lo, um(e.v2)); hi = Math.max(hi, um(e.v1)); });
+    var pad = (hi - lo) * 0.008; lo -= pad; hi += pad;
+    var top = 16, bottom = h - 16, ph = bottom - top;
+    var X = function (u) { return (u - lo) / (hi - lo) * w; };
+    var Y = function (v) { return bottom - Math.min(Math.max(v, 0), 1.25) / 1.25 * ph; };
+    var font = "10.5px 'IBM Plex Mono', monospace";
+    g.font = font; g.textBaseline = "alphabetic";
+
+    // Axis: round microns along the bottom.
+    g.fillStyle = css("--faint"); g.strokeStyle = css("--hair"); g.lineWidth = 1;
+    var step = (hi - lo) > 0.4 ? 0.05 : 0.02;
+    for (var t = Math.ceil(lo / step) * step; t <= hi; t += step) {
+      var xt = X(t);
+      g.beginPath(); g.moveTo(xt, top); g.lineTo(xt, bottom); g.stroke();
+      g.textAlign = "center"; g.fillText(t.toFixed(2), xt, h - 3);
+    }
+    g.textAlign = "left"; g.fillText("µm", 2, h - 3);
+
+    STATE.overviewHit = [];
+    orders.forEach(function (o, idx) {
+      var e = entry(o), ov = e.overview, nus = STATE.manifest.overview_nu[e.name];
+      var x1 = X(um(e.v1)), x0 = X(um(e.v2));
+      STATE.overviewHit.push({ order: o, x0: x0, x1: x1, mid: (x0 + x1) / 2 });
+      if (o === STATE.order) {
+        g.fillStyle = css("--sunk"); g.fillRect(x0, top - 14, x1 - x0, ph + 14);
+      }
+      var tr = unpackOverview(ov.t, 1.0), elo = unpackOverview(ov.lo, 1.3), ehi = unpackOverview(ov.hi, 1.3);
+      // Transmission, shaded from the top so absorption reads as a bite.
+      g.fillStyle = css("--telluric"); g.globalAlpha = 0.22;
+      g.beginPath(); g.moveTo(X(um(nus[0])), Y(0));
+      for (var i = 0; i < nus.length; i++) g.lineTo(X(um(nus[i])), Y(tr[i]));
+      g.lineTo(X(um(nus[nus.length - 1])), Y(0)); g.closePath(); g.fill();
+      g.globalAlpha = 1;
+      // The data's envelope per bin; alternate orders differ in weight so
+      // their overlaps can be told apart.
+      g.strokeStyle = o === STATE.order ? css("--corrected") : css("--observed");
+      g.globalAlpha = o === STATE.order ? 1 : (idx % 2 ? 0.55 : 0.8);
+      g.lineWidth = 1;
+      g.beginPath();
+      for (var j = 0; j < nus.length; j++) {
+        if (!isFinite(elo[j])) continue;
+        var xx = X(um(nus[j]));
+        g.moveTo(xx, Y(elo[j])); g.lineTo(xx, Y(ehi[j]) - 0.5);
+      }
+      g.stroke(); g.globalAlpha = 1;
+      // Order labels: every order when there is room, every other otherwise.
+      var every = (w / orders.length) < 26 ? 2 : 1;
+      if (o === STATE.order || o % every === 0) {
+        g.fillStyle = o === STATE.order ? css("--ink") : css("--faint");
+        g.textAlign = "center";
+        g.fillText(String(o), (x0 + x1) / 2, top - 4);
+      }
+      var sev = severity(e);
+      if (sev) {
+        g.fillStyle = css(sev === "bad" ? "--bad" : "--warn");
+        g.fillRect(x0 + 1, bottom + 1, Math.max(1, x1 - x0 - 2), 2);
+      }
+    });
+
+    // The main panel's current view.
+    if (STATE.plot && STATE.order != null) {
+      var sx = STATE.plot.scales.x;
+      if (sx.min != null) {
+        var a = X(um(sx.max)), b = X(um(sx.min));
+        g.strokeStyle = css("--corrected"); g.lineWidth = 1.5;
+        g.strokeRect(a, top - 1, Math.max(2, b - a), ph + 2);
+      }
+    }
+  }
+
+  function overviewClick(ev) {
+    var r = $("overview").getBoundingClientRect(), x = ev.clientX - r.left, best = null, dist = Infinity;
+    STATE.overviewHit.forEach(function (h) {
+      // Orders overlap; inside two, the nearer centre wins.
+      var inside = x >= h.x0 && x <= h.x1, d = Math.abs(x - h.mid) + (inside ? 0 : 1e4);
+      if (d < dist) { dist = d; best = h.order; }
+    });
+    if (best != null) show(best);
+  }
+
+  // ---- plotting --------------------------------------------------------
+  function niceStep(span) {
+    var raw = span / 6, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+    return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
+  }
+
+  // The flux axis from the data, not from its extremes: a few hot pixels at
+  // an order's edge reach 10-40x the continuum and would flatten the rest.
+  function fluxScale(pack) {
+    var v = [], o = pack.series.observed, r = pack.reliable;
+    for (var i = 0; i < o.length; i++) if (r[i] && isFinite(o[i])) v.push(o[i]);
+    if (v.length < 16) for (var j = 0; j < o.length; j++) if (isFinite(o[j])) v.push(o[j]);
+    if (!v.length) return { distr: STATE.logy ? 3 : 1 };
+    v.sort(function (a, b) { return a - b; });
+    var top = v[Math.floor(0.995 * (v.length - 1))];
+    if (STATE.logy) return { distr: 3, range: [Math.max(v[Math.floor(0.005 * (v.length - 1))] * 0.8, top * 1e-3), top * 1.25] };
+    return { range: [Math.min(0, v[0]), top * 1.15] };
+  }
+
+  function buildPlots(pack, other) {
+    var el = $("plot"), rel = $("rplot");
+    var keep = null, plotKey = STATE.band + STATE.order;
+    if (STATE.plot && STATE.plotKey === plotKey) {
+      var sx = STATE.plot.scales.x;
+      if (sx.min != null && sx.max != null) keep = [sx.min, sx.max];
+    }
+    if (typeof uPlot === "undefined") {
+      el.innerHTML = '<div style="padding:28px 8px;color:var(--muted);font-size:13px">' +
+        'The chart library did not load from <span class="mono">cdn.jsdelivr.net</span>, so the spectra cannot be drawn.</div>';
+      return;
+    }
+    if (STATE.plot) { STATE.plot.destroy(); STATE.plot = null; }
+    if (STATE.rplot) { STATE.rplot.destroy(); STATE.rplot = null; }
+
+    var width = el.clientWidth || 800, height = Math.max(220, el.clientHeight || 320);
+    var data = [pack.x], series = [{}];
+    TRACES.forEach(function (t) {
+      data.push(pack.series[t.key] || new Float64Array(pack.x.length).fill(NaN));
+      var spec = { label: t.label, stroke: css(t.token), width: t.width, scale: t.scale,
+                   spanGaps: false, points: { show: false }, show: STATE.traces[t.key] };
+      if (t.dash) spec.dash = t.dash;
+      series.push(spec);
+    });
+    if (other) {
+      ["observed", "model"].forEach(function (k) {
+        data.push(other.series[k]);
+        series.push({ label: "frame " + other.entry.frame + " " + k,
+          stroke: css(k === "observed" ? "--faint" : "--telluric"), width: 0.9, scale: "f",
+          spanGaps: false, points: { show: false }, dash: [2, 3] });
+      });
+    }
+    Array.from(STATE.species).forEach(function (name) {
+      if (!pack.species[name]) return;
+      data.push(pack.species[name]);
+      series.push({ label: name, stroke: speciesColor(name), width: 1.2, scale: "t", points: { show: false } });
+    });
+
+    // nu -> detector column, and back, by interpolation over this order's own
+    // pixels. The PLP's columns are what its products index.
+    var col = pack.column, xs = pack.x, n = xs.length;
+    function nuOfColumn(c) {
+      // columns run opposite to wavenumber, but monotonically either way
+      var asc = col[n - 1] > col[0];
+      var lo = 0, hi = n - 1;
+      while (hi - lo > 1) {
+        var mid = (lo + hi) >> 1;
+        if ((col[mid] < c) === asc) lo = mid; else hi = mid;
+      }
+      var f = (c - col[lo]) / ((col[hi] - col[lo]) || 1);
+      return xs[lo] + f * (xs[hi] - xs[lo]);
+    }
+    function columnOfNu(v) {
+      var lo = 0, hi = n - 1;
+      if (v <= xs[0]) return col[0];
+      if (v >= xs[n - 1]) return col[n - 1];
+      while (hi - lo > 1) { var mid = (lo + hi) >> 1; if (xs[mid] < v) lo = mid; else hi = mid; }
+      var f = (v - xs[lo]) / (xs[hi] - xs[lo]);
+      return col[lo] + f * (col[hi] - col[lo]);
+    }
+
+    var axisFont = "11px 'IBM Plex Mono', monospace";
+    STATE.plot = new uPlot({
+      width: width, height: height,
+      scales: { x: { time: false }, f: fluxScale(pack), t: { range: [0, 1.04] } },
+      series: series, legend: { show: false },
+      cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      axes: [
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") }, font: axisFont,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(0); }); } },
+        { scale: "f", stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") },
+          font: axisFont, size: 52 },
+        { scale: "t", side: 1, stroke: css("--muted"), grid: { show: false }, font: axisFont, size: 42,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(1); }); } },
+        // Detector column on top, at round column numbers.
+        { side: 0, scale: "x", stroke: css("--faint"), grid: { show: false }, ticks: { stroke: css("--hair") },
+          font: axisFont, size: 30,
+          splits: function (u, i, mn, mx) {
+            var a = columnOfNu(mn), b = columnOfNu(mx), c0 = Math.min(a, b), c1 = Math.max(a, b);
+            var st = niceStep(c1 - c0), out = [];
+            for (var c = Math.ceil(c0 / st) * st; c <= c1; c += st) out.push(nuOfColumn(c));
+            return out.sort(function (p, q) { return p - q; });
+          },
+          values: function (u, vs) { return vs.map(function (v) { return "px " + Math.round(columnOfNu(v)); }); } }
+      ],
+      hooks: {
+        setScale: [function (u, k) { if (k === "x") drawOverview(); }],
+        setCursor: [function (u) {
+          var i = u.cursor.idx, r = $("readout");
+          if (i == null) { r.innerHTML = ""; return; }
+          var b = ['<b>' + pack.x[i].toFixed(3) + '</b> cm⁻¹', '<b>' + (1e4 / pack.x[i]).toFixed(5) + '</b> µm',
+                   'column <b>' + pack.column[i] + '</b>', 'cache index <b>' + i + '</b>'];
+          if (pack.mask[i]) {
+            b.push('obs <b>' + pack.series.observed[i].toFixed(4) + '</b>');
+            b.push('model <b>' + pack.series.model[i].toFixed(4) + '</b>');
+            b.push('T <b>' + pack.series.transmission[i].toFixed(4) + '</b>');
+            b.push('z <b>' + pack.series.residual[i].toFixed(2) + '</b>');
+          } else b.push('<b>masked</b>');
+          if (pack.series.response_pattern) b.push('pattern <b>' + (100 * pack.series.response_pattern[i]).toFixed(2) + '%</b>');
+          Array.from(STATE.species).forEach(function (name) {
+            if (pack.species[name]) b.push(name + ' <b>' + pack.species[name][i].toFixed(4) + '</b>');
+          });
+          r.innerHTML = b.join("");
+        }]
+      }
+    }, data, el);
+
+    var band = new Float64Array(n).fill(1), nband = new Float64Array(n).fill(-1);
+    STATE.rplot = new uPlot({
+      width: width, height: 118, scales: { x: { time: false } }, legend: { show: false },
+      cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      series: [{}, { stroke: "transparent", width: 0, points: { show: false } },
+               { stroke: "transparent", width: 0, points: { show: false } },
+               { stroke: css("--telluric"), width: 0.9, points: { show: false }, spanGaps: false }],
+      bands: [{ series: [1, 2], fill: css("--hair") }],
+      axes: [
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: axisFont,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(0); }); } },
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: axisFont, size: 52 }
+      ]
+    }, [pack.x, band, nband, pack.series.residual], rel);
+
+    // Restore the zoom after construction; a static range on the x scale
+    // left the solar page drawing axes and no series.
+    if (keep) {
+      STATE.plot.setScale("x", { min: keep[0], max: keep[1] });
+      STATE.rplot.setScale("x", { min: keep[0], max: keep[1] });
+    }
+    STATE.plotKey = plotKey;
+    drawOverview();
+  }
+
+  // ---- species panel ---------------------------------------------------
+  function renderSpecies(e) {
+    var names = Object.keys(e.lines).concat(e.absent_species);
+    var depth = function (s) { return (e.max_optical_depth[s] || 0) * e.airmass; };
+    var groups = [
+      { title: "fitted here", members: e.free_species.slice() },
+      { title: "in the model, held at the profile", members: names.filter(function (s) {
+          return e.free_species.indexOf(s) < 0 && e.absent_species.indexOf(s) < 0; }) },
+      { title: "no lines in this order", members: e.absent_species.slice() }
+    ];
+    var out = "";
+    groups.forEach(function (g) {
+      if (!g.members.length) return;
+      g.members.sort(function (a, b) { return depth(b) - depth(a); });
+      out += '<div class="group-title">' + g.title + ' <span style="opacity:.7">(' + g.members.length + ')</span></div>';
+      g.members.forEach(function (s) {
+        var drawable = !!e.arrays["species:" + s] && e.absent_species.indexOf(s) < 0;
+        var on = STATE.species.has(s), detail = "";
+        if (e.absent_species.indexOf(s) < 0) {
+          detail = '<span class="num">τ ' + depth(s).toPrecision(3);
+          if (e.free_species.indexOf(s) >= 0) {
+            var sig = e.sigma[s];
+            detail += ' · ' + Math.exp(e.log_column_scales[s]).toFixed(3) + '×' +
+              (sig ? ' ±' + (100 * sig).toFixed(1) + '%' : '');
+          }
+          detail += ' · ' + (e.lines[s] || 0) + ' lines</span>';
+          if (e.at_bound.indexOf(s) >= 0) detail += ' <span class="flag">bound</span>';
+        }
+        out += '<' + (drawable ? 'button type="button"' : 'div') + ' class="sp ' + (drawable ? "active" : "off") +
+          '" data-species="' + s + '">' +
+          '<span class="swatch" style="background:' + (drawable && on ? speciesColor(s) : "transparent") + ';' +
+          (drawable ? 'border-color:' + speciesColor(s) : '') + '"></span>' +
+          '<span class="name mono">' + s + '</span><span>' + detail + '</span></' + (drawable ? 'button' : 'div') + '>';
+      });
+    });
+    if (e.arrays["species:continuum"]) {
+      var on = STATE.species.has("continuum");
+      out += '<div class="group-title">continuum</div><button type="button" class="sp active" data-species="continuum">' +
+        '<span class="swatch" style="background:' + (on ? speciesColor("continuum") : "transparent") +
+        ';border-color:' + speciesColor("continuum") + '"></span><span class="name mono">MT_CKD H2O</span>' +
+        '<span class="num">kept apart from the lines</span></button>';
+    }
+    $("species").innerHTML = out;
+    $("species-hint").textContent = "τ is peak slant optical depth at air mass " + e.airmass.toFixed(2) +
+      "; ± is the formal error, 3–9× too small";
+  }
+
+  // ---- header ----------------------------------------------------------
+  function renderHeader(e) {
+    var f = STATE.frameInfo[STATE.band + "|" + STATE.frame] || {};
+    $("window-name").textContent = e.name + " · " + um(e.v2).toFixed(4) + "–" + um(e.v1).toFixed(4) + " µm · " +
+      (f.object || "") + " · frame " + STATE.frame;
+    var q = e.quality, z = zrms(e);
+    var items = [
+      { k: "z rms", v: z.toFixed(2) + "σ", cls: z < 1.5 ? "is-good" : z < 3 ? "is-warn" : "is-bad" },
+      { k: "rms/median σ", v: q.residual_rms_over_noise.toFixed(2) },
+      { k: "rms", v: (100 * q.residual_rms).toFixed(2) + "%" },
+      { k: "median T", v: q.median_transmission.toFixed(3) },
+      { k: "usable px", v: q.reliable + " / " + q.pixels },
+      { k: "air mass", v: e.airmass.toFixed(3) },
+      { k: "R", v: Math.round(q.resolving_power_fitted).toLocaleString("en-US") },
+      { k: "v", v: q.velocity_kms.toFixed(2) + " km/s" },
+      { k: "v★", v: q.stellar_velocity_kms.toFixed(1) + " km/s", cls: railedStar(e) ? "is-warn" : "" }
+    ];
+    if (q.response_pattern_rms != null) items.push({ k: "pattern", v: (100 * q.response_pattern_rms).toFixed(2) + "%" });
+    var up = upperBound(e);
+    if (up.length) items.push({ k: "", v: up.join(", ") + " at upper bound", cls: "is-bad" });
+    if (!q.all_stages_converged) items.push({ k: "", v: "a stage did not converge", cls: "is-warn" });
+    var others = e.at_bound.filter(function (k) { return up.indexOf(k) < 0 && k !== "stellar_velocity_kms"; });
+    if (others.length) items.push({ k: "at bound", v: others.join(", "), cls: "is-warn" });
+    $("badges").innerHTML = items.map(function (b) {
+      return '<span class="badge ' + (b.cls || "") + '">' + (b.k ? '<i>' + b.k + '</i>' : "") +
+        '<b class="mono">' + b.v + '</b></span>';
+    }).join("");
+  }
+
+  // ---- frames ----------------------------------------------------------
+  function frameLabel(f) {
+    return f.frame + " · " + f.object.replace(/\s+V\s+[\d.]+$/, "") + " · X " + f.airmass.toFixed(2) +
+      " · " + f.date_obs.slice(11, 16) + " UT";
+  }
+  function renderFrames() {
+    var list = STATE.frames.filter(function (f) { return f.band === STATE.band; });
+    $("frame").innerHTML = list.map(function (f) {
+      return '<option value="' + f.frame + '"' + (f.frame === STATE.frame ? " selected" : "") + '>' + frameLabel(f) + '</option>';
+    }).join("");
+    $("compare").innerHTML = '<option value="">none</option>' + list.filter(function (f) { return f.frame !== STATE.frame; })
+      .map(function (f) {
+        return '<option value="' + f.frame + '"' + (f.frame === STATE.compare ? " selected" : "") + '>' + frameLabel(f) + '</option>';
+      }).join("");
+    if (STATE.compare === STATE.frame) STATE.compare = "";
+    $("band-title").textContent = STATE.band + " band · " + (list.length) + " frames";
+  }
+
+  // ---- review marks ----------------------------------------------------
+  function markKey(order, frame) { return frame + ":" + order; }
+  function markFor(order, frame) { return (STATE.marks[STATE.band] || {})[markKey(order, frame)] || null; }
+  function renderReview() {
+    var m = markFor(STATE.order, STATE.frame);
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(!!m && m.mark === b.dataset.mark));
+    });
+    var note = $("note");
+    if (document.activeElement !== note) note.value = (m && m.note) || "";
+  }
+  function saveMark(patch) {
+    if (!STATE.db) { $("review-status").textContent = "not saved — this view cannot store marks"; return; }
+    var band = STATE.band, k = markKey(STATE.order, STATE.frame);
+    var next = Object.assign({}, markFor(STATE.order, STATE.frame) || {}, patch, { at: new Date().toISOString() });
+    if (!next.mark && !next.note) next = null;
+    STATE.marks[band] = Object.assign({}, STATE.marks[band]);
+    if (next) STATE.marks[band][k] = next; else delete STATE.marks[band][k];
+    renderReview(); renderList();
+    STATE.writing = STATE.writing.then(function () {
+      return STATE.db.doc("reviews/igrins_dct2018_" + band).set({ marks: STATE.marks[band] });
+    }).then(function () {
+      $("review-status").textContent = "saved " + new Date().toLocaleTimeString();
+    }).catch(function (e) {
+      $("review-status").textContent = "not saved (" + (e && e.code ? e.code : "error") + ")";
+    });
+  }
+  function connectStore() {
+    if (!(window.claude && window.claude.use)) { $("review-status").textContent = "marks unavailable here"; return; }
+    window.claude.use("db").then(function (db) {
+      if (!db) { $("review-status").textContent = "marks unavailable here"; return; }
+      STATE.db = db;
+      $("review-status").textContent = "ready";
+      ["H", "K"].forEach(function (band) {
+        db.doc("reviews/igrins_dct2018_" + band).onSnapshot(function (snap) {
+          STATE.marks[band] = (snap.exists && snap.data().marks) || {};
+          renderReview(); renderList(); drawOverview();
+        }, function (e) { $("review-status").textContent = "marks offline (" + e.code + ")"; });
+      });
+    }).catch(function () { $("review-status").textContent = "marks unavailable here"; });
+  }
+
+  // ---- orchestration ---------------------------------------------------
+  function show(order) {
+    var e = entry(order);
+    if (!e) {
+      // This frame lacks the order: fall back to the first one it has.
+      var first = STATE.orders[STATE.band].find(function (o) { return !!entry(o); });
+      if (first == null) return;
+      order = first; e = entry(order);
+    }
+    STATE.order = order;
+    renderHeader(e); renderSpecies(e); renderReview(); renderList(); drawOverview();
+    var jobs = [load(e)];
+    var o = STATE.compare ? entry(order, STATE.compare) : null;
+    if (o) jobs.push(load(o));
+    Promise.all(jobs).then(function (packs) {
+      if (STATE.order !== order) return;
+      buildPlots(packs[0], packs[1] || null);
+    }).catch(function (err) { $("readout").textContent = String(err.message || err); });
+  }
+  function step(delta) {
+    var shown = visibleOrders(), at = shown.indexOf(STATE.order);
+    var next = shown[Math.min(Math.max(at + delta, 0), shown.length - 1)];
+    if (next != null && next !== STATE.order) show(next);
+  }
+  function stepFrame(delta) {
+    var list = STATE.frames.filter(function (f) { return f.band === STATE.band; });
+    var at = list.findIndex(function (f) { return f.frame === STATE.frame; });
+    var next = list[Math.min(Math.max(at + delta, 0), list.length - 1)];
+    if (next && next.frame !== STATE.frame) { STATE.frame = next.frame; renderFrames(); show(STATE.order); }
+  }
+
+  function renderLegend() {
+    $("corrected-note").hidden = !STATE.traces.corrected;
+    $("legend").innerHTML = TRACES.map(function (t) {
+      return '<button type="button" class="trace" data-trace="' + t.key + '" style="color:var(' + t.token + ')"' +
+        ' aria-pressed="' + STATE.traces[t.key] + '"><span class="swatch"></span>' +
+        '<span style="color:var(--ink)">' + t.label + '</span></button>';
+    }).join("") + '<span class="hint">↑↓ order · ←→ frame · drag to zoom, double-click to reset</span>';
+  }
+  function renderFilters() {
+    $("filters").innerHTML = FILTERS.map(function (f) {
+      return '<button type="button" class="chip" data-filter="' + f.key + '" aria-pressed="' +
+        (STATE.filter === f.key) + '">' + f.label + '</button>';
+    }).join("");
+  }
+
+  function wire() {
+    $("list").addEventListener("click", function (e) {
+      var row = e.target.closest(".row"); if (row) show(Number(row.dataset.order));
+    });
+    $("filters").addEventListener("click", function (e) {
+      var chip = e.target.closest(".chip"); if (!chip) return;
+      STATE.filter = chip.dataset.filter; renderFilters(); renderList();
+    });
+    $("legend").addEventListener("click", function (e) {
+      var b = e.target.closest(".trace"); if (!b) return;
+      STATE.traces[b.dataset.trace] = !STATE.traces[b.dataset.trace];
+      renderLegend();
+      // Rebuild rather than setSeries: on the solar page setSeries left the
+      // canvas unchanged; buildPlots carries the zoom across.
+      show(STATE.order);
+    });
+    $("species").addEventListener("click", function (e) {
+      var b = e.target.closest(".sp.active"); if (!b) return;
+      var s = b.dataset.species;
+      if (STATE.species.has(s)) STATE.species.delete(s); else STATE.species.add(s);
+      show(STATE.order);
+    });
+    document.querySelectorAll("[data-band]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        STATE.band = b.dataset.band;
+        document.querySelectorAll("[data-band]").forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o.dataset.band === STATE.band));
+        });
+        STATE.species.clear(); STATE.plotKey = null;
+        renderFrames();
+        // Open the band on the order nearest the middle of its list.
+        var orders = STATE.orders[STATE.band];
+        show(STATE.band === "H" ? (orders.indexOf(109) >= 0 ? 109 : orders[0]) : (orders.indexOf(80) >= 0 ? 80 : orders[0]));
+      });
+    });
+    $("frame").addEventListener("change", function () { STATE.frame = $("frame").value; renderFrames(); show(STATE.order); });
+    $("compare").addEventListener("change", function () { STATE.compare = $("compare").value; show(STATE.order); });
+    $("logy").addEventListener("click", function () {
+      STATE.logy = !STATE.logy; $("logy").setAttribute("aria-pressed", String(STATE.logy)); show(STATE.order);
+    });
+    $("overview").addEventListener("click", overviewClick);
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var m = markFor(STATE.order, STATE.frame);
+        saveMark({ mark: m && m.mark === b.dataset.mark ? "" : b.dataset.mark });
+      });
+    });
+    var timer = null;
+    $("note").addEventListener("input", function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () { saveMark({ note: $("note").value.trim() }); }, 700);
+    });
+    document.addEventListener("keydown", function (e) {
+      var tag = e.target.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT" || tag === "SELECT") return;
+      if (e.key === "ArrowDown" || e.key === "j") { step(1); e.preventDefault(); }
+      if (e.key === "ArrowUp" || e.key === "k") { step(-1); e.preventDefault(); }
+      if (e.key === "ArrowRight" || e.key === "l") { stepFrame(1); e.preventDefault(); }
+      if (e.key === "ArrowLeft" || e.key === "h") { stepFrame(-1); e.preventDefault(); }
+    });
+    var resize = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(resize); resize = setTimeout(function () { if (STATE.order != null) show(STATE.order); }, 180);
+    });
+  }
+
+  fetch("manifest.json").then(function (r) { return r.json(); }).then(function (m) {
+    STATE.manifest = m;
+    m.entries.forEach(function (e) {
+      e.frame = e.frame.split("_").pop();
+      STATE.byKey.set(key(e.band, e.order, e.frame), e);
+      if (STATE.orders[e.band].indexOf(e.order) < 0) STATE.orders[e.band].push(e.order);
+    });
+    STATE.orders.H.sort(function (a, b) { return a - b; });
+    STATE.orders.K.sort(function (a, b) { return a - b; });
+    STATE.frames = m.frames.slice().sort(function (a, b) { return a.mjd - b.mjd; });
+    STATE.frames.forEach(function (f) { STATE.frameInfo[f.band + "|" + f.frame] = f; });
+    // Open on the highest air mass, where the telluric lines are deepest.
+    var h = STATE.frames.filter(function (f) { return f.band === "H"; });
+    STATE.frame = h.slice().sort(function (a, b) { return b.airmass - a.airmass; })[0].frame;
+    renderFilters(); renderLegend(); renderFrames(); wire(); connectStore();
+    show(STATE.orders.H.indexOf(109) >= 0 ? 109 : STATE.orders.H[0]);
+  }).catch(function (e) {
+    document.getElementById("app").innerHTML =
+      '<div id="boot">The fit bundle did not load.<br><span class="mono">' + String(e.message || e) + '</span></div>';
+  });
+})();
+</script>
