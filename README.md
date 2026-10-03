@@ -187,6 +187,13 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/results_archive.py fetch
 UV_CACHE_DIR=.uv-cache uv run python scripts/results_archive.py check
 ```
 
+The `results-2026-10-03` release is archived on Zenodo as
+[10.5281/zenodo.23121557](https://doi.org/10.5281/zenodo.23121557) (all
+versions: [10.5281/zenodo.23121556](https://doi.org/10.5281/zenodo.23121556)).
+Zenodo's GitHub integration archives the repository at the release's tag -- the
+code and `data/results_manifest.json`, which pins every result file by sha256 --
+not the attached results archive itself, which is the release asset above.
+
 ## Observational data, and how to cite it
 
 The package downloads its own spectroscopy (AER line files, MT_CKD) but **not**
