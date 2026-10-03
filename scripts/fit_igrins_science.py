@@ -322,6 +322,11 @@ def main() -> None:
                     source_flux_model_grid=order.source_flux_model_grid)
                 w["clipped_fraction"] = float(np.count_nonzero(mask & reach)
                                               / max(np.count_nonzero(mask), 1))
+                # Kept for the products: the pixels the shifts were measured
+                # without. It cannot be recomputed afterwards -- it was cut
+                # against the unclipped model, and the final continuum, refitted
+                # without these pixels, sits higher and flags 1.7x as many.
+                w["clip_mask"] = mask & reach
                 objective = w["objective"].rebind(w["clipped"])
                 free = ({"velocity_kms"} | ({"H2O"} if w["water_free"] else set())
                         | set(w["dry_free"]))
@@ -364,7 +369,8 @@ def main() -> None:
                 effective_transmission=effective, transmission=transmission,
                 corrected=observed / np.maximum(effective, 1e-6),
                 corrected_uncertainty=sigma / np.maximum(effective, 1e-6),
-                continuum=continuum, response_pattern=w["pattern"][axis])
+                continuum=continuum, response_pattern=w["pattern"][axis],
+                **({} if "clip_mask" not in w else {"clipped": w["clip_mask"][axis]}))
             row = {
                 "order": number, "name": name,
                 "reliable": int(reliable.sum()), "pixels": int(mask.size),
@@ -428,7 +434,12 @@ def main() -> None:
                 "shifts": {"frame": shifts[key],
                            "frame_clipped": None if clipped_shifts is None else clipped_shifts[key],
                            "final": final_level},
+                # The starting stellar velocity belongs here: with a model in
+                # the source slot a start of 0 lets an order with few stellar
+                # lines settle tens of km/s from the star (LkCa 15's H98, H102
+                # and H123 did), and without it the run cannot be repeated.
                 "settings": {"stellar": args.stellar, "vsini_kms": args.vsini_kms,
+                             "stellar_velocity_kms": args.stellar_velocity_kms,
                              "clip_sigma": args.clip_sigma, "clip_pixels": args.clip_pixels,
                              "min_transmission": args.min_transmission,
                              "dry_shift": args.dry_shift},
@@ -478,7 +489,8 @@ def main() -> None:
             config={**{k: v for k, v in calibration.source["config"].items()},
                     "clip_sigma": args.clip_sigma if args.clip_sigma is not None else "",
                     "clip_pixels": args.clip_pixels, "stellar": args.stellar,
-                    "vsini_kms": args.vsini_kms},
+                    "vsini_kms": args.vsini_kms,
+                    "stellar_velocity_kms": args.stellar_velocity_kms},
             physics=dict(driver.PHYSICS),
             inputs={"calibration": str(calibration_path),
                     "calibration_record": calibration.source["record"],

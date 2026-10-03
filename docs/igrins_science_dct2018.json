@@ -1,8 +1,8 @@
 {
  "description": "IGRINS science-frame telluric correction against a night calibration; see scripts/fit_igrins_science.py and docs/igrins_science.md",
  "runs": [
-  "/home/jjlee/work/lblrtm/data/corrected/igrins/science_dct2018",
-  "/home/jjlee/work/lblrtm/data/corrected/igrins/science_dct2018_standards"
+  "data/corrected/igrins/science_dct2018",
+  "data/corrected/igrins/science_dct2018_standards"
  ],
  "band_agreement": {
   "STD": {
@@ -13,7 +13,7 @@
   },
   "TAR": {
    "exposures": 6,
-   "median_abs_difference": 0.00749,
+   "median_abs_difference": 0.00736,
    "max_abs_difference": 0.02219,
    "flagged": 1
   }
@@ -32,10 +32,10 @@
      "order_source": "wat",
      "water_shift": -0.0169,
      "velocity_shift_kms": -0.15309,
-     "water_shift_clipped": -0.01588,
-     "velocity_shift_clipped_kms": -0.1245,
+     "water_shift_clipped": -0.01558,
+     "velocity_shift_clipped_kms": -0.12456,
      "median_clipped_fraction": 0.01887,
-     "median_residual_over_noise": 4.7057,
+     "median_residual_over_noise": 4.70558,
      "stellar_source": "flat"
     },
     "K": {
@@ -43,18 +43,18 @@
      "orders": 25,
      "order_source": "wat",
      "water_shift": -0.01603,
-     "velocity_shift_kms": 0.00342,
+     "velocity_shift_kms": 0.00345,
      "water_shift_clipped": -0.01445,
      "velocity_shift_clipped_kms": 0.00924,
      "median_clipped_fraction": 0.01527,
-     "median_residual_over_noise": 4.36506,
+     "median_residual_over_noise": 4.36395,
      "stellar_source": "flat"
     }
    },
    "band_agreement": {
-    "H": -0.01588,
+    "H": -0.01558,
     "K": -0.01445,
-    "difference": -0.00143,
+    "difference": -0.00113,
     "flag": false
    }
   },
@@ -69,7 +69,7 @@
      "airmass": 1.5092,
      "orders": 27,
      "order_source": "wat",
-     "water_shift": 0.0178,
+     "water_shift": 0.01777,
      "velocity_shift_kms": 0.08551,
      "water_shift_clipped": 0.00747,
      "velocity_shift_clipped_kms": 0.07721,
@@ -81,19 +81,19 @@
      "airmass": 1.5092,
      "orders": 25,
      "order_source": "wat",
-     "water_shift": 0.00078,
+     "water_shift": 0.00077,
      "velocity_shift_kms": 0.1609,
-     "water_shift_clipped": 0.01233,
-     "velocity_shift_clipped_kms": 0.16102,
+     "water_shift_clipped": 0.0123,
+     "velocity_shift_clipped_kms": 0.16107,
      "median_clipped_fraction": 0.02493,
-     "median_residual_over_noise": 2.17889,
+     "median_residual_over_noise": 2.17888,
      "stellar_source": "flat"
     }
    },
    "band_agreement": {
     "H": 0.00747,
-    "K": 0.01233,
-    "difference": -0.00486,
+    "K": 0.0123,
+    "difference": -0.00483,
     "flag": false
    }
   },
@@ -147,31 +147,31 @@
      "airmass": 1.3205,
      "orders": 27,
      "order_source": "wat",
-     "water_shift": -0.00669,
-     "velocity_shift_kms": -0.30693,
-     "water_shift_clipped": -0.0025,
+     "water_shift": -0.0067,
+     "velocity_shift_kms": -0.30719,
+     "water_shift_clipped": -0.00228,
      "velocity_shift_clipped_kms": -0.29127,
      "median_clipped_fraction": 0.02559,
-     "median_residual_over_noise": 3.50981,
+     "median_residual_over_noise": 3.50979,
      "stellar_source": "flat"
     },
     "K": {
      "airmass": 1.3205,
      "orders": 25,
      "order_source": "wat",
-     "water_shift": 0.00584,
+     "water_shift": 0.00583,
      "velocity_shift_kms": -0.26032,
-     "water_shift_clipped": 0.00761,
+     "water_shift_clipped": 0.00762,
      "velocity_shift_clipped_kms": -0.27635,
      "median_clipped_fraction": 0.02321,
-     "median_residual_over_noise": 2.31426,
+     "median_residual_over_noise": 2.31338,
      "stellar_source": "flat"
     }
    },
    "band_agreement": {
-    "H": -0.0025,
-    "K": 0.00761,
-    "difference": -0.01012,
+    "H": -0.00228,
+    "K": 0.00762,
+    "difference": -0.00989,
     "flag": false
    }
   },
@@ -225,9 +225,9 @@
      "airmass": 1.0872,
      "orders": 27,
      "order_source": "wat",
-     "water_shift": 0.03925,
+     "water_shift": 0.03926,
      "velocity_shift_kms": -0.19957,
-     "water_shift_clipped": 0.04054,
+     "water_shift_clipped": 0.0405,
      "velocity_shift_clipped_kms": -0.24431,
      "median_clipped_fraction": 0.01658,
      "median_residual_over_noise": 3.03906,
@@ -242,14 +242,14 @@
      "water_shift_clipped": 0.04435,
      "velocity_shift_clipped_kms": -0.20492,
      "median_clipped_fraction": 0.01678,
-     "median_residual_over_noise": 1.8993,
+     "median_residual_over_noise": 1.90115,
      "stellar_source": "flat"
     }
    },
    "band_agreement": {
-    "H": 0.04054,
+    "H": 0.0405,
     "K": 0.04435,
-    "difference": -0.00381,
+    "difference": -0.00385,
     "flag": false
    }
   },
@@ -264,12 +264,12 @@
      "airmass": 1.4323,
      "orders": 27,
      "order_source": "wat",
-     "water_shift": -0.00626,
+     "water_shift": -0.00624,
      "velocity_shift_kms": 0.08924,
      "water_shift_clipped": -0.00225,
-     "velocity_shift_clipped_kms": 0.02585,
+     "velocity_shift_clipped_kms": 0.02632,
      "median_clipped_fraction": 0.04125,
-     "median_residual_over_noise": 8.05778,
+     "median_residual_over_noise": 8.05783,
      "stellar_source": "flat"
     },
     "K": {
@@ -381,19 +381,19 @@
      "airmass": 1.1605,
      "orders": 27,
      "order_source": "wat",
-     "water_shift": 0.15578,
-     "velocity_shift_kms": -0.00173,
-     "water_shift_clipped": 0.15304,
-     "velocity_shift_clipped_kms": 0.02275,
+     "water_shift": 0.15577,
+     "velocity_shift_kms": -0.00174,
+     "water_shift_clipped": 0.1533,
+     "velocity_shift_clipped_kms": 0.0166,
      "median_clipped_fraction": 0.01403,
-     "median_residual_over_noise": 2.06669,
+     "median_residual_over_noise": 2.06671,
      "stellar_source": "flat"
     },
     "K": {
      "airmass": 1.1605,
      "orders": 25,
      "order_source": "wat",
-     "water_shift": 0.1468,
+     "water_shift": 0.14679,
      "velocity_shift_kms": 0.00028,
      "water_shift_clipped": 0.1376,
      "velocity_shift_clipped_kms": 0.00028,
@@ -403,9 +403,9 @@
     }
    },
    "band_agreement": {
-    "H": 0.15304,
+    "H": 0.1533,
     "K": 0.1376,
-    "difference": 0.01544,
+    "difference": 0.0157,
     "flag": false
    }
   }

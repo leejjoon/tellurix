@@ -58,9 +58,9 @@ bands agreeing on the frame's water to 0.009 or better.
 
 | frame | target | airmass | time | residual H / K | water shift H / K | H - K |
 |---|---|---|---|---|---|---|
-| 37 | Hubble 4 | 1.83 | between standards | 4.71 / 4.37 | -0.016 / -0.014 | -0.001 |
+| 37 | Hubble 4 | 1.83 | between standards | 4.71 / 4.36 | -0.016 / -0.014 | -0.001 |
 | 53 | V1075 Tau | 1.51 | between standards | 2.81 / 2.18 | +0.007 / +0.012 | -0.005 |
-| 59 | LkCa 15 | 1.32 | between standards | 3.51 / 2.31 | -0.003 / +0.008 | -0.010 |
+| 59 | LkCa 15 | 1.32 | between standards | 3.51 / 2.31 | -0.002 / +0.008 | -0.010 |
 | 74 | UY Aur | 1.09 | between standards | 3.04 / 1.90 | +0.041 / +0.044 | -0.004 |
 | 92 | GJ 281 | 1.43 | between standards | 8.06 / 6.30 | -0.002 / +0.020 | -0.022 |
 | 142 | YY Gem | 1.16 | 2.5 h after the last | 2.07 / 1.82 | +0.153 / +0.138 | +0.015 |
@@ -145,7 +145,7 @@ being slightly cooler -- and LkCa 15 at 4370 K, log g 3.9, vsini 13 km/s.
 | | residual H / K, flat | with model | H - K water, flat | with model |
 |---|---|---|---:|---:|
 | GJ 281 | 8.06 / 6.30 | 5.48 / 3.14 | -0.022 | +0.019 |
-| LkCa 15 | 3.51 / 2.31 | 2.94 / 2.21 | -0.010 | +0.013 |
+| LkCa 15 | 3.51 / 2.31 | 2.94 / 2.21 | -0.010 | +0.012 |
 
 The models land where they should -- the fitted stellar velocity agrees across
 orders to 0.2-0.8 km/s and between the bands (GJ 281 6.6 and 6.7, LkCa 15 26.6
@@ -203,7 +203,20 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_science.py \
     --clip-sigma 3 --dry-shift --output-dir data/corrected/igrins/science_dct2018
 UV_CACHE_DIR=.uv-cache uv run python scripts/summarize_igrins_science.py \
     --runs data/corrected/igrins/science_dct2018 --output docs/igrins_science_dct2018.json
+# a target model in the source slot needs a starting stellar velocity: from 0,
+# three of LkCa 15's H orders settle 40 km/s from the star
+UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_science.py \
+    --spec data/igrins/20181220_0059/SDC?_20181220_0059.spec.fits \
+    --calibration data/calibration/igrins_dct2018_h.h5 data/calibration/igrins_dct2018_k.h5 \
+    --stellar data/stellar/lkca15_payne_zero_hk.npz --vsini-kms 13 --stellar-velocity-kms 26.6 \
+    --clip-sigma 3 --output-dir data/corrected/igrins/science_dct2018_model \
+    --record data/corrected/igrins/science_dct2018_model/record_0059.h5
 ```
+
+Each run's npz carries `clipped`, the pixels the clip set aside when it measured
+the frame's shifts. It cannot be recomputed afterwards: it is cut against the
+unclipped model, and the final continuum, refitted without those pixels, sits
+higher and flags about 1.7x as many.
 
 Fit both bands of an exposure in one run to get the band comparison printed;
 the report computes it either way. A band costs about 15-25 minutes on one GPU
