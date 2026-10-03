@@ -14,7 +14,7 @@ file, and a result that changed locally is visible against the published one.
     uv run python scripts/results_archive.py fetch --archive tellurix-results.tar.gz
     uv run python scripts/results_archive.py check            # compare data/ with the manifest
     uv run python scripts/results_archive.py pack --release results-2026-10-03 \\
-        --output dist/tellurix-results-2026-10-03.tar.gz
+        --mirror <zenodo file URL> --output dist/tellurix-results-2026-10-03.tar.gz
 
 ``pack`` takes the files the manifest lists, or with ``--from-git`` the files
 git tracks under those directories, which is how the first archive was made.
@@ -55,7 +55,8 @@ def _tracked_files() -> list[str]:
     return sorted(name for name in listed.split("\0") if name)
 
 
-def pack(output: Path, files: list[str], url: str, release: str) -> dict:
+def pack(output: Path, files: list[str], url: str, release: str,
+         mirrors: list[str] = ()) -> dict:
     """Write a deterministic tar.gz of ``files`` and return its manifest."""
 
     for name in files:
@@ -81,6 +82,8 @@ def pack(output: Path, files: list[str], url: str, release: str) -> dict:
         "sha256": sha256(output),
         "bytes": output.stat().st_size,
         "url": url,
+        # Tried in order after `url`; a download counts only if its sha256 matches.
+        "mirrors": list(mirrors),
         "release": release,
         "directories": list(DIRECTORIES),
         "files": {name: sha256(ROOT / name) for name in files},
@@ -95,6 +98,38 @@ def _safe_members(tar: tarfile.TarFile, expected: set[str]):
         if not member.isfile():
             raise SystemExit(f"archive entry {member.name!r} is not a regular file")
         yield member
+
+
+def download(manifest: dict, directory: Path) -> Path:
+    """Fetch the archive from the first location that serves the right bytes.
+
+    The release asset comes first and the mirrors after it. A location that
+    fails -- unreachable, a 404, or a file whose sha256 is not the manifest's --
+    is reported and skipped, so a mirror can only ever supply the archive the
+    manifest pins.
+    """
+
+    locations = [url for url in [manifest.get("url"), *manifest.get("mirrors", [])] if url]
+    if not locations:
+        raise SystemExit("the manifest has no download URL; pass --archive")
+    Path(directory).mkdir(parents=True, exist_ok=True)
+    archive = Path(directory) / manifest["archive"]
+    for url in locations:
+        # Only the network side counts as the location failing; a local write
+        # error is ours and must not be blamed on every mirror in turn.
+        try:
+            response = urlopen(Request(url, headers={"User-Agent": "tellurix-results"}))
+        except OSError as exc:
+            print(f"  {url}: {exc}")
+            continue
+        with response, open(archive, "wb") as handle:
+            while block := response.read(1 << 20):
+                handle.write(block)
+        if sha256(archive) == manifest["sha256"]:
+            print(f"downloaded {manifest['archive']} from {url}")
+            return archive
+        print(f"  {url}: served a file whose sha256 is not the manifest's")
+    raise SystemExit(f"no location served {manifest['archive']}; tried {len(locations)}")
 
 
 def install(archive: Path, manifest: dict, overwrite: bool) -> int:
@@ -142,6 +177,8 @@ def main() -> None:
     pack_parser.add_argument("--release", default="",
                              help="the GitHub release tag the archive is attached to; sets --url")
     pack_parser.add_argument("--url", default="", help="where the archive will be downloaded from")
+    pack_parser.add_argument("--mirror", action="append", default=[],
+                             help="another download location, tried if the first fails; repeatable")
     args = parser.parse_args()
 
     if args.command == "pack":
@@ -151,7 +188,7 @@ def main() -> None:
             files = sorted(json.loads(MANIFEST.read_text())["files"])
         url = args.url or (f"{REPOSITORY}/releases/download/{args.release}/{args.output.name}"
                            if args.release else "")
-        manifest = pack(args.output, files, url, args.release)
+        manifest = pack(args.output, files, url, args.release, args.mirror)
         MANIFEST.write_text(json.dumps(manifest, indent=1, sort_keys=False) + "\n")
         print(f"wrote {args.output} ({manifest['bytes'] / 1e6:.1f} MB, {len(files)} files, "
               f"sha256 {manifest['sha256'][:16]}...) and {MANIFEST.relative_to(ROOT)}")
@@ -170,13 +207,7 @@ def main() -> None:
 
     archive = args.archive
     if archive is None:
-        if not manifest.get("url"):
-            raise SystemExit("the manifest has no download URL yet; pass --archive")
-        archive = Path(tempfile.mkdtemp()) / manifest["archive"]
-        request = Request(manifest["url"], headers={"User-Agent": "tellurix-results"})
-        with urlopen(request) as response, open(archive, "wb") as handle:
-            while block := response.read(1 << 20):
-                handle.write(block)
+        archive = download(manifest, Path(tempfile.mkdtemp()))
     written = install(archive, manifest, args.overwrite)
     missing, changed = check(manifest)
     if missing or changed:

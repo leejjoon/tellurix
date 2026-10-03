@@ -193,7 +193,8 @@ versions: [10.5281/zenodo.23121556](https://doi.org/10.5281/zenodo.23121556)).
 The record holds both the repository at the release's tag -- the code and the
 manifest -- and the results archive itself, `tellurix-results-2026-10-03.tar.gz`,
 identical to the release asset (sha256 `d60d0790...48ef`, as the manifest pins
-it). Cite the DOI; `fetch` downloads from the GitHub release.
+it). Cite the DOI. `fetch` downloads from the GitHub release and falls back to
+the Zenodo copy if the release cannot be reached.
 
 ## Observational data, and how to cite it
 

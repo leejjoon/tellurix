@@ -4,6 +4,9 @@
  "sha256": "d60d07906620b5dcac627394b53213e06ac7c1a9ae572440f8501f73f23648ef",
  "bytes": 15089534,
  "url": "https://github.com/leejjoon/tellurix/releases/download/results-2026-10-03/tellurix-results-2026-10-03.tar.gz",
+ "mirrors": [
+  "https://zenodo.org/records/23121557/files/tellurix-results-2026-10-03.tar.gz?download=1"
+ ],
  "release": "results-2026-10-03",
  "directories": [
   "data/corrected",
