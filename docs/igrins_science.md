@@ -213,6 +213,12 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_science.py \
     --record data/corrected/igrins/science_dct2018_model/record_0059.h5
 ```
 
+To look at the result rather than the summary numbers,
+`scripts/export_igrins_target_review.py` bundles these runs (plus the
+three-standard sparse run and the PLP's own A0V-divided spectra) for
+`docs/review_page/igrins_targets.html`; CLAUDE.md, *Review pages*, says how it
+is published.
+
 Each run's npz carries `clipped`, the pixels the clip set aside when it measured
 the frame's shifts. It cannot be recomputed afterwards: it is cut against the
 unclipped model, and the final continuum, refitted without those pixels, sits
