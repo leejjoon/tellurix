@@ -45,7 +45,7 @@ LBLRTM over three pressure-temperature-water states.
 Against isolated LBLRTM 12.17 continuum calculations at 5000--5020 cm-1, the
 three cases give median relative optical-depth errors of 0.024%, 0.076%, and
 0.029%. The largest 99th-percentile error is 0.107%; see
-`docs/native_mt_ckd_validation.json` for the states and complete metrics.
+`packages/tellurix/tests/data/native_mt_ckd_validation.json` for the states and complete metrics.
 
 The builder first uses the same pressure edges as the JAX layers and enables
 the AER/HITRAN air-pressure line shifts that ExoJAX 2.5 Direct omits. LBLRTM

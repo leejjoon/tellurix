@@ -28,10 +28,13 @@ with its own `pyproject.toml`, source and tests:
 The root `pyproject.toml` is not a package (`tool.uv.package = false`): it
 installs all three, editable, into one `.venv` for what stays at the top level
 -- the pipeline `scripts/`, `benchmarks/`, `docs/`, `data/`, and `tests/` for
-what spans packages. A package's tests carry their own fixtures under
-`tests/data/` beside them; core tests still read a few profiles from the
-repository's `data/profiles/` and one report from `docs/`, through a `REPO`
-constant, so they run from a checkout and not from an installed wheel.
+what spans packages. A package's tests read only their own fixtures, under `tests/data/` beside
+them, so they run from any directory. Tests of the repository's own data or
+scripts (the AFGL profiles, a script's defaults) belong in the root `tests/`.
+Three profiles in `packages/tellurix/tests/data/profiles/` are copies of
+`data/profiles/` and are inputs, not products; the two validation reports there
+(`aer_co_validation.json`, `native_mt_ckd_validation.json`) are written in place
+by `validate_aer_co.py` and `validate_mt_ckd.py`.
 
 The direction is one way: an instrument package imports `tellurix`, never the
 reverse, and neither instrument imports the other.
@@ -715,7 +718,7 @@ UV_CACHE_DIR=.uv-cache uv run python benchmarks/compare.py baseline.json candida
 UV_CACHE_DIR=.uv-cache uv run python scripts/run_lblrtm_reference.py      # rebuild the core test fixture
 UV_CACHE_DIR=.uv-cache uv run python scripts/build_lblrtm_correction.py   # rebuild data/corrections template
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_aer_co.py           # writes packages/tellurix/tests/data/aer_co_validation.json
-UV_CACHE_DIR=.uv-cache uv run python scripts/validate_mt_ckd.py           # writes docs/native_mt_ckd_validation.json
+UV_CACHE_DIR=.uv-cache uv run python scripts/validate_mt_ckd.py           # writes packages/tellurix/tests/data/native_mt_ckd_validation.json
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_mixed_precision.py [--resume]
 ```
 
@@ -917,7 +920,7 @@ opt-in to keep the default numerically identical to ExoJAX.
   `docs/` plus a prose companion (`docs/validation.md`,
   `docs/performance.md`, `docs/lblrtm_corrected_mode.md`,
   `docs/mixed_precision_validation.md`). `packages/tellurix/tests/test_lblrtm.py` asserts on
-  `packages/tellurix/tests/data/aer_co_validation.json` and `docs/native_mt_ckd_validation.json`,
+  `packages/tellurix/tests/data/aer_co_validation.json` and `packages/tellurix/tests/data/native_mt_ckd_validation.json`,
   so regenerating those reports requires a working LBLRTM build. Update the
   numbers in README/docs prose whenever a report is regenerated.
 - `mt_ckd.py` carries an AER copyright notice; keep it with any derived code.

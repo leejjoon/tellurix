@@ -5,8 +5,7 @@ import pytest
 
 from tellurix import AtmosphereProfile, SpectralOrder, load_atmosphere_csv, load_mipas_profile
 
-# The repository root: these files are shared with the pipeline scripts.
-REPO = Path(__file__).resolve().parents[3]
+DATA = Path(__file__).resolve().parent / "data"
 
 
 def test_profile_rejects_pressure_in_wrong_order():
@@ -26,7 +25,7 @@ def test_order_defaults_mask_and_source():
 
 
 def test_example_profile_loads_all_target_species():
-    profile = load_atmosphere_csv(str(REPO / "data/profiles/example_midlatitude.csv"))
+    profile = load_atmosphere_csv(str(DATA / "profiles/example_midlatitude.csv"))
     assert len(profile.temperature_k) == 6
     assert set(profile.vmr) == {"H2O", "CO2", "CH4", "O2", "CO", "N2O"}
     assert np.all(profile.air_column_cm2 > 0.0)

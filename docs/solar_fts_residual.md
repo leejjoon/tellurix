@@ -370,7 +370,7 @@ the JAX model integrates over the profile's own edges, and LBLRTM was
 integrating over different ones.
 
 **The committed LBLRTM fixtures predate this** -- `packages/tellurix/tests/data/aer_co_validation.json`,
-`docs/native_mt_ckd_validation.json`, `docs/lblrtm_corrected_results.json` and
+`packages/tellurix/tests/data/native_mt_ckd_validation.json`, `docs/lblrtm_corrected_results.json` and
 the correction templates were all produced with LBLRTM choosing its own
 layering. Regenerating them changes committed reference numbers that
 `packages/tellurix/tests/test_lblrtm.py` asserts on, so it is a deliberate act and has not been

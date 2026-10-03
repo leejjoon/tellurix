@@ -1,15 +1,13 @@
-from pathlib import Path
 import dataclasses
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from tellurix import ContinuumSum, O2CollisionInducedContinuum, load_atmosphere_csv
 
-# The repository root: these files are shared with the pipeline scripts.
-REPO = Path(__file__).resolve().parents[3]
-
-PROFILE = str(REPO / "data/profiles/kitt_peak_19830626_file3.csv")
+DATA = Path(__file__).resolve().parent / "data"
+PROFILE = str(DATA / "profiles/kitt_peak_19830626_file3.csv")
 
 
 @pytest.fixture(scope="module")

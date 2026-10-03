@@ -22,7 +22,7 @@ def main() -> None:
     parser.add_argument("--v1", type=float, default=5000.0)
     parser.add_argument("--v2", type=float, default=5020.0)
     parser.add_argument(
-        "--output", type=Path, default=Path("docs/native_mt_ckd_validation.json")
+        "--output", type=Path, default=Path("packages/tellurix/tests/data/native_mt_ckd_validation.json")
     )
     args = parser.parse_args()
 
