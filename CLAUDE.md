@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`tellurix` (package `src/tellurix/`, repo directory `lblrtm/`) is a
+`tellurix` (repo directory `lblrtm/`) is a
 differentiable JAX forward model for terrestrial (telluric) absorption in
 high-resolution spectra such as IGRINS. It wraps ExoJAX opacity calculators
 with a layered atmosphere, slant-path transmission, an instrument model, and a
@@ -12,23 +12,34 @@ bounded MAP fitter. LBLRTM 12.17 is the accuracy reference, not a runtime
 dependency — LBLRTM is only executed offline to produce fixtures and
 correction templates.
 
-The repository carries three packages, all in one distribution for now:
+The repository is a uv workspace of three packages under `packages/`, each
+with its own `pyproject.toml`, source and tests:
 
-- `tellurix` (`src/tellurix/`) -- the core: forward model, opacity, continua,
-  fitter, stellar source, run records, species scans, and the LBLRTM reference
-  tooling. It knows no instrument.
-- `tellurix_fts` (`src/tellurix_fts/`) -- FTS atlases: `atlas.py` (Arcturus),
-  `nso.py` (NSO Kitt Peak solar atlases), `ils.py` (MOPD measured from the
-  spectrum).
-- `tellurix_igrins` (`src/tellurix_igrins/`) -- `igrins.py` (RRISA reader),
-  `night.py` (night calibration), `flat.py` (lamp-flat blaze).
+- `tellurix` (`packages/tellurix/`) -- the core: forward model, opacity,
+  continua, fitter, stellar source, run records, species scans, and the LBLRTM
+  reference tooling. It knows no instrument.
+- `tellurix-fts` (`packages/tellurix-fts/`, import `tellurix_fts`) -- FTS
+  atlases: `atlas.py` (Arcturus), `nso.py` (NSO Kitt Peak solar atlases),
+  `ils.py` (MOPD measured from the spectrum).
+- `tellurix-igrins` (`packages/tellurix-igrins/`, import `tellurix_igrins`) --
+  `igrins.py` (RRISA reader), `night.py` (night calibration), `flat.py`
+  (lamp-flat blaze).
+
+The root `pyproject.toml` is not a package (`tool.uv.package = false`): it
+installs all three, editable, into one `.venv` for what stays at the top level
+-- the pipeline `scripts/`, `benchmarks/`, `docs/`, `data/`, and `tests/` for
+what spans packages. A package's tests carry their own fixtures under
+`tests/data/` beside them; core tests still read a few profiles from the
+repository's `data/profiles/` and one report from `docs/`, through a `REPO`
+constant, so they run from a checkout and not from an installed wheel.
 
 The direction is one way: an instrument package imports `tellurix`, never the
 reverse, and neither instrument imports the other.
 `tests/test_package_boundary.py` enforces it, including imports inside function
 bodies. Put new instrument-specific code in its package, not in the core, and
-import moved names from their package (`from tellurix_igrins import
-read_igrins_observation`) -- the core does not re-export them.
+import those names from their package (`from tellurix_igrins import
+read_igrins_observation`) -- the core does not re-export them. A new
+dependency goes in the `pyproject.toml` of the package whose code imports it.
 
 ## Commands
 
@@ -36,8 +47,9 @@ read_igrins_observation`) -- the core does not re-export them.
 UV_CACHE_DIR=.uv-cache uv sync --dev --extra gpu   # environment (.venv, Python 3.10)
 # Plain `uv sync --dev` REMOVES the CUDA wheels and leaves jax CPU-only; the extra is
 # what keeps the GPU working, and every fit driver defaults to --platform gpu.
-UV_CACHE_DIR=.uv-cache uv run pytest          # full suite, ~70 s, no external data needed
-UV_CACHE_DIR=.uv-cache uv run pytest tests/test_model.py::test_name   # one test
+UV_CACHE_DIR=.uv-cache uv run pytest          # full suite, ~3 min on CPU, no external data needed
+UV_CACHE_DIR=.uv-cache uv run pytest packages/tellurix-igrins   # one package
+UV_CACHE_DIR=.uv-cache uv run pytest packages/tellurix/tests/test_model.py::test_name   # one test
 ```
 
 Always prefix with `UV_CACHE_DIR=.uv-cache`; the default cache location is not
@@ -700,9 +712,9 @@ AER line files it downloads, the rest also execute the LBLRTM binary:
 UV_CACHE_DIR=.uv-cache uv run python benchmarks/benchmark.py --platform cpu --output benchmarks/results/cpu.json
 UV_CACHE_DIR=.uv-cache uv run python benchmarks/benchmark_fit.py   # staged-fit cost -> docs/precomputed_opacity_results.json
 UV_CACHE_DIR=.uv-cache uv run python benchmarks/compare.py baseline.json candidate.json
-UV_CACHE_DIR=.uv-cache uv run python scripts/run_lblrtm_reference.py      # rebuild tests/data fixture
+UV_CACHE_DIR=.uv-cache uv run python scripts/run_lblrtm_reference.py      # rebuild the core test fixture
 UV_CACHE_DIR=.uv-cache uv run python scripts/build_lblrtm_correction.py   # rebuild data/corrections template
-UV_CACHE_DIR=.uv-cache uv run python scripts/validate_aer_co.py           # writes tests/data/aer_co_validation.json
+UV_CACHE_DIR=.uv-cache uv run python scripts/validate_aer_co.py           # writes packages/tellurix/tests/data/aer_co_validation.json
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_mt_ckd.py           # writes docs/native_mt_ckd_validation.json
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_mixed_precision.py [--resume]
 ```
@@ -722,7 +734,7 @@ Scripts hardcode the bootstrapped paths relative to the repo root:
 `data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule/`.
 All of `data/lblrtm/`, `data/databases/`, `data/corrections/`, and
 `benchmarks/results/*` are gitignored — only compact fixtures under
-`tests/data/` and JSON reports under `docs/` are committed.
+each package's `tests/data/` and JSON reports under `docs/` are committed.
 
 The package was `jax-telluric` until 0.2.0. The import is now `tellurix`, the
 console script `tellurix-download-data`, and the environment variable
@@ -865,7 +877,7 @@ Nothing of shape (line, grid) is stored: ExoJAX's dense offset matrix and the
 core/wing test are exact functions of two 1-D vectors and are recomputed inside
 the kernel, which cut what the calculators hold from 426 MB to 1.8 MB and the
 opacity compile from 22 s to 4 s on the Arcturus window, bit-for-bit. Keep it
-that way — `tests/test_direct.py` asserts no 2-D array survives construction.
+that way — `packages/tellurix/tests/test_direct.py` asserts no 2-D array survives construction.
 The kernel is compute-bound, not bandwidth-bound, so steady state is unchanged.
 XLA now fuses the whole wing sum into one reduction and never materializes it,
 so **`layer_chunk_size` is obsolete**: peak memory is the same at every chunk
@@ -904,8 +916,8 @@ opt-in to keep the default numerically identical to ExoJAX.
 - Accuracy and performance claims are backed by a committed JSON report under
   `docs/` plus a prose companion (`docs/validation.md`,
   `docs/performance.md`, `docs/lblrtm_corrected_mode.md`,
-  `docs/mixed_precision_validation.md`). `tests/test_lblrtm.py` asserts on
-  `tests/data/aer_co_validation.json` and `docs/native_mt_ckd_validation.json`,
+  `docs/mixed_precision_validation.md`). `packages/tellurix/tests/test_lblrtm.py` asserts on
+  `packages/tellurix/tests/data/aer_co_validation.json` and `docs/native_mt_ckd_validation.json`,
   so regenerating those reports requires a working LBLRTM build. Update the
   numbers in README/docs prose whenever a report is regenerated.
 - `mt_ckd.py` carries an AER copyright notice; keep it with any derived code.
@@ -918,7 +930,7 @@ opt-in to keep the default numerically identical to ExoJAX.
   (measured: 0.76% formal on the water column against 6.5–9% of sub-window
   scatter). Use `FitResult.correlation` for degeneracies, which survives a wrong
   noise model, and an empirical study for an actual error bar.
-- A run's product is its HDF5 record (`src/tellurix/record.py`), not the
+- A run's product is its HDF5 record (`packages/tellurix/src/tellurix/record.py`), not the
   `.npz` arrays, which are a cache. `docs/using_the_corrected_spectra.md` is the
   user-facing guide -- point a consumer there, not at the development records in
   `arcturus_fit.md` or `igrins_a0v.md`. `scripts/export_spectra_hdf5.py` packs a

@@ -395,7 +395,7 @@ uv run python scripts/summarize_igrins_fit.py \
 
 `data/igrins/` and the per-order `.npz` are gitignored; the committed record is
 `docs/igrins_a0v_results.json` and the two-order fixture under
-`tests/data/igrins/`.
+`packages/tellurix-igrins/tests/data/igrins/`.
 
 ## What limits the residual, and the fix
 

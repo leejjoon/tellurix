@@ -9,9 +9,12 @@ The first validation target is LBLRTM 12.17 in representative IGRINS H- and
 K-band intervals. See `docs/lblrtm_exojax_research.md` for the rationale and
 `docs/validation.md` for the reference-data workflow.
 
-The core is `tellurix` and knows no instrument. Readers and calibrations for
-particular data are in `tellurix_fts` (the Arcturus and NSO solar FTS atlases)
-and `tellurix_igrins` (IGRINS reduced spectra), which build on it.
+The repository is a uv workspace of three packages under `packages/`. The core
+is `tellurix` and knows no instrument. Readers and calibrations for particular
+data are in `tellurix-fts` (import `tellurix_fts`: the Arcturus and NSO solar
+FTS atlases) and `tellurix-igrins` (import `tellurix_igrins`: IGRINS reduced
+spectra), which build on it. `uv sync` installs all three; another project can
+depend on the core alone.
 
 ## Environment
 
@@ -64,7 +67,7 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/run_lblrtm_reference.py
 
 The high-resolution TAPE files remain under `data/lblrtm/run_reference/`; the
 script writes an IGRINS-resolution spectrum and provenance JSON under
-`tests/data/`.
+`packages/tellurix/tests/data/`.
 
 Run the first end-to-end comparison, using AER 3.9 CO parameters in both
 LBLRTM and ExoJAX, with:
@@ -73,7 +76,7 @@ LBLRTM and ExoJAX, with:
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_aer_co.py
 ```
 
-The script records the error metrics in `tests/data/aer_co_validation.json`.
+The script records the error metrics in `packages/tellurix/tests/data/aer_co_validation.json`.
 The `AERLineDatabase` adapter can likewise load the H2O, CO2, O3, N2O, CH4,
 and O2 files extracted by the bootstrap script.
 

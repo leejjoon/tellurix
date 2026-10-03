@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tellurix-fts"
+version = "0.2.0"
+description = "Readers for Fourier-transform spectrometer atlases (Arcturus, NSO solar) for tellurix"
+readme = "README.md"
+requires-python = ">=3.10,<3.11"
+dependencies = [
+  "tellurix>=0.2,<0.3",
+  "numpy>=1.26,<2",
+]
+
+[tool.uv.sources]
+tellurix = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tellurix_fts"]

@@ -69,7 +69,7 @@ gigabyte on a wide page. Both arrays are sorted, so each line's core region is
 one contiguous run of samples, found by `searchsorted`. A pair at the boundary
 has `x*x >= 111`, where ExoJAX's `hjert` already takes its asymptotic branch, so
 which side it falls on cannot change a value; the core list comes out identical,
-order included, and `tests/test_direct.py` asserts that against the dense scan.
+order included, and `packages/tellurix/tests/test_direct.py` asserts that against the dense scan.
 
 ### Final products without an eager forward model
 

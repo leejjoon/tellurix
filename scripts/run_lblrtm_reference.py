@@ -24,7 +24,7 @@ def main() -> None:
     parser.add_argument("--v2", type=float, default=5100.0)
     parser.add_argument("--angle", type=float, default=0.0)
     parser.add_argument("--profile", type=Path, default=Path("data/profiles/example_midlatitude.csv"))
-    parser.add_argument("--output", type=Path, default=Path("tests/data/lblrtm_k_5000_5100.npz"))
+    parser.add_argument("--output", type=Path, default=Path("packages/tellurix/tests/data/lblrtm_k_5000_5100.npz"))
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parents[1]

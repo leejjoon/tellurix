@@ -78,7 +78,7 @@ def main() -> None:
             "absolute_line_shift_resolution_elements": 0.1,
         },
     }
-    output = root / "tests/data/aer_co_validation.json"
+    output = root / "packages/tellurix/tests/data/aer_co_validation.json"
     output.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
 

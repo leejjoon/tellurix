@@ -11,7 +11,12 @@ from pathlib import Path
 
 import pytest
 
-SRC = Path(__file__).resolve().parents[1] / "src"
+PACKAGES = Path(__file__).resolve().parents[1] / "packages"
+SOURCES = {
+    "tellurix": PACKAGES / "tellurix/src/tellurix",
+    "tellurix_fts": PACKAGES / "tellurix-fts/src/tellurix_fts",
+    "tellurix_igrins": PACKAGES / "tellurix-igrins/src/tellurix_igrins",
+}
 FORBIDDEN = {
     "tellurix": {"tellurix_fts", "tellurix_igrins"},
     "tellurix_fts": {"tellurix_igrins"},
@@ -32,8 +37,9 @@ def imported_packages(path):
 def test_package_imports_only_what_it_may(package):
     offending = sorted(
         f"{path.name} imports {name}"
-        for path in (SRC / package).glob("*.py")
+        for path in SOURCES[package].glob("*.py")
         for name in imported_packages(path)
         if name in FORBIDDEN[package]
     )
+    assert any(SOURCES[package].glob("*.py")), f"no sources found for {package}"
     assert not offending

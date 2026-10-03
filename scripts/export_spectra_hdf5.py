@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Pack a run's corrected spectra into one self-contained HDF5 file.
 
-The run record (`src/tellurix/record.py`) holds the fitted *parameters* and
+The run record (`packages/tellurix/src/tellurix/record.py`) holds the fitted *parameters* and
 is the archival product: 530 KB for the whole Arcturus atlas, from which
 `rebuild_arcturus_page.py` regenerates every array to 2.8e-7. That is the right
 thing to keep in git and the wrong thing to hand someone who wants spectra,

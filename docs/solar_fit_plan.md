@@ -326,7 +326,7 @@ band, at the r-grid that band's measured MOPD requires, and cache it.
 
 ## Phase 2 -- reader, ILS, site profile
 
-`src/tellurix_fts/nso.py` -- **built**, with `tests/test_nso.py` -- self-contained
+`packages/tellurix-fts/src/tellurix_fts/nso.py` -- **built**, with `packages/tellurix-fts/tests/test_nso.py` -- self-contained
 in the way `atlas.py` is:
 
 - `read_fts_spectrum(path)` -- parse the 15-line header (source name, comment,
@@ -1274,7 +1274,7 @@ is not carried. Tables extracted by `scripts/extract_o2_cia.py` into
 `_o2_cia_tables.py` with AER's notice; each term's formula, layer quantities, radiation
 term and XINT interpolation as LBLRTM applies them. `ContinuumSum` puts it beside
 MT_CKD; the fitted O2 scale reaches it through the scaled VMR, so the O2-O2 terms go as
-its square and the A-band term linearly (tests/test_o2_cia.py).
+its square and the A-band term linearly (packages/tellurix/tests/test_o2_cia.py).
 
 **Validated against LBLRTM to 0.13%** (`scripts/validate_o2_cia.py`,
 `docs/o2_cia_validation.json`): vertical optical depth from LBLRTM's continua-on minus

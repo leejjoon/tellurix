@@ -369,11 +369,11 @@ and it removes a physics mismatch that was there even when AUTLAY succeeded:
 the JAX model integrates over the profile's own edges, and LBLRTM was
 integrating over different ones.
 
-**The committed LBLRTM fixtures predate this** -- `tests/data/aer_co_validation.json`,
+**The committed LBLRTM fixtures predate this** -- `packages/tellurix/tests/data/aer_co_validation.json`,
 `docs/native_mt_ckd_validation.json`, `docs/lblrtm_corrected_results.json` and
 the correction templates were all produced with LBLRTM choosing its own
 layering. Regenerating them changes committed reference numbers that
-`tests/test_lblrtm.py` asserts on, so it is a deliberate act and has not been
+`packages/tellurix/tests/test_lblrtm.py` asserts on, so it is a deliberate act and has not been
 done here.
 
 ## Replacing the line physics does not move the residual

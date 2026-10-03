@@ -475,7 +475,7 @@ def fit_window(args, root: Path, *, spectrum=None):
     # otherwise reconstruct this exact model from scratch: same grid, same line
     # lists, same precomputed opacity, to call one more method on a model that
     # existed here and was discarded. Optical depth is additive, so these
-    # multiply back to `exact_transmission` (checked in tests/test_model.py),
+    # multiply back to `exact_transmission` (checked in packages/tellurix/tests/test_model.py),
     # and taking them from the fitted model is what makes them the fit's own
     # numbers rather than a later approximation of them.
     species_on_grid = {name: np.asarray(values) for name, values

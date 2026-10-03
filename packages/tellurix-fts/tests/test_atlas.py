@@ -1,10 +1,14 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from tellurix_fts import arcturus_spectral_order, epoch_velocity_kms, read_arcturus_page
 
+DATA = Path(__file__).resolve().parent / "data"
 
-FIXTURE = "tests/data/arcturus_page_sample.txt"
+
+FIXTURE = str(DATA / "arcturus_page_sample.txt")
 
 
 def test_reads_ascending_wavenumbers_and_the_requested_epoch():

@@ -17,9 +17,13 @@ from tellurix import (
 )
 from tellurix import lblrtm as lblrtm_module
 
+DATA = Path(__file__).resolve().parent / "data"
+# The repository root: these files are shared with the pipeline scripts.
+REPO = Path(__file__).resolve().parents[3]
+
 
 def test_tape5_writer_uses_requested_range_profile_and_continuum(tmp_path):
-    profile = load_atmosphere_csv("data/profiles/example_midlatitude.csv")
+    profile = load_atmosphere_csv(str(REPO / "data/profiles/example_midlatitude.csv"))
     output = tmp_path / "TAPE5"
     write_tape5(output, profile, LBLRTMRunConfig(5000.0, 5100.0, 30.0))
     lines = output.read_text().splitlines()
@@ -68,7 +72,7 @@ def test_degrade_and_compare_reference_spectrum():
 
 
 def test_run_lblrtm_accepts_relative_workdir(tmp_path, monkeypatch):
-    profile = load_atmosphere_csv("data/profiles/example_midlatitude.csv")
+    profile = load_atmosphere_csv(str(REPO / "data/profiles/example_midlatitude.csv"))
     fake_spectrum = LBLRTMSpectrum(np.arange(8.0), np.ones(8))
 
     def fake_run(command, cwd, capture_output, text):
@@ -90,7 +94,7 @@ def test_run_lblrtm_accepts_relative_workdir(tmp_path, monkeypatch):
 
 
 def test_committed_lblrtm_fixture_has_valid_ranges():
-    fixture = Path("tests/data/lblrtm_k_5000_5100.npz")
+    fixture = DATA / "lblrtm_k_5000_5100.npz"
     metadata = json.loads(fixture.with_suffix(".json").read_text())
     assert hashlib.sha256(fixture.read_bytes()).hexdigest() == metadata["sha256"]
     with np.load(fixture) as data:
@@ -104,7 +108,7 @@ def test_committed_lblrtm_fixture_has_valid_ranges():
 
 
 def test_recorded_aer_co_validation_meets_mvp_thresholds():
-    result = json.loads(Path("tests/data/aer_co_validation.json").read_text())
+    result = json.loads((DATA / "aer_co_validation.json").read_text())
     metrics = result["metrics"]
     thresholds = result["thresholds"]
     assert metrics["median_absolute_error"] < thresholds["median_absolute_error"]
@@ -115,7 +119,7 @@ def test_recorded_aer_co_validation_meets_mvp_thresholds():
 
 
 def test_recorded_native_mt_ckd_validation_matches_lblrtm():
-    result = json.loads(Path("docs/native_mt_ckd_validation.json").read_text())
+    result = json.loads((REPO / "docs/native_mt_ckd_validation.json").read_text())
     assert result["lblrtm"] == "12.17"
     assert result["mt_ckd"] == "4.3"
     for case in result["cases"]:
@@ -125,7 +129,7 @@ def test_recorded_native_mt_ckd_validation_matches_lblrtm():
 
 
 def test_build_lblrtm_correction_isolates_continuum_and_line_residual(tmp_path, monkeypatch):
-    full_profile = load_atmosphere_csv("data/profiles/example_midlatitude.csv")
+    full_profile = load_atmosphere_csv(str(REPO / "data/profiles/example_midlatitude.csv"))
     profile = AtmosphereProfile(
         full_profile.pressure_edges_bar,
         full_profile.temperature_k,
@@ -171,7 +175,7 @@ def test_tape5_supplies_the_layer_boundaries_instead_of_letting_lblrtm_invent_th
     attributed to the line physics.
     """
 
-    profile = load_atmosphere_csv("data/profiles/kitt_peak_1994.csv")
+    profile = load_atmosphere_csv(str(REPO / "data/profiles/kitt_peak_1994.csv"))
     output = tmp_path / "TAPE5"
     write_tape5(output, profile, LBLRTMRunConfig(4350.0, 4380.0, 59.75))
     lines = output.read_text().splitlines()

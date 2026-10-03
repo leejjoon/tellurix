@@ -1,37 +1,41 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+# The workspace root, not a package. It installs the three packages under
+# packages/ into one environment for the pipeline scripts, benchmarks and tests
+# that live at the top of the repository.
 
 [project]
-name = "tellurix"
+name = "tellurix-workspace"
 version = "0.2.0"
-description = "Differentiable terrestrial telluric transmission for high-resolution spectra"
-readme = "README.md"
 requires-python = ">=3.10,<3.11"
 dependencies = [
-  "exojax==2.5.0",
-  # Already in the lock via exojax; declared because record.py uses it directly.
-  "h5py>=3.10,<4",
-  "jax>=0.5,<0.7",
-  # RADIS currently pulls a vaex wheel built against NumPy 1.x.
-  "numpy>=1.26,<2",
-  "scipy>=1.13,<2",
+  "tellurix",
+  "tellurix-fts",
+  "tellurix-igrins",
 ]
+
+[project.optional-dependencies]
+gpu = ["tellurix[gpu]"]
 
 [dependency-groups]
 dev = [
   "pytest>=8,<9",
 ]
 
-[project.optional-dependencies]
-gpu = ["jax[cuda12]>=0.5,<0.7"]
+[tool.uv]
+package = false
 
-[project.scripts]
-tellurix-download-data = "tellurix.download:main"
+[tool.uv.workspace]
+members = ["packages/*"]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/tellurix", "src/tellurix_fts", "src/tellurix_igrins"]
+[tool.uv.sources]
+tellurix = { workspace = true }
+tellurix-fts = { workspace = true }
+tellurix-igrins = { workspace = true }
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = [
+  "packages/tellurix/tests",
+  "packages/tellurix-fts/tests",
+  "packages/tellurix-igrins/tests",
+  "tests",
+]
 addopts = "-ra"

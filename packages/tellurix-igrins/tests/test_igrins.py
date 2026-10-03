@@ -1,5 +1,7 @@
 """The IGRINS reader must survive nine years of header drift across three sites."""
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -9,7 +11,9 @@ from tellurix_igrins import (
     stellar_line_mask, surface_conditions, zenith_angle_deg,
 )
 
-FIXTURE = "tests/data/igrins/SDCH_test_0001.spec.fits"
+DATA = Path(__file__).resolve().parent / "data"
+
+FIXTURE = str(DATA / "igrins/SDCH_test_0001.spec.fits")
 
 # The three conventions actually observed in the archive, each with the value a
 # real frame carried. Nothing in the file says which is in force.

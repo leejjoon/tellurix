@@ -1,3 +1,4 @@
+from pathlib import Path
 import datetime as dt
 
 import numpy as np
@@ -9,11 +10,13 @@ from tellurix_fts import (
     zenith_angle_deg_for_airmass,
 )
 
+DATA = Path(__file__).resolve().parent / "data"
 
-FTS_FIXTURE = "tests/data/nso_ftsspec_sample.txt"
-PHOTATL_FIXTURE = "tests/data/nso_photatl_sample"
+
+FTS_FIXTURE = str(DATA / "nso_ftsspec_sample.txt")
+PHOTATL_FIXTURE = str(DATA / "nso_photatl_sample")
 # 200 rows of ph08900 around its first -1.0 fill in the solar column.
-NIRATL_FIXTURE = "tests/data/nso_niratl_sample"
+NIRATL_FIXTURE = str(DATA / "nso_niratl_sample")
 SAMPLING_CM1 = 0.0094771
 
 

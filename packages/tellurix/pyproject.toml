@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tellurix"
+version = "0.2.0"
+description = "Differentiable terrestrial telluric transmission for high-resolution spectra"
+readme = "README.md"
+requires-python = ">=3.10,<3.11"
+dependencies = [
+  "exojax==2.5.0",
+  # Already in the lock via exojax; declared because record.py uses it directly.
+  "h5py>=3.10,<4",
+  "jax>=0.5,<0.7",
+  # RADIS currently pulls a vaex wheel built against NumPy 1.x.
+  "numpy>=1.26,<2",
+  "scipy>=1.13,<2",
+]
+
+[project.optional-dependencies]
+gpu = ["jax[cuda12]>=0.5,<0.7"]
+
+[project.scripts]
+tellurix-download-data = "tellurix.download:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tellurix"]

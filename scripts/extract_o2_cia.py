@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Extract LBLRTM 12.17's O2 collision-induced coefficient tables into tellurix.
 
-Writes ``src/tellurix/_o2_cia_tables.py`` from the BLOCK DATA statements in
+Writes ``packages/tellurix/src/tellurix/_o2_cia_tables.py`` from the BLOCK DATA statements in
 ``contnm.f90``, asserting each table's length against its declared NPT. The
 1.06 um term (O2INF2) is analytic in LBLRTM and is implemented as code in
 ``tellurix.o2_cia``, not tabulated here.
@@ -17,7 +17,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data/lblrtm/LBLRTM/src/contnm.f90"
-OUTPUT = ROOT / "src/tellurix/_o2_cia_tables.py"
+OUTPUT = ROOT / "packages/tellurix/src/tellurix/_o2_cia_tables.py"
 # block name -> (name in tellurix, what it is)
 BLOCKS = {
     "bo2inf1": ("O2INF1", "1.27 um, Mate et al. 1999 (JGR 104, 30585); units 1/(amagat_O2 amagat_air)"),
@@ -46,7 +46,7 @@ def main() -> None:
     text = raw.decode("latin-1")
     # AER's notice, verbatim from tellurix/mt_ckd.py, which carries it for the
     # same reason: this is derived from the continuum code distributed with LBLRTM.
-    notice = [line for line in (ROOT / "src/tellurix/mt_ckd.py").read_text().splitlines()
+    notice = [line for line in (ROOT / "packages/tellurix/src/tellurix/mt_ckd.py").read_text().splitlines()
               if line.startswith("#")][:8]
     if not notice[0].startswith("# Copyright"):
         raise SystemExit("could not find AER's notice in mt_ckd.py")

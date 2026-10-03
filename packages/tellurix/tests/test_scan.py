@@ -6,13 +6,18 @@ were eliminated before anyone questioned the list. See
 docs/solar_fts_residual.md.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from tellurix import AER_MOLECULE_IDS
 
+# The repository root: these files are shared with the pipeline scripts.
+REPO = Path(__file__).resolve().parents[3]
 
-AFGL = "data/profiles/afgl/midlatitude_winter.csv"
+
+AFGL = str(REPO / "data/profiles/afgl/midlatitude_winter.csv")
 
 
 def _read(path):
@@ -59,7 +64,7 @@ def test_afgl_carries_the_species_that_were_missing():
                                    "midlatitude_winter", "subarctic_summer",
                                    "subarctic_winter", "us_standard_1976"])
 def test_every_extracted_model_has_the_same_shape(model):
-    names, values = _read(f"data/profiles/afgl/{model}.csv")
+    names, values = _read(str(REPO / f"data/profiles/afgl/{model}.csv"))
 
     assert values.shape == (50, 48)
     assert np.all(values[:, names.index("altitude_km")] >= 0.0)
