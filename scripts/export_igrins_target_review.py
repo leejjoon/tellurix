@@ -35,12 +35,9 @@ import argparse
 import base64
 import json
 from pathlib import Path
-import sys
 import time
 
 import numpy as np
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 CHUNK_BYTES = 1_500_000
 OVERVIEW_BINS = 192

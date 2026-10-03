@@ -980,47 +980,6 @@ def smoothed_frame_median(stack, minimum_frames=3, smooth_pixels=51):
     return pattern
 
 
-def run_provenance(root: Path, args, observations, profile_path: Path) -> tuple[dict, dict]:
-    """What produced this run, and the identity of everything that went into it.
-
-    Paths alone are not provenance: a line list can be replaced under the same
-    name. The hashes are what let a rebuild say whether it is looking at the
-    same inputs.
-    """
-
-    import jax
-    import tellurix
-    from tellurix import file_sha256
-
-    driver = Path(__file__).resolve()
-    inputs = {
-        "profile": str(profile_path), "profile_sha256": file_sha256(profile_path),
-        "stellar": args.stellar,
-        "frames": [str(o.path) for o in observations],
-        "frame_sha256": [o.sha256["spec"] for o in observations],
-    }
-    if args.stellar != "flat" and Path(args.stellar).exists():
-        inputs["stellar_sha256"] = file_sha256(args.stellar)
-    mt_ckd = root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc"
-    if mt_ckd.exists():
-        inputs["mt_ckd"] = str(mt_ckd)
-        inputs["mt_ckd_sha256"] = file_sha256(mt_ckd)
-    line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
-    inputs["aer_line_root"] = str(line_root)
-    for species, molecule_id in sorted(MOLECULE_IDS.items()):
-        stem = f"{molecule_id:02d}_{species}"
-        path = line_root / stem / stem
-        if path.exists():
-            inputs[f"aer_{species}_sha256"] = file_sha256(path)
-    run = {
-        "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "driver": driver.name, "driver_sha256": file_sha256(driver),
-        "tellurix": getattr(tellurix, "__version__", ""),
-        "jax": jax.__version__,
-    }
-    return run, inputs
-
-
 def continuum_level(order: IGRINSOrder, percentile: float = 95.0) -> float:
     """A robust flux scale for one order, in the extraction's own counts.
 

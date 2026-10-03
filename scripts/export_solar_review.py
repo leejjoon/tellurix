@@ -3,8 +3,8 @@
 
 The fits save the *total* transmission and nothing per species, so "which
 molecule makes this feature" cannot be answered from the cached arrays. This
-rebuilds each window's model through `fit_fts_window.prepare_window` -- the same
-function the fitter itself uses, not a second description of it -- refreezes the
+rebuilds each window's model through `tellurix_fts.window.prepare_window` -- the
+same function the fit itself uses, not a second description of it -- refreezes the
 opacity at the fitted parameters, where that is exact, and splits the
 transmission with `TelluricModel.species_transmission`.
 
@@ -26,20 +26,17 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-import sys
 import time
 import traceback
-from types import SimpleNamespace
 
 import numpy as np
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tellurix import TelluricParameters, read_scan  # noqa: E402
 from tellurix_fts import read_niratl_page, read_photatl_page, read_solar_spectrum  # noqa: E402
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_niratl_page, is_photatl_page  # noqa: E402
 
-from fit_fts_window import prepare_window  # noqa: E402
+from tellurix.download import DataPaths  # noqa: E402
+from tellurix_fts.window import WindowSettings, prepare_window  # noqa: E402
 
 # Everything the page can offer as a row, whether or not any window fits it.
 from tellurix import AER_MOLECULE_IDS  # noqa: E402
@@ -71,14 +68,14 @@ def quantize(values: np.ndarray, keep_nan: bool = False) -> tuple[bytes, float, 
     return codes.tobytes(), lo, hi
 
 
-def settings_for(row, spectrum_path: Path, args, blob) -> SimpleNamespace:
+def settings_for(row, spectrum_path: Path, args, blob) -> WindowSettings:
     """The fit's own configuration, read back from what the run recorded.
 
     The FWHM and the profile come from the run, not from defaults: niratl runs
     at 0.01859 cm-1 on the June 1983 atmosphere, and a rebuild on photatl's
     would draw a different model than the one that was fitted.
     """
-    return SimpleNamespace(
+    return WindowSettings(
         spectrum=spectrum_path, v1=row["v1"], v2=row["v2"],
         margin_cm1=args.margin_cm1, grid_margin_cm1=args.grid_margin_cm1,
         samples_per_resolution=args.samples_per_resolution,
@@ -86,7 +83,7 @@ def settings_for(row, spectrum_path: Path, args, blob) -> SimpleNamespace:
         profile=Path(blob.get("profile") or args.profile), species=",".join(row["species"]),
         stellar="auto", vsini_kms=0.0, macroturbulence_kms=1.5,
         source_continuum=False, normalize_source=False,
-        continuum_degree=args.continuum_degree, stages="continuum", pin=[],
+        continuum_degree=args.continuum_degree, stages="continuum", pin=(),
         zenith_angle_deg=None, accuracy_mode="mt_ckd", correction=None,
         gaussian_ils=False, vectorize_layers=True, mixed_precision=True,
         # False on purpose: prepare_window would otherwise precompute the
@@ -94,7 +91,6 @@ def settings_for(row, spectrum_path: Path, args, blob) -> SimpleNamespace:
         # at the *fitted* parameters a moment later. That discarded evaluation
         # was 2.3 s of every 6.6 s window.
         precompute_opacity=False, self_broadening="linear", layer_chunk_size=0,
-        report=None, diagnostic_npz=None,
     )
 
 
@@ -246,7 +242,9 @@ def main() -> None:
                 key = str(spectrum_path)
                 if key not in spectra:
                     spectra[key] = read_solar_spectrum(spectrum_path)
-                prepared = prepare_window(settings_for(row, spectrum_path, args, blob), root,
+                prepared = prepare_window(settings_for(row, spectrum_path, args, blob),
+                                          DataPaths.bootstrapped(root),
+                                          stellar_directory=root / "data/stellar", base=root,
                                           spectrum=spectra[key])
                 model, order = prepared.model, prepared.order
                 parameters = parameters_for(row, model.species)

@@ -80,7 +80,7 @@ def main() -> None:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--source", type=Path,
                         default=Path("data/lblrtm/LBLRTM/src/lblatm.f90"))
-    parser.add_argument("--output", type=Path, default=Path("data/profiles/afgl"))
+    parser.add_argument("--output", type=Path, default=Path("packages/tellurix/src/tellurix/afgl"))
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parents[1]

@@ -39,6 +39,7 @@ from .nso import (
     window_continuum_snr,
     zenith_angle_deg_for_airmass,
 )
+from .window import WindowSettings, fit_window, prepare_window
 
 __all__ = [
     "arcturus_spectral_order",
@@ -66,4 +67,7 @@ __all__ = [
     "uniform_wavenumber_grid",
     "window_continuum_snr",
     "zenith_angle_deg_for_airmass",
+    "WindowSettings",
+    "fit_window",
+    "prepare_window",
 ]

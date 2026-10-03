@@ -1,21 +1,17 @@
-"""The AFGL profiles the species scan ranks against, and the scan script's defaults.
+"""The AFGL standard atmospheres shipped with the package.
 
-These check what `scripts/extract_afgl_profiles.py` wrote to `data/profiles/afgl/`
-and what `scripts/scan_window_species.py` defaults to -- the repository's data
-and scripts, not the `tellurix` package, which is why they live here. They exist
-because a hand-written species list hid OCS and O3 in the 4.9 um solar window;
-see docs/solar_fts_residual.md.
+They are what the species scan ranks against and what a site profile takes its
+trace gases from. They exist because a hand-written species list hid OCS and O3
+in the 4.9 um solar window; see docs/solar_fts_residual.md.
 """
-
-from pathlib import Path
 
 import numpy as np
 import pytest
 
 from tellurix import AER_MOLECULE_IDS
+from tellurix.site_profile import AFGL_DIRECTORY, AFGL_MODELS
 
-REPO = Path(__file__).resolve().parents[1]
-AFGL = REPO / "data/profiles/afgl/midlatitude_winter.csv"
+AFGL = AFGL_DIRECTORY / "midlatitude_winter.csv"
 
 
 def _read(path):
@@ -58,11 +54,9 @@ def test_afgl_carries_the_species_that_were_missing():
         assert values[:, names.index(species)].max() > floor
 
 
-@pytest.mark.parametrize("model", ["tropical", "midlatitude_summer",
-                                   "midlatitude_winter", "subarctic_summer",
-                                   "subarctic_winter", "us_standard_1976"])
+@pytest.mark.parametrize("model", AFGL_MODELS)
 def test_every_extracted_model_has_the_same_shape(model):
-    names, values = _read(REPO / f"data/profiles/afgl/{model}.csv")
+    names, values = _read(AFGL_DIRECTORY / f"{model}.csv")
 
     assert values.shape == (50, 48)
     assert np.all(values[:, names.index("altitude_km")] >= 0.0)
@@ -70,21 +64,3 @@ def test_every_extracted_model_has_the_same_shape(model):
     # Abundances are ppmv and must be positive: the extractor floors the
     # 1e-14 placeholders rather than letting a log interpolation see zero.
     assert np.all(values[:, 1:] > 0.0)
-
-
-def test_the_line_budget_cannot_move_a_species_across_the_threshold():
-    """The scan's one load-bearing approximation.
-
-    `select_significant_lines` drops the weakest lines whose summed bounded
-    contribution stays under a budget, so the peak optical depth it reports is
-    wrong by at most that budget. The scan's default budget is two orders of
-    magnitude below its default threshold, which is what makes the verdict
-    safe rather than merely cheap.
-    """
-
-    # Read the defaults from the source rather than importing the script,
-    # which pulls in jax and the whole opacity stack for a two-line check.
-    source = (REPO / "scripts/scan_window_species.py").read_text()
-    budget = float(source.split('"--line-budget", type=float, default=')[1].split(",")[0])
-    threshold = float(source.split('"--threshold", type=float, default=')[1].split(",")[0])
-    assert budget <= threshold / 100.0

@@ -1219,7 +1219,7 @@ A column driven *down* leaves little absorption behind to be wrong by; one drive
 puts absorption into the model that is not in the sky. Flagging every bound would
 discard 9% of the 1990 windows to no purpose. Per run, windows with a column at the
 upper bound: file 4 two (NO, CH4), file 5 none, photatl none, niratl none, `_2` five
-and `_3` two (all water). `scripts/quality_flags.py` holds the rule;
+and `_3` two (all water). `tellurix.quality` holds the rule;
 `export_transmission_hdf5.py` writes `column_at_upper_bound` and
 `species_at_upper_bound` per row (`annotate_quality_flags.py` added them to the five
 files already written, with the same function); the corrected-spectrum exporters set

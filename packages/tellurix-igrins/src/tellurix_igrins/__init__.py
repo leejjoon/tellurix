@@ -38,6 +38,7 @@ from .igrins import (
     surface_conditions,
     zenith_angle_deg,
 )
+from .standard import StandardFitSettings, build_order_context, fit_one
 
 __all__ = [
     "continuum_level",
@@ -64,4 +65,7 @@ __all__ = [
     "surface_conditions",
     "WatSpec",
     "zenith_angle_deg",
+    "StandardFitSettings",
+    "build_order_context",
+    "fit_one",
 ]

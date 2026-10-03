@@ -40,7 +40,6 @@ per frame are written alongside.
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import os
 import time
@@ -58,16 +57,6 @@ BAND_DISAGREEMENT = 0.02
 # a slant-path error a water scale cannot absorb -- and freeing them per frame
 # took those frames from 1.6-2.0 of the noise to 0.3-0.4.
 DRY = ("CO2", "CH4")
-
-
-def load_driver(root: Path):
-    """The standards driver's order rule and context builder, so both agree."""
-
-    spec = importlib.util.spec_from_file_location(
-        "fit_igrins_standard", root / "scripts/fit_igrins_standard.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def exposure(observation) -> str:
@@ -119,7 +108,11 @@ def main() -> None:
         jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
         jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
-    driver = load_driver(root)
+    from tellurix.download import DataPaths
+    from tellurix_igrins.standard import (
+        ORDER_RULE, PHYSICS, StandardFitSettings, build_order_context,
+    )
+
     from tellurix import (
         ArrayOpacityBackend, OrderObjective, SpectralOrder, StellarSpectrum, TelluricModel,
         TelluricParameters, chebyshev_continuum, fit_order, load_atmosphere_csv,
@@ -144,14 +137,13 @@ def main() -> None:
     for band, frames in sorted(bands.items()):
         calibration, calibration_path = calibrations[band]
         config = calibration.source["config"]
-        for key in driver.ORDER:
-            if key in config:
-                driver.ORDER[key] = config[key]
+        # The order rule the calibration's own run used, not today's default.
+        rule = {**ORDER_RULE, **{key: config[key] for key in ORDER_RULE if key in config}}
         profile_path = args.profile or Path(calibration.source["inputs"]["profile"])
         if not profile_path.exists():
             profile_path = root / "data/profiles" / profile_path.name
         profile = load_atmosphere_csv(profile_path)
-        context_args = argparse.Namespace(
+        context_settings = StandardFitSettings(
             resolving_power=config["resolving_power"],
             samples_per_resolution=config["samples_per_resolution"],
             margin_cm1=config["margin_cm1"], grid_margin_cm1=config["grid_margin_cm1"],
@@ -172,7 +164,7 @@ def main() -> None:
                                       else pinned(parameters.velocity_kms))
             bounds["wavelength_stretch"] = (0.0, 0.0)
             bounds["lsf_sigma_kms"] = pinned(parameters.lsf_sigma_kms)
-            bound = driver.ORDER["continuum_bound"]
+            bound = rule["continuum_bound"]
             for index in range(degree + 1):
                 bounds[f"continuum_{index}"] = (-2.0, 2.0) if index == 0 else (-bound, bound)
             bounds["log_jitter"] = (np.log(1e-5), np.log(0.5))
@@ -195,8 +187,9 @@ def main() -> None:
             if not holders:
                 continue
             try:
-                context = driver.build_order_context(holders[0], number, context_args,
-                                                     args.data_root, profile, stellar)
+                context = build_order_context(holders[0], number, context_settings,
+                                              DataPaths.bootstrapped(args.data_root),
+                                              profile, stellar)
             except (RuntimeError, ValueError) as exc:
                 print(f"  {band}{number}: skipped ({exc})")
                 continue
@@ -205,8 +198,8 @@ def main() -> None:
                 profile, context["grid"],
                 ArrayOpacityBackend({s: np.zeros((len(profile.temperature_k), context["grid"].size))
                                      for s in model.species}),
-                accuracy_mode="fast", max_lsf_sigma_kms=driver.PHYSICS["max_lsf_sigma_kms"],
-                pixel_integration=driver.PHYSICS["pixel_integration"])
+                accuracy_mode="fast", max_lsf_sigma_kms=PHYSICS["max_lsf_sigma_kms"],
+                pixel_integration=PHYSICS["pixel_integration"])
             objective = None
             water_free = "H2O" in context["free_species"]
             for observation in holders:
@@ -214,9 +207,9 @@ def main() -> None:
                 try:
                     order = igrins_spectral_order(
                         extracted, source_flux_model_grid=context["source"],
-                        saturation_floor=driver.ORDER["saturation_floor"],
-                        throughput_floor=driver.ORDER["throughput_floor"],
-                        continuum_percentile=driver.ORDER["continuum_percentile"],
+                        saturation_floor=rule["saturation_floor"],
+                        throughput_floor=rule["throughput_floor"],
+                        continuum_percentile=rule["continuum_percentile"],
                         # The target is not an A0V: there is no hydrogen series
                         # to mask, and masking its own lines is --clip-sigma's job.
                         mask_hydrogen_kms=None)
@@ -491,7 +484,7 @@ def main() -> None:
                     "clip_pixels": args.clip_pixels, "stellar": args.stellar,
                     "vsini_kms": args.vsini_kms,
                     "stellar_velocity_kms": args.stellar_velocity_kms},
-            physics=dict(driver.PHYSICS),
+            physics=dict(PHYSICS),
             inputs={"calibration": str(calibration_path),
                     "calibration_record": calibration.source["record"],
                     "frames": [r["frame"] for r in rows]},

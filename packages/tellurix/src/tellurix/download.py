@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import hashlib
 import os
 from pathlib import Path, PurePosixPath
@@ -47,6 +48,39 @@ def default_data_directory() -> Path:
         if legacy.is_dir() and any(legacy.iterdir()):
             return legacy
     return current
+
+
+@dataclass(frozen=True)
+class DataPaths:
+    """Where the AER line files and the MT_CKD coefficients are.
+
+    Two layouts exist and neither is wrong: ``tellurix-download-data`` fills a
+    per-user directory (:meth:`downloaded`), and ``scripts/bootstrap_lblrtm.sh``
+    builds LBLRTM inside a checkout and leaves both files where LBLRTM reads
+    them (:meth:`bootstrapped`). Code that fits takes one of these rather than a
+    repository root, so it runs the same from an installed package.
+    """
+
+    line_root: Path
+    mt_ckd: Path
+
+    @classmethod
+    def downloaded(cls, directory: str | Path | None = None) -> "DataPaths":
+        root = Path(directory).expanduser() if directory else default_data_directory()
+        return cls(root / "aer_v_3.9/line_files_By_Molecule",
+                   root / "mt_ckd/absco-ref_wv-mt-ckd.nc")
+
+    @classmethod
+    def bootstrapped(cls, checkout: str | Path) -> "DataPaths":
+        root = Path(checkout)
+        return cls(root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule",
+                   root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc")
+
+    def line_file(self, species: str, molecule_id: int) -> Path:
+        """AER's per-molecule file, named ``NN_SPECIES`` inside a directory of that name."""
+
+        name = f"{molecule_id:02d}_{species}"
+        return self.line_root / name / name
 
 
 def _sha256(path: Path) -> str:

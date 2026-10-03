@@ -23,10 +23,11 @@ from .aer import (
 )
 from .o2_cia import ContinuumSum, O2CollisionInducedContinuum
 from .exojax_backend import ExoJAXOpacityBackend
-from .download import default_data_directory, download_aer_lines, download_mt_ckd
+from .download import DataPaths, default_data_directory, download_aer_lines, download_mt_ckd
 from .io import load_atmosphere_csv, load_mipas_profile
 from .lblrtm import LBLRTMRunConfig, run_lblrtm, write_tape5
 from .mt_ckd import MTCKDWaterContinuum
+from .quality import species_at_upper_bound, write_upper_bound_flags
 from .scan import (
     ScanIdentity,
     cached_scan,
@@ -53,6 +54,7 @@ from .model import (
     constant_velocity_grid,
     trim_wavenumber_grid,
 )
+from .site_profile import afgl_dry_vmr, build_site_profile, load_afgl, write_profile_csv
 from .stellar import (
     StellarSpectrum,
     broaden_stellar_source,
@@ -108,6 +110,13 @@ __all__ = [
     "parameters_from_row",
     "prepare_stellar_source",
     "ContinuumSum",
+    "DataPaths",
+    "afgl_dry_vmr",
+    "build_site_profile",
+    "load_afgl",
+    "species_at_upper_bound",
+    "write_profile_csv",
+    "write_upper_bound_flags",
     "O2CollisionInducedContinuum",
     "read_record",
     "read_tape12_single_precision",

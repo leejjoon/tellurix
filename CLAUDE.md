@@ -16,14 +16,29 @@ The repository is a uv workspace of three packages under `packages/`, each
 with its own `pyproject.toml`, source and tests:
 
 - `tellurix` (`packages/tellurix/`) -- the core: forward model, opacity,
-  continua, fitter, stellar source, run records, species scans, and the LBLRTM
-  reference tooling. It knows no instrument.
+  continua, fitter, stellar source, run records, species scans, site profiles
+  from the AFGL atmospheres it ships (`site_profile.py`, `afgl/`), the
+  upper-bound quality rule (`quality.py`), and the LBLRTM reference tooling.
+  It knows no instrument.
 - `tellurix-fts` (`packages/tellurix-fts/`, import `tellurix_fts`) -- FTS
   atlases: `atlas.py` (Arcturus), `nso.py` (NSO Kitt Peak solar atlases),
-  `ils.py` (MOPD measured from the spectrum).
+  `ils.py` (MOPD measured from the spectrum), `window.py` (the solar window fit:
+  `WindowSettings`, `prepare_window`, `fit_window`).
 - `tellurix-igrins` (`packages/tellurix-igrins/`, import `tellurix_igrins`) --
   `igrins.py` (RRISA reader), `night.py` (night calibration), `flat.py`
-  (lamp-flat blaze).
+  (lamp-flat blaze), `standard.py` (the per-order fit: `StandardFitSettings`,
+  `build_order_context`, `fit_one`, and the order rule `ORDER_RULE`).
+
+Code that more than one script needs lives in a package, never in `scripts/`:
+no script imports another. A fit takes a frozen settings object and a
+`tellurix.DataPaths` -- where the AER line files and MT_CKD are, either
+`DataPaths.bootstrapped(checkout)` (what `bootstrap_lblrtm.sh` builds) or
+`DataPaths.downloaded()` (what `tellurix-download-data` fetches) -- never an
+argparse namespace or the repository root. The scripts are the command lines:
+they parse arguments, build those two objects from this checkout, and write
+the summaries and records. A run's order rule is its own copy
+(`StandardFitSettings.order_rule`); restore a recorded run's rule by building
+one from its `config`, never by mutating `ORDER_RULE`, which is read-only.
 
 The root `pyproject.toml` is not a package (`tool.uv.package = false`): it
 installs all three, editable, into one `.venv` for what stays at the top level
@@ -154,7 +169,7 @@ corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error
 into it, 5-13% of fake absorption -- while one at the lower bound is harmless; the
 transmission files flag the former per row (`column_at_upper_bound`) and the
-corrected files mark it unreliable (`scripts/quality_flags.py`, §4m). The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
+corrected files mark it unreliable (`tellurix.quality`, §4m). The survey's original four points, as it wrote them: `photatl` (1.11-5.41 um, 87% overlap with the
 Arcturus pages already fitted) **interpolates pixels where the sky is opaque**;
 its **ILS is the weakest input in their programme** -- R = 300,000 quoted once
 for four atlases, no MOPD, no apodization; its **wavelength scale is +260 m/s**
@@ -667,7 +682,7 @@ carry: 36 MB for the A0V page, 33 MB for the targets page.
 What the exporters check, and the traps that shaped them:
 
 - `export_igrins_review.py` rebuilds every order through
-  `fit_igrins_standard.build_order_context` to split the transmission by species,
+  `tellurix_igrins.standard.build_order_context` to split the transmission by species,
   and refuses an order-frame whose species do not multiply back to the total
   (6e-16) or whose total misses the cached `transmission` (2e-16) -- the second is
   what proves the summary's parameters made the cached arrays.

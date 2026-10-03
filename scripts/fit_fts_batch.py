@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Fit every window of an NSO FTS solar spectrum, species computed per window.
 
-The scaling-up of `fit_fts_window.py`, which this driver *calls* rather than
-reimplements. The Arcturus batch driver carries its own copy of the page fit;
+The scaling-up of `fit_fts_window.py`: both run `tellurix_fts.window.fit_window`
+rather than each carrying an implementation. The Arcturus batch driver carries its own copy of the page fit;
 that was affordable there because the species list was a six-molecule constant,
 and it is not affordable here, because the species list is a per-window result
 and a second implementation would be free to compute it differently.
@@ -46,14 +46,11 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import sys
 import time
 import traceback
 from types import SimpleNamespace
 
 import numpy as np
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tellurix import (  # noqa: E402
     AER_MOLECULE_IDS, ScanIdentity, cached_scan, file_sha256, load_atmosphere_csv,
@@ -62,7 +59,8 @@ from tellurix import (  # noqa: E402
 from tellurix_fts import read_solar_spectrum  # noqa: E402
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_atlas_page, window_continuum_snr  # noqa: E402
 
-from fit_fts_window import fit_window  # noqa: E402
+from tellurix.download import DataPaths  # noqa: E402
+from tellurix_fts.window import WindowSettings, fit_window  # noqa: E402
 
 LINE_ROOT = Path("data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
 
@@ -205,16 +203,18 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    o2_cia: bool = False) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
-    Both drivers' hashes, because this one delegates the fit to the other and a
-    change in either changes the result.
+    The hashes of this driver and of the module that fits, because this one
+    delegates the fit and a change in either changes the result.
     """
 
     try:
         from importlib.metadata import version
     except ImportError:  # pragma: no cover
         version = None
+    import tellurix_fts.window
+
     driver = Path(__file__).resolve()
-    fitter = driver.with_name("fit_fts_window.py")
+    fitter = Path(tellurix_fts.window.__file__).resolve()
     return {
         **PHYSICS,
         # What this run used, not the photatl default PHYSICS carries: niratl
@@ -226,7 +226,7 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         "o2_cia": bool(o2_cia),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
-        "fitter": fitter.name,
+        "fitter": f"{fitter.parent.name}/{fitter.name}",
         "fitter_sha256": hashlib.sha256(fitter.read_bytes()).hexdigest(),
         "tellurix": version("tellurix") if version else None,
     }
@@ -269,7 +269,7 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         return {**entry, **scan, "negligible_telluric": True,
                 "seconds": round(time.time() - started, 1)}
 
-    settings = SimpleNamespace(
+    settings = WindowSettings(
         spectrum=Path(entry["file"]), v1=entry["v1"], v2=entry["v2"],
         margin_cm1=args.margin_cm1, grid_margin_cm1=args.grid_margin_cm1,
         samples_per_resolution=args.samples_per_resolution, fwhm_cm1=args.fwhm_cm1,
@@ -277,16 +277,17 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         stellar="auto", vsini_kms=PHYSICS["vsini_kms"],
         macroturbulence_kms=PHYSICS["macroturbulence_kms"],
         source_continuum=False, normalize_source=False,
-        continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=[],
+        continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=(),
         zenith_angle_deg=args.zenith_angle_deg,
         accuracy_mode=args.accuracy_mode, correction=None, gaussian_ils=False,
         o2_cia=args.o2_cia,
         vectorize_layers=True, mixed_precision=True,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
         layer_chunk_size=args.layer_chunk_size,
-        report=None, diagnostic_npz=None,
     )
-    report, arrays = fit_window(settings, root, spectrum=spectrum)
+    report, arrays = fit_window(settings, DataPaths.bootstrapped(root),
+                                stellar_directory=root / "data/stellar", base=root,
+                                spectrum=spectrum)
 
     mask = arrays["mask"]
     observed = arrays["observed_raw"]
@@ -546,11 +547,11 @@ def main() -> None:
                 status = ("negligible telluric" if row["negligible_telluric"] else
                           f"rms/noise {row['residual_rms_over_noise']:5.2f}  "
                           f"{'+'.join(row['species'])}")
-            # SystemExit as well as Exception: `fit_window` came from a CLI and
-            # reports a user error by raising SystemExit, which is a
-            # BaseException and would otherwise take the whole run down. The
-            # first window does exactly that -- 1876-1906 cm-1 reaches 5330.5 nm
-            # and the reddest Payne Zero band stops at 5330.0.
+            # SystemExit as well as Exception, in case anything below still
+            # reports a user error the CLI way: SystemExit is a BaseException
+            # and would otherwise take the whole run down. `fit_window` itself
+            # raises ValueError -- the first window does, since 1876-1906 cm-1
+            # reaches 5330.5 nm and the reddest Payne Zero band stops at 5330.0.
             except (Exception, SystemExit) as exc:  # a bad window must not stop the run
                 row = {**entry, "error": str(exc), "traceback": traceback.format_exc()[-1500:]}
                 status = f"FAILED: {exc}"

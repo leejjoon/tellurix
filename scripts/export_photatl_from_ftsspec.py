@@ -46,18 +46,14 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import sys
 import time
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 from tellurix import file_sha256  # noqa: E402
 from tellurix_fts import read_fts_spectrum, read_photatl_page, robust_noise  # noqa: E402
 from tellurix_fts.nso import is_photatl_page  # noqa: E402
-
-from quality_flags import UPPER_BOUND_NOTE, species_at_upper_bound  # noqa: E402
+from tellurix.quality import UPPER_BOUND_NOTE, species_at_upper_bound  # noqa: E402
 
 NSO = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso")
 

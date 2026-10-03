@@ -16,6 +16,8 @@ the 1983 edge windows sits at 5.9x). That is stated, not thresholded.
 
 from __future__ import annotations
 
+import numpy as np
+
 UPPER_BOUND_NOTE = (
     "a fitted column at its upper bound: the fit used that species to absorb something "
     "else (usually the solar model's error), so the window's correction carries absorption "
@@ -37,3 +39,26 @@ def species_at_upper_bound(at_bound, log_columns: dict) -> list[str]:
         at_bound = [name for name in at_bound.split("+") if name]
     return sorted(name for name, value in log_columns.items()
                   if name in at_bound and float(value) > 0.0)
+
+
+def write_upper_bound_flags(handle, rows, species) -> int:
+    """Per-row datasets marking a window whose correction must not be used.
+
+    ``handle`` is an open h5py group; ``rows`` carry ``at_bound`` and a
+    ``log_column_<species>`` field per species. Existing flags are replaced, so
+    a file written before the flag existed can be annotated in place and ends up
+    holding exactly what a fresh export would. Returns how many rows are flagged.
+    """
+
+    names = [species_at_upper_bound(row["at_bound"],
+                                    {s: row[f"log_column_{s}"] for s in species})
+             for row in rows]
+    for key in ("column_at_upper_bound", "species_at_upper_bound"):
+        if key in handle:
+            del handle[key]
+    handle.create_dataset("column_at_upper_bound", data=np.array([bool(n) for n in names]))
+    handle["column_at_upper_bound"].attrs["description"] = (
+        "True: do not use this row. " + UPPER_BOUND_NOTE + ". A species at the LOWER bound "
+        "is harmless and not flagged (docs/solar_fit_plan.md §4m).")
+    handle.create_dataset("species_at_upper_bound", data=["+".join(n).encode() for n in names])
+    return int(sum(bool(n) for n in names))

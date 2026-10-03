@@ -46,7 +46,6 @@ and its analogue for a science target is the target's own model.
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import os
 import time
@@ -68,16 +67,6 @@ DRY = ("CO2", "CH4")
 # moving together (+0.081 and +0.080 on its airmass-3 frame), and CO2 is the one
 # a line-rich target biases least -- CH4 shares 2.3 um with the CO bandheads.
 DRY_LEVELS = ("L4", "S3", "S3t")
-
-
-def load_driver(root: Path):
-    """The fitting driver's order rule and context builder, so both agree."""
-
-    spec = importlib.util.spec_from_file_location(
-        "fit_igrins_standard", root / "scripts/fit_igrins_standard.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def read_run(run_dir: Path, record: Path | None = None):
@@ -295,7 +284,11 @@ def main() -> None:
         jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
         jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
-    driver = load_driver(root)
+    from tellurix.download import DataPaths
+    from tellurix_igrins.standard import (
+        ORDER_RULE, PHYSICS, StandardFitSettings, build_order_context,
+    )
+
     from tellurix import (
         ArrayOpacityBackend, OrderObjective, SpectralOrder, StellarSpectrum, TelluricModel,
         TelluricParameters, fit_order, load_atmosphere_csv,
@@ -303,10 +296,8 @@ def main() -> None:
     from tellurix_igrins import NightCalibration, igrins_spectral_order, read_igrins_observation
 
     rows, inputs, config, physics, run_species = read_run(args.run_dir, args.record)
-    for key in ("continuum_bound", "continuum_percentile", "saturation_floor",
-                "throughput_floor", "mask_hydrogen_kms", "minimum_pixels", "minimum_reliable"):
-        if key in config:
-            driver.ORDER[key] = config[key]
+    # The order rule the run itself used, not today's default.
+    rule = {**ORDER_RULE, **{key: config[key] for key in ORDER_RULE if key in config}}
     stellar_path = config["stellar"]
     stellar = (None if stellar_path == "flat"
                else StellarSpectrum.from_npz(args.data_root / stellar_path))
@@ -314,7 +305,7 @@ def main() -> None:
     profile_path = args.profile or Path(inputs["profile"])
     profile = load_atmosphere_csv(profile_path if profile_path.is_absolute()
                                   else root / profile_path)
-    context_args = argparse.Namespace(
+    context_settings = StandardFitSettings(
         resolving_power=config["resolving_power"],
         samples_per_resolution=config["samples_per_resolution"],
         margin_cm1=config["margin_cm1"], grid_margin_cm1=config["grid_margin_cm1"],
@@ -341,10 +332,10 @@ def main() -> None:
     def order_for(context, observation, name, extracted, inject_sigma_kms=None):
         order = igrins_spectral_order(
             extracted, source_flux_model_grid=context["source"],
-            saturation_floor=driver.ORDER["saturation_floor"],
-            throughput_floor=driver.ORDER["throughput_floor"],
-            continuum_percentile=driver.ORDER["continuum_percentile"],
-            mask_hydrogen_kms=driver.ORDER["mask_hydrogen_kms"] if stellar is None else None)
+            saturation_floor=rule["saturation_floor"],
+            throughput_floor=rule["throughput_floor"],
+            continuum_percentile=rule["continuum_percentile"],
+            mask_hydrogen_kms=rule["mask_hydrogen_kms"] if stellar is None else None)
         cached = np.load(args.run_dir / f"{name}_{extracted.name}.npz")
         if "response_pattern" in cached.files:
             response = native_axis(cached["response_pattern"], order.wavelength_vacuum_nm)
@@ -376,7 +367,7 @@ def main() -> None:
         bounds["wavelength_stretch"] = (0.0, 0.0)
         bounds["lsf_sigma_kms"] = ((1.0, 6.0) if "lsf_sigma_kms" in free
                                    else pinned(parameters.lsf_sigma_kms))
-        bound = driver.ORDER["continuum_bound"]
+        bound = rule["continuum_bound"]
         for index in range(degree + 1):
             bounds[f"continuum_{index}"] = (-2.0, 2.0) if index == 0 else (-bound, bound)
         bounds["log_jitter"] = (np.log(1e-5), np.log(0.5))
@@ -434,8 +425,8 @@ def main() -> None:
     for number in orders:
         first = observations[frames[0]]
         try:
-            context = driver.build_order_context(first, number, context_args, args.data_root, profile,
-                                                 stellar)
+            context = build_order_context(first, number, context_settings,
+                                          DataPaths.bootstrapped(args.data_root), profile, stellar)
         except (RuntimeError, ValueError) as exc:
             print(f"order {number}: skipped ({exc})")
             continue
@@ -444,8 +435,8 @@ def main() -> None:
             profile, context["grid"],
             ArrayOpacityBackend({s: np.zeros((len(profile.temperature_k), context["grid"].size))
                                  for s in model.species}),
-            accuracy_mode="fast", max_lsf_sigma_kms=driver.PHYSICS["max_lsf_sigma_kms"],
-            pixel_integration=driver.PHYSICS["pixel_integration"])
+            accuracy_mode="fast", max_lsf_sigma_kms=PHYSICS["max_lsf_sigma_kms"],
+            pixel_integration=PHYSICS["pixel_integration"])
         objective = None
         water_free = "H2O" in context["free_species"]
         for name in held:

@@ -2,8 +2,8 @@
 """Bundle a night's IGRINS standard fits for the review page, species by species.
 
 The driver saves the *total* transmission and nothing per species, so this
-rebuilds each order through `fit_igrins_standard.build_order_context` -- the
-function the fitter itself uses -- refreezes the opacity at each frame's fitted
+rebuilds each order through `tellurix_igrins.standard.build_order_context` --
+the function the fit itself uses -- refreezes the opacity at each frame's fitted
 parameters, where that is exact, and splits the transmission with
 `TelluricModel.species_transmission`. One context per order serves every frame,
 as it does in the fit: within a night the PLP's wavelength solution is shared.
@@ -34,14 +34,10 @@ import json
 import os
 from pathlib import Path
 import shutil
-import sys
 import time
 import traceback
-from types import SimpleNamespace
 
 import numpy as np
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 CHUNK_BYTES = 1_500_000
 OVERVIEW_BINS = 192
@@ -112,8 +108,9 @@ def export(args, root: Path) -> None:
         jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
     from tellurix import StellarSpectrum, TelluricParameters, load_atmosphere_csv
+    from tellurix.download import DataPaths
     from tellurix_igrins import read_igrins_observation
-    from fit_igrins_standard import build_order_context
+    from tellurix_igrins.standard import StandardFitSettings, build_order_context
 
     jobs = []
     runs = []
@@ -173,11 +170,12 @@ def export(args, root: Path) -> None:
                     if stellar_name not in stellars:
                         stellars[stellar_name] = (None if stellar_name == "flat" else
                                                   StellarSpectrum.from_npz(root / stellar_name))
-                    namespace = SimpleNamespace(**{k: settings[k] for k in (
+                    fit_settings = StandardFitSettings(**{k: settings[k] for k in (
                         "resolving_power", "samples_per_resolution", "margin_cm1",
                         "grid_margin_cm1", "vsini_kms", "self_broadening",
                         "min_optical_depth")}, precompute_opacity=True)
-                    context = build_order_context(observation, number, namespace, root,
+                    context = build_order_context(observation, number, fit_settings,
+                                                  DataPaths.bootstrapped(root),
                                                   profiles[settings["profile"]],
                                                   stellars[stellar_name])
                 model = context["model"]

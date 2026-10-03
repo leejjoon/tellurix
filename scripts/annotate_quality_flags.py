@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """Add the upper-bound flag to transmission files written before it existed.
 
-Uses the export's own `write_upper_bound_flags`, on the parameters each file
-already carries, so an annotated file and a freshly exported one hold the same
-flag by construction -- and re-exporting an hour of windows to add one boolean
+Uses `tellurix.quality.write_upper_bound_flags`, the function the export calls,
+on the parameters each file already carries, so an annotated file and a freshly
+exported one hold the same flag by construction -- and re-exporting an hour of windows to add one boolean
 per row is not needed.
 
     UV_CACHE_DIR=.uv-cache uv run python scripts/annotate_quality_flags.py \\
@@ -14,11 +14,8 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from export_transmission_hdf5 import write_upper_bound_flags  # noqa: E402
+from tellurix.quality import write_upper_bound_flags
 
 
 def main() -> None:

@@ -1,9 +1,4 @@
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-
-from quality_flags import species_at_upper_bound  # noqa: E402
+from tellurix.quality import species_at_upper_bound
 
 
 def test_only_the_upper_bound_flags_a_window():
