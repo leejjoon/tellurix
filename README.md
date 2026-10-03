@@ -175,6 +175,18 @@ negligible overhead; the pressure-shifted GPU forward path costs about 2 ms
 more in the measured order. See [the corrected-mode guide](docs/lblrtm_corrected_mode.md)
 for usage, assumptions, and reproduction.
 
+## Fitted results
+
+The run records, night calibrations and species-scan cache the pipelines
+produced (`data/corrected/`, `data/calibration/`, `data/scans/`) are archived on
+Zenodo rather than kept in git. `data/results_manifest.json` pins the archive
+and every file in it; fetch and verify them with
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run python scripts/results_archive.py fetch
+UV_CACHE_DIR=.uv-cache uv run python scripts/results_archive.py check
+```
+
 ## Observational data, and how to cite it
 
 The package downloads its own spectroscopy (AER line files, MT_CKD) but **not**

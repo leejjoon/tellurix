@@ -30,8 +30,8 @@ is worth knowing if you are comparing against an older number:
 | `stellar_continuum` | absent | present |
 
 The extra 0.26 sigma is the page edges, which are genuinely harder; it is not a
-regression. The superseded record is recoverable with
-`git show 06e5e3d:data/corrected/atlas/arcturus_atlas.h5`, and its run can be
+regression. The superseded record is kept in the results archive as
+`data/corrected/atlas/arcturus_atlas_trimmed.h5`, and its run can be
 reproduced with `--trim-overlap-cm1 2.5`. IGRINS residuals are 1.30-1.86 sigma
 median.
 

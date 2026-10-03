@@ -54,3 +54,9 @@ data/review_*/
 
 # Claude Code worktrees and session state.
 .claude/
+# Fitted results: archived on Zenodo and fetched into place by
+# scripts/results_archive.py. data/results_manifest.json, which pins them, is
+# the part that stays in git.
+data/corrected/
+data/calibration/
+data/scans/

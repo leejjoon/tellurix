@@ -134,7 +134,7 @@ The committed Arcturus record is the **full-coverage** run: `page_windows`
 no longer trims the ~5 cm-1 the atlas pages overlap by, so every pixel the atlas
 ships is fitted (822,928 against 636,444) and adjacent pages overlap in every
 product. `--trim-overlap-cm1 2.5` restores the old tiling and reproduces the
-superseded record (`git show 06e5e3d:data/corrected/atlas/arcturus_atlas.h5`).
+superseded record (`data/corrected/atlas/arcturus_atlas_trimmed.h5`, in the results archive).
 The residual median moves 4.22 -> 4.48 sigma, which is the page edges being
 harder, and the at-bound rate improves 21.6% -> 19.4%. **Nothing in the products
 tiles now**, so concatenating adjacent pages double-counts. The duplication is
