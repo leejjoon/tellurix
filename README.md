@@ -190,9 +190,10 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/results_archive.py check
 The `results-2026-10-03` release is archived on Zenodo as
 [10.5281/zenodo.23121557](https://doi.org/10.5281/zenodo.23121557) (all
 versions: [10.5281/zenodo.23121556](https://doi.org/10.5281/zenodo.23121556)).
-Zenodo's GitHub integration archives the repository at the release's tag -- the
-code and `data/results_manifest.json`, which pins every result file by sha256 --
-not the attached results archive itself, which is the release asset above.
+The record holds both the repository at the release's tag -- the code and the
+manifest -- and the results archive itself, `tellurix-results-2026-10-03.tar.gz`,
+identical to the release asset (sha256 `d60d0790...48ef`, as the manifest pins
+it). Cite the DOI; `fetch` downloads from the GitHub release.
 
 ## Observational data, and how to cite it
 
