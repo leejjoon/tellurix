@@ -7,12 +7,20 @@ the comparison measures physics, not two different atmospheres. The layer
 pressure is the air-weighted mean of the edges for both codes, lines and
 continua alike. Reports the transmission error at R=45,000 before and after
 fitting the H2O and CO2 column scales and a linear continuum, the way any fit
-would, and the per-species line and continuum ratios behind it. Writes
+would, and the per-species line and continuum ratios behind it.
+
+It then splits the CO2 residual. LBLRTM applies AER's first-order line
+coupling to every CO2 line the TAPE3 carries coefficients for, and cuts every
+line at 25 cm-1 less a pedestal; tellurix does neither. A CO2-only TAPE3 is
+built with LNFL both with and without coupling (NOCPL), and the cutoff is
+evaluated with ``tellurix.lblrtm_line_shape_optical_depth``, so each effect is
+measured on its own and on the fitted transmission. Writes
 ``docs/lblrtm_identical_layers.json``.
 
     UV_CACHE_DIR=.uv-cache uv run python scripts/compare_lblrtm_layers.py
 
-Needs ``bootstrap_lblrtm.sh``; four LBLRTM runs of a few minutes each.
+Needs ``bootstrap_lblrtm.sh``. The LBLRTM and LNFL runs take seconds; the
+tellurix side a minute on a GPU.
 """
 
 from __future__ import annotations
@@ -20,6 +28,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -32,7 +41,7 @@ from scipy.optimize import least_squares
 from tellurix import (
     AER_MOLECULE_IDS, AERLineDatabase, DataPaths, ExoJAXOpacityBackend, LBLRTMRunConfig,
     MTCKDWaterContinuum, TelluricModel, TelluricParameters, constant_velocity_grid,
-    load_atmosphere_csv, run_lblrtm,
+    lblrtm_line_shape_optical_depth, load_atmosphere_csv, run_lblrtm, run_lnfl,
 )
 
 WINDOW_CM1 = (5000.0, 5020.0)
@@ -108,12 +117,12 @@ def main() -> None:
                                 samples_per_resolution=SAMPLES_PER_RESOLUTION,
                                 margin_cm1=LINE_MARGIN_CM1)
 
-    def lblrtm(run_profile, continuum_flag, name):
+    def lblrtm(run_profile, continuum_flag, name, line_file=tape3):
         config = LBLRTMRunConfig(float(nu[0]) - PAD_CM1, float(nu[-1]) + PAD_CM1,
                                  continuum_flag=continuum_flag, user_layers=True,
                                  description=f"tellurix identical layers {name}")
-        spectrum = run_lblrtm(root / args.run_dir / name, run_profile, config, executable, tape3,
-                              paths.mt_ckd)
+        spectrum = run_lblrtm(root / args.run_dir / name, run_profile, config, executable,
+                              line_file, paths.mt_ckd)
         print(f"LBLRTM {name} done", flush=True)
         return on_grid(spectrum, nu)
 
@@ -124,6 +133,22 @@ def main() -> None:
                                          f"lines_{s.lower()}")
            for s in ("H2O", "CO2")},
     }
+
+    # CO2 alone from TAPE3s with and without AER's line coupling, over the
+    # grid plus LBLRTM's 25 cm-1 reach.
+    co2_profile = dataclasses.replace(profile, vmr={"CO2": profile.vmr["CO2"]})
+    for coupling in (True, False):
+        name = "co2_coupled" if coupling else "co2_uncoupled"
+        line_file = run_lnfl(root / args.run_dir / f"lnfl_{name}", ("CO2",),
+                             float(nu[0]) - LINE_MARGIN_CM1 - 1.0, float(nu[-1]) + LINE_MARGIN_CM1 + 1.0,
+                             reference / "AER_Line_File/aer_v_3.9/line_file/aer_v_3.9",
+                             reference / "LNFL/lnfl_v3.2_linux_gnu_sgl", line_coupling=coupling)
+        lblrtm_tau[name] = lblrtm(co2_profile, 0, name, line_file)
+        if coupling:
+            # LNFL's TAPE6 lists, per molecule, the lines and how many of them
+            # carry coupling coefficients.
+            log = (line_file.parent / "TAPE6").read_bytes().replace(b"\0", b"").decode("ascii", "replace")
+            lines, coupled = re.search(r"CO2\s+=\s+(\d+)\s+(\d+)", log).groups()
 
     databases = {}
     for species in profile.vmr:
@@ -156,6 +181,36 @@ def main() -> None:
             "integrated_ratio_tellurix_over_lblrtm": float(ours[inner].sum() / theirs[inner].sum()),
             "residual_rms": float(np.sqrt(np.mean((theirs - ours)[inner] ** 2))),
         }
+    # What the 25 cm-1 cutoff changes for the lines tellurix carries -- all
+    # of those within 25 cm-1 of the grid, as LBLRTM carries.
+    cutoff = {}
+    for species, database in databases.items():
+        truncated, full = lblrtm_line_shape_optical_depth(database, profile, nu)
+        cutoff[species] = truncated - full
+    coupling = lblrtm_tau["co2_coupled"] - lblrtm_tau["co2_uncoupled"]
+
+    def ratio_and_rms(ours, theirs):
+        return {"integrated_ratio_tellurix_over_lblrtm": float(ours[inner].sum() / theirs[inner].sum()),
+                "residual_rms": float(np.sqrt(np.mean((theirs - ours)[inner] ** 2)))}
+
+    co2 = {
+        "tape3_lines": int(lines), "tape3_coupled_lines": int(coupled),
+        "against_coupled_lblrtm": ratio_and_rms(pieces["CO2"], lblrtm_tau["co2_coupled"]),
+        "against_coupled_lblrtm_with_cutoff": ratio_and_rms(pieces["CO2"] + cutoff["CO2"],
+                                                            lblrtm_tau["co2_coupled"]),
+        "against_uncoupled_lblrtm": ratio_and_rms(pieces["CO2"], lblrtm_tau["co2_uncoupled"]),
+        "against_uncoupled_lblrtm_with_cutoff": ratio_and_rms(pieces["CO2"] + cutoff["CO2"],
+                                                              lblrtm_tau["co2_uncoupled"]),
+    }
+    variants = {"as_now": {}, "with_co2_coupling": {"CO2": coupling}, "with_cutoff": cutoff,
+                "with_cutoff_and_co2_coupling": {**cutoff, "CO2": cutoff["CO2"] + coupling}}
+    co2["fitted_transmission"] = {
+        "note": "tellurix lines + MT_CKD against LBLRTM with continua, with LBLRTM's CO2 coupling "
+                "(its coupled minus uncoupled CO2 optical depth) and/or its cutoff added to tellurix",
+        **{name: compare({k: v + extra.get(k, 0.0) for k, v in pieces.items()}, mt_ckd,
+                         lblrtm_tau["continua"], nu)
+           for name, extra in variants.items()}}
+
     report = {
         "description": __doc__.split("\n\n")[1].replace("\n", " "),
         "generated_by": "scripts/compare_lblrtm_layers.py",
@@ -174,10 +229,17 @@ def main() -> None:
             "lblrtm_all_continua": float(lblrtm_continuum[inner].mean()),
             "tellurix_mt_ckd": float(mt_ckd[inner].mean()),
         },
+        "co2_attribution": co2,
     }
     for key in ("lines_only", "lines_and_continua"):
         print(key, json.dumps(report[key]), flush=True)
     print(json.dumps(report["species_lines"]), json.dumps(report["continuum_mean_optical_depth"]))
+    for key, value in co2.items():
+        if key.startswith("against"):
+            print(key, json.dumps(value))
+    for key, value in co2["fitted_transmission"].items():
+        if key != "note":
+            print(key, json.dumps(value["fitted_R45000"]))
     output = root / args.output
     output.write_text(json.dumps(report, indent=1) + "\n")
     print(f"wrote {output}")

@@ -25,7 +25,9 @@ from .o2_cia import ContinuumSum, O2CollisionInducedContinuum
 from .exojax_backend import ExoJAXOpacityBackend
 from .download import DataPaths, default_data_directory, download_aer_lines, download_mt_ckd
 from .io import load_atmosphere_csv, load_mipas_profile
-from .lblrtm import LBLRTMRunConfig, run_lblrtm, write_tape5
+from .lblrtm import (
+    LBLRTMRunConfig, lblrtm_line_shape_optical_depth, run_lblrtm, run_lnfl, write_tape5,
+)
 from .mt_ckd import MTCKDWaterContinuum
 from .quality import species_at_upper_bound, write_upper_bound_flags
 from .scan import (
@@ -127,6 +129,8 @@ __all__ = [
     "resample_stellar_continuum",
     "resample_stellar_source",
     "run_lblrtm",
+    "run_lnfl",
+    "lblrtm_line_shape_optical_depth",
     "trim_wavenumber_grid",
     "write_record",
     "write_tape5",

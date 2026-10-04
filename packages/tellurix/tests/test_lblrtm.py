@@ -221,3 +221,43 @@ def test_user_layers_hand_lblrtm_the_columns_tellurix_integrates(tmp_path):
     np.testing.assert_allclose(amounts[:, 6], air * profile.vmr["O2"][::-1], rtol=1e-7)
     # Broadening air is what is left after every listed molecule.
     np.testing.assert_allclose(amounts.sum(axis=1), air, rtol=1e-7)
+
+
+def test_lnfl_is_asked_for_the_molecules_and_coupling_requested(tmp_path, monkeypatch):
+    def fake_run(command, cwd, capture_output, text):
+        (Path(cwd) / "TAPE3").write_bytes(b"placeholder")
+        return type("Result", (), {"returncode": 0, "stdout": "", "stderr": ""})()
+
+    monkeypatch.setattr(lblrtm_module.subprocess, "run", fake_run)
+    for path in ("line_file", "lnfl"):
+        (tmp_path / path).write_bytes(b"x")
+    tape3 = lblrtm_module.run_lnfl(tmp_path / "run", ("CO2", "CH4"), 4900.0, 5100.0,
+                                   tmp_path / "line_file", tmp_path / "lnfl", line_coupling=False)
+    lines = (tape3.parent / "TAPE5").read_text().splitlines()
+
+    assert lines[1] == "  4900.000  5100.000"
+    assert lines[2][:7] == "0100010" and len(lines[2].split()[0]) == 47
+    assert lines[2].endswith("NOCPL")
+
+
+def test_lblrtm_line_shape_cuts_each_line_at_25_cm1_less_its_pedestal(tmp_path):
+    """Inside the cutoff the two shapes differ by the pedestal, outside by the whole line."""
+
+    path = tmp_path / "05_CO"
+    path.write_text(f"{5:2d}{1:1d}{5000.0:12.6f}{1.0e-20:10.3E}{0.0:10.3E}.0700.0800"
+                    f"{100.0:10.4f}{0.7:4.2f}{0.0:8.6f}\n")
+    from tellurix import AERLineDatabase
+    database = AERLineDatabase(path, "CO", (4960.0, 5040.0), margin_cm1=0.0)
+    profile = AtmosphereProfile([0.5, 0.9], [280.0], [1.0], {"CO": [1.0e-6]})
+    nu = np.linspace(4960.0, 5040.0, 801)
+    truncated, full = lblrtm_module.lblrtm_line_shape_optical_depth(
+        database, profile, nu, pressure_shift=False)
+
+    inside, outside = np.abs(nu - 5000.0) <= 25.0, np.abs(nu - 5000.0) > 25.0
+    np.testing.assert_array_equal(truncated[outside], 0.0)
+    pedestal = full[inside] - truncated[inside]
+    # One line, so the pedestal is one constant, the Lorentz value at 25 cm-1.
+    # Near the centre the line is ~1e6 times the pedestal, so the difference
+    # carries that much float cancellation.
+    np.testing.assert_allclose(pedestal, pedestal[0], rtol=1e-6)
+    assert 0.0 < pedestal[0] < np.min(full[inside])

@@ -206,7 +206,8 @@ class AERLineDatabase:
 
     The adapter lets :class:`exojax.opacity.OpaDirect` use the same ordinary
     Voigt-line parameters supplied to LNFL. AER line-coupling records are not
-    exposed by this adapter. The auxiliary speed-dependence data are for
+    exposed by this adapter, though LBLRTM applies them -- to about half the
+    CO2 lines near 2 um (docs/lblrtm_corrected_mode.md). The auxiliary speed-dependence data are for
     MonoRTM and are not used by the LBLRTM configuration validated here.
     """
 

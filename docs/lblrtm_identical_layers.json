@@ -1,5 +1,5 @@
 {
- "description": "LBLRTM is given tellurix's own layers -- pressure, temperature and molecular column of each, as IATM=0 layer input (``LBLRTMRunConfig.user_layers``) -- so the comparison measures physics, not two different atmospheres. The layer pressure is the air-weighted mean of the edges for both codes, lines and continua alike. Reports the transmission error at R=45,000 before and after fitting the H2O and CO2 column scales and a linear continuum, the way any fit would, and the per-species line and continuum ratios behind it. Writes ``docs/lblrtm_identical_layers.json``.",
+ "description": "LBLRTM is given tellurix's own layers -- pressure, temperature and molecular column of each, as IATM=0 layer input (``LBLRTMRunConfig.user_layers``) -- so the comparison measures physics, not two different atmospheres. The layer pressure is the air-weighted mean of the edges for both codes, lines and continua alike. Reports the transmission error at R=45,000 before and after fitting the H2O and CO2 column scales and a linear continuum, the way any fit would, and the per-species line and continuum ratios behind it.",
  "generated_by": "scripts/compare_lblrtm_layers.py",
  "measured": "2026-10-04",
  "profile": "data/profiles/example_midlatitude.csv",
@@ -27,11 +27,11 @@
    "max": 0.016138032273802283
   },
   "fitted_R45000": {
-   "median": 0.0006034138340655915,
-   "p99": 0.006989776217107984,
-   "max": 0.007694936469204772,
-   "h2o_scale": 1.0014011050667457,
-   "co2_scale": 0.9993385657739902
+   "median": 0.0006034138418121726,
+   "p99": 0.006989776224462545,
+   "max": 0.007694936456307644,
+   "h2o_scale": 1.0014011052343912,
+   "co2_scale": 0.9993385658393169
   }
  },
  "lines_and_continua": {
@@ -46,25 +46,124 @@
    "max": 0.011903774288610003
   },
   "fitted_R45000": {
-   "median": 0.00046758590245422546,
-   "p99": 0.006905960975896515,
-   "max": 0.007601384670778866,
-   "h2o_scale": 1.0010886849657967,
-   "co2_scale": 1.000141605528267
+   "median": 0.00046758591010348516,
+   "p99": 0.0069059609999082274,
+   "max": 0.007601384640194442,
+   "h2o_scale": 1.0010886851059675,
+   "co2_scale": 1.0001416056728885
   }
  },
  "species_lines": {
   "H2O": {
    "integrated_ratio_tellurix_over_lblrtm": 1.0058911557050734,
-   "residual_rms": 0.0013168560141825945
+   "residual_rms": 0.0013168560141825925
   },
   "CO2": {
    "integrated_ratio_tellurix_over_lblrtm": 1.0152071546360497,
-   "residual_rms": 0.013064374502714157
+   "residual_rms": 0.013064374502714112
   }
  },
  "continuum_mean_optical_depth": {
   "lblrtm_all_continua": 0.0065853624121505645,
   "tellurix_mt_ckd": 0.002849532258471131
+ },
+ "co2_attribution": {
+  "tape3_lines": 11849,
+  "tape3_coupled_lines": 5679,
+  "against_coupled_lblrtm": {
+   "integrated_ratio_tellurix_over_lblrtm": 1.0152071546360497,
+   "residual_rms": 0.013064374502714112
+  },
+  "against_coupled_lblrtm_with_cutoff": {
+   "integrated_ratio_tellurix_over_lblrtm": 1.008481851234479,
+   "residual_rms": 0.010877029861893315
+  },
+  "against_uncoupled_lblrtm": {
+   "integrated_ratio_tellurix_over_lblrtm": 1.0080254647072804,
+   "residual_rms": 0.0055203934246007575
+  },
+  "against_uncoupled_lblrtm_with_cutoff": {
+   "integrated_ratio_tellurix_over_lblrtm": 1.0013477368605967,
+   "residual_rms": 0.0033664857112577977
+  },
+  "fitted_transmission": {
+   "note": "tellurix lines + MT_CKD against LBLRTM with continua, with LBLRTM's CO2 coupling (its coupled minus uncoupled CO2 optical depth) and/or its cutoff added to tellurix",
+   "as_now": {
+    "unfitted_monochromatic": {
+     "median": 0.003756687364754152,
+     "p99": 0.0120868325901606,
+     "max": 0.012646354039186902
+    },
+    "unfitted_R45000": {
+     "median": 0.0036915006219492286,
+     "p99": 0.011520351742402415,
+     "max": 0.011903774288610003
+    },
+    "fitted_R45000": {
+     "median": 0.00046758591010348516,
+     "p99": 0.0069059609999082274,
+     "max": 0.007601384640194442,
+     "h2o_scale": 1.0010886851059675,
+     "co2_scale": 1.0001416056728885
+    }
+   },
+   "with_co2_coupling": {
+    "unfitted_monochromatic": {
+     "median": 0.002299402307900711,
+     "p99": 0.002992598706634768,
+     "max": 0.003034818396154826
+    },
+    "unfitted_R45000": {
+     "median": 0.0022309298917929654,
+     "p99": 0.0029470822782886076,
+     "max": 0.0029804172432409404
+    },
+    "fitted_R45000": {
+     "median": 0.0003235339410247451,
+     "p99": 0.0008392784003145794,
+     "max": 0.0009223108949952818,
+     "h2o_scale": 0.9992919631684769,
+     "co2_scale": 1.0021073700014633
+    }
+   },
+   "with_cutoff": {
+    "unfitted_monochromatic": {
+     "median": 0.0008037173748156046,
+     "p99": 0.00890311457514643,
+     "max": 0.009779285252532466
+    },
+    "unfitted_R45000": {
+     "median": 0.0007836583307735956,
+     "p99": 0.008396523086052288,
+     "max": 0.008849472073403919
+    },
+    "fitted_R45000": {
+     "median": 0.0004578191020293068,
+     "p99": 0.006919725791837867,
+     "max": 0.0075870757933999,
+     "h2o_scale": 1.0010830006917286,
+     "co2_scale": 1.0001415757263357
+    }
+   },
+   "with_cutoff_and_co2_coupling": {
+    "unfitted_monochromatic": {
+     "median": 0.000791826481033403,
+     "p99": 0.004070758463837317,
+     "max": 0.004648029858310698
+    },
+    "unfitted_R45000": {
+     "median": 0.00079529321242644,
+     "p99": 0.00399597460134702,
+     "max": 0.004321626008536805
+    },
+    "fitted_R45000": {
+     "median": 0.0003333456820880931,
+     "p99": 0.0008147864126204763,
+     "max": 0.0008845714457205167,
+     "h2o_scale": 0.9992886534121026,
+     "co2_scale": 1.002095552099766
+    }
+   }
+  }
  }
 }

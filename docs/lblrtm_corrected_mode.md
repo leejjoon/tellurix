@@ -65,10 +65,12 @@ The resulting template contains two kinds of terms:
   This includes other continua and small numerical decomposition residuals and
   is held fixed under abundance changes.
 
-For this 5000--5020 cm-1 case, CO2 line coupling is outside the AER coupling
-database's stated 597--2503 cm-1 range. LBLRTM also does not consume the AER
-speed-dependence files used by MonoRTM. Those effects therefore do not explain
-this order's correction. After fixing the profile extent, pressure shifts
+LBLRTM applies AER's first-order line coupling to CO2 here: LNFL writes
+coupling coefficients for 5,679 of the 11,849 CO2 lines within 25 cm-1 of
+this order, and tellurix does not model coupling (see "With identical layers"
+below; an earlier version of this page said the coupling data stopped at
+2503 cm-1, which is wrong for AER 3.9). LBLRTM does not consume the AER
+speed-dependence files used by MonoRTM. After fixing the profile extent, pressure shifts
 reduce the fast 99th-percentile error from 0.107 to 0.0581. The residual
 remains explicitly empirical; what it is made of is below.
 
@@ -118,6 +120,26 @@ down from 0.093 with LBLRTM's own layering), CO2's 1.5% above (RMS 0.013).
 CO2 is now the larger line residual. The rest is continuum: LBLRTM's
 continua average an optical depth of 0.0066 here, MT_CKD's water part 0.0028;
 the remainder is smooth, and the fitted continuum absorbs it.
+
+The CO2 residual is two things LBLRTM does and tellurix does not, each
+measured on its own: AER's line coupling, from CO2-only TAPE3s built with and
+without it (LNFL's NOCPL), and the 25 cm-1 cutoff with its pedestal
+(`tellurix.lblrtm_line_shape_optical_depth`):
+
+| tellurix CO2 against | integrated ratio | residual RMS |
+|---|---:|---:|
+| LBLRTM, coupled (as it runs) | 1.0152 | 0.0131 |
+| LBLRTM, coupled; tellurix with the cutoff | 1.0085 | 0.0109 |
+| LBLRTM, uncoupled | 1.0080 | 0.0055 |
+| LBLRTM, uncoupled; tellurix with the cutoff | 1.0013 | 0.0034 |
+
+Coupling and the cutoff carry about 0.7% each, leaving 0.13%. Only coupling
+survives a fit. Adding LBLRTM's CO2 coupling (its coupled minus uncoupled
+optical depth) to tellurix takes the fitted 99th percentile from 0.69% to
+0.084%; adding the cutoff leaves it at 0.69%, because the pedestal is smooth and
+the fitted continuum takes it. Line mixing is physics rather than an LBLRTM
+artefact -- it moves absorption out of the gaps between lines -- so it will be
+in the 2.0 and 1.6 um CO2 bands of real spectra too.
 
 All terms are vertical optical depths. The normal model airmass calculation
 therefore scales them with zenith angle. Templates are valid only for their

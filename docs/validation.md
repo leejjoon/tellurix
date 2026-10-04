@@ -59,8 +59,9 @@ atmosphere the two codes were given, not in their physics; see "What the
 layers (`LBLRTMRunConfig(user_layers=True)`), the fitted transmission agrees
 with LBLRTM to 0.05% median and 0.69% at the 99th percentile at R=45,000
 (`docs/lblrtm_identical_layers.json`). That meets the median threshold below
-(1e-3) and misses the 99th-percentile one (5e-3); of the line residuals, CO2's
-is ten times H2O's.
+(1e-3) and misses the 99th-percentile one (5e-3). That miss is CO2 line
+coupling, which LBLRTM applies and tellurix does not: with LBLRTM's coupling
+added, the fitted 99th percentile is 0.084%.
 
 ## Layering
 

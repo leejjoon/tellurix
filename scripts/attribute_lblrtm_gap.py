@@ -10,10 +10,9 @@ R=45,000 before and after the column scales are fitted. Writes
 
     UV_CACHE_DIR=.uv-cache uv run python scripts/attribute_lblrtm_gap.py
 
-LBLRTM 12.17 with ILBLF4=1 truncates every line at B = 25 cm-1 and subtracts
-its value there: L(B) for most molecules, (2 - x^2/B^2) L(B) for CO2
-(``oprop.f90``, CONVF4; the CO2 chi factor is overridden to 1). tellurix keeps
-the full Voigt line and carries only lines inside its grid. The predicted
+LBLRTM truncates every line at 25 cm-1 less a pedestal
+(``tellurix.lblrtm_line_shape_optical_depth``); tellurix keeps the full Voigt
+line and, in this template, carried only lines inside its grid. The predicted
 LBLRTM-minus-tellurix optical depth from that alone is compared with the
 template's measured residual.
 """
@@ -28,13 +27,12 @@ from pathlib import Path
 
 import numpy as np
 from scipy.optimize import least_squares
-from scipy.special import voigt_profile
 
 import tellurix  # noqa: F401  (x64 before exojax)
 from tellurix import (
-    AER_MOLECULE_IDS, AERLineDatabase, DataPaths, load_atmosphere_csv, read_tape12_single_precision,
+    AER_MOLECULE_IDS, AERLineDatabase, DataPaths, lblrtm_line_shape_optical_depth,
+    load_atmosphere_csv, read_tape12_single_precision,
 )
-from tellurix.direct import SparseCoreDirect
 
 CUTOFF_CM1 = 25.0
 WINDOW_CM1 = (5000.0, 5020.0)
@@ -59,57 +57,26 @@ def tape12_optical_depth(path: Path, nu: np.ndarray) -> np.ndarray:
 def cutoff_residual(paths, species, profile, nu) -> np.ndarray:
     """LBLRTM minus tellurix optical depth from the cutoff and the grid edges alone."""
 
-    co2 = species == "CO2"
-    temperature = np.asarray(profile.temperature_k)
-    pressure = np.asarray(profile.pressure_layer_bar)
-    vmr = np.asarray(profile.vmr[species])
-
     def lines(lower, upper):
         try:
-            database = AERLineDatabase(paths.line_file(species, AER_MOLECULE_IDS[species]),
-                                       species, (lower, upper), margin_cm1=0.0)
+            return AERLineDatabase(paths.line_file(species, AER_MOLECULE_IDS[species]),
+                                   species, (lower, upper), margin_cm1=0.0)
         except ValueError as exc:
             if "lines found" not in str(exc):
                 raise
             return None
-        # The template's backend used pressure shifts; take the same line
-        # parameters from the same calculator.
-        calculator = SparseCoreDirect(database, np.linspace(lower, upper, 16), pressure_shift=True,
-                                      minimum_temperature_k=temperature.min(),
-                                      maximum_temperature_k=temperature.max(),
-                                      maximum_pressure_bar=pressure.max())
-        return database, calculator
 
-    def plinth(x, gamma, strength):
-        at_cutoff = strength * gamma / (np.pi * (gamma**2 + CUTOFF_CM1**2))
-        return at_cutoff * ((2.0 - x**2 / CUTOFF_CM1**2) if co2 else 1.0)
-
+    # The template's backend carried only the lines inside its grid, with
+    # pressure shifts: the cutoff changes those, and LBLRTM adds the lines
+    # within 25 cm-1 beyond either end.
     carried = lines(nu[0], nu[-1])
-    beyond = [lines(nu[0] - CUTOFF_CM1 - 1.0, nu[0]), lines(nu[-1], nu[-1] + CUTOFF_CM1 + 1.0)]
     tau = np.zeros_like(nu)
-    for layer, column in enumerate(profile.air_column_cm2 * vmr):
-        for sign, entry in [(-1.0, carried)] + [(1.0, b) for b in beyond]:
-            if entry is None:
-                continue
-            database, calculator = entry
-            sigma, gamma, strength = (np.asarray(a) for a in calculator._line_parameters(
-                temperature[layer], pressure[layer], pressure[layer] * vmr[layer]))
-            centre = np.asarray(database.nu_lines) + np.asarray(
-                calculator._line_shift(temperature[layer], pressure[layer]))
-            for start in range(0, centre.size, 400):
-                part = slice(start, start + 400)
-                x = nu[None, :] - centre[part, None]
-                inside = np.abs(x) <= CUTOFF_CM1
-                g, s = gamma[part, None], strength[part, None]
-                voigt = s * voigt_profile(x, sigma[part, None], g)
-                if sign < 0:
-                    # tellurix keeps the far wing LBLRTM drops and lacks the
-                    # plinth LBLRTM subtracts.
-                    change = np.where(inside, plinth(x, g, s), voigt)
-                else:
-                    # Lines outside tellurix's grid that LBLRTM still carries.
-                    change = np.where(inside, voigt - plinth(x, g, s), 0.0)
-                tau += sign * column * np.sum(change, axis=0)
+    if carried is not None:
+        truncated, full = lblrtm_line_shape_optical_depth(carried, profile, nu)
+        tau = truncated - full
+    for beyond in (lines(nu[0] - CUTOFF_CM1 - 1.0, nu[0]), lines(nu[-1], nu[-1] + CUTOFF_CM1 + 1.0)):
+        if beyond is not None:
+            tau = tau + lblrtm_line_shape_optical_depth(beyond, profile, nu)[0]
     return tau
 
 

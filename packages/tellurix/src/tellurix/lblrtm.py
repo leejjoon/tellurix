@@ -275,3 +275,101 @@ def run_lblrtm(
         details = (result.stdout + "\n" + result.stderr).strip()
         raise RuntimeError(f"LBLRTM failed with status {result.returncode}:\n{details[-4000:]}")
     return read_tape12_single_precision(tape12)
+
+
+def run_lnfl(
+    workdir: str | Path,
+    species: tuple[str, ...],
+    wavenumber_min_cm1: float,
+    wavenumber_max_cm1: float,
+    line_file: str | Path,
+    executable: str | Path,
+    line_coupling: bool = True,
+) -> Path:
+    """Build an LBLRTM TAPE3 with LNFL and return its path.
+
+    ``species`` are names from the HITRAN-ordered list LBLRTM uses (record 3 of
+    LNFL's TAPE5 is a positional on/off mask). ``line_coupling=False`` passes
+    LNFL's NOCPL option, which drops AER's first-order coupling coefficients --
+    the one way to see what LBLRTM's line mixing contributes, since LBLRTM
+    applies whatever the TAPE3 carries.
+    """
+
+    unknown = set(species) - set(_LBLRTM_SPECIES)
+    if unknown:
+        raise ValueError(f"unknown LNFL species: {', '.join(sorted(unknown))}")
+    directory = Path(workdir).resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    mask = "".join("1" if name in species else "0" for name in _LBLRTM_SPECIES).ljust(47, "0")
+    (directory / "TAPE5").write_text(
+        f"tellurix LNFL {' '.join(species)}{'' if line_coupling else ' (NOCPL)'}\n"
+        f"{wavenumber_min_cm1:10.3f}{wavenumber_max_cm1:10.3f}\n"
+        f"{mask}    {'' if line_coupling else 'NOCPL'}\n", encoding="ascii")
+    for name in ("TAPE1", "TAPE3", "TAPE10"):
+        target = directory / name
+        if target.exists() or target.is_symlink():
+            target.unlink()
+    (directory / "TAPE1").symlink_to(Path(line_file).resolve())
+    binary = directory / "lnfl"
+    shutil.copy2(executable, binary)
+    result = subprocess.run([str(binary)], cwd=directory, capture_output=True, text=True)
+    tape3 = directory / "TAPE3"
+    if result.returncode != 0 or not tape3.exists():
+        details = (result.stdout + "\n" + result.stderr).strip()
+        raise RuntimeError(f"LNFL failed with status {result.returncode}:\n{details[-4000:]}")
+    return tape3
+
+
+def lblrtm_line_shape_optical_depth(
+    database,
+    profile: AtmosphereProfile,
+    wavenumber_cm1: np.ndarray,
+    pressure_shift: bool = True,
+    cutoff_cm1: float = 25.0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Vertical optical depth of ``database``'s lines as LBLRTM and as tellurix shape them.
+
+    Returns ``(truncated, full)``. ``full`` is the Voigt line everywhere, as
+    tellurix evaluates it. ``truncated`` is LBLRTM 12.17's with ILBLF4=1
+    (``oprop.f90``, CONVF4): every line cut at ``cutoff_cm1`` less its Lorentz
+    value there, L(B) for most molecules and (2 - x^2/B^2) L(B) for CO2, whose
+    chi factor 12.17 overrides to 1. ``truncated - full`` is what the cutoff
+    changes for lines both codes carry; ``truncated`` alone is what LBLRTM adds
+    for lines only it carries. Line coupling is not included. Evaluated in
+    numpy, line by line, for validation rather than fitting.
+    """
+
+    from scipy.special import voigt_profile
+
+    from .direct import SparseCoreDirect
+
+    nu = np.asarray(wavenumber_cm1, dtype=float)
+    species = database.simple_molecule_name.upper()
+    temperature = np.asarray(profile.temperature_k)
+    pressure = np.asarray(profile.pressure_layer_bar)
+    vmr = np.asarray(profile.vmr[species])
+    # The same line parameters the fitting kernel uses, from the same class.
+    calculator = SparseCoreDirect(database, np.linspace(nu[0], nu[-1], 16),
+                                  pressure_shift=pressure_shift,
+                                  minimum_temperature_k=float(temperature.min()),
+                                  maximum_temperature_k=float(temperature.max()),
+                                  maximum_pressure_bar=float(pressure.max()))
+    truncated = np.zeros_like(nu)
+    full = np.zeros_like(nu)
+    for layer, column in enumerate(profile.air_column_cm2 * vmr):
+        sigma, gamma, strength = (np.asarray(a) for a in calculator._line_parameters(
+            temperature[layer], pressure[layer], pressure[layer] * vmr[layer]))
+        centre = np.asarray(database.nu_lines, dtype=float)
+        if pressure_shift:
+            centre = centre + np.asarray(calculator._line_shift(temperature[layer], pressure[layer]))
+        for start in range(0, centre.size, 500):
+            part = slice(start, start + 500)
+            x = nu[None, :] - centre[part, None]
+            g, s = gamma[part, None], strength[part, None]
+            voigt = s * voigt_profile(x, sigma[part, None], g)
+            pedestal = s * g / (np.pi * (g * g + cutoff_cm1 ** 2))
+            if species == "CO2":
+                pedestal = pedestal * (2.0 - x * x / cutoff_cm1 ** 2)
+            full += column * voigt.sum(axis=0)
+            truncated += column * np.where(np.abs(x) <= cutoff_cm1, voigt - pedestal, 0.0).sum(axis=0)
+    return truncated, full
