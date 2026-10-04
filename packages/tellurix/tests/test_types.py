@@ -50,3 +50,27 @@ def test_mipas_profile_is_converted_from_levels_to_top_down_layers(tmp_path):
     np.testing.assert_allclose(profile.pressure_edges_bar, [0.25, 0.8])
     np.testing.assert_allclose(profile.temperature_k, [252.5])
     np.testing.assert_allclose(profile.vmr["H2O"], [0.00255])
+
+
+def test_a_profile_without_a_mean_pressure_keeps_each_term_on_its_own():
+    """Lines on the geometric mean, continua on the arithmetic, as before."""
+
+    profile = AtmosphereProfile([0.1, 0.4], [250.0], [5.0], {"H2O": [1.0e-3]})
+
+    assert profile.pressure_layer_bar == pytest.approx([0.2])
+    assert profile.continuum_pressure_bar == pytest.approx([0.25])
+
+
+def test_a_mean_pressure_is_used_by_lines_and_continua_alike():
+    profile = AtmosphereProfile([0.1, 0.4], [250.0], [5.0], {"H2O": [1.0e-3]},
+                                mean_pressure_bar=[0.24])
+
+    assert profile.pressure_layer_bar == pytest.approx([0.24])
+    assert profile.continuum_pressure_bar == pytest.approx([0.24])
+
+
+@pytest.mark.parametrize("mean_pressure", ([0.1], [0.5], [0.2, 0.3], [np.nan]))
+def test_a_mean_pressure_outside_its_layer_is_rejected(mean_pressure):
+    with pytest.raises(ValueError, match="mean pressure"):
+        AtmosphereProfile([0.1, 0.4], [250.0], [5.0], {"H2O": [1.0e-3]},
+                          mean_pressure_bar=mean_pressure)

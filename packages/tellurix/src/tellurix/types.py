@@ -39,6 +39,14 @@ class AtmosphereProfile:
     Pressure edges have ``n_layer + 1`` entries and must increase toward the
     ground. Temperatures, altitudes, mean molecular weights, and every VMR
     profile have ``n_layer`` entries. VMR means volume mixing ratio.
+
+    ``mean_pressure_bar`` is the air-density-weighted pressure of each layer,
+    as LBLRTM's Curtis-Godson averaging defines it and as
+    ``site_profile.weighted_layers`` computes it. When it is given, lines and
+    continua both use it. When it is not, each keeps the pressure it always
+    used -- the geometric mean of the edges for lines, the arithmetic mean for
+    the continua -- so a profile written before the field existed reproduces
+    every earlier result exactly.
     """
 
     pressure_edges_bar: ArrayLike
@@ -47,6 +55,7 @@ class AtmosphereProfile:
     vmr: Mapping[str, ArrayLike]
     mean_molecular_weight_g_mol: ArrayLike = 28.9647
     gravity_m_s2: ArrayLike = 9.80665
+    mean_pressure_bar: ArrayLike | None = None
 
     def __post_init__(self) -> None:
         edges = np.asarray(self.pressure_edges_bar, dtype=float)
@@ -78,6 +87,14 @@ class AtmosphereProfile:
         if np.any(mmw <= 0.0) or np.any(gravity <= 0.0):
             raise ValueError("mean molecular weight and gravity must be positive")
 
+        if self.mean_pressure_bar is not None:
+            mean_pressure = np.asarray(self.mean_pressure_bar, dtype=float)
+            if mean_pressure.shape != (nlayer,) or np.any(~np.isfinite(mean_pressure)):
+                raise ValueError("mean pressure must be finite with one value per layer")
+            if np.any(mean_pressure <= edges[:-1]) or np.any(mean_pressure >= edges[1:]):
+                raise ValueError("mean pressure must lie strictly between its layer's edges")
+            object.__setattr__(self, "mean_pressure_bar", mean_pressure)
+
         object.__setattr__(self, "pressure_edges_bar", edges)
         object.__setattr__(self, "temperature_k", temperature)
         object.__setattr__(self, "altitude_km", altitude)
@@ -87,10 +104,31 @@ class AtmosphereProfile:
 
     @property
     def pressure_layer_bar(self) -> np.ndarray:
-        """Geometric-mean pressure at each layer center."""
+        """The pressure the line opacity is evaluated at.
 
+        ``mean_pressure_bar`` when given, otherwise the geometric mean of the
+        edges -- which sits below the air-weighted mean, by 20% in a layer
+        spanning a factor of four in pressure.
+        """
+
+        if self.mean_pressure_bar is not None:
+            return self.mean_pressure_bar
         edges = np.asarray(self.pressure_edges_bar)
         return np.sqrt(edges[:-1] * edges[1:])
+
+    @property
+    def continuum_pressure_bar(self) -> np.ndarray:
+        """The pressure the continua are evaluated at.
+
+        ``mean_pressure_bar`` when given, otherwise the arithmetic mean of the
+        edges: hydrostatic column is proportional to pressure, so that is the
+        air-weighted mean of a layer of uniform state.
+        """
+
+        if self.mean_pressure_bar is not None:
+            return self.mean_pressure_bar
+        edges = np.asarray(self.pressure_edges_bar)
+        return 0.5 * (edges[:-1] + edges[1:])
 
     @property
     def air_column_cm2(self) -> np.ndarray:

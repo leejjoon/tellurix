@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import hashlib
 import json
 from pathlib import Path
@@ -215,10 +216,7 @@ def main() -> None:
     for scale in (0.5, 2.0):
         scaled_vmr = dict(profile.vmr)
         scaled_vmr["H2O"] = np.asarray(profile.vmr["H2O"]) * scale
-        scaled_profile = type(profile)(
-            profile.pressure_edges_bar, profile.temperature_k, profile.altitude_km,
-            scaled_vmr, profile.mean_molecular_weight_g_mol, profile.gravity_m_s2,
-        )
+        scaled_profile = dataclasses.replace(profile, vmr=scaled_vmr)
         scaled_parameters = parameters._replace(
             log_column_scales={name: np.log(scale) if name == "H2O" else 0.0 for name in species}
         )

@@ -54,7 +54,9 @@ from .model import (
     constant_velocity_grid,
     trim_wavenumber_grid,
 )
-from .site_profile import afgl_dry_vmr, build_site_profile, load_afgl, write_profile_csv
+from .site_profile import (
+    LAYERINGS, afgl_dry_vmr, build_site_profile, load_afgl, weighted_layers, write_profile_csv,
+)
 from .stellar import (
     StellarSpectrum,
     broaden_stellar_source,
@@ -113,6 +115,8 @@ __all__ = [
     "DataPaths",
     "afgl_dry_vmr",
     "build_site_profile",
+    "weighted_layers",
+    "LAYERINGS",
     "load_afgl",
     "species_at_upper_bound",
     "write_profile_csv",

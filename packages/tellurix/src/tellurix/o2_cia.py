@@ -154,7 +154,7 @@ class O2CollisionInducedContinuum:
         return _BoundO2CollisionInducedContinuum(
             pressure_edges_bar=edges,
             temperature_k=temperature,
-            pressure_hpa=0.5 * (edges[:-1] + edges[1:]) * 1000.0,
+            pressure_hpa=np.asarray(profile.continuum_pressure_bar) * 1000.0,
             air_column_cm2=np.asarray(profile.air_column_cm2, dtype=float),
             basis=basis,
         )
@@ -174,7 +174,9 @@ class _BoundO2CollisionInducedContinuum:
         """Vertical optical depth by layer, (layer, wavenumber)."""
 
         if not (np.array_equal(self.pressure_edges_bar, np.asarray(profile.pressure_edges_bar))
-                and np.array_equal(self.temperature_k, np.asarray(profile.temperature_k))):
+                and np.array_equal(self.temperature_k, np.asarray(profile.temperature_k))
+                and np.array_equal(self.pressure_hpa,
+                                   np.asarray(profile.continuum_pressure_bar) * 1000.0)):
             raise ValueError("prepared O2 continuum does not match the model profile")
         x_o2 = jnp.asarray(scaled_vmr["O2"])
         x_h2o = jnp.asarray(scaled_vmr["H2O"]) if "H2O" in scaled_vmr else jnp.zeros_like(x_o2)

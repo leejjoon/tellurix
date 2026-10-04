@@ -130,14 +130,9 @@ class MTCKDWaterContinuum:
         if "H2O" not in scaled_vmr:
             raise ValueError("MT_CKD water continuum requires an H2O VMR profile")
         temperature = jnp.asarray(profile.temperature_k)[:, None, None]
-        pressure_edges = jnp.asarray(profile.pressure_edges_bar)
         # Continuum opacity is proportional to absorber column times collider
-        # density.  With the layer state held constant and hydrostatic column
-        # coordinate dN proportional to dP, the exact layer-mean pressure is
-        # the arithmetic mean of its bounding pressures.
-        pressure_hpa = (
-            0.5 * (pressure_edges[:-1] + pressure_edges[1:])[:, None, None] * 1000.0
-        )
+        # density, so it wants the air-weighted layer pressure.
+        pressure_hpa = jnp.asarray(profile.continuum_pressure_bar)[:, None, None] * 1000.0
         water_vmr = jnp.asarray(scaled_vmr["H2O"])[:, None, None]
         indices = jnp.asarray(self._indices)
         weights = jnp.asarray(self._weights)[None, :, :]
@@ -184,8 +179,7 @@ class MTCKDWaterContinuum:
         if "H2O" not in profile.vmr:
             raise ValueError("MT_CKD water continuum requires an H2O VMR profile")
         temperature = np.asarray(profile.temperature_k)[:, None, None]
-        edges = np.asarray(profile.pressure_edges_bar)
-        pressure_hpa = 0.5 * (edges[:-1] + edges[1:])[:, None, None] * 1000.0
+        pressure_hpa = np.asarray(profile.continuum_pressure_bar)[:, None, None] * 1000.0
         coefficient_nu = self.coefficient_wavenumber_cm1[self._indices][None, :, :]
         self_ref = self.self_absco_ref[self._indices][None, :, :]
         foreign_ref = self.foreign_absco_ref[self._indices][None, :, :]
@@ -215,6 +209,7 @@ class MTCKDWaterContinuum:
         return _BoundMTCKDWaterContinuum(
             np.asarray(profile.pressure_edges_bar),
             np.asarray(profile.temperature_k),
+            np.asarray(profile.continuum_pressure_bar),
             self_cross_section,
             foreign_cross_section,
         )
@@ -226,6 +221,7 @@ class _BoundMTCKDWaterContinuum:
 
     pressure_edges_bar: np.ndarray
     temperature_k: np.ndarray
+    continuum_pressure_bar: np.ndarray
     self_cross_section: np.ndarray
     foreign_cross_section: np.ndarray
 
@@ -235,6 +231,7 @@ class _BoundMTCKDWaterContinuum:
         checks = (
             (self.pressure_edges_bar, np.asarray(profile.pressure_edges_bar)),
             (self.temperature_k, np.asarray(profile.temperature_k)),
+            (self.continuum_pressure_bar, np.asarray(profile.continuum_pressure_bar)),
         )
         if any(
             left.shape != right.shape or not np.array_equal(left, right)

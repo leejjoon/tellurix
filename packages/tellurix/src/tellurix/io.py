@@ -15,14 +15,16 @@ _REQUIRED_COLUMNS = {
     "temperature_k",
     "altitude_km",
 }
-_NON_SPECIES_COLUMNS = _REQUIRED_COLUMNS | {"mean_molecular_weight_g_mol", "gravity_m_s2"}
+_NON_SPECIES_COLUMNS = _REQUIRED_COLUMNS | {"mean_molecular_weight_g_mol", "gravity_m_s2", "pressure_bar"}
 
 
 def load_atmosphere_csv(path: str | Path) -> AtmosphereProfile:
     """Load a top-to-bottom layer profile from a CSV file.
 
     Any column outside the required/physical columns is interpreted as a
-    molecule name containing a volume mixing ratio.
+    molecule name containing a volume mixing ratio. An optional
+    ``pressure_bar`` column is each layer's air-weighted mean pressure
+    (``AtmosphereProfile.mean_pressure_bar``).
     """
 
     with Path(path).open(newline="", encoding="utf-8") as stream:
@@ -56,6 +58,8 @@ def load_atmosphere_csv(path: str | Path) -> AtmosphereProfile:
         vmr={name.upper(): [float(row[name]) for row in rows] for name in species},
         mean_molecular_weight_g_mol=optional_column("mean_molecular_weight_g_mol", 28.9647),
         gravity_m_s2=optional_column("gravity_m_s2", 9.80665),
+        mean_pressure_bar=(np.asarray([float(row["pressure_bar"]) for row in rows])
+                           if "pressure_bar" in columns else None),
     )
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
@@ -249,10 +250,7 @@ def build_lblrtm_correction(
     for species in correction_species:
         if species not in profile.vmr or not np.any(np.asarray(profile.vmr[species]) > 0.0):
             raise ValueError(f"cannot build a {species} correction with zero reference abundance")
-        species_profile = AtmosphereProfile(
-            profile.pressure_edges_bar, profile.temperature_k, profile.altitude_km,
-            {species: profile.vmr[species]}, profile.mean_molecular_weight_g_mol, profile.gravity_m_s2,
-        )
+        species_profile = dataclasses.replace(profile, vmr={species: profile.vmr[species]})
         lblrtm_tau = run(species_profile, 0, f"lines_{species.lower()}")
         if species in cross_sections:
             jax_tau = np.sum(
