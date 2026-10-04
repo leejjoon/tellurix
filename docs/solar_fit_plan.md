@@ -1321,6 +1321,23 @@ line files with and without AER's line coupling, recipe in the script's docstrin
   residue. What remains acts as strength x column: a B-band intensity scale ~3% above
   AER's (HITRAN's is 2.3% *below* it), on top of a common ~1-4% that an air mass or
   column error could carry.
+- **The laboratory says the intensities are not too weak.** AER v3.9's B-band is
+  Gordon, Rothman & Toon (2011, JQSRT 112, 2310), the HITRAN2012 list: Giver's band
+  strength with a (nu_line/nu_band)^3 correction and an empirical 1.02 to match the
+  Lisak et al. (2010) cavity ring-down values. Where HITRAN still cites that source the
+  two lists are identical. HITRAN2016 replaced the 48 strongest 16O2 lines (98% of the
+  band) with the Torun frequency-stabilised CRDS measurements (Domyslawska et al. 2012-
+  2016, JQSRT 169, 111; intensities to <0.5%), and HITRAN2020 corrected only their
+  widths (Gordon et al. 2022, §2.7.3): against those, **AER is 2.4% too strong**. Gordon
+  et al.'s own validation on Park Falls TCCON spectra retrieved an O2 column of
+  1.005 +- 0.01 with the AER-equivalent list (their Table 4). Here the same list asks
+  for ~1.045 -- about 4% above TCCON and 7% above the lab. The excess belongs to these
+  spectra or this analysis, not to the line list.
+- **A zero-level offset is in the right direction and too small.** A spectrum sitting
+  below true zero deepens every line by the same fraction, weak or saturated, as the
+  curve of growth demands, and shows as saturated cores below zero. They are: -0.4% to
+  -1.1% of the continuum in the B-band, -0.1% to -0.3% in the A-band. That is worth
+  ~0.5-1% of O2 scale in the B-band, not 4.5%.
 - **niratl's air mass is 1.05-1.12, not pinned.** Its 1.10 came from the A-band at
   zenith 0; correcting for the line physics alone gives ~1.12, and if the A-band excess
   above is in the line intensities it is nearer 1.05.
@@ -1401,9 +1418,11 @@ them by exactly 1/T of the O2 continuum (§4o measured both), every round trip e
   intensities and widths against HITRAN's (<1%), a temperature-profile error, water,
   line width and shape.
   The B-band part scales with the O2 column and is the same in weak and saturated lines,
-  so it is a strength, not a width or line shape. Next: the published B-band intensity
-  measurements against AER and HITRAN. niratl's air mass stays at 1.05-1.12 until this
-  is settled.
+  so it is a strength, not a width or line shape -- yet the lab (CRDS, in HITRAN since
+  2016) puts AER's B-band 2.4% too *strong*, and TCCON retrieved 1.005 with it. The
+  excess is in these spectra or this analysis; a zero-level offset explains <1%. Open:
+  what scales every B-band depth by ~1.07 relative to the lab and A-band by ~1.03.
+  niratl's air mass stays at 1.05-1.12 until this is settled.
 - **`lsf_sigma_kms` at a bound** in 78 of 222 windows of file 5, 105 of 215 of file 4,
   37 of 307 of `_2`. Not examined. The sibling project's W4.1 result -- telluric lines
   constrain an ILS where stellar lines cannot -- is the lever not yet tried.
