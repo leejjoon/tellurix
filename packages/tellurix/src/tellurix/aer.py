@@ -216,30 +216,42 @@ def _coupling_table(path: Path, molecule_id: int) -> dict:
     the flag but not the record. The key is the position field as written,
     so a line matches only the record AER wrote for it. Reduced-width coupling
     (flag -3, two O2 lines) is stored as None and refused where it is used.
+    The file is read once for every molecule and cached by path, size and mtime.
     """
 
     stat = path.stat()
-    key = (str(path.resolve()), stat.st_size, stat.st_mtime_ns, molecule_id)
+    key = (str(path.resolve()), stat.st_size, stat.st_mtime_ns)
     if key not in _COUPLING_TABLES:
-        table = {}
+        tables: dict = {}
         with path.open(encoding="ascii", errors="replace") as stream:
-            pending = None
+            pending, skip = None, 0
             for line in stream:
-                if pending is not None:
-                    values = [float(line[2 + 24 * k: 15 + 24 * k]) for k in range(4)]
-                    values += [float(line[15 + 24 * k: 26 + 24 * k]) for k in range(4)]
-                    table[pending] = (np.asarray(values[:4]), np.asarray(values[4:]))
-                    pending = None
+                if skip:
+                    # Every coupled line is followed by its records -- one for
+                    # -1 and -3, foreign then self for -5 -- which look like
+                    # lines to a careless reader. Only -1's is kept.
+                    if pending is not None:
+                        values = [float(line[2 + 24 * k: 15 + 24 * k]) for k in range(4)]
+                        values += [float(line[15 + 24 * k: 26 + 24 * k]) for k in range(4)]
+                        molecule, entry = pending
+                        tables.setdefault(molecule, {})[entry] = (np.asarray(values[:4]),
+                                                                  np.asarray(values[4:]))
+                        pending = None
+                    skip -= 1
                     continue
-                if len(line) < 100 or line[:2].strip() != str(molecule_id) or "." not in line[3:15]:
+                if len(line) < 100 or not line[:2].strip() or "." not in line[3:15]:
                     continue
                 flag = line[98:100]
+                if flag not in ("-1", "-3", "-5"):
+                    continue
+                molecule, entry = int(line[:2]), (int(line[2:3]), line[3:15].strip())
+                skip = 2 if flag == "-5" else 1
                 if flag == "-1":
-                    pending = (int(line[2:3]), line[3:15].strip())
-                elif flag in ("-3", "-5"):
-                    table[(int(line[2:3]), line[3:15].strip())] = None
-        _COUPLING_TABLES[key] = table
-    return _COUPLING_TABLES[key]
+                    pending = (molecule, entry)
+                else:
+                    tables.setdefault(molecule, {})[entry] = None
+        _COUPLING_TABLES[key] = tables
+    return _COUPLING_TABLES[key].get(molecule_id, {})
 
 
 class AERLineDatabase:

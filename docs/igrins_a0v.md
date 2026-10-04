@@ -1006,6 +1006,32 @@ wing -- which is also what fitting vsini would need, since rotation shapes the
 core and not the wings. None of this limits the telluric correction, whose
 residual at the Brackett lines is already at the noise.
 
+## Line coupling on a real night
+
+LBLRTM applies AER's first-order line coupling to about half the CO2 lines in
+both IGRINS CO2 bands, and with it tellurix agrees with LBLRTM to 0.04% where it
+otherwise left 0.7% (`docs/lblrtm_corrected_mode.md`). On DCT 2018's ten
+standards, refitted in the CO2 orders with `fit_igrins_standard.py
+--line-coupling` and otherwise as the ERA5 run (`docs/igrins_line_coupling_dct2018.json`):
+
+| order | CO2 peak optical depth | per-pixel z, without -> with | frames better |
+|---|---:|---|---:|
+| K89 (band centre) | 169 | 1.966 -> 1.683 | 10 of 10 |
+| K87 | 36 | 1.732 -> 1.700 | 10 of 10 |
+| K91 | 52 | 2.292 -> 2.278 | 8 of 10 |
+| K86, K92 (band edges) | 36, 24 | 1.563 -> 1.616, 2.940 -> 2.956 | 0 of 10 |
+| H111-H115 (1.6 um band) | ~1.9 | within 0.003 | -- |
+
+Coupling is worth 14% at the 2.0 um band centre, a little in the orders beside
+it, and costs 1-3% at the two band edges -- the edge orders' signs are
+consistent across all ten frames, so that is a real mismatch, not noise; whether
+it is tellurix's coupling term running 15% stronger than LBLRTM's at 2 um is not
+known. In H, where CO2 peaks near optical depth 2, it changes nothing at this
+night's S/N. **It is not the CO2 per-night systematic**: the fitted CO2 columns
+and their airmass slopes move by at most 0.0016 in every order but H124, whose
+CO2 scale sits near 3.6 in both runs and is not a measurement. Coupling stays
+off by default; turn it on for fits that lean on the 2.0 um CO2 band centre.
+
 ## What is not done yet
 
 - **Science frames.** Whether a night's standards can set the telluric model of

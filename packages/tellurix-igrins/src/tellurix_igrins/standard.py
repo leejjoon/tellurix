@@ -126,6 +126,10 @@ class StandardFitSettings:
     self_broadening: str = "linear"
     # The formal errors, and with them the 8.2 s Hessian compile.
     covariance: bool = True
+    # AER's first-order line coupling, which LBLRTM applies to about half the
+    # CO2 lines in both the 2.0 and the 1.6 um bands. Off reproduces every run
+    # made before it existed.
+    line_coupling: bool = False
     order_rule: Mapping = field(default=ORDER_RULE)
 
     def __post_init__(self):
@@ -217,7 +221,8 @@ def build_order_context(observation, number, settings: StandardFitSettings, path
         try:
             databases[species] = AERLineDatabase(
                 paths.line_file(species, molecule_id), species, (v1, v2),
-                margin_cm1=settings.margin_cm1)
+                margin_cm1=settings.margin_cm1,
+                line_coupling=paths.line_coupling if settings.line_coupling else None)
         except ValueError as exc:
             if not str(exc).startswith(f"no {species} lines found"):
                 raise
@@ -232,7 +237,8 @@ def build_order_context(observation, number, settings: StandardFitSettings, path
                              float(np.max(profile.temperature_k))),
         maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
         methods=PHYSICS["opacity_method"], vectorize_layers=PHYSICS["vectorize_layers"],
-        mixed_precision=PHYSICS["mixed_precision"], pressure_shift=PHYSICS["pressure_shift"])
+        mixed_precision=PHYSICS["mixed_precision"], pressure_shift=PHYSICS["pressure_shift"],
+        line_coupling=settings.line_coupling)
     mark("opacity_prepare")
 
     continuum_backend = MTCKDWaterContinuum.from_netcdf(paths.mt_ckd, grid)

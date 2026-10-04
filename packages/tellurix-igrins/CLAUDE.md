@@ -357,6 +357,14 @@ absorbing a wing mismatch, so do **not** pin one velocity per frame to "fix" it
 from the central-line orders (H98, H103, H109, H113, H120); the real fix is the
 wing, via a fixed master blaze.
 
+**`--line-coupling`** (`StandardFitSettings.line_coupling`, recorded in the
+run's settings, physics and record config, restored from a calibration's config
+by the science fit) applies AER's first-order CO2 line mixing. On DCT 2018 it
+takes K89, the 2.0 um band centre, from z 1.97 to 1.68 in all ten frames, costs
+1-3% in K86 and K92 at the band edges, does nothing in H, and leaves every CO2
+column and airmass slope within 0.0016 -- it is not the per-night systematic
+(`docs/igrins_a0v.md`, "Line coupling on a real night"). Off by default.
+
 ## Science products: two things learned while building the targets page
 
 - **The clip mask is saved** (`clipped` in each npz of a `--clip-sigma` run).

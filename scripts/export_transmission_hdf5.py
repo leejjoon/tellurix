@@ -154,7 +154,9 @@ def main() -> None:
             try:
                 databases[name] = AERLineDatabase(
                     verified(f"aer_{name}", line_root / stem / stem), name, (v1, v2),
-                    margin_cm1=float(config["margin_cm1"]))
+                    margin_cm1=float(config["margin_cm1"]),
+                    line_coupling=(verified("aer_line_coupling", line_root.parent / "lncpl_lines")
+                                   if physics.get("line_coupling") else None))
             except ValueError as exc:
                 if not str(exc).startswith(f"no {name} lines found"):
                     raise
@@ -171,7 +173,9 @@ def main() -> None:
             maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
             vectorize_layers=bool(physics["vectorize_layers"]),
             mixed_precision=bool(physics["mixed_precision"]),
-            pressure_shift=bool(physics["pressure_shift"]))
+            pressure_shift=bool(physics["pressure_shift"]),
+            # A record without the key fitted uncoupled lines.
+            line_coupling=bool(physics.get("line_coupling", False)))
         # A "fast" record fitted lines only -- the windows past MT_CKD's 20000
         # cm-1 -- and must be rebuilt the same way.
         continuum = None if physics["accuracy_mode"] == "fast" else MTCKDWaterContinuum.from_netcdf(

@@ -196,11 +196,15 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
         candidate = line_root / stem / stem
         if candidate.exists():
             entries[f"aer_{name}_sha256"] = file_sha256(candidate)
+    if getattr(args, "line_coupling", False):
+        coupling = line_root.parent / "lncpl_lines"
+        entries["aer_line_coupling"] = str(coupling)
+        entries["aer_line_coupling_sha256"] = file_sha256(coupling)
     return entries
 
 
 def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
-                   o2_cia: bool = False) -> dict:
+                   o2_cia: bool = False, line_coupling: bool = False) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -224,6 +228,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         "accuracy_mode": accuracy_mode,
         # A record without the key predates the option and had no O2 continuum.
         "o2_cia": bool(o2_cia),
+        # Likewise: a record without it fitted uncoupled lines.
+        "line_coupling": bool(line_coupling),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "fitter": f"{fitter.parent.name}/{fitter.name}",
@@ -280,7 +286,7 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=(),
         zenith_angle_deg=args.zenith_angle_deg,
         accuracy_mode=args.accuracy_mode, correction=None, gaussian_ils=False,
-        o2_cia=args.o2_cia,
+        o2_cia=args.o2_cia, line_coupling=args.line_coupling,
         vectorize_layers=True, mixed_precision=True,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
         layer_chunk_size=args.layer_chunk_size,
@@ -457,6 +463,9 @@ def main() -> None:
                         help="add LBLRTM's O2 collision-induced continua (1.27 um, 1.06 um, "
                              "A-band, visible; tellurix.o2_cia). Off by default so a rerun "
                              "reproduces the records written before it existed.")
+    parser.add_argument("--line-coupling", action=argparse.BooleanOptionalAction, default=False,
+                        help="apply AER's first-order line coupling (CO2, CH4, O2), as LBLRTM "
+                             "does. Off by default so a rerun reproduces earlier records.")
     parser.add_argument("--accuracy-mode", choices=("mt_ckd", "fast"), default="mt_ckd",
                         help="'fast' drops the water continuum: only for windows past the end "
                              "of the MT_CKD table at 20000 cm-1, and as its own run with its "
@@ -570,7 +579,8 @@ def main() -> None:
             {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
              "spectrum": str(args.spectrum), "spectrum_sha256": spectrum.sha256,
              "profile": str(args.profile),
-             "physics": physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia),
+             "physics": physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
+                                         args.line_coupling),
              "settings": {"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,
@@ -612,7 +622,8 @@ def main() -> None:
         write_record(
             args.record,
             run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                 **{k: v for k, v in physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia).items()
+                 **{k: v for k, v in physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
+                                         args.line_coupling).items()
                     if k in ("driver", "driver_sha256", "fitter", "fitter_sha256", "tellurix")}},
             config={"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                     "samples_per_resolution": args.samples_per_resolution,
@@ -622,7 +633,8 @@ def main() -> None:
                     "scan_threshold": args.scan_threshold, "scan_fwhm_cm1": args.scan_fwhm_cm1,
                     "species_threshold": args.species_threshold,
                     "scan_line_budget": args.scan_line_budget, "airmass": airmass},
-            physics=physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia),
+            physics=physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
+                                         args.line_coupling),
             inputs=input_hashes(root, args, spectrum, species),
             parameter_names=codec.names, species=species, pages=rows,
             continuum_degree=args.continuum_degree,

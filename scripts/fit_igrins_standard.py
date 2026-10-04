@@ -131,6 +131,9 @@ def main() -> None:
                         help="a MasterPattern (build_igrins_master_pattern.py) to divide out "
                              "instead of the night's own leave-one-out pattern -- for a night "
                              "with fewer than --fixed-pattern-min-frames standards")
+    parser.add_argument("--line-coupling", action="store_true",
+                        help="apply AER's first-order line coupling (CO2 in both bands), as "
+                             "LBLRTM does; off reproduces earlier runs")
     parser.add_argument("--no-covariance", action="store_true",
                         help="skip the formal errors, and with them the 8.2 s Hessian compile")
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"),
@@ -149,7 +152,7 @@ def main() -> None:
         grid_margin_cm1=args.grid_margin_cm1, continuum_degree=args.continuum_degree,
         min_optical_depth=args.min_optical_depth, min_transmission=args.min_transmission,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
-        covariance=not args.no_covariance, order_rule=rule)
+        covariance=not args.no_covariance, line_coupling=args.line_coupling, order_rule=rule)
     paths = DataPaths.bootstrapped(root)
     os.environ["JAX_PLATFORMS"] = "cuda" if args.platform == "gpu" else "cpu"
     os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
@@ -303,6 +306,7 @@ def main() -> None:
                 "precompute_opacity": args.precompute_opacity,
                 "self_broadening": args.self_broadening,
                 "covariance": not args.no_covariance,
+                "line_coupling": args.line_coupling,
                 "fixed_pattern": args.fixed_pattern,
                 "fixed_pattern_min_frames": args.fixed_pattern_min_frames,
                 "response_pattern": None if master is None else str(args.response_pattern),
@@ -310,7 +314,8 @@ def main() -> None:
                 "pattern_smooth_pixels": args.pattern_smooth_pixels,
                 "frames_in_run": len(observations),
             },
-            "physics": {**PHYSICS, "stages": list(stages_for(args.stellar))},
+            "physics": {**PHYSICS, "line_coupling": args.line_coupling,
+                       "stages": list(stages_for(args.stellar))},
             "order_rule": dict(settings.order_rule),
             "results": rows, "failures": failures[id(observation)],
         }
@@ -363,8 +368,10 @@ def main() -> None:
                     "min_transmission": args.min_transmission,
                     "vsini_kms": args.vsini_kms, "stellar": args.stellar,
                     "blaze": "" if args.blaze is None else str(args.blaze),
+                    "line_coupling": args.line_coupling,
                     **settings.order_rule},
-            physics={**PHYSICS, "stages": list(stages_for(args.stellar))},
+            physics={**PHYSICS, "line_coupling": args.line_coupling,
+                       "stages": list(stages_for(args.stellar))},
             inputs=inputs,
             parameter_names=run_names,
             species=species,

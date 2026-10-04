@@ -62,7 +62,8 @@ def settings_from(args) -> WindowSettings:
         accuracy_mode=args.accuracy_mode, correction=args.correction,
         gaussian_ils=args.gaussian_ils, vectorize_layers=args.vectorize_layers,
         mixed_precision=args.mixed_precision, precompute_opacity=args.precompute_opacity,
-        self_broadening=args.self_broadening, layer_chunk_size=args.layer_chunk_size)
+        self_broadening=args.self_broadening, layer_chunk_size=args.layer_chunk_size,
+        line_coupling=args.line_coupling)
 
 
 def main() -> None:
@@ -124,6 +125,8 @@ def main() -> None:
     parser.add_argument("--mixed-precision", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--precompute-opacity", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--self-broadening", choices=("linear", "frozen"), default="linear")
+    parser.add_argument("--line-coupling", action="store_true",
+                        help="apply AER's first-order line coupling, as LBLRTM does")
     parser.add_argument("--layer-chunk-size", type=int, default=0)
     parser.add_argument("--report", type=Path, default=Path("docs/solar_fts_window_fit.json"))
     parser.add_argument("--diagnostic-npz", type=Path,

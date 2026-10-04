@@ -246,3 +246,11 @@ continuum-source degeneracy is separately ruled out by `--continuum-anchor 0.98`
 run in this environment: Payne Zero needs Python >= 3.11 while this package is pinned
 to 3.10 by `exojax==2.5.0`. It runs in Payne Zero's own venv and writes an npz that
 `StellarSpectrum.from_npz` reads back; the script's docstring has the invocation.
+
+**`--line-coupling`** on `fit_fts_window.py` and `fit_fts_batch.py`
+(`WindowSettings.line_coupling`) applies AER's first-order line mixing (CO2, CH4,
+O2). The batch records it in `physics.line_coupling` and hashes `lncpl_lines` into
+the inputs; `export_transmission_hdf5.py` and `export_solar_review.py` rebuild with
+it from the record, a record without the key meaning off. No solar product has
+been fitted with it yet; on IGRINS it matters at the 2.0 um CO2 band centre and
+nowhere else measured (`docs/igrins_a0v.md`).

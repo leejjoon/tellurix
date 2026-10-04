@@ -91,6 +91,7 @@ def settings_for(row, spectrum_path: Path, args, blob) -> WindowSettings:
         # at the *fitted* parameters a moment later. That discarded evaluation
         # was 2.3 s of every 6.6 s window.
         precompute_opacity=False, self_broadening="linear", layer_chunk_size=0,
+        line_coupling=bool(blob.get("physics", {}).get("line_coupling", False)),
     )
 
 

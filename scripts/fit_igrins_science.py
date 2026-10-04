@@ -148,7 +148,9 @@ def main() -> None:
             samples_per_resolution=config["samples_per_resolution"],
             margin_cm1=config["margin_cm1"], grid_margin_cm1=config["grid_margin_cm1"],
             vsini_kms=args.vsini_kms, precompute_opacity=True, self_broadening="linear",
-            min_optical_depth=config["min_optical_depth"], stellar=args.stellar)
+            min_optical_depth=config["min_optical_depth"], stellar=args.stellar,
+            # A calibration made before line coupling existed had none.
+            line_coupling=bool(config.get("line_coupling", False)))
         degree = int(config["continuum_degree"])
         numbers = (sorted(set(calibration.orders) & set().union(*(o.orders for o in frames)))
                    if args.orders is None else [int(v) for v in args.orders.split(",")])

@@ -1,0 +1,230 @@
+{
+ "description": "DCT 2018-12-20, the ten standards of the ERA5 run (era2018_{h,k}), refitted in the CO2 orders with and without first-order line coupling (fit_igrins_standard.py --line-coupling); everything else as that run: dct_2018_era5.csv, the A0V Payne Zero source at vsini 150, the night's leave-one-out response pattern.",
+ "measured": "2026-10-04",
+ "command": "scripts/fit_igrins_standard.py --spec <10 frames> --profile data/profiles/dct_2018_era5.csv --stellar data/stellar/a0v_payne_zero_hk.npz --vsini-kms 150 --orders <list> [--line-coupling]",
+ "metric": "residual_z_rms, the per-pixel residual over its uncertainty",
+ "orders": {
+  "H111": {
+   "co2_max_optical_depth": 1.89,
+   "frames": 10,
+   "frames_improved": 5,
+   "residual_z_median": [
+    1.274,
+    1.274
+   ],
+   "co2_log_scale_mean": [
+    -0.0266,
+    -0.0267
+   ],
+   "co2_airmass_slope": [
+    -0.0088,
+    -0.0088
+   ]
+  },
+  "H112": {
+   "co2_max_optical_depth": 1.79,
+   "frames": 10,
+   "frames_improved": 4,
+   "residual_z_median": [
+    1.68,
+    1.678
+   ],
+   "co2_log_scale_mean": [
+    -0.0384,
+    -0.0384
+   ],
+   "co2_airmass_slope": [
+    -0.0177,
+    -0.0177
+   ]
+  },
+  "H113": {
+   "co2_max_optical_depth": 1.81,
+   "frames": 10,
+   "frames_improved": 7,
+   "residual_z_median": [
+    1.391,
+    1.391
+   ],
+   "co2_log_scale_mean": [
+    -0.0301,
+    -0.0302
+   ],
+   "co2_airmass_slope": [
+    0.0007,
+    0.0008
+   ]
+  },
+  "H114": {
+   "co2_max_optical_depth": 1.92,
+   "frames": 10,
+   "frames_improved": 10,
+   "residual_z_median": [
+    1.55,
+    1.547
+   ],
+   "co2_log_scale_mean": [
+    -0.0486,
+    -0.0485
+   ],
+   "co2_airmass_slope": [
+    -0.0097,
+    -0.0098
+   ]
+  },
+  "H115": {
+   "co2_max_optical_depth": 1.87,
+   "frames": 10,
+   "frames_improved": 6,
+   "residual_z_median": [
+    1.345,
+    1.344
+   ],
+   "co2_log_scale_mean": [
+    -0.0934,
+    -0.0933
+   ],
+   "co2_airmass_slope": [
+    0.0452,
+    0.0448
+   ]
+  },
+  "H124": {
+   "co2_max_optical_depth": 2.27,
+   "frames": 10,
+   "frames_improved": 6,
+   "residual_z_median": [
+    2.927,
+    2.927
+   ],
+   "co2_log_scale_mean": [
+    1.2694,
+    1.3494
+   ],
+   "co2_airmass_slope": [
+    -0.2216,
+    -0.2744
+   ]
+  },
+  "K86": {
+   "co2_max_optical_depth": 35.8,
+   "frames": 10,
+   "frames_improved": 0,
+   "residual_z_median": [
+    1.563,
+    1.616
+   ],
+   "co2_log_scale_mean": [
+    -0.0198,
+    -0.0203
+   ],
+   "co2_airmass_slope": [
+    0.0032,
+    0.0031
+   ]
+  },
+  "K87": {
+   "co2_max_optical_depth": 35.81,
+   "frames": 10,
+   "frames_improved": 10,
+   "residual_z_median": [
+    1.732,
+    1.7
+   ],
+   "co2_log_scale_mean": [
+    -0.0389,
+    -0.0391
+   ],
+   "co2_airmass_slope": [
+    0.0076,
+    0.0079
+   ]
+  },
+  "K88": {
+   "co2_max_optical_depth": 140.95,
+   "frames": 10,
+   "frames_improved": 4,
+   "residual_z_median": [
+    1.542,
+    1.538
+   ],
+   "co2_log_scale_mean": [
+    -0.0259,
+    -0.0256
+   ],
+   "co2_airmass_slope": [
+    0.0087,
+    0.0089
+   ]
+  },
+  "K89": {
+   "co2_max_optical_depth": 169.23,
+   "frames": 10,
+   "frames_improved": 10,
+   "residual_z_median": [
+    1.966,
+    1.683
+   ],
+   "co2_log_scale_mean": [
+    -0.026,
+    -0.0254
+   ],
+   "co2_airmass_slope": [
+    0.0078,
+    0.0094
+   ]
+  },
+  "K90": {
+   "co2_max_optical_depth": 43.16,
+   "frames": 10,
+   "frames_improved": 10,
+   "residual_z_median": [
+    1.361,
+    1.355
+   ],
+   "co2_log_scale_mean": [
+    -0.0478,
+    -0.0473
+   ],
+   "co2_airmass_slope": [
+    0.031,
+    0.0308
+   ]
+  },
+  "K91": {
+   "co2_max_optical_depth": 52.14,
+   "frames": 10,
+   "frames_improved": 8,
+   "residual_z_median": [
+    2.292,
+    2.278
+   ],
+   "co2_log_scale_mean": [
+    -0.0339,
+    -0.0354
+   ],
+   "co2_airmass_slope": [
+    0.0138,
+    0.0138
+   ]
+  },
+  "K92": {
+   "co2_max_optical_depth": 24.24,
+   "frames": 10,
+   "frames_improved": 0,
+   "residual_z_median": [
+    2.94,
+    2.956
+   ],
+   "co2_log_scale_mean": [
+    -0.013,
+    -0.0144
+   ],
+   "co2_airmass_slope": [
+    -0.0068,
+    -0.0058
+   ]
+  }
+ },
+ "note": "pairs are [without, with] line coupling"
+}

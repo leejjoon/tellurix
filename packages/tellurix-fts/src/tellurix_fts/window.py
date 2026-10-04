@@ -112,6 +112,8 @@ class WindowSettings:
     gaussian_ils: bool = False
     # LBLRTM's O2 collision-induced bands (tellurix.o2_cia).
     o2_cia: bool = False
+    # AER's first-order line coupling (CO2, CH4, O2), as LBLRTM applies it.
+    line_coupling: bool = False
     vectorize_layers: bool = True
     mixed_precision: bool = True
     precompute_opacity: bool = True
@@ -219,7 +221,8 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
         try:
             databases[species] = AERLineDatabase(
                 paths.line_file(species, molecule_id), species, (settings.v1, settings.v2),
-                margin_cm1=settings.margin_cm1)
+                margin_cm1=settings.margin_cm1,
+                line_coupling=paths.line_coupling if settings.line_coupling else None)
         except ValueError as exc:
             if not str(exc).startswith(f"no {species} lines found"):
                 raise
@@ -237,6 +240,7 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
         mixed_precision=settings.mixed_precision,
         pressure_shift=True,
         layer_chunk_size=settings.layer_chunk_size or None,
+        line_coupling=settings.line_coupling,
     )
     # The two modes are exclusive by construction: lblrtm_corrected carries the
     # continua inside its template and TelluricModel rejects a separate one.
@@ -499,6 +503,7 @@ def fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory:
                           else "native MT_CKD 4.3"),
             "correction": None if settings.correction is None else str(settings.correction),
             "pressure_shift": True,
+            "line_coupling": settings.line_coupling,
             "mixed_precision": settings.mixed_precision,
             "precomputed_opacity": (settings.self_broadening if settings.precompute_opacity
                                     else None),
