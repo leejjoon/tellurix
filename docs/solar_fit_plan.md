@@ -1252,13 +1252,75 @@ line files with and without AER's line coupling, recipe in the script's docstrin
 - **Line coupling is worth nothing here**: coupled and uncoupled agree to 0.01%.
 - **The excess is real and band-dependent**: against the ~0.98 the line physics
   predict, the fits ask for about 5% more A-band and 9% more B-band absorption. Not
-  explained. Candidates, untested: AER's intensities in both bands (the B more), and
-  the header air masses themselves, which would move both bands alike.
+  explained. The header air masses would move both bands alike; AER's intensities, the
+  first candidate, are ruled out below.
 - **O2's collision-induced continuum does not explain any of it** -- §4o measured that
   directly. A first version of this section said it explained the A-band, from
   LBLRTM's equivalent widths with and without its continua (1.016 against the fitted
   1.018); that assumed the continuum's absorption would surface as O2 column, and a fit
   with the continuum shows it does not.
+- **AER's line parameters do not explain it either** (`scripts/compare_o2_hitran.py`,
+  `docs/o2_hitran_comparison.json`). HITRAN's current O2 lists, fetched 2026-10-04 (the
+  service gives no edition), differ from AER v3.9 only in the A- and B-bands; the
+  a1-Delta 1.06 um and gamma bands are identical. Matched line by line, main
+  isotopologue, AER over HITRAN:
+
+  | | A-band | B-band |
+  |---|---|---|
+  | intensity | 0.992 | 1.023 |
+  | air-broadened width | 0.993 | 0.970 |
+  | width temperature exponent | 1.027 | 0.934 |
+
+  Substituted into tellurix on §4n's windows and profile, the O2 scale that makes AER's
+  lines absorb as much as HITRAN's:
+
+  | | A-band | B-band |
+  |---|---|---|
+  | HITRAN intensities only | 1.006 | 0.979 |
+  | HITRAN widths only | 1.001 | 1.025-1.030 |
+  | intensities, widths and shifts | **1.007-1.008** | **1.003-1.009** |
+
+  In the B-band HITRAN's weaker lines and wider lines cancel. Under 1% of a 5% and a 9%
+  excess, the same in both bands, so the 4% between them is untouched. niratl's air mass
+  stays at 1.05-1.12.
+- **Nor does the temperature profile** (`scripts/o2_temperature_sensitivity.py`,
+  `docs/o2_temperature_sensitivity.json`). Per window, the excess is largest where the
+  window is weakest -- 1.04-1.11 at the A-band's red edge against 1.00-1.04 in its
+  saturated middle -- and high-J lines strengthen ~3.5% per kelvin where saturated
+  windows move -0.5%, so a profile too cold would look like this. Fitting ln(scale) to a
+  factor per file and band plus a uniform dT: +1.0 to +2.0 K with every window, but
+  +0.5 +- 0.3 K once windows under 2% mean depth are dropped -- the weakest windows,
+  which carry the leverage, are also where a column most easily absorbs solar error.
+  Either way the band factors remain: **B 1.05 in both files**, A 1.01-1.03, gamma
+  1.01-1.05.
+- **Water is not trading with it**: in every B-band window the O2-H2O correlation is
+  |r| <= 0.1, though the water scales there run 0.56-1.63. O2's correlations are with
+  the continuum, as in the A-band.
+- **What the B-band excess is not**: it is the same at air mass 3.09 and 5.37 (1.057,
+  1.051 after dT), so it scales with the O2 column, unlike a fixed solar line mistaken
+  for O2, whose share would fall with air mass. An air-mass error would move the A-band
+  and gamma alike.
+- **It is a strength, not a width** (`scripts/o2_curve_of_growth.py`,
+  `docs/o2_curve_of_growth.json`). In the B-band windows the excess sits in the wings of
+  the saturated lines, where absorption goes as strength x width x column, so a window
+  cannot tell the two apart; single lines can. Each line's O2 scale is one linear step
+  from its window's fitted one, over its own unmasked pixels (stepping from O2 = 1
+  instead lets the continuum absorb ~40% of the deficit first), with lines dropped
+  where water or the Sun carry a fifth of the leverage:
+
+  | line depth | B, X 5.37 | B, X 3.09 | A, X 5.37 | A, X 3.09 |
+  |---|---|---|---|---|
+  | 0.1-0.3 | 1.045 +- 0.008 | 1.052 +- 0.006 | 1.021 +- 0.007 | 1.024 +- 0.009 |
+  | 0.3-0.85 | 1.043 +- 0.004 | 1.044 +- 0.007 | 1.009 +- 0.004 | 1.039 +- 0.004 |
+  | > 0.85 | 1.043 +- 0.004 | 1.058 +- 0.011 | 1.013 +- 0.002 | 1.036 +- 0.003 |
+
+  (bootstrap errors). Flat: weak lines, blind to width, want the same excess as the
+  saturated wings, so broadening, line mixing and speed dependence -- which act through
+  the wings -- are not the cause. The weakest bin (depth < 0.1) sits lower in the
+  B-band, 1.012 +- 0.019 and 1.027 +- 0.015, 1-2 sigma; it is dominated by solar
+  residue. What remains acts as strength x column: a B-band intensity scale ~3% above
+  AER's (HITRAN's is 2.3% *below* it), on top of a common ~1-4% that an air mass or
+  column error could carry.
 - **niratl's air mass is 1.05-1.12, not pinned.** Its 1.10 came from the A-band at
   zenith 0; correcting for the line physics alone gives ~1.12, and if the A-band excess
   above is in the line intensities it is nearer 1.05.
@@ -1335,9 +1397,13 @@ them by exactly 1/T of the O2 continuum (§4o measured both), every round trip e
 ### Also open
 
 - **The O2 excess is unexplained** (§4n): ~5% A-band, ~9% B-band above what the line
-  physics predict. Next check: AER v3.9's O2 A- and B-band intensities against
-  HITRAN2020, which revised them; HITRAN's API needs a registered key. It settles
-  niratl's air mass too (1.05-1.12 now).
+  physics predict. Ruled out: O2 collision-induced absorption, line coupling, AER's
+  intensities and widths against HITRAN's (<1%), a temperature-profile error, water,
+  line width and shape.
+  The B-band part scales with the O2 column and is the same in weak and saturated lines,
+  so it is a strength, not a width or line shape. Next: the published B-band intensity
+  measurements against AER and HITRAN. niratl's air mass stays at 1.05-1.12 until this
+  is settled.
 - **`lsf_sigma_kms` at a bound** in 78 of 222 windows of file 5, 105 of 215 of file 4,
   37 of 307 of `_2`. Not examined. The sibling project's W4.1 result -- telluric lines
   constrain an ILS where stellar lines cannot -- is the lever not yet tried.

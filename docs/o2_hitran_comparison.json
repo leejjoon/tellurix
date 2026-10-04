@@ -1,0 +1,437 @@
+{
+ "about": "O2 line parameters, AER v3.9 over HITRAN, and the O2 column scale that makes tellurix with AER's lines reproduce the equivalent width it gives with HITRAN's. scripts/compare_o2_hitran.py; docs/solar_fit_plan.md section 4n.",
+ "hitran_fetched": "Sun Oct  4 11:42:07 AM UTC 2026",
+ "line_parameters": {
+  "a1Delta 1.06um": {
+   "iso1": {
+    "lines_aer": 156,
+    "lines_hitran": 156,
+    "band_strength_ratio": 1.0,
+    "matched": 156,
+    "strong": 116,
+    "strength_ratio_weighted": 1.0,
+    "strength_ratio_range": [
+     1.0,
+     1.0
+    ],
+    "gamma_air_ratio_weighted": 1.0,
+    "gamma_air_ratio_range": [
+     1.0,
+     1.0
+    ],
+    "gamma_self_ratio_weighted": 1.0,
+    "gamma_self_ratio_range": [
+     1.0,
+     1.0
+    ],
+    "n_air_ratio_weighted": 1.0,
+    "n_air_ratio_range": [
+     1.0,
+     1.0
+    ],
+    "delta_air_difference_weighted": 0.0
+   }
+  },
+  "A 760nm": {
+   "iso1": {
+    "lines_aer": 161,
+    "lines_hitran": 161,
+    "band_strength_ratio": 0.9923398201119553,
+    "matched": 161,
+    "strong": 59,
+    "strength_ratio_weighted": 0.9923798809046298,
+    "strength_ratio_range": [
+     0.9765130984643179,
+     0.9976133651551312
+    ],
+    "gamma_air_ratio_weighted": 0.9932977024103459,
+    "gamma_air_ratio_range": [
+     0.9469026548672566,
+     1.0256410256410255
+    ],
+    "gamma_self_ratio_weighted": 0.9837797995800627,
+    "gamma_self_ratio_range": [
+     0.9375,
+     1.027027027027027
+    ],
+    "n_air_ratio_weighted": 1.0271062867037122,
+    "n_air_ratio_range": [
+     0.13793103448275865,
+     1.1333333333333333
+    ],
+    "delta_air_difference_weighted": -4.073803023628654e-05
+   },
+   "iso2": {
+    "lines_aer": 140,
+    "lines_hitran": 140,
+    "band_strength_ratio": 1.0394477437459628
+   },
+   "iso3": {
+    "lines_aer": 140,
+    "lines_hitran": 140,
+    "band_strength_ratio": 0.9557918142422246
+   }
+  },
+  "B 687nm": {
+   "iso1": {
+    "lines_aer": 123,
+    "lines_hitran": 123,
+    "band_strength_ratio": 1.0231725522417208,
+    "matched": 123,
+    "strong": 59,
+    "strength_ratio_weighted": 1.0234220886227403,
+    "strength_ratio_range": [
+     0.9675236806495263,
+     1.0439844760672703
+    ],
+    "gamma_air_ratio_weighted": 0.9697891735397003,
+    "gamma_air_ratio_range": [
+     0.9049919484702093,
+     1.0063091482649842
+    ],
+    "gamma_self_ratio_weighted": 1.0,
+    "gamma_self_ratio_range": [
+     1.0,
+     1.0
+    ],
+    "n_air_ratio_weighted": 0.9335673654783887,
+    "n_air_ratio_range": [
+     0.8554216867469879,
+     1.9189189189189189
+    ],
+    "delta_air_difference_weighted": 0.0002889796409822897
+   },
+   "iso2": {
+    "lines_aer": 128,
+    "lines_hitran": 128,
+    "band_strength_ratio": 1.0
+   },
+   "iso3": {
+    "lines_aer": 105,
+    "lines_hitran": 105,
+    "band_strength_ratio": 1.0
+   }
+  },
+  "gamma 628nm": {
+   "iso1": {
+    "lines_aer": 73,
+    "lines_hitran": 73,
+    "band_strength_ratio": 1.0,
+    "matched": 73,
+    "strong": 59,
+    "strength_ratio_weighted": 1.0,
+    "strength_ratio_range": [
+     1.0,
+     1.0
+    ],
+    "gamma_air_ratio_weighted": 1.0,
+    "gamma_air_ratio_range": [
+     1.0,
+     1.0
+    ],
+    "gamma_self_ratio_weighted": 1.0,
+    "gamma_self_ratio_range": [
+     1.0,
+     1.0
+    ],
+    "n_air_ratio_weighted": 1.0,
+    "n_air_ratio_range": [
+     1.0,
+     1.0
+    ],
+    "delta_air_difference_weighted": 0.0
+   },
+   "iso2": {
+    "lines_aer": 88,
+    "lines_hitran": 88,
+    "band_strength_ratio": 1.0
+   }
+  }
+ },
+ "windows": [
+  {
+   "band": "A",
+   "v1": 13000.0,
+   "airmass": 1.1,
+   "ew_aer": 1.0221994161293735,
+   "ew_strength": 1.0294144341205511,
+   "scale_strength": 1.0125792314553919,
+   "ew_width": 1.0192537898354785,
+   "scale_width": 0.9948945900344798,
+   "ew_all": 1.0264416258799645,
+   "scale_all": 1.0073888610041386
+  },
+  {
+   "band": "A",
+   "v1": 13000.0,
+   "airmass": 3.09,
+   "ew_aer": 1.7973979053226667,
+   "ew_strength": 1.8088366286246318,
+   "scale_strength": 1.0116521537338192,
+   "ew_width": 1.7914940403639623,
+   "scale_width": 0.9940161670677844,
+   "ew_all": 1.8028994732696357,
+   "scale_all": 1.0056007570484964
+  },
+  {
+   "band": "A",
+   "v1": 13000.0,
+   "airmass": 5.37,
+   "ew_aer": 2.4248058991611865,
+   "ew_strength": 2.4394791538727065,
+   "scale_strength": 1.0110604900356501,
+   "ew_width": 2.416713165014749,
+   "scale_width": 0.9939288818639294,
+   "ew_all": 2.431348865019993,
+   "scale_all": 1.0049299563399339
+  },
+  {
+   "band": "A",
+   "v1": 13060.0,
+   "airmass": 1.1,
+   "ew_aer": 8.867188275404423,
+   "ew_strength": 8.895458914990883,
+   "scale_strength": 1.0067314247002546,
+   "ew_width": 8.887435162321243,
+   "scale_width": 1.0048209165653408,
+   "ew_all": 8.915608725841256,
+   "scale_all": 1.0115385644565682
+  },
+  {
+   "band": "A",
+   "v1": 13060.0,
+   "airmass": 3.09,
+   "ew_aer": 14.026438720815479,
+   "ew_strength": 14.062043409062603,
+   "scale_strength": 1.006235664425044,
+   "ew_width": 14.055038213253985,
+   "scale_width": 1.0050088021087367,
+   "ew_all": 14.090431916922341,
+   "scale_all": 1.0112171333302862
+  },
+  {
+   "band": "A",
+   "v1": 13060.0,
+   "airmass": 5.37,
+   "ew_aer": 17.322317809547393,
+   "ew_strength": 17.360550213546624,
+   "scale_strength": 1.0062305304345343,
+   "ew_width": 17.354271530823024,
+   "scale_width": 1.0052073270859045,
+   "ew_all": 17.39229228217959,
+   "scale_all": 1.011416432943111
+  },
+  {
+   "band": "A",
+   "v1": 13120.0,
+   "airmass": 1.1,
+   "ew_aer": 15.473369254067318,
+   "ew_strength": 15.480608743716225,
+   "scale_strength": 1.0012210334659846,
+   "ew_width": 15.499929063402426,
+   "scale_width": 1.0044796550062385,
+   "ew_all": 15.507146680056735,
+   "scale_all": 1.0056969993090776
+  },
+  {
+   "band": "A",
+   "v1": 13120.0,
+   "airmass": 3.09,
+   "ew_aer": 21.369635767232005,
+   "ew_strength": 21.375607554013357,
+   "scale_strength": 1.0012128175405692,
+   "ew_width": 21.39179008720646,
+   "scale_width": 1.0044993481596336,
+   "ew_all": 21.397781845153524,
+   "scale_all": 1.0057162216688718
+  },
+  {
+   "band": "A",
+   "v1": 13120.0,
+   "airmass": 5.37,
+   "ew_aer": 23.746074033421642,
+   "ew_strength": 23.751159462427566,
+   "scale_strength": 1.0014191559811678,
+   "ew_width": 23.762256849736772,
+   "scale_width": 1.004516028153968,
+   "ew_all": 23.767385215588657,
+   "scale_all": 1.0059471662278339
+  },
+  {
+   "band": "B",
+   "v1": 14410.0,
+   "airmass": 1.1,
+   "ew_aer": 0.4690804534728019,
+   "ew_strength": 0.468323469752953,
+   "scale_strength": 0.9976930411961813,
+   "ew_width": 0.47374085841147956,
+   "scale_width": 1.0142938042085583,
+   "ew_all": 0.4736084207977552,
+   "scale_all": 1.0138862185362711
+  },
+  {
+   "band": "B",
+   "v1": 14410.0,
+   "airmass": 3.09,
+   "ew_aer": 0.9001854674336087,
+   "ew_strength": 0.8990481054522129,
+   "scale_strength": 0.9978511096883053,
+   "ew_width": 0.9135313601823103,
+   "scale_width": 1.0254536607812332,
+   "ew_all": 0.9131741921956578,
+   "scale_all": 1.0247683420478266
+  },
+  {
+   "band": "B",
+   "v1": 14410.0,
+   "airmass": 5.37,
+   "ew_aer": 1.229762990198893,
+   "ew_strength": 1.2282972053155456,
+   "scale_strength": 0.9978720847107418,
+   "ew_width": 1.2500259915445957,
+   "scale_width": 1.0296988751779073,
+   "ew_all": 1.2493453963675338,
+   "scale_all": 1.0286965398051775
+  },
+  {
+   "band": "B",
+   "v1": 14440.0,
+   "airmass": 1.1,
+   "ew_aer": 1.188474401519825,
+   "ew_strength": 1.175187340392156,
+   "scale_strength": 0.9799950992594021,
+   "ew_width": 1.2099285780620956,
+   "scale_width": 1.0327254754650463,
+   "ew_all": 1.1959789404218126,
+   "scale_all": 1.0113896125977464
+  },
+  {
+   "band": "B",
+   "v1": 14440.0,
+   "airmass": 3.09,
+   "ew_aer": 2.085382990837969,
+   "ew_strength": 2.063827484072016,
+   "scale_strength": 0.9810732431666653,
+   "ew_width": 2.125855445920576,
+   "scale_width": 1.0359897233471467,
+   "ew_all": 2.1033011191405935,
+   "scale_all": 1.0158653088868408
+  },
+  {
+   "band": "B",
+   "v1": 14440.0,
+   "airmass": 5.37,
+   "ew_aer": 2.810262282408506,
+   "ew_strength": 2.782280991268726,
+   "scale_strength": 0.9817240570410881,
+   "ew_width": 2.864607391876665,
+   "scale_width": 1.0359483796039708,
+   "ew_all": 2.835475307173319,
+   "scale_all": 1.016608197220354
+  },
+  {
+   "band": "B",
+   "v1": 14470.0,
+   "airmass": 1.1,
+   "ew_aer": 2.594692351433003,
+   "ew_strength": 2.5495066786292195,
+   "scale_strength": 0.9661875741369674,
+   "ew_width": 2.634432705947628,
+   "scale_width": 1.030238245884964,
+   "ew_all": 2.5885555996418668,
+   "scale_all": 0.9953783423095282
+  },
+  {
+   "band": "B",
+   "v1": 14470.0,
+   "airmass": 3.09,
+   "ew_aer": 4.38489167870019,
+   "ew_strength": 4.311707008296183,
+   "scale_strength": 0.9669830689706507,
+   "ew_width": 4.4524184112242295,
+   "scale_width": 1.0309888162024166,
+   "ew_all": 4.378108778397761,
+   "scale_all": 0.9969205483003954
+  },
+  {
+   "band": "B",
+   "v1": 14470.0,
+   "airmass": 5.37,
+   "ew_aer": 5.779276992700488,
+   "ew_strength": 5.685810671471164,
+   "scale_strength": 0.9675069886980137,
+   "ew_width": 5.8665345180635295,
+   "scale_width": 1.0308732895154291,
+   "ew_all": 5.771687578223725,
+   "scale_all": 0.9973445993941346
+  },
+  {
+   "band": "B",
+   "v1": 14500.0,
+   "airmass": 1.1,
+   "ew_aer": 2.820703718244001,
+   "ew_strength": 2.7747301847348496,
+   "scale_strength": 0.9689439576203069,
+   "ew_width": 2.8545666991075063,
+   "scale_width": 1.0231999845394322,
+   "ew_all": 2.8079585634688593,
+   "scale_all": 0.9913429175999701
+  },
+  {
+   "band": "B",
+   "v1": 14500.0,
+   "airmass": 3.09,
+   "ew_aer": 4.816719230716345,
+   "ew_strength": 4.742852872154799,
+   "scale_strength": 0.9701348826219013,
+   "ew_width": 4.8745185335233625,
+   "scale_width": 1.023705391654059,
+   "ew_all": 4.799620077202256,
+   "scale_all": 0.9930500195387786
+  },
+  {
+   "band": "B",
+   "v1": 14500.0,
+   "airmass": 5.37,
+   "ew_aer": 6.376895945721693,
+   "ew_strength": 6.283203176846213,
+   "scale_strength": 0.9708283635286199,
+   "ew_width": 6.451755679976347,
+   "scale_width": 1.023658972171849,
+   "ew_all": 6.356763877721021,
+   "scale_all": 0.9936976261367649
+  }
+ ],
+ "summary": {
+  "A X=1.1": {
+   "strength": 1.0068438965405437,
+   "width": 1.0013983872020196,
+   "all": 1.0082081415899282
+  },
+  "A X=3.09": {
+   "strength": 1.0063668785664774,
+   "width": 1.001174772445385,
+   "all": 1.0075113706825516
+  },
+  "A X=5.37": {
+   "strength": 1.006236725483784,
+   "width": 1.001217412367934,
+   "all": 1.0074311851702928
+  },
+  "B X=1.1": {
+   "strength": 0.9782049180532144,
+   "width": 1.0251143775245002,
+   "all": 1.0029992727608787
+  },
+  "B X=3.09": {
+   "strength": 0.9790105761118807,
+   "width": 1.029034397996214,
+   "all": 1.0076510546934605
+  },
+  "B X=5.37": {
+   "strength": 0.9794828734946159,
+   "width": 1.030044879117289,
+   "all": 1.0090867406391077
+  }
+ }
+}
