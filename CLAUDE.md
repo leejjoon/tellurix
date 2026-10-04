@@ -332,6 +332,10 @@ opt-in to keep the default numerically identical to ExoJAX.
 - Units are in names: `_bar`, `_hpa`, `_cm1`, `_km`, `_kms`, `_k`, `cm2`.
 - Comments explain *why* (a numerical or LBLRTM-compatibility reason), not what.
   Keep that density; the existing comments are load-bearing.
+- LBLRTM is the regression reference, not the truth. Whether a physics change
+  is *better* is judged against the observations, under the guards in
+  `docs/validation.md`, "Beyond LBLRTM" -- an open item to revisit, with the
+  candidate physics and the proposed scorecard.
 - Accuracy and performance claims are backed by a committed JSON report under
   `docs/` plus a prose companion (`docs/validation.md`,
   `docs/performance.md`, `docs/lblrtm_corrected_mode.md`,

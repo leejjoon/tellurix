@@ -110,3 +110,66 @@ Compare every fitted JAX derivative with a central finite difference away from
 bounds. The relative difference target is `1e-4`. Synthetic noisy orders must
 recover injected molecular scales, wavelength correction, LSF width, continuum,
 and jitter within three estimated standard deviations.
+
+## Beyond LBLRTM: judging physics by the observations (open, to revisit)
+
+*Recorded 2026-10-04 as the direction for later work; nothing below is done.*
+
+Agreement with LBLRTM shows the implementation is right -- same lines, same
+layers, same continuum, same answer, now to 0.04% at R=45,000 after a fit
+(`docs/lblrtm_identical_layers.json`). It does not show the physics is right.
+LBLRTM is a convention as much as a model: AER's line intensities rather than
+HITRAN2020's, first-order line coupling from AER's own coefficients, a 25 cm-1
+line cutoff less a pedestal, a Voigt shape with no speed dependence. For the
+project's purpose -- correcting observed spectra -- the observations are the
+judge, and LBLRTM agreement becomes a regression test that a change has not
+broken the implementation.
+
+The two can already be seen to disagree. CO2 line coupling improves the IGRINS
+2.0 um band centre on DCT 2018 (K89, z 1.97 -> 1.68, ten of ten frames) and
+costs 1-3% at the band edges (K86, K92, ten of ten), where tellurix still matches
+LBLRTM to 0.03-0.06% -- LBLRTM would be "wrong" there the same way
+(`docs/igrins_a0v.md`, "Line coupling on a real night").
+
+**The trap.** A residual mixes telluric error with instrument error (the LSF's
+shape -- 2-3% left in deep K lines from the Gaussian trading against the cores --
+the blaze, the fringe) and stellar error (the ~1% solar-model floor). Freedom in
+the line physics can quietly absorb either. A physics change counts as better
+only if it
+
+1. lowers the residual consistently across nights and instruments, not on one
+   night and not chosen per order;
+2. makes the retrieved columns more physical: column scales independent of
+   airmass, H and K agreeing on water, water agreeing with ERA5, CO2 at the
+   epoch's known mixing ratio -- tests that resist absorbing other errors in a
+   way a residual does not;
+3. survives out of sample, as the held-out transfer test does
+   (`docs/igrins_transfer.md`).
+
+**Which data for which question.** The NSO solar FTS atlases are the sharper
+test of line physics: far higher resolution, a well-characterized instrument
+and very high S/N show line-shape errors directly. IGRINS answers the practical
+question of how good a correction is, and at its resolution the LSF and the
+stellar model probably limit most orders more than line physics does -- worth
+measuring before investing in more physics.
+
+**Candidates where physics beyond LBLRTM may matter.**
+
+- Speed-dependent line shapes (HITRAN2020 has parameters for CO2 and H2O); their
+  signature is a W-shaped residual in line cores at the 1% level.
+- HITRAN2020 against AER 3.9 intensities -- the unexplained O2 excess in the
+  solar fits, ~5% in the A-band and ~9% in the B-band
+  (`docs/solar_fit_plan.md`, §4n), is the first case.
+- CO2 line mixing beyond first order, given the band-edge behaviour above.
+- The continuum LBLRTM carries at 2 um beyond MT_CKD's water part: mean optical
+  depth 0.0066 against 0.0028 at 5000-5020 cm-1, the difference not identified.
+
+**Proposed method: a fixed scorecard.** A few IGRINS night-bands spanning dry to
+wet, a few solar FTS windows, and the column-consistency checks above, scored
+the same way every time. Each physics option -- coupling on or off, speed
+dependence, HITRAN against AER, the cutoff -- is an A/B on that one benchmark,
+with LBLRTM agreement run alongside as the regression test. The LBLRTM-equivalent
+configuration stays the default until an option wins across the scorecard, not
+in one order. A first, cheaper step is to measure how much of today's IGRINS and
+solar residual is telluric at all, against instrument and stellar: if those
+dominate, that is where the gains are.
