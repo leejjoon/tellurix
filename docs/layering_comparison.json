@@ -1,0 +1,478 @@
+{
+ "description": "Builds the default 12 layers from one ERA5 column both ways ``site_profile.LAYERINGS`` offers, and a 150-layer reference from the same levels, then fits each 12-layer profile to the reference -- H2O, CO2 and CH4 column scales and a linear continuum, at R=45,000 -- the way a real correction would absorb the difference. Two more variants swap only the layer pressure, to show how much of the difference is pressure and how much is temperature and water. Writes ``docs/layering_comparison.json``.",
+ "generated_by": "scripts/compare_layering.py",
+ "measured": "2026-10-04",
+ "era5": "ARCO-ERA5 37-level via tellurix.era5.fetch_column; layers by build_era5_profile",
+ "dry_vmr": "EPOCH_DRY_VMR['2020']",
+ "edges_km_above_site": [
+  0.0,
+  0.3,
+  0.7,
+  1.2,
+  1.8,
+  2.6,
+  3.6,
+  5.0,
+  7.0,
+  10.0,
+  14.0,
+  20.0,
+  30.0
+ ],
+ "reference_layers": 150,
+ "resolving_power": 45000.0,
+ "samples_per_resolution": 4.0,
+ "airmass": 1.5,
+ "metric": "absolute transmission error over the window where the reference exceeds 0.05",
+ "opacity": "AER 3.9 lines, ExoJAX direct_sparse with pressure shifts, 25 cm-1 line margin",
+ "variants": {
+  "centre": "values at the layer centre, geometric-mean pressure: profiles before 2026-10",
+  "weighted": "air-weighted pressure and temperature, integrated amounts (the default)",
+  "weighted_geometric_pressure": "weighted temperature and amounts, geometric-mean pressure",
+  "centre_weighted_pressure": "centre temperature and amounts, air-weighted pressure"
+ },
+ "cases": {
+  "dct_2018": {
+   "era5_time": "2018-12-21T05:00",
+   "latitude": 34.7444,
+   "longitude": -111.4223,
+   "site_altitude_km": 2.36,
+   "station_pressure_hpa": 768.5
+  },
+  "mcdonald_2017": {
+   "era5_time": "2017-04-21T08:00",
+   "latitude": 30.6717,
+   "longitude": -104.0225,
+   "site_altitude_km": 2.077,
+   "station_pressure_hpa": 792.4
+  }
+ },
+ "results": {
+  "dct_2018": {
+   "water_column_cm2": {
+    "centre": 7.857482133508521e+21,
+    "weighted": 7.737821098419851e+21,
+    "weighted_geometric_pressure": 7.737821098419851e+21,
+    "centre_weighted_pressure": 7.857482133508521e+21,
+    "reference": 7.73777868329752e+21
+   },
+   "4300-4330": {
+    "min_reference_transmission": 0.22571826185657504,
+    "centre": {
+     "unfitted_p99": 0.0015165859918126814,
+     "unfitted_max": 0.0019581051024788465,
+     "fitted_median": 7.850362688055501e-05,
+     "fitted_p99": 0.0013775245693720864,
+     "fitted_max": 0.0018346593892719643,
+     "scales": {
+      "H2O": 0.9972196189227348,
+      "CO2": 0.006951866707825511,
+      "CH4": 1.00146051133573
+     }
+    },
+    "weighted": {
+     "unfitted_p99": 0.0005966299606177361,
+     "unfitted_max": 0.000920883885641377,
+     "fitted_median": 2.298173112158519e-05,
+     "fitted_p99": 0.00045289062135368265,
+     "fitted_max": 0.0007186370548403209,
+     "scales": {
+      "H2O": 1.0033562231370343,
+      "CO2": 2.239073368488076,
+      "CH4": 0.9992014642733046
+     }
+    },
+    "weighted_geometric_pressure": {
+     "unfitted_p99": 0.0017464425209666435,
+     "unfitted_max": 0.0025313126859470847,
+     "fitted_median": 7.469198409093547e-05,
+     "fitted_p99": 0.001477201963094577,
+     "fitted_max": 0.0019371671132997204,
+     "scales": {
+      "H2O": 1.003682466151972,
+      "CO2": 0.0001234260043586128,
+      "CH4": 1.0022040583136167
+     }
+    },
+    "centre_weighted_pressure": {
+     "unfitted_p99": 0.0010132738264861997,
+     "unfitted_max": 0.0015838028016063044,
+     "fitted_median": 6.435756097700196e-05,
+     "fitted_p99": 0.000701493970814368,
+     "fitted_max": 0.0008982748567936127,
+     "scales": {
+      "H2O": 0.9968976927451415,
+      "CO2": 14.087493934417527,
+      "CH4": 0.9984612027407499
+     }
+    }
+   },
+   "5000-5030": {
+    "min_reference_transmission": 0.004357478437318056,
+    "centre": {
+     "unfitted_p99": 0.0032080367841742763,
+     "unfitted_max": 0.004814699538051803,
+     "fitted_median": 0.0001326068590127294,
+     "fitted_p99": 0.0020209078578249926,
+     "fitted_max": 0.0035284814173781043,
+     "scales": {
+      "H2O": 0.993963295786941,
+      "CO2": 1.008392057574556,
+      "CH4": 569797.8673898409
+     }
+    },
+    "weighted": {
+     "unfitted_p99": 0.0009050321593763367,
+     "unfitted_max": 0.001067333802516779,
+     "fitted_median": 4.6095715934557635e-05,
+     "fitted_p99": 0.0005371992908237467,
+     "fitted_max": 0.0008984318934304736,
+     "scales": {
+      "H2O": 1.0026753389446932,
+      "CO2": 1.0002907035813344,
+      "CH4": 0.36787811184199354
+     }
+    },
+    "weighted_geometric_pressure": {
+     "unfitted_p99": 0.002738902316657095,
+     "unfitted_max": 0.003017583362481202,
+     "fitted_median": 0.00012027089645916256,
+     "fitted_p99": 0.0011948300517822328,
+     "fitted_max": 0.0025490001161714293,
+     "scales": {
+      "H2O": 1.0035817715397353,
+      "CO2": 1.0065888189843268,
+      "CH4": 0.36789161109677676
+     }
+    },
+    "centre_weighted_pressure": {
+     "unfitted_p99": 0.002705960819020982,
+     "unfitted_max": 0.004651896909121267,
+     "fitted_median": 0.00011319349394489642,
+     "fitted_p99": 0.0014650695862594141,
+     "fitted_max": 0.002764239399774049,
+     "scales": {
+      "H2O": 0.9930544161778171,
+      "CO2": 1.0021009683735789,
+      "CH4": 931057.6316872091
+     }
+    }
+   },
+   "5600-5630": {
+    "min_reference_transmission": 0.0012340169922824815,
+    "centre": {
+     "unfitted_p99": 0.002321491047493855,
+     "unfitted_max": 0.005137005139120299,
+     "fitted_median": 0.00010130358032389708,
+     "fitted_p99": 0.0018430389928842355,
+     "fitted_max": 0.004045944893677378,
+     "scales": {
+      "H2O": 0.9965774846674673,
+      "CO2": 4.4936076721289995,
+      "CH4": 0.9996223521175776
+     }
+    },
+    "weighted": {
+     "unfitted_p99": 0.0011807496129240965,
+     "unfitted_max": 0.0012357256548989337,
+     "fitted_median": 1.9885849652401255e-05,
+     "fitted_p99": 0.00036170435450381304,
+     "fitted_max": 0.0009153734645172551,
+     "scales": {
+      "H2O": 1.0031226350815199,
+      "CO2": 1.6634517077090178,
+      "CH4": 1.0008039353254008
+     }
+    },
+    "weighted_geometric_pressure": {
+     "unfitted_p99": 0.001780047163254634,
+     "unfitted_max": 0.0019237683631612157,
+     "fitted_median": 3.89518678776124e-05,
+     "fitted_p99": 0.0005974707311409937,
+     "fitted_max": 0.0016106802938402054,
+     "scales": {
+      "H2O": 1.004756152483838,
+      "CO2": 1.6109307620181572,
+      "CH4": 0.9995869558856023
+     }
+    },
+    "centre_weighted_pressure": {
+     "unfitted_p99": 0.0028834158672610757,
+     "unfitted_max": 0.004968458971204126,
+     "fitted_median": 0.0001043410220412655,
+     "fitted_p99": 0.0018080655359155164,
+     "fitted_max": 0.0033440384106545595,
+     "scales": {
+      "H2O": 0.994937152447899,
+      "CO2": 4.542445831833265,
+      "CH4": 1.000841189538689
+     }
+    }
+   },
+   "6300-6330": {
+    "min_reference_transmission": 0.6003450865352511,
+    "centre": {
+     "unfitted_p99": 0.0010716789182958944,
+     "unfitted_max": 0.001482897281769202,
+     "fitted_median": 2.0993882443809397e-05,
+     "fitted_p99": 0.0005344263854362432,
+     "fitted_max": 0.0016037490202022164,
+     "scales": {
+      "H2O": 0.9876148691336116,
+      "CO2": 1.003694920313632,
+      "CH4": 0.34986636564383927
+     }
+    },
+    "weighted": {
+     "unfitted_p99": 0.0006466394625231763,
+     "unfitted_max": 0.0009589003874748148,
+     "fitted_median": 6.852387171796259e-06,
+     "fitted_p99": 0.0004817352321721982,
+     "fitted_max": 0.0009446390154740358,
+     "scales": {
+      "H2O": 0.9972771906188371,
+      "CO2": 0.9983695812331591,
+      "CH4": 3.794319664294742
+     }
+    },
+    "weighted_geometric_pressure": {
+     "unfitted_p99": 0.0010701960714025593,
+     "unfitted_max": 0.001463399496548945,
+     "fitted_median": 2.722513871322718e-05,
+     "fitted_p99": 0.0007764167912242168,
+     "fitted_max": 0.0017687829199712901,
+     "scales": {
+      "H2O": 1.0032926186354938,
+      "CO2": 1.0023819400374372,
+      "CH4": 0.9869669643844533
+     }
+    },
+    "centre_weighted_pressure": {
+     "unfitted_p99": 0.0006649243991850473,
+     "unfitted_max": 0.0010563789019708558,
+     "fitted_median": 1.5048999694400322e-05,
+     "fitted_p99": 0.0006099298736346022,
+     "fitted_max": 0.0011109525702481804,
+     "scales": {
+      "H2O": 0.9817202955824159,
+      "CO2": 0.9996858030417641,
+      "CH4": 3.155844449008437
+     }
+    }
+   }
+  },
+  "mcdonald_2017": {
+   "water_column_cm2": {
+    "centre": 2.6300286059445087e+22,
+    "weighted": 2.627860168775439e+22,
+    "weighted_geometric_pressure": 2.627860168775439e+22,
+    "centre_weighted_pressure": 2.6300286059445087e+22,
+    "reference": 2.627856918919558e+22
+   },
+   "4300-4330": {
+    "min_reference_transmission": 0.10657167571525167,
+    "centre": {
+     "unfitted_p99": 0.0017258087130488365,
+     "unfitted_max": 0.002313921934445684,
+     "fitted_median": 8.699156673158681e-05,
+     "fitted_p99": 0.0013582173518759345,
+     "fitted_max": 0.001746831655832004,
+     "scales": {
+      "H2O": 1.0050107218139008,
+      "CO2": 0.00012347185840804066,
+      "CH4": 1.0019606817118079
+     }
+    },
+    "weighted": {
+     "unfitted_p99": 0.000997471347719846,
+     "unfitted_max": 0.001191411002456344,
+     "fitted_median": 2.869620972800746e-05,
+     "fitted_p99": 0.00046195207412735043,
+     "fitted_max": 0.0007085444619743253,
+     "scales": {
+      "H2O": 1.003760060967452,
+      "CO2": 3.218551394775319,
+      "CH4": 0.9991589494210618
+     }
+    },
+    "weighted_geometric_pressure": {
+     "unfitted_p99": 0.0018561154224880883,
+     "unfitted_max": 0.0026432521780599405,
+     "fitted_median": 8.546673117043602e-05,
+     "fitted_p99": 0.0015177398042265785,
+     "fitted_max": 0.002024050271896116,
+     "scales": {
+      "H2O": 1.0038709533351922,
+      "CO2": 0.0009127819236661325,
+      "CH4": 1.0021944361573436
+     }
+    },
+    "centre_weighted_pressure": {
+     "unfitted_p99": 0.0012591060516475606,
+     "unfitted_max": 0.00155524371124649,
+     "fitted_median": 3.900882359836322e-05,
+     "fitted_p99": 0.0006548037119150274,
+     "fitted_max": 0.0009761436658409783,
+     "scales": {
+      "H2O": 1.0048960072795194,
+      "CO2": 8.123203825509464,
+      "CH4": 0.9989508831815354
+     }
+    }
+   },
+   "5000-5030": {
+    "min_reference_transmission": 0.0018370635939509198,
+    "centre": {
+     "unfitted_p99": 0.0029330469533565356,
+     "unfitted_max": 0.0031683022100224,
+     "fitted_median": 0.00016503191956318553,
+     "fitted_p99": 0.001186759916979928,
+     "fitted_max": 0.0028506640317890186,
+     "scales": {
+      "H2O": 1.0038402406768014,
+      "CO2": 1.0079455662640229,
+      "CH4": 2.7183868799161237
+     }
+    },
+    "weighted": {
+     "unfitted_p99": 0.0011706961318702215,
+     "unfitted_max": 0.0014257519119954543,
+     "fitted_median": 7.045521609261307e-05,
+     "fitted_p99": 0.000571685403664064,
+     "fitted_max": 0.0006866293623100095,
+     "scales": {
+      "H2O": 1.002947090866569,
+      "CO2": 1.0004286223311385,
+      "CH4": 0.04978728852867747
+     }
+    },
+    "weighted_geometric_pressure": {
+     "unfitted_p99": 0.002677889415623558,
+     "unfitted_max": 0.003012687778401024,
+     "fitted_median": 0.00014291574577451893,
+     "fitted_p99": 0.001136308093944454,
+     "fitted_max": 0.002526731834282092,
+     "scales": {
+      "H2O": 1.0033409992173883,
+      "CO2": 1.006761006955567,
+      "CH4": 89659.79586077727
+     }
+    },
+    "centre_weighted_pressure": {
+     "unfitted_p99": 0.0014905024267008668,
+     "unfitted_max": 0.00200721815779481,
+     "fitted_median": 0.0001100742407118549,
+     "fitted_p99": 0.0007996139392714421,
+     "fitted_max": 0.001133060455484447,
+     "scales": {
+      "H2O": 1.00344626931083,
+      "CO2": 1.0015754574946394,
+      "CH4": 0.04978742461665694
+     }
+    }
+   },
+   "5600-5630": {
+    "min_reference_transmission": 6.395817239710208e-08,
+    "centre": {
+     "unfitted_p99": 0.0024407342343129123,
+     "unfitted_max": 0.002595198404012622,
+     "fitted_median": 9.646135191887506e-05,
+     "fitted_p99": 0.0010246994184268843,
+     "fitted_max": 0.0012312577289633753,
+     "scales": {
+      "H2O": 1.0046050863416058,
+      "CO2": 5.532312642959565,
+      "CH4": 1.0008185103269311
+     }
+    },
+    "weighted": {
+     "unfitted_p99": 0.0016373249756928166,
+     "unfitted_max": 0.001717701680898187,
+     "fitted_median": 5.6443706265008053e-05,
+     "fitted_p99": 0.0005872801797596638,
+     "fitted_max": 0.0007659899534450121,
+     "scales": {
+      "H2O": 1.0033485032635228,
+      "CO2": 3.7355284503306265,
+      "CH4": 1.0022970429773497
+     }
+    },
+    "weighted_geometric_pressure": {
+     "unfitted_p99": 0.0018146172014488471,
+     "unfitted_max": 0.001938597383943863,
+     "fitted_median": 6.793909185248692e-05,
+     "fitted_p99": 0.0006662195248785486,
+     "fitted_max": 0.0008982628743182119,
+     "scales": {
+      "H2O": 1.003851098348403,
+      "CO2": 3.7761630097597014,
+      "CH4": 0.9995515079520998
+     }
+    },
+    "centre_weighted_pressure": {
+     "unfitted_p99": 0.0022616326904709248,
+     "unfitted_max": 0.002400252523030333,
+     "fitted_median": 9.032312656642727e-05,
+     "fitted_p99": 0.0009709612536851464,
+     "fitted_max": 0.0010998602705151739,
+     "scales": {
+      "H2O": 1.0041030061385545,
+      "CO2": 5.4869143415560755,
+      "CH4": 1.0035425206090056
+     }
+    }
+   },
+   "6300-6330": {
+    "min_reference_transmission": 0.591152008239072,
+    "centre": {
+     "unfitted_p99": 0.0011087258099969992,
+     "unfitted_max": 0.001456324204888504,
+     "fitted_median": 3.0061129873582004e-05,
+     "fitted_p99": 0.0008402585064648203,
+     "fitted_max": 0.0019571816310746115,
+     "scales": {
+      "H2O": 1.0005125266159536,
+      "CO2": 1.0023033500005023,
+      "CH4": 0.6019841071101605
+     }
+    },
+    "weighted": {
+     "unfitted_p99": 0.0006634640679168435,
+     "unfitted_max": 0.0009797711203902715,
+     "fitted_median": 8.633063548868503e-06,
+     "fitted_p99": 0.0004812972963982423,
+     "fitted_max": 0.0009462463735971927,
+     "scales": {
+      "H2O": 0.9987511569659732,
+      "CO2": 0.9982870581768111,
+      "CH4": 4.168115774883826
+     }
+    },
+    "weighted_geometric_pressure": {
+     "unfitted_p99": 0.0010775768741589213,
+     "unfitted_max": 0.0014260226925335573,
+     "fitted_median": 2.9839209731596927e-05,
+     "fitted_p99": 0.0007843788103290848,
+     "fitted_max": 0.0017502493987109347,
+     "scales": {
+      "H2O": 1.0010437830290637,
+      "CO2": 1.0022525543888348,
+      "CH4": 1.3706834723889598
+     }
+    },
+    "centre_weighted_pressure": {
+     "unfitted_p99": 0.000629312326796212,
+     "unfitted_max": 0.0009380536373646553,
+     "fitted_median": 9.756014443640382e-06,
+     "fitted_p99": 0.00039874846419246706,
+     "fitted_max": 0.0007350813007851453,
+     "scales": {
+      "H2O": 0.9982053455022486,
+      "CO2": 0.9983289296939759,
+      "CH4": 3.438019610892843
+     }
+    }
+   }
+  }
+ }
+}

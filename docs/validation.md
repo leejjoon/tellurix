@@ -53,9 +53,43 @@ remains future work.
 
 `accuracy_mode="mt_ckd"` applies only the isolated physical H2O self and
 foreign continua. Its reference 99th-percentile error is 0.0569 versus 0.0581
-for pressure-shifted lines alone. `lblrtm_corrected` is required for the much
-closer agreement above because ordinary H2O and CO2 line residuals dominate
-this interval.
+for pressure-shifted lines alone. That gap is mostly a difference in the
+atmosphere the two codes were given, not in their physics; see "What the
+5000--5020 cm-1 gap is" in `docs/lblrtm_corrected_mode.md`.
+
+## Layering
+
+A layer's pressure, temperature and amounts can be sampled at its centre or
+averaged over it. LBLRTM averages (`lblatm.f90`, ALAYER and FPACK): pressure
+and temperature weighted by air density, each gas's amount integrated, with
+pressure, density and number densities exponential in height between levels.
+`tellurix.site_profile.weighted_layers` does the same, and since 2026-10 it is
+the default of `build_site_profile`, `make_site_profile.py` and
+`era5_site_profile.py` (`--layering weighted`); `--layering centre` reproduces
+every earlier profile byte for byte. A weighted profile writes the air-weighted
+pressure as a `pressure_bar` column, which `AtmosphereProfile.mean_pressure_bar`
+carries to lines and continua alike. A profile without it keeps the geometric
+mean of the edges for lines and the arithmetic mean for the continua, as
+before, so old records reproduce.
+
+`scripts/compare_layering.py` measures what the choice costs, into
+`docs/layering_comparison.json`. From two
+ERA5 nights (DCT, 2.35 mm; McDonald, 7.87 mm), the default 12 layers are
+fitted to a 150-layer reference built from the same levels -- H2O, CO2 and
+CH4 scales and a linear continuum, R=45,000, air mass 1.5 -- in four IGRINS
+windows:
+
+| | 99th percentile after the fit | before the fit |
+|---|---:|---:|
+| centre | 0.05--0.20% | 0.11--0.32% |
+| weighted | 0.04--0.06% | 0.06--0.16% |
+
+Both are under IGRINS noise, so layering does not limit a correction and the
+products made with centre layers stand. Centre layering put 1.5% too much
+water in the dry night's column; the fitted scale absorbs that. The pressure
+matters as much as the amounts: weighted temperature and water with the
+geometric-mean pressure are no better than centre layering in the CH4 window
+(0.15% against 0.14%).
 
 Use a water-dominated H interval and a mixed-species K interval. Within pixels
 whose reference transmission exceeds 0.05, require median absolute error below

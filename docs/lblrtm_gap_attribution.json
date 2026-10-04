@@ -1,0 +1,139 @@
+{
+ "description": "Reads the correction template and the LBLRTM runs ``build_lblrtm_correction.py`` left under ``data/lblrtm/run_corrections/``; runs nothing new. Measures three things: the column of each gas each code was given (LBLRTM's from its TAPE6), what LBLRTM's 25 cm-1 line cutoff would change, and the transmission error at R=45,000 before and after the column scales are fitted. Writes ``docs/lblrtm_gap_attribution.json``.",
+ "generated_by": "scripts/attribute_lblrtm_gap.py",
+ "measured": "2026-10-04",
+ "template": "data/corrections/lblrtm_5000_5020.npz",
+ "profile": "data/profiles/example_midlatitude.csv",
+ "runs": "data/lblrtm/run_corrections",
+ "window_cm1": [
+  5000.0,
+  5020.0
+ ],
+ "column_cm2": {
+  "note": "LBLRTM's from continuum_all/TAPE6; it auto-layered the levels the TAPE5 writer gave it and interpolated water exponentially",
+  "AIR": {
+   "tellurix": 1.6795767695289578e+25,
+   "lblrtm": 1.674e+25
+  },
+  "H2O": {
+   "tellurix": 2.439519639700538e+22,
+   "lblrtm": 2.143e+22
+  },
+  "CO2": {
+   "tellurix": 7.054222432021622e+21,
+   "lblrtm": 7.025e+21
+  }
+ },
+ "integrated_line_optical_depth_ratio_tellurix_over_lblrtm_4980_5040": {
+  "H2O": 1.1173304322648212,
+  "CO2": 0.977402521473442
+ },
+ "cutoff_residual_rms": {
+  "CH4": {
+   "before": 4.752766628290028e-08,
+   "after_cutoff": 4.752766717653385e-08
+  },
+  "CO": {
+   "before": 4.7533336666847117e-08,
+   "after_cutoff": 4.7533336666847117e-08
+  },
+  "CO2": {
+   "before": 0.0637786785657684,
+   "after_cutoff": 0.06357643314604268
+  },
+  "H2O": {
+   "before": 0.09265546615036369,
+   "after_cutoff": 0.09257002961681064
+  },
+  "N2O": {
+   "before": 3.620754908421729e-05,
+   "after_cutoff": 3.6061909162390554e-05
+  },
+  "O2": {
+   "before": 4.7533336666847117e-08,
+   "after_cutoff": 4.7533336666847117e-08
+  }
+ },
+ "transmission_error_unfitted": {
+  "lines": {
+   "monochromatic": {
+    "median": 0.0032892747355408036,
+    "p99": 0.03205349060005232,
+    "max": 0.05044388189121651
+   },
+   "R45000": {
+    "median": 0.0033803650802148866,
+    "p99": 0.029807858278083067,
+    "max": 0.034471333547820365
+   }
+  },
+  "lines + MT_CKD": {
+   "monochromatic": {
+    "median": 0.005528945882443126,
+    "p99": 0.03276137481683116,
+    "max": 0.05172120790198703
+   },
+   "R45000": {
+    "median": 0.005515280187519789,
+    "p99": 0.030567114306132046,
+    "max": 0.03481076132603808
+   }
+  },
+  "lines with cutoff": {
+   "monochromatic": {
+    "median": 0.0019728918848647137,
+    "p99": 0.03172150446431353,
+    "max": 0.04908007877474457
+   },
+   "R45000": {
+    "median": 0.0018985970578710987,
+    "p99": 0.028748472366938654,
+    "max": 0.03405374515836279
+   }
+  },
+  "lines with cutoff + MT_CKD": {
+   "monochromatic": {
+    "median": 0.0029165948772959527,
+    "p99": 0.031959029434845354,
+    "max": 0.05036115534566299
+   },
+   "R45000": {
+    "median": 0.002952941886985916,
+    "p99": 0.029644686732602857,
+    "max": 0.03439427417263172
+   }
+  }
+ },
+ "transmission_error_fitted_R45000": {
+  "note": "H2O and CO2 column scales and a linear continuum fitted to LBLRTM",
+  "lines": {
+   "h2o_scale": 0.9205077669947112,
+   "co2_scale": 1.0205568252777417,
+   "median": 0.0015534992074270892,
+   "p99": 0.012135134725559774,
+   "max": 0.015894431666556436
+  },
+  "lines + MT_CKD": {
+   "h2o_scale": 0.9205248400719191,
+   "co2_scale": 1.0205063747595469,
+   "median": 0.0015396379174592578,
+   "p99": 0.012118272903745545,
+   "max": 0.015896473470714906
+  },
+  "lines with cutoff": {
+   "h2o_scale": 0.9205481103923895,
+   "co2_scale": 1.020421199990158,
+   "median": 0.001537545171665211,
+   "p99": 0.012055850706599406,
+   "max": 0.01589851660582145
+  },
+  "lines with cutoff + MT_CKD": {
+   "h2o_scale": 0.9205654263515709,
+   "co2_scale": 1.0203702468783005,
+   "median": 0.0015347621282807422,
+   "p99": 0.012038762874470288,
+   "max": 0.015900591225930433
+  }
+ },
+ "metric": "absolute transmission error where the reference exceeds 0.05"
+}

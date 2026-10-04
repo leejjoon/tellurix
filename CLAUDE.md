@@ -107,6 +107,8 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/build_lblrtm_correction.py   # rebu
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_aer_co.py           # writes packages/tellurix/tests/data/aer_co_validation.json
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_mt_ckd.py           # writes packages/tellurix/tests/data/native_mt_ckd_validation.json
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_mixed_precision.py [--resume]
+UV_CACHE_DIR=.uv-cache uv run python scripts/attribute_lblrtm_gap.py      # reads run_corrections -> docs/lblrtm_gap_attribution.json
+UV_CACHE_DIR=.uv-cache uv run python scripts/compare_layering.py          # ERA5 + AER lines, ~20 min GPU -> docs/layering_comparison.json
 ```
 
 ## Two toolchains
@@ -310,6 +312,16 @@ opt-in to keep the default numerically identical to ExoJAX.
   altitude decreases. Wavenumber grids are strictly increasing and evenly
   spaced in log wavenumber (constant velocity step) — `constant_velocity_grid`
   builds them with padding for line wings.
+- Profiles are built with LBLRTM-style weighted layers by default
+  (`site_profile.weighted_layers`; `--layering centre` reproduces the profiles
+  made before 2026-10 byte for byte). A weighted CSV carries a `pressure_bar`
+  column, `AtmosphereProfile.mean_pressure_bar`, used by lines and continua
+  alike; without it lines keep the geometric mean of the edges and continua the
+  arithmetic mean, so old records reproduce. Copy a profile with
+  `dataclasses.replace`, never field by field, or that pressure is dropped.
+  The choice is worth under 0.2% after a fit (`docs/layering_comparison.json`).
+  ERA5 fetching and layering are `tellurix.era5` (the `era5` extra, which the
+  workspace installs); `era5_site_profile.py` is only its command line.
 - Units are in names: `_bar`, `_hpa`, `_cm1`, `_km`, `_kms`, `_k`, `cm2`.
 - Comments explain *why* (a numerical or LBLRTM-compatibility reason), not what.
   Keep that density; the existing comments are load-bearing.

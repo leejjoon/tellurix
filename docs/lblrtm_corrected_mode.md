@@ -69,10 +69,36 @@ For this 5000--5020 cm-1 case, CO2 line coupling is outside the AER coupling
 database's stated 597--2503 cm-1 range. LBLRTM also does not consume the AER
 speed-dependence files used by MonoRTM. Those effects therefore do not explain
 this order's correction. After fixing the profile extent, pressure shifts
-reduce the fast 99th-percentile error from 0.107 to 0.0581. The remaining
-discrepancy is concentrated in ordinary H2O and CO2 line calculations; its
-exact parameter-level cause has not been isolated, so the residual remains
-explicitly empirical.
+reduce the fast 99th-percentile error from 0.107 to 0.0581. The residual
+remains explicitly empirical; what it is made of is below.
+
+### What the 5000--5020 cm-1 gap is
+
+Measured by `scripts/attribute_lblrtm_gap.py` into
+`docs/lblrtm_gap_attribution.json`, from the template and the LBLRTM runs that
+built it:
+
+- **Mostly, a different atmosphere.** The TAPE5 writer hands LBLRTM the
+  6-layer profile as 7 levels, chosen so that adjacent levels average to the
+  layer values. LBLRTM re-layers them into 18 and interpolates water
+  exponentially between levels, which sags below that average: its water
+  column is 2.143e22 cm-2 against tellurix's 2.440e22, 13.8% less. Air and CO2
+  agree to 0.4%. tellurix's integrated H2O line optical depth is 11.7% high and
+  CO2's 2.3% low.
+- **Not LBLRTM's 25 cm-1 line cutoff.** LBLRTM truncates every line at
+  25 cm-1 and subtracts its value there (`oprop.f90`, CONVF4; the CO2 chi
+  factor is switched off in 12.17). tellurix keeps the full Voigt line. The
+  difference is real but small: applying the cutoff moves the H2O residual's RMS
+  from 0.0927 to 0.0926 in optical depth, and the fitted error below from
+  0.0121 to 0.0120.
+- **What a fit sees.** With the H2O and CO2 column scales and a linear
+  continuum fitted to LBLRTM, as any fit would (H2O 0.92, CO2 1.02), the R=45,000
+  transmission agrees to 0.15% median and 1.2% at the 99th percentile. That
+  remainder still includes the two codes' different vertical distribution of
+  water, so it is an upper bound on the physics difference.
+
+A comparison that hands LBLRTM tellurix's own layers -- user-supplied layer
+amounts, no auto-layering -- would isolate the physics; it has not been run.
 
 All terms are vertical optical depths. The normal model airmass calculation
 therefore scales them with zenith angle. Templates are valid only for their
@@ -156,10 +182,9 @@ among samples with transmission above 0.05:
 | LBLRTM corrected | 4.80e-8 | 4.75e-5 | 3.78e-4 |
 
 MT_CKD slightly improves the 99th-percentile error but increases the median
-in this order. The dominant JAX line residual is signed and partially cancels
-the positive continuum opacity in the fast comparison. Adding a known
-continuum therefore need not improve every aggregate agreement metric while
-the ordinary H2O and CO2 line mismatch remains. The `mt_ckd` mode is the
+in this order. The fast comparison carries 13.8% more water than LBLRTM's (see
+"What the 5000--5020 cm-1 gap is" above), so adding a known continuum on top
+of it need not improve every aggregate agreement metric. The `mt_ckd` mode is the
 physically attributable option; `lblrtm_corrected` is the close LBLRTM
 emulator.
 
