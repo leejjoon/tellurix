@@ -295,6 +295,12 @@ fallback branch, which is why `precompute_opacity` uses a central difference.
 derivative in float32 — the JVP is algebraically rewritten to avoid the
 catastrophic float32 cancellation in ExoJAX's identity. Coordinates, cores,
 line physics, accumulation, and the whole instrument model stay float64.
+`line_coupling=True` adds AER's first-order (Rosenkranz) line mixing in
+`direct_sparse`, read from `lncpl_lines` (`AERLineDatabase(line_coupling=
+DataPaths.line_coupling)`); LBLRTM applies it to about half the CO2 lines near
+2 um, and it is the whole of what separated the two codes there
+(`docs/lblrtm_corrected_mode.md`). Off by default. Its Im w uses a custom JVP:
+differentiating Algorithm 916's series directly stores every term.
 `pressure_shift=True` adds HITRAN `delta_air` shifts scaled like LBLRTM's
 RHORAT (`delta_air * P/1 atm * 296 K/T`); ExoJAX 2.5 omits these, so it is
 opt-in to keep the default numerically identical to ExoJAX.

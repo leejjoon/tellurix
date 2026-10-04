@@ -121,25 +121,54 @@ CO2 is now the larger line residual. The rest is continuum: LBLRTM's
 continua average an optical depth of 0.0066 here, MT_CKD's water part 0.0028;
 the remainder is smooth, and the fitted continuum absorbs it.
 
-The CO2 residual is two things LBLRTM does and tellurix does not, each
-measured on its own: AER's line coupling, from CO2-only TAPE3s built with and
-without it (LNFL's NOCPL), and the 25 cm-1 cutoff with its pedestal
-(`tellurix.lblrtm_line_shape_optical_depth`):
+The CO2 residual is two things LBLRTM does and tellurix did not, each
+measured on its own: AER's first-order line coupling, from CO2-only TAPE3s
+built with and without it (LNFL's NOCPL), and the 25 cm-1 cutoff with its
+pedestal (`tellurix.lblrtm_line_shape_optical_depth`). LBLRTM never rejects a
+coupled line, so the coupled/uncoupled pair runs with line rejection off
+(`LBLRTMRunConfig(line_rejection=False)`); with it on, rejection takes 0.19%
+from the uncoupled run and masquerades as coupling.
 
-| tellurix CO2 against | integrated ratio | residual RMS |
+| tellurix CO2 against LBLRTM CO2 (rejection off) | integrated ratio | residual RMS |
 |---|---:|---:|
-| LBLRTM, coupled (as it runs) | 1.0152 | 0.0131 |
-| LBLRTM, coupled; tellurix with the cutoff | 1.0085 | 0.0109 |
-| LBLRTM, uncoupled | 1.0080 | 0.0055 |
-| LBLRTM, uncoupled; tellurix with the cutoff | 1.0013 | 0.0034 |
+| uncoupled | 1.0061 | 0.0047 |
+| uncoupled; tellurix with the cutoff | 0.9994 | 0.0033 |
+| coupled; tellurix with `line_coupling=True` | 1.0046 | 0.0041 |
+| coupled; tellurix with coupling and the cutoff | 0.9979 | 0.0034 |
 
-Coupling and the cutoff carry about 0.7% each, leaving 0.13%. Only coupling
-survives a fit. Adding LBLRTM's CO2 coupling (its coupled minus uncoupled
-optical depth) to tellurix takes the fitted 99th percentile from 0.69% to
-0.084%; adding the cutoff leaves it at 0.69%, because the pedestal is smooth and
-the fitted continuum takes it. Line mixing is physics rather than an LBLRTM
-artefact -- it moves absorption out of the gaps between lines -- so it will be
-in the 2.0 and 1.6 um CO2 bands of real spectra too.
+LBLRTM's coupling lowers this window's CO2 optical depth by 0.90%, tellurix's
+by 1.04%; the two terms differ by an RMS of 0.0009 against the term's own 0.011.
+The cutoff carries 0.7%. Only coupling survives a fit:
+
+| tellurix against LBLRTM as it runs, R=45,000, fitted | median | 99th percentile | max |
+|---|---:|---:|---:|
+| as before | 0.047% | 0.69% | 0.76% |
+| `line_coupling=True` | 0.010% | 0.039% | 0.074% |
+| with the cutoff only | 0.046% | 0.69% | 0.76% |
+| coupling and the cutoff | 0.010% | 0.043% | 0.076% |
+
+The fitted scales with coupling are 1.00001 (H2O) and 1.00003 (CO2). The cutoff's
+pedestal is smooth and the fitted continuum takes it, so tellurix does not model
+it. Line mixing is physics rather than an LBLRTM artefact -- it moves absorption
+out of the gaps between lines -- so it will be in the 2.0 and 1.6 um CO2 bands of
+real spectra too.
+
+### Line coupling in tellurix
+
+`AERLineDatabase(..., line_coupling=DataPaths.line_coupling)` reads AER's Y and
+G at 200, 250, 296 and 340 K from `lncpl_lines` (the per-molecule files carry
+the flag, not the coefficients), and `ExoJAXOpacityBackend.prepare(...,
+line_coupling=True)` applies them in `direct_sparse`: each line becomes
+S (1 + G p^2) [Re w(z) + Y p Im w(z)], with Y and G interpolated in temperature
+as LBLRTM does and the Im w term cut at 25 cm-1 less a pedestal, as LBLRTM cuts
+it -- a Rosenkranz term decays only as 1/x and its tails cancel over a whole
+band, not over a window's line list. The line itself keeps its full Voigt
+shape. LBLRTM approximates the dispersion profile as the Voigt line times its
+offset in Voigt widths; tellurix uses Im w, exact everywhere, and the two forms
+differ by 0.03% of this window's CO2. Coupling is off by default, so every
+earlier result reproduces. AER 3.9 couples CO2 (632,976 lines), CH4 and O2;
+two O2 lines use a reduced-width form (flag -3) that is refused rather than
+approximated.
 
 All terms are vertical optical depths. The normal model airmass calculation
 therefore scales them with zenith angle. Templates are valid only for their

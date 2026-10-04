@@ -76,6 +76,12 @@ class DataPaths:
         return cls(root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule",
                    root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc")
 
+    @property
+    def line_coupling(self) -> Path:
+        """AER's first-order line-coupling records, beside the per-molecule files."""
+
+        return self.line_root.parent / "lncpl_lines"
+
     def line_file(self, species: str, molecule_id: int) -> Path:
         """AER's per-molecule file, named ``NN_SPECIES`` inside a directory of that name."""
 

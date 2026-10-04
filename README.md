@@ -169,7 +169,9 @@ order, MT_CKD alone changed the 99th-percentile LBLRTM error from 0.0581 to
 0.0569. That gap is mostly not line physics: the comparison gave LBLRTM 12%
 less water than tellurix (see [the corrected-mode guide](docs/lblrtm_corrected_mode.md)).
 Given identical layers, with the column scales fitted as any fit does, the two
-agree to 0.05% median and 0.69% at the 99th percentile at R=45,000.
+agree to 0.05% median and 0.69% at the 99th percentile at R=45,000, and to
+0.010% and 0.039% with tellurix's first-order line coupling switched on
+(`line_coupling=True`), which LBLRTM applies to CO2.
 
 Generate a template with `scripts/build_lblrtm_correction.py`. In the tested
 5000--5020 cm-1 order, the correction reduced the 99th-percentile absolute

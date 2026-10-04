@@ -201,13 +201,55 @@ def _file_index(path: Path):
     return _FILE_INDEX[key]
 
 
+# LBLRTM's line-coupling reference temperatures (oprop.f90, TEMPLC): each
+# coupled line carries Y and G at these four.
+COUPLING_TEMPERATURES_K = (200.0, 250.0, 296.0, 340.0)
+_COUPLING_TABLES: dict = {}
+
+
+def _coupling_table(path: Path, molecule_id: int) -> dict:
+    """First-order coupling coefficients of one molecule, keyed by isotope and line position.
+
+    AER keeps them in ``lncpl_lines``: every line whose flag (columns 99-100)
+    is -1 is followed by a record of Y and G at the four temperatures,
+    ``(I2, 4(E13.6, E11.4), I2)`` as LNFL reads it. The per-molecule files carry
+    the flag but not the record. The key is the position field as written,
+    so a line matches only the record AER wrote for it. Reduced-width coupling
+    (flag -3, two O2 lines) is stored as None and refused where it is used.
+    """
+
+    stat = path.stat()
+    key = (str(path.resolve()), stat.st_size, stat.st_mtime_ns, molecule_id)
+    if key not in _COUPLING_TABLES:
+        table = {}
+        with path.open(encoding="ascii", errors="replace") as stream:
+            pending = None
+            for line in stream:
+                if pending is not None:
+                    values = [float(line[2 + 24 * k: 15 + 24 * k]) for k in range(4)]
+                    values += [float(line[15 + 24 * k: 26 + 24 * k]) for k in range(4)]
+                    table[pending] = (np.asarray(values[:4]), np.asarray(values[4:]))
+                    pending = None
+                    continue
+                if len(line) < 100 or line[:2].strip() != str(molecule_id) or "." not in line[3:15]:
+                    continue
+                flag = line[98:100]
+                if flag == "-1":
+                    pending = (int(line[2:3]), line[3:15].strip())
+                elif flag in ("-3", "-5"):
+                    table[(int(line[2:3]), line[3:15].strip())] = None
+        _COUPLING_TABLES[key] = table
+    return _COUPLING_TABLES[key]
+
+
 class AERLineDatabase:
     """Minimal HITRAN-like database backed by an AER per-molecule line file.
 
     The adapter lets :class:`exojax.opacity.OpaDirect` use the same ordinary
-    Voigt-line parameters supplied to LNFL. AER line-coupling records are not
-    exposed by this adapter, though LBLRTM applies them -- to about half the
-    CO2 lines near 2 um (docs/lblrtm_corrected_mode.md). The auxiliary speed-dependence data are for
+    Voigt-line parameters supplied to LNFL. ``line_coupling`` names AER's
+    ``lncpl_lines`` (``DataPaths.line_coupling``) to read the first-order
+    coupling coefficients LBLRTM applies -- to about half the CO2 lines near
+    2 um -- for ``SparseCoreDirect(line_coupling=True)``. The auxiliary speed-dependence data are for
     MonoRTM and are not used by the LBLRTM configuration validated here.
     """
 
@@ -221,6 +263,7 @@ class AERLineDatabase:
         wavenumber_range_cm1: tuple[float, float],
         margin_cm1: float = 25.0,
         strength_cutoff: float = 0.0,
+        line_coupling: str | Path | None = None,
     ) -> None:
         molecule = molecule.upper()
         if molecule not in AER_MOLECULE_IDS:
@@ -250,6 +293,8 @@ class AERLineDatabase:
                       for offset in candidates)
 
         records: list[tuple[float, ...]] = []
+        positions: list[str] = []
+        flags: list[str] = []
         for line in source:
             # Some AER per-molecule files (notably CH4) omit the header
             # and % delimiter. Recognize records by their numeric fields.
@@ -279,6 +324,8 @@ class AERLineDatabase:
                     _fortran_float(line[59:67]),
                 )
             )
+            positions.append(line[3:15].strip())
+            flags.append(line[98:100] if len(line) >= 100 else "")
         if not records:
             raise ValueError(f"no {molecule} lines found in the requested range")
         values = np.asarray(records)
@@ -297,11 +344,51 @@ class AERLineDatabase:
         self.delta_air = values[:, 8]
         self.molmass = _MEAN_MOLAR_MASS[molecule]
         self._load_partition_functions()
+        # First-order line coupling (Rosenkranz), as LBLRTM applies it: zero
+        # for every line unless a coupling file is given.
+        self.coupling_y = np.zeros((len(self.nu_lines), 4))
+        self.coupling_g = np.zeros((len(self.nu_lines), 4))
+        if line_coupling is not None:
+            table = _coupling_table(Path(line_coupling), self.molecid)
+            for index, (isotope, position, flag) in enumerate(zip(self.isoid, positions, flags)):
+                if flag.strip() not in ("-1", "-3", "-5"):
+                    continue
+                entry = table.get((int(isotope), position), "missing")
+                if entry is None:
+                    raise ValueError(f"{molecule} line at {position} cm-1 uses a coupling form "
+                                     f"(flag {flag.strip()}) this adapter does not model")
+                if isinstance(entry, str):
+                    raise ValueError(f"{molecule} line at {position} cm-1 is flagged as coupled "
+                                     f"but {line_coupling} has no record for it")
+                self.coupling_y[index], self.coupling_g[index] = entry
+        self.line_coupling = line_coupling
 
     _LINE_ARRAYS = (
         "isoid", "nu_lines", "line_strength_ref_original", "logsij0", "A",
-        "gamma_air", "gamma_self", "elower", "n_air", "delta_air",
+        "gamma_air", "gamma_self", "elower", "n_air", "delta_air", "coupling_y", "coupling_g",
     )
+
+    @property
+    def has_line_coupling(self) -> bool:
+        return bool(np.any(self.coupling_y) or np.any(self.coupling_g))
+
+    def coupling(self, temperature_k, pressure_bar):
+        """Per-line Rosenkranz coefficient Y*P/P0 and strength factor 1 + G*(P/P0)^2.
+
+        Interpolated linearly in temperature between the two reference
+        temperatures above the layer's, and extrapolated from the end pairs
+        outside 200-340 K, exactly as LBLRTM does (oprop.f90, the ILC loop).
+        """
+
+        reference = jnp.asarray(COUPLING_TEMPERATURES_K)
+        upper = jnp.clip(jnp.searchsorted(reference, temperature_k, side="left"), 1, 3)
+        y, g = jnp.asarray(self.coupling_y), jnp.asarray(self.coupling_g)
+        span = reference[upper] - reference[upper - 1]
+        offset = temperature_k - reference[upper]
+        y_t = y[:, upper] + (y[:, upper] - y[:, upper - 1]) / span * offset
+        g_t = g[:, upper] + (g[:, upper] - g[:, upper - 1]) / span * offset
+        pressure_atm = pressure_bar / 1.01325
+        return y_t * pressure_atm, 1.0 + g_t * pressure_atm ** 2
 
     def restrict(self, keep) -> "AERLineDatabase":
         """Return a copy holding only the lines selected by a boolean mask."""

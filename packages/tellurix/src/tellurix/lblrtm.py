@@ -76,6 +76,12 @@ class LBLRTMRunConfig:
     # make the two codes integrate the same atmosphere, so a difference between
     # them is the physics.
     user_layers: bool = False
+    # LBLRTM drops lines whose peak optical depth in a layer is below DPTMIN
+    # (2e-4) or DPTFAC (1e-3) of the running total, but never a coupled line.
+    # Comparing runs with and without coupling therefore also compares
+    # rejection: in the 5000-5020 cm-1 CO2 the uncoupled run lost 0.19% of its
+    # optical depth this way. False sets both thresholds to zero.
+    line_rejection: bool = True
 
     def __post_init__(self) -> None:
         if not 0.0 < self.wavenumber_min_cm1 < self.wavenumber_max_cm1:
@@ -84,6 +90,12 @@ class LBLRTMRunConfig:
             raise ValueError("zenith angle must be in [0, 90) degrees")
         if self.continuum_flag not in range(6):
             raise ValueError("continuum_flag must be one of 0, 1, 2, 3, 4, or 5")
+
+
+def _rejection_fields(config: LBLRTMRunConfig) -> str:
+    """Record 1.3's DPTMIN and DPTFAC: negative selects LBLRTM's defaults."""
+    value = -1.0 if config.line_rejection else 0.0
+    return f"{value:10.3f}{value:10.3f}"
 
 
 def write_tape5(
@@ -136,7 +148,7 @@ def write_tape5(
     lines.append("".join(f"{value:5d}" for value in flags) + f"{0:5d}{0:5d}{0:5d}{0:5d}{0:5d}{0:5d}")
     lines.append(
         f"{config.wavenumber_min_cm1:10.3f}{config.wavenumber_max_cm1:10.3f}"
-        f"{4.0:10.3f}{0.0:10.3f}{0.04:10.3f}{36.0:10.3f}{-1.0:10.3f}{-1.0:10.3f}"
+        f"{4.0:10.3f}{0.0:10.3f}{0.04:10.3f}{36.0:10.3f}{_rejection_fields(config)}"
         f"{0:5d}{0.0:15.3f}{0:5d}"
     )
     lines.append(
@@ -220,7 +232,7 @@ def _write_layer_tape5(path, profile: AtmosphereProfile, config: LBLRTMRunConfig
     lines.append("".join(f"{value:5d}" for value in flags) + f"{0:5d}{0:5d}{0:5d}{0:5d}{0:5d}{0:5d}")
     lines.append(
         f"{config.wavenumber_min_cm1:10.3f}{config.wavenumber_max_cm1:10.3f}"
-        f"{4.0:10.3f}{0.0:10.3f}{0.04:10.3f}{36.0:10.3f}{-1.0:10.3f}{-1.0:10.3f}"
+        f"{4.0:10.3f}{0.0:10.3f}{0.04:10.3f}{36.0:10.3f}{_rejection_fields(config)}"
         f"{0:5d}{0.0:15.3f}{0:5d}"
     )
     lines.append(

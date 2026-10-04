@@ -117,9 +117,10 @@ def main() -> None:
                                 samples_per_resolution=SAMPLES_PER_RESOLUTION,
                                 margin_cm1=LINE_MARGIN_CM1)
 
-    def lblrtm(run_profile, continuum_flag, name, line_file=tape3):
+    def lblrtm(run_profile, continuum_flag, name, line_file=tape3, line_rejection=True):
         config = LBLRTMRunConfig(float(nu[0]) - PAD_CM1, float(nu[-1]) + PAD_CM1,
                                  continuum_flag=continuum_flag, user_layers=True,
+                                 line_rejection=line_rejection,
                                  description=f"tellurix identical layers {name}")
         spectrum = run_lblrtm(root / args.run_dir / name, run_profile, config, executable,
                               line_file, paths.mt_ckd)
@@ -135,7 +136,9 @@ def main() -> None:
     }
 
     # CO2 alone from TAPE3s with and without AER's line coupling, over the
-    # grid plus LBLRTM's 25 cm-1 reach.
+    # grid plus LBLRTM's 25 cm-1 reach. Line rejection is off in both: LBLRTM
+    # never rejects a coupled line, so with it on the pair would differ by
+    # rejection as well as by coupling.
     co2_profile = dataclasses.replace(profile, vmr={"CO2": profile.vmr["CO2"]})
     for coupling in (True, False):
         name = "co2_coupled" if coupling else "co2_uncoupled"
@@ -143,34 +146,41 @@ def main() -> None:
                              float(nu[0]) - LINE_MARGIN_CM1 - 1.0, float(nu[-1]) + LINE_MARGIN_CM1 + 1.0,
                              reference / "AER_Line_File/aer_v_3.9/line_file/aer_v_3.9",
                              reference / "LNFL/lnfl_v3.2_linux_gnu_sgl", line_coupling=coupling)
-        lblrtm_tau[name] = lblrtm(co2_profile, 0, name, line_file)
+        lblrtm_tau[name] = lblrtm(co2_profile, 0, name, line_file, line_rejection=False)
         if coupling:
             # LNFL's TAPE6 lists, per molecule, the lines and how many of them
             # carry coupling coefficients.
             log = (line_file.parent / "TAPE6").read_bytes().replace(b"\0", b"").decode("ascii", "replace")
-            lines, coupled = re.search(r"CO2\s+=\s+(\d+)\s+(\d+)", log).groups()
+            lines, coupled_count = re.search(r"CO2\s+=\s+(\d+)\s+(\d+)", log).groups()
 
     databases = {}
     for species in profile.vmr:
         try:
-            # Lines LBLRTM reaches for: everything within 25 cm-1 of the grid.
+            # Lines LBLRTM reaches for: everything within 25 cm-1 of the grid,
+            # with AER's coupling coefficients for the coupled model.
             databases[species] = AERLineDatabase(paths.line_file(species, AER_MOLECULE_IDS[species]),
                                                  species, (float(nu[0]), float(nu[-1])),
-                                                 margin_cm1=LINE_MARGIN_CM1)
+                                                 margin_cm1=LINE_MARGIN_CM1,
+                                                 line_coupling=paths.line_coupling)
         except ValueError as exc:
             if "lines found" not in str(exc):
                 raise
-    backend = ExoJAXOpacityBackend.prepare(
-        databases, nu, methods="direct_sparse",
-        temperature_range_k=(float(profile.temperature_k.min()), float(profile.temperature_k.max())),
-        maximum_pressure_bar=float(profile.pressure_layer_bar.max()), vectorize_layers=True,
-        pressure_shift=True)
     continuum = MTCKDWaterContinuum.from_netcdf(paths.mt_ckd, nu)
-    model = TelluricModel(profile, nu, backend, continuum=continuum)
-    parameters = TelluricParameters({s: 0.0 for s in model.species}, 0.0, 0.0, 3.0,
-                                    jnp.asarray([0.0]), np.log(1.0e-5))
-    pieces = {k: -np.log(np.asarray(v)) for k, v in model.species_transmission(parameters).items()}
+
+    def tellurix(line_coupling):
+        backend = ExoJAXOpacityBackend.prepare(
+            databases, nu, methods="direct_sparse",
+            temperature_range_k=(float(profile.temperature_k.min()), float(profile.temperature_k.max())),
+            maximum_pressure_bar=float(profile.pressure_layer_bar.max()), vectorize_layers=True,
+            pressure_shift=True, line_coupling=line_coupling)
+        model = TelluricModel(profile, nu, backend, continuum=continuum)
+        parameters = TelluricParameters({s: 0.0 for s in model.species}, 0.0, 0.0, 3.0,
+                                        jnp.asarray([0.0]), np.log(1.0e-5))
+        return {k: -np.log(np.asarray(v)) for k, v in model.species_transmission(parameters).items()}
+
+    pieces, coupled = tellurix(False), tellurix(True)
     mt_ckd = pieces.pop("continuum")
+    coupled.pop("continuum")
 
     inner = (nu >= WINDOW_CM1[0]) & (nu <= WINDOW_CM1[1])
     lblrtm_continuum = lblrtm_tau["continua"] - lblrtm_tau["lines"]
@@ -187,29 +197,35 @@ def main() -> None:
     for species, database in databases.items():
         truncated, full = lblrtm_line_shape_optical_depth(database, profile, nu)
         cutoff[species] = truncated - full
-    coupling = lblrtm_tau["co2_coupled"] - lblrtm_tau["co2_uncoupled"]
 
     def ratio_and_rms(ours, theirs):
         return {"integrated_ratio_tellurix_over_lblrtm": float(ours[inner].sum() / theirs[inner].sum()),
                 "residual_rms": float(np.sqrt(np.mean((theirs - ours)[inner] ** 2)))}
 
+    their_coupling = lblrtm_tau["co2_coupled"] - lblrtm_tau["co2_uncoupled"]
+    our_coupling = coupled["CO2"] - pieces["CO2"]
     co2 = {
-        "tape3_lines": int(lines), "tape3_coupled_lines": int(coupled),
-        "against_coupled_lblrtm": ratio_and_rms(pieces["CO2"], lblrtm_tau["co2_coupled"]),
-        "against_coupled_lblrtm_with_cutoff": ratio_and_rms(pieces["CO2"] + cutoff["CO2"],
-                                                            lblrtm_tau["co2_coupled"]),
-        "against_uncoupled_lblrtm": ratio_and_rms(pieces["CO2"], lblrtm_tau["co2_uncoupled"]),
-        "against_uncoupled_lblrtm_with_cutoff": ratio_and_rms(pieces["CO2"] + cutoff["CO2"],
-                                                              lblrtm_tau["co2_uncoupled"]),
+        "tape3_lines": int(lines), "tape3_coupled_lines": int(coupled_count),
+        "lblrtm_line_rejection": False,
+        "uncoupled": ratio_and_rms(pieces["CO2"], lblrtm_tau["co2_uncoupled"]),
+        "uncoupled_with_cutoff": ratio_and_rms(pieces["CO2"] + cutoff["CO2"],
+                                               lblrtm_tau["co2_uncoupled"]),
+        "coupled": ratio_and_rms(coupled["CO2"], lblrtm_tau["co2_coupled"]),
+        "coupled_with_cutoff": ratio_and_rms(coupled["CO2"] + cutoff["CO2"], lblrtm_tau["co2_coupled"]),
+        "coupling_term_over_uncoupled_co2": {
+            "tellurix": float(our_coupling[inner].sum() / pieces["CO2"][inner].sum()),
+            "lblrtm": float(their_coupling[inner].sum() / lblrtm_tau["co2_uncoupled"][inner].sum()),
+            "rms_of_lblrtm_term": float(np.sqrt(np.mean(their_coupling[inner] ** 2))),
+            "rms_of_difference": float(np.sqrt(np.mean((their_coupling - our_coupling)[inner] ** 2))),
+        },
     }
-    variants = {"as_now": {}, "with_co2_coupling": {"CO2": coupling}, "with_cutoff": cutoff,
-                "with_cutoff_and_co2_coupling": {**cutoff, "CO2": cutoff["CO2"] + coupling}}
+    variants = {"as_now": pieces, "with_line_coupling": coupled,
+                "with_cutoff": {k: v + cutoff.get(k, 0.0) for k, v in pieces.items()},
+                "with_line_coupling_and_cutoff": {k: v + cutoff.get(k, 0.0) for k, v in coupled.items()}}
     co2["fitted_transmission"] = {
-        "note": "tellurix lines + MT_CKD against LBLRTM with continua, with LBLRTM's CO2 coupling "
-                "(its coupled minus uncoupled CO2 optical depth) and/or its cutoff added to tellurix",
-        **{name: compare({k: v + extra.get(k, 0.0) for k, v in pieces.items()}, mt_ckd,
-                         lblrtm_tau["continua"], nu)
-           for name, extra in variants.items()}}
+        "note": "tellurix lines + MT_CKD against LBLRTM with continua as it runs; tellurix with its "
+                "own line coupling (direct_sparse line_coupling=True) and/or LBLRTM's cutoff",
+        **{name: compare(taus, mt_ckd, lblrtm_tau["continua"], nu) for name, taus in variants.items()}}
 
     report = {
         "description": __doc__.split("\n\n")[1].replace("\n", " "),
@@ -217,7 +233,8 @@ def main() -> None:
         "measured": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "profile": str(args.profile), "layer_pressure": "air-weighted mean of the edges, both codes",
         "lblrtm": "12.17, IATM=0 layer input, TAPE3 run_lnfl_igrins (AER 3.9)",
-        "tellurix": "AER 3.9 lines within 25 cm-1, direct_sparse with pressure shifts; native MT_CKD 4.3",
+        "tellurix": "AER 3.9 lines within 25 cm-1, direct_sparse with pressure shifts; native MT_CKD 4.3; "
+                    "line coupling off except where stated",
         "window_cm1": WINDOW_CM1, "resolving_power": RESOLVING_POWER,
         "samples_per_resolution": SAMPLES_PER_RESOLUTION, "zenith_angle_deg": 0.0,
         "metric": "absolute transmission error where the reference exceeds 0.05",
@@ -235,7 +252,7 @@ def main() -> None:
         print(key, json.dumps(report[key]), flush=True)
     print(json.dumps(report["species_lines"]), json.dumps(report["continuum_mean_optical_depth"]))
     for key, value in co2.items():
-        if key.startswith("against"):
+        if isinstance(value, dict) and key != "fitted_transmission":
             print(key, json.dumps(value))
     for key, value in co2["fitted_transmission"].items():
         if key != "note":

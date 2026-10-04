@@ -172,3 +172,71 @@ def test_core_list_matches_the_dense_selection_it_replaced():
         line, column = np.nonzero(np.abs(offsets) <= half_width[:, None])
         np.testing.assert_array_equal(calculator.core_line, line)
         np.testing.assert_array_equal(calculator.core_grid, column)
+
+
+def _coupled_database(y=0.02, g=0.0):
+    """One line with Rosenkranz coefficients, as AERLineDatabase.coupling gives them."""
+    return SimpleNamespace(
+        dbtype="hitran", isotope=1, molmass=44.0,
+        nu_lines=np.array([5000.0]),
+        logsij0=jnp.log(jnp.array([1e-22])),
+        elower=np.array([100.]), n_air=np.array([0.7]),
+        gamma_air=np.array([0.07]), gamma_self=np.array([0.09]),
+        delta_air=np.array([0.0]), A=np.array([0.0]),
+        qr_interp=lambda isotope, temperature, reference: (temperature / reference) ** 1.5,
+        has_line_coupling=True,
+        coupling=lambda temperature, pressure: (jnp.array([y]) * pressure / 1.01325,
+                                                1.0 + jnp.array([g]) * (pressure / 1.01325) ** 2),
+    )
+
+
+def test_line_coupling_adds_an_odd_term_that_ends_at_25_cm1():
+    grid = np.linspace(4960.0, 5040.0, 8001)
+    plain = SparseCoreDirect(_coupled_database(), grid).xsvector(280.0, 0.8, 0.0)
+    coupled = SparseCoreDirect(_coupled_database(), grid, line_coupling=True).xsvector(280.0, 0.8, 0.0)
+    dispersion = np.asarray(coupled - plain)
+
+    centre = np.abs(grid - 5000.0) < 1e-9
+    np.testing.assert_allclose(dispersion, -dispersion[::-1], atol=1e-12 * float(np.max(plain)))
+    assert dispersion[centre] == pytest.approx(0.0, abs=1e-30)
+    # Positive Y moves absorption to the high-wavenumber side.
+    assert dispersion[np.argmin(np.abs(grid - 5000.1))] > 0.0
+    np.testing.assert_array_equal(dispersion[np.abs(grid - 5000.0) > 25.0], 0.0)
+    # Near the line it is Y p times the Lorentz dispersion profile.
+    near = np.argmin(np.abs(grid - 5000.5))
+    gamma = 0.07 * (296.0 / 280.0) ** 0.7 * 0.8
+    expected = 0.02 * 0.8 / 1.01325 * 0.5 / (np.pi * (0.25 + gamma**2)) * float(
+        plain[near] / (gamma / (np.pi * (0.25 + gamma**2))))
+    assert dispersion[near] == pytest.approx(expected, rel=0.02)
+
+
+def test_coupling_g_scales_the_line_and_off_means_off():
+    grid = np.linspace(4995.0, 5005.0, 2001)
+    plain = SparseCoreDirect(_coupled_database(y=0.0, g=0.5), grid).xsvector(280.0, 0.8, 0.0)
+    scaled = SparseCoreDirect(_coupled_database(y=0.0, g=0.5), grid,
+                              line_coupling=True).xsvector(280.0, 0.8, 0.0)
+    np.testing.assert_allclose(scaled, plain * (1.0 + 0.5 * (0.8 / 1.01325) ** 2), rtol=1e-12)
+
+
+def test_coupled_sparse_kernel_matches_its_dense_fallback():
+    grid = np.linspace(4990.0, 5010.0, 4001)
+    calculator = SparseCoreDirect(_coupled_database(g=0.1), grid, line_coupling=True)
+    np.testing.assert_allclose(calculator._sparse_xsvector(250.0, 0.5, 0.01),
+                               calculator._full_xsvector(250.0, 0.5, 0.01), rtol=1e-6, atol=1e-30)
+
+
+def test_imaginary_faddeeva_derivative_is_analytic_and_continuous():
+    from tellurix.direct import _core_imag
+    from scipy.special import wofz
+
+    points = np.array([[0.3, 0.2], [2.0, 5.0], [10.4, 1.5], [10.6, 1.5], [3.0, 12.0]])
+    values = jax.vmap(lambda p: _core_imag(p[0], p[1]))(jnp.asarray(points))
+    np.testing.assert_allclose(values, wofz(points[:, 0] + 1j * points[:, 1]).imag, rtol=1e-5)
+    gradients = jax.vmap(jax.grad(lambda p: _core_imag(p[0], p[1])))(jnp.asarray(points))
+    step = 1e-6
+    for (x, a), gradient in zip(points, np.asarray(gradients)):
+        numerical = [(wofz(x + step + 1j * a) - wofz(x - step + 1j * a)).imag / (2 * step),
+                     (wofz(x + 1j * (a + step)) - wofz(x + 1j * (a - step))).imag / (2 * step)]
+        # ExoJAX's asymptotic branch (|z|^2 > 111) is good to ~1e-6, and the
+        # analytic derivative is built from it.
+        np.testing.assert_allclose(gradient, numerical, rtol=1e-4, atol=1e-6)

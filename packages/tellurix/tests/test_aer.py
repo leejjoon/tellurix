@@ -208,3 +208,44 @@ def test_both_padded_forms_of_the_molecule_field_are_read(identifier, tmp_path):
     path.write_text(identifier + record[2:] + "\n")
     database = AERLineDatabase(path, "CO", (4999.0, 5001.0), margin_cm1=0.0)
     np.testing.assert_allclose(np.asarray(database.nu_lines), [5000.0])
+
+
+def _flagged(nu, flag):
+    return _record(nu, 1.0e-22).ljust(98) + flag
+
+
+def test_coupling_coefficients_come_from_lncpl_lines(tmp_path):
+    """The per-molecule file has the -1 flag; lncpl_lines has the record after it."""
+
+    lines = tmp_path / "05_CO"
+    lines.write_text(_flagged(5000.0, "-1") + "\n" + _record(5001.0, 1.0e-22) + "\n")
+    coupling = tmp_path / "lncpl_lines"
+    record = " 5" + "".join(f"{y:13.6E}{g:11.4E}" for y, g in
+                            ((0.04, 0.0), (0.03, 0.001), (0.02, 0.002), (0.01, 0.003))) + "-1"
+    coupling.write_text(_flagged(5000.0, "-1") + "\n" + record + "\n")
+    database = AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0, line_coupling=coupling)
+
+    assert database.has_line_coupling
+    np.testing.assert_allclose(database.coupling_y[0], [0.04, 0.03, 0.02, 0.01])
+    np.testing.assert_array_equal(database.coupling_y[1], 0.0)
+    # 225 K lies between 200 and 250; 350 K extrapolates the 296-340 pair.
+    y, factor = database.coupling(225.0, 1.01325)
+    assert float(y[0]) == pytest.approx(0.035)
+    assert float(factor[0]) == pytest.approx(1.0005)
+    assert float(database.coupling(350.0, 0.506625)[0][0]) == pytest.approx(
+        (0.01 - 0.01 / 44.0 * 10.0) * 0.5)
+    assert database.restrict(np.array([True, False])).coupling_y.shape == (1, 4)
+    assert not AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0).has_line_coupling
+
+
+def test_a_coupled_line_without_its_record_or_with_another_form_is_refused(tmp_path):
+    lines = tmp_path / "05_CO"
+    lines.write_text(_flagged(5000.0, "-1") + "\n")
+    empty = tmp_path / "lncpl_lines"
+    empty.write_text("")
+    with pytest.raises(ValueError, match="no record"):
+        AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0, line_coupling=empty)
+    reduced = tmp_path / "lncpl_reduced"
+    reduced.write_text(_flagged(5000.0, "-3") + "\n")
+    with pytest.raises(ValueError, match="flag -1|flag -3"):
+        AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0, line_coupling=reduced)

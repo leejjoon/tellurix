@@ -34,6 +34,7 @@ class ExoJAXOpacityBackend:
         mixed_precision: bool = False,
         pressure_shift: bool = False,
         layer_chunk_size: int | None = None,
+        line_coupling: bool = False,
     ) -> "ExoJAXOpacityBackend":
         """Construct Direct, sparse-core Direct, or PreMODIT calculators.
 
@@ -59,12 +60,19 @@ class ExoJAXOpacityBackend:
         numerically compatible with ExoJAX 2.5 Direct.
         Supply the fixed profile's temperature range and maximum pressure to
         keep the pressure-shifted sparse core list as compact as possible.
+        ``line_coupling=True`` applies first-order line mixing in
+        ``direct_sparse`` calculators to every line its database carries
+        coupling coefficients for (``AERLineDatabase(line_coupling=...)``);
+        LBLRTM applies AER's to about half the CO2 lines near 2 um.
         """
 
         from exojax.opacity import OpaDirect, OpaPremodit
 
         calculators = {}
         for species, database in databases.items():
+            if line_coupling and (methods.get(species, methods.get(species.upper(), "direct"))
+                                  if isinstance(methods, Mapping) else methods) != "direct_sparse":
+                raise ValueError("line_coupling is implemented only in direct_sparse")
             method = (
                 methods.get(species, methods.get(species.upper(), "direct"))
                 if isinstance(methods, Mapping)
@@ -84,6 +92,7 @@ class ExoJAXOpacityBackend:
                     mixed_precision=mixed_precision,
                     pressure_shift=pressure_shift,
                     maximum_pressure_bar=maximum_pressure_bar,
+                    line_coupling=line_coupling,
                     **sparse_bounds,
                 )
             elif method == "premodit":

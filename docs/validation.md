@@ -60,8 +60,9 @@ layers (`LBLRTMRunConfig(user_layers=True)`), the fitted transmission agrees
 with LBLRTM to 0.05% median and 0.69% at the 99th percentile at R=45,000
 (`docs/lblrtm_identical_layers.json`). That meets the median threshold below
 (1e-3) and misses the 99th-percentile one (5e-3). That miss is CO2 line
-coupling, which LBLRTM applies and tellurix does not: with LBLRTM's coupling
-added, the fitted 99th percentile is 0.084%.
+coupling, which LBLRTM applies: with tellurix's own (`line_coupling=True`)
+the fitted agreement is 0.010% median and 0.039% at the 99th percentile, inside
+both thresholds.
 
 ## Layering
 

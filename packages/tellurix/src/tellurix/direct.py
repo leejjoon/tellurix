@@ -11,7 +11,7 @@ import numpy as np
 
 from exojax.opacity import OpaDirect
 from exojax.opacity.lpf.lpf import hjert, xsvector as lpf_xsvector
-from exojax.special.faddeeva import asymptotic_wofz
+from exojax.special.faddeeva import asymptotic_wofz, imwofz
 from exojax.database.core.broadening import doppler_sigma, gamma_hitran, gamma_natural
 from exojax.database.core.line_strength import line_strength
 from exojax.utils.constants import Tref_original
@@ -57,6 +57,60 @@ def _mixed_wing_jvp(primals, tangents):
     )
 
 
+def _wing_imag(x, a):
+    """Im w(x + ia) in the wing, for the line-coupling (dispersion) term.
+
+    No float32 variant: the term is Y*P times smaller than the line, so its
+    cost is not where mixed precision pays, and Im w has no cancellation."""
+    return jnp.imag(asymptotic_wofz(x, a))
+
+
+@jax.custom_jvp
+def _core_imag(x, a):
+    """Im w(x + ia) with the branch ExoJAX's hjert uses for the real part.
+
+    Both branches are evaluated under ``where``, so each gets coordinates that
+    are safe for it: the asymptotic series is singular at z = 0, which a core
+    pair can reach.
+    """
+    small = x * x + a * a < 111.0
+    series = imwofz(jnp.where(small, x, 0.0), a)
+    asymptotic = jnp.imag(asymptotic_wofz(jnp.where(small, 20.0, x), a))
+    return jnp.where(small, series, asymptotic)
+
+
+@_core_imag.defjvp
+def _core_imag_jvp(primals, tangents):
+    # Differentiating Algorithm 916's series directly stores every term, which
+    # under vmap over a dense (line, grid) fallback is tens of gigabytes. w is
+    # analytic with w'(z) = -2 z w(z) + 2i/sqrt(pi), and dz/da = i, so both
+    # partials follow from Re w and Im w alone -- as hjert's JVP does.
+    x, a = primals
+    dx, da = tangents
+    real, imag = hjert(x, a), _core_imag(x, a)
+    derivative_real = -2.0 * (x * real - a * imag)
+    derivative_imag = -2.0 * (x * imag + a * real) + 2.0 / jnp.sqrt(jnp.pi)
+    return imag, derivative_imag * dx + derivative_real * da
+
+
+# LBLRTM cuts the coupling term off where it cuts the line (oprop.f90, CONVF4):
+# at 25 cm-1, less the value that brings it to zero there. A Rosenkranz term
+# decays only as 1/x, and its tails cancel across a whole band (sum S*Y = 0),
+# not across a window's line list; AER's Y are made for this shape.
+_COUPLING_CUTOFF_CM1 = 25.0
+
+
+def _dispersion(imag, offset, gamma, scale):
+    """The coupling profile in Im w units, truncated as LBLRTM truncates it.
+
+    In the Lorentz limit Im w * scale/sqrt(pi) is offset / (pi (offset^2 +
+    gamma^2)); LBLRTM's pedestal is offset / (pi (gamma^2 + B^2)), which makes
+    the term vanish at |offset| = B.
+    """
+    pedestal = offset / (jnp.sqrt(jnp.pi) * scale * (gamma * gamma + _COUPLING_CUTOFF_CM1 ** 2))
+    return jnp.where(jnp.abs(offset) <= _COUPLING_CUTOFF_CM1, imag - pedestal, 0.0)
+
+
 class SparseCoreDirect(OpaDirect):
     """ExoJAX Direct with identical branch selection and a compact core list.
 
@@ -67,6 +121,16 @@ class SparseCoreDirect(OpaDirect):
     ``mixed_precision=True`` evaluates wing values and stable wing derivative
     coefficients in float32. Coordinates, line physics, cores, accumulation,
     and the returned cross sections retain the input precision.
+
+    ``line_coupling=True`` adds first-order (Rosenkranz) line mixing from the
+    database's coupling coefficients, as LBLRTM applies AER's: each line becomes
+    S (1 + G p^2) [Re w(z) + Y p Im w(z)] with p the pressure in atmospheres,
+    Y and G interpolated in temperature (``AERLineDatabase.coupling``). The
+    Im w term is cut at 25 cm-1 less a pedestal, as LBLRTM cuts it; the line
+    itself keeps its full Voigt shape. LBLRTM approximates the dispersion
+    profile as the Voigt line times its offset in Voigt widths, which is exact
+    in the Lorentz limit; Im w is exact everywhere. Off by default, so earlier
+    results reproduce.
     """
 
     def __init__(
@@ -78,6 +142,7 @@ class SparseCoreDirect(OpaDirect):
         mixed_precision=False,
         pressure_shift=False,
         maximum_pressure_bar=2.0,
+        line_coupling=False,
     ):
         if mdb.dbtype != "hitran":
             raise ValueError("SparseCoreDirect requires a HITRAN-style database")
@@ -89,12 +154,17 @@ class SparseCoreDirect(OpaDirect):
             raise ValueError("maximum pressure must be finite and positive")
         if pressure_shift and not hasattr(mdb, "delta_air"):
             raise ValueError("pressure_shift requires HITRAN delta_air coefficients")
+        if line_coupling and not hasattr(mdb, "coupling"):
+            raise ValueError("line_coupling requires a database with coupling coefficients")
         super().__init__(mdb, nu_grid)
         self.minimum_temperature_k = float(minimum_temperature_k)
         self.maximum_temperature_k = float(maximum_temperature_k)
         self.maximum_pressure_bar = float(maximum_pressure_bar)
         self.mixed_precision = bool(mixed_precision)
         self.pressure_shift = bool(pressure_shift)
+        # A database with no coupled line in range needs no dispersion term,
+        # and leaving it out keeps the kernel exactly what it was.
+        self.line_coupling = bool(line_coupling) and bool(mdb.has_line_coupling)
         self.delta_air = jnp.asarray(mdb.delta_air) if pressure_shift else None
         line_center = np.asarray(mdb.nu_lines, dtype=float)
         grid = np.asarray(nu_grid, dtype=float)
@@ -167,15 +237,33 @@ class SparseCoreDirect(OpaDirect):
                                  mdb.qr_interp(mdb.isotope, T, Tref_original), Tref_original)
         return sigma, gamma, strength
 
+    def _coupling(self, T, P, strength):
+        """Coupling coefficient Y*p per line, and the strength with G applied."""
+        mixing, factor = self.mdb.coupling(T, P)
+        return mixing, strength * factor
+
     def _full_xsvector(self, T, P, Pself):
         # Identical to OpaDirect.xsvector, which builds the same line
         # parameters, except that the offset matrix is rebuilt here rather
         # than held on the device for a branch that is almost never taken.
         sigma, gamma, strength = self._line_parameters(T, P, Pself)
-        return lpf_xsvector(self._dense_offsets(T, P), sigma, gamma, strength)
+        if not self.line_coupling:
+            return lpf_xsvector(self._dense_offsets(T, P), sigma, gamma, strength)
+        mixing, strength = self._coupling(T, P, strength)
+        scale = 1 / (jnp.sqrt(2.0) * sigma)
+        offsets = self._dense_offsets(T, P)
+        x = offsets * scale[:, None]
+        a = jnp.broadcast_to((scale * gamma)[:, None], x.shape)
+        real = jax.vmap(jax.vmap(hjert))(x, a)
+        imag = _dispersion(jax.vmap(jax.vmap(_core_imag))(x, a), offsets,
+                           gamma[:, None], scale[:, None])
+        weights = strength * scale / jnp.sqrt(jnp.pi)
+        return jnp.sum((real + mixing[:, None] * imag) * weights[:, None], axis=0)
 
     def _sparse_xsvector(self, T, P, Pself):
         sigma, gamma, strength = self._line_parameters(T, P, Pself)
+        if self.line_coupling:
+            mixing, strength = self._coupling(T, P, strength)
         scale = 1 / (jnp.sqrt(2.0) * sigma)
         a = scale * gamma
         weights = strength * scale / jnp.sqrt(jnp.pi)
@@ -194,11 +282,18 @@ class SparseCoreDirect(OpaDirect):
         x = jnp.where(wing_mask, offsets * scale[:, None], 20.0)
         wing_function = _mixed_wing if self.mixed_precision else _wing
         wings = jnp.where(wing_mask, wing_function(x, a[:, None]), 0.0)
+        if self.line_coupling:
+            dispersion = _dispersion(_wing_imag(x, a[:, None]), offsets, gamma[:, None], scale[:, None])
+            wings = wings + mixing[:, None] * jnp.where(wing_mask, dispersion, 0.0)
         spectrum = jnp.sum(wings * weights[:, None], axis=0)
 
         core_line, core_grid = self._core_line, self._core_grid
         core_offsets = grid[core_grid] - centers[core_line]
         if shift is not None:
             core_offsets = core_offsets - shift[core_line]
-        cores = jax.vmap(hjert)(core_offsets * scale[core_line], a[core_line])
+        core_x, core_a = core_offsets * scale[core_line], a[core_line]
+        cores = jax.vmap(hjert)(core_x, core_a)
+        if self.line_coupling:
+            cores = cores + mixing[core_line] * _dispersion(
+                jax.vmap(_core_imag)(core_x, core_a), core_offsets, gamma[core_line], scale[core_line])
         return spectrum.at[core_grid].add(cores * weights[core_line])

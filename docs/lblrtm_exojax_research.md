@@ -20,7 +20,7 @@ radiance and scattering mode supported by LBLRTM.
 | Atmosphere | Layer-oriented opacity and radiative-transfer helpers | Standard or explicit Earth profiles | Accept an explicit pressure, temperature, altitude, and VMR profile |
 | Direct telluric model | Single-slab official tutorial; `ArtAbsPure` also supports Earth transmission | Mature terrestrial slant paths | Sum layer optical depths and expose zenith angle explicitly |
 | Continuum | HITRAN CIA facilities | MT_CKD 4.3 | Import separately generated self/foreign reference terms and preserve their abundance scaling |
-| Line mixing | No documented LBLRTM-equivalent implementation | O2, CO2, and CH4 coupling | Quantify separately; add only where it matters in H/K |
+| Line mixing | No documented LBLRTM-equivalent implementation | O2, CO2, and CH4 coupling | First-order coupling from AER's records, opt-in (`line_coupling=True`); it is what is left at 2 um (`docs/lblrtm_corrected_mode.md`) |
 | Instrument | Gaussian FFT/overlap-add convolution and sampling | TelFit Gaussian resolution and resampling | Apply Gaussian LSF and pixel integration on padded order grids |
 | Inference | End-to-end JAX derivatives and probabilistic-programming compatibility | Selected analytic Jacobians | Use JAX gradients in bounded Gaussian MAP fitting |
 
@@ -42,6 +42,6 @@ some LBLRTM documentation.
 `AERLineDatabase` reads AER's per-molecule 100-character files directly into
 the interface required by ExoJAX `OpaDirect`. This makes the ordinary Voigt
 line comparison use identical AER centers, strengths, lower-state energies,
-and air/self broadening parameters. LBLRTM's separate coupling and
-speed-dependent files are deliberately excluded and remain measurable
-residual terms.
+and air/self broadening parameters. AER's first-order line coupling, kept in
+`lncpl_lines`, can be read alongside them (`line_coupling=`); the
+speed-dependent files, which LBLRTM does not use either, are excluded.
