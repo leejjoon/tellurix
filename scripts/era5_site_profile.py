@@ -13,7 +13,7 @@ This reads the real profile from ERA5 and writes the same CSV, with the same
 layer edges above the site, so a fit against the two differs in T(z) and q(z)
 and in nothing else.
 
-    uv run --with aiohttp python scripts/era5_site_profile.py \\
+    uv run python scripts/era5_site_profile.py \\
         --spec data/igrins/20181220_*/SDCH_*.spec.fits \\
         --output data/profiles/dct_2018_era5.csv
 
@@ -23,40 +23,26 @@ takes it directly. Only the first can supply a station pressure from a header;
 the other two anchor on ERA5's own geopotential, which is what
 ``station_pressure_from_era5`` exists for.
 
-    uv run --with aiohttp python scripts/era5_site_profile.py --epoch 1990 \\
+    uv run python scripts/era5_site_profile.py --epoch 1990 \\
         --fts .../telluric_near_ir/ftsspec_901218_5.txt \\
         --output data/profiles/kitt_peak_19901218_1800.csv
 
-Data comes from ARCO-ERA5 on Google Cloud, which is public and needs no
-credentials, unlike the Copernicus CDS API. One hourly timestep of one variable
-is a single global chunk of about 50 MB, so a profile costs three of those.
-
-**The grid cell's orography is not the observatory.** At 0.25 degrees the cell
-containing DCT has a surface elevation of 1844 m against the telescope's 2360 m,
-and Cerro Pachon and Mt Locke are worse. That does not matter here, because the
-column is anchored at the *station pressure from the frame's own header* and
-integrated upward: ERA5 supplies T and q as functions of pressure, which is a
-real atmospheric column regardless of where the model thinks the ground is. The
-levels ERA5 reports below the telescope are extrapolated and are discarded.
+Fetching and layering are ``tellurix.era5``, which says where the data comes
+from and why the grid cell's orography does not matter; this is its command
+line. The column is anchored at the *station pressure from the frame's own
+header* when there is one.
 """
 
 from __future__ import annotations
 
 import argparse
+import functools
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
 
-ARCO_ERA5 = ("https://storage.googleapis.com/gcp-public-data-arco-era5/ar/"
-             "full_37-1h-0p25deg-chunk-1.zarr-v3")
-EPOCH = datetime(1900, 1, 1, tzinfo=timezone.utc)
-_G0 = 9.80665
-_BOLTZMANN_ERG_K = 1.380649e-16
-_AVOGADRO = 6.02214076e23
-_DRY_MOLAR_MASS_G_MOL = 28.9647
-_WATER_MOLAR_MASS_G_MOL = 18.01528
-_EARTH_RADIUS_KM = 6371.0
+from tellurix.era5 import build_era5_profile, fetch_column, station_pressure_from_era5
 
 # Where each site actually is. ERA5 needs a latitude and longitude; the reader's
 # SITES table carries only the altitude, because that is all the header
@@ -83,123 +69,9 @@ def _named_sites():
     return {"Kitt Peak": (KITT_PEAK_LATITUDE_DEG, KITT_PEAK_LONGITUDE_DEG, KITT_PEAK_ALTITUDE_KM)}
 
 
-def _gravity(altitude_km):
-    return _G0 * (_EARTH_RADIUS_KM / (_EARTH_RADIUS_KM + altitude_km)) ** 2
-
-
-def specific_humidity_to_vmr(q):
-    """Moist-air volume mixing ratio from specific humidity.
-
-    q is a mass fraction of moist air; the profile stores number fractions.
-    """
-
-    q = np.clip(np.asarray(q, dtype=float), 0.0, 0.999)
-    ratio = (_DRY_MOLAR_MASS_G_MOL / _WATER_MOLAR_MASS_G_MOL) * q / (1.0 - q)
-    return ratio / (1.0 + ratio)
-
-
-def fetch_column(latitude, longitude, when):
-    """ERA5 temperature, specific humidity and geopotential height over a point."""
-
-    import fsspec
-    import zarr
-
-    store = zarr.open_consolidated(fsspec.get_mapper(ARCO_ERA5), mode="r")
-    latitudes = store["latitude"][:]
-    longitudes = store["longitude"][:]
-    index_lat = int(np.abs(latitudes - latitude).argmin())
-    index_lon = int(np.abs(longitudes - (longitude % 360.0)).argmin())
-    index_time = int((when - EPOCH).total_seconds() // 3600)
-    if not 0 <= index_time < store["time"].shape[0]:
-        raise SystemExit(f"{when:%Y-%m-%d %H:%M} is outside the ERA5 archive")
-    return {
-        "level_hpa": store["level"][:].astype(float),
-        "temperature_k": store["temperature"][index_time, :, index_lat, index_lon].astype(float),
-        "specific_humidity": store["specific_humidity"][index_time, :, index_lat, index_lon].astype(float),
-        "height_m": store["geopotential"][index_time, :, index_lat, index_lon].astype(float) / _G0,
-        "grid": (float(latitudes[index_lat]), float(longitudes[index_lon])),
-        "grid_surface_m": float(store["geopotential_at_surface"][index_time, index_lat, index_lon]) / _G0,
-        "time": when,
-    }
-
-
-def station_pressure_from_era5(column, site_altitude_km):
-    """The pressure at the telescope, read off ERA5's own geopotential.
-
-    The header's BARPRESS is the better number when it exists, but every Gemini
-    South frame from 2020 on drops it -- 31% of the archive -- and without an
-    anchor no profile can be built at all. Interpolating ERA5's height-pressure
-    relation to the site altitude supplies one. Checked against the three nights
-    that do carry the card, it agrees to 0.4-1.7 hPa, or 0.2%.
-    """
-
-    order = np.argsort(column["height_m"])
-    height = column["height_m"][order]
-    pressure = column["level_hpa"][order]
-    site_m = site_altitude_km * 1000.0
-    if not height[0] <= site_m <= height[-1]:
-        raise SystemExit(f"the site at {site_m:.0f} m is outside ERA5's height range")
-    return float(np.exp(np.interp(site_m, height, np.log(pressure))))
-
-
-def build_profile(column, surface_pressure_hpa, site_altitude_km, dry_vmr, edges_km):
-    """Layers above the site, with ERA5's temperature and water."""
-
-    edges = np.asarray(edges_km, dtype=float)
-    site_m = site_altitude_km * 1000.0
-    above = column["height_m"] > site_m
-    if above.sum() < 8:
-        raise SystemExit("ERA5 reports too few levels above the site")
-    # ERA5 runs top-down; sort by height so interpolation is monotonic.
-    order = np.argsort(column["height_m"])
-    height_km = (column["height_m"][order] - site_m) / 1000.0
-    temperature_profile = column["temperature_k"][order]
-    water_profile = specific_humidity_to_vmr(column["specific_humidity"][order])
-
-    fine = np.linspace(0.0, edges[-1], 40001)
-    fine_temperature = np.interp(fine, height_km, temperature_profile)
-    gravity_cm_s2 = _gravity(site_altitude_km + fine) * 100.0
-    scale = _DRY_MOLAR_MASS_G_MOL * gravity_cm_s2 / (_AVOGADRO * _BOLTZMANN_ERG_K)
-    integrand = scale / fine_temperature
-    log_pressure = np.log(surface_pressure_hpa) - np.concatenate(
-        [[0.0], np.cumsum(np.diff(fine) * 1.0e5 * 0.5 * (integrand[1:] + integrand[:-1]))]
-    )
-    edge_pressure_hpa = np.exp(np.interp(edges, fine, log_pressure))
-
-    center = 0.5 * (edges[:-1] + edges[1:])
-    temperature = np.interp(center, height_km, temperature_profile)
-    # Interpolate water in the log, which is how it varies, and never below the
-    # stratospheric value ERA5 itself reports at the top.
-    water_vmr = np.exp(np.interp(center, height_km, np.log(np.maximum(water_profile, 1.0e-12))))
-    thickness_cm = np.diff(edges) * 1.0e5
-    center_pressure_hpa = np.exp(np.interp(center, fine, log_pressure))
-    number_density = center_pressure_hpa * 1000.0 / (_BOLTZMANN_ERG_K * temperature)
-
-    vmr = {"H2O": water_vmr}
-    for species, dry in dry_vmr.items():
-        vmr[species] = dry * (1.0 - water_vmr)
-
-    water_column = float(np.sum(water_vmr * number_density * thickness_cm))
-    precipitable_water_mm = water_column * _WATER_MOLAR_MASS_G_MOL / _AVOGADRO * 10.0
-
-    order_out = np.argsort(center)[::-1]
-    return {
-        "pressure_top_bar": edge_pressure_hpa[1:][order_out] / 1000.0,
-        "pressure_bottom_bar": edge_pressure_hpa[:-1][order_out] / 1000.0,
-        "temperature_k": temperature[order_out],
-        "altitude_km": (site_altitude_km + center)[order_out],
-        "mean_molecular_weight_g_mol": np.full(len(order_out), _DRY_MOLAR_MASS_G_MOL),
-        "gravity_m_s2": _gravity(site_altitude_km + center)[order_out],
-        **{name: values[order_out] for name, values in vmr.items()},
-        "_precipitable_water_mm": precipitable_water_mm,
-        "_lapse_k_km": float((temperature_profile[np.argmin(np.abs(height_km - 0.1))]
-                              - temperature_profile[np.argmin(np.abs(height_km - 3.0))]) / 2.9),
-    }
-
-
 def main() -> None:
     from tellurix.site_profile import (
-        AFGL_MODELS, DEFAULT_EDGES_KM, EPOCH_DRY_VMR, afgl_dry_vmr, write_profile_csv,
+        AFGL_MODELS, DEFAULT_EDGES_KM, EPOCH_DRY_VMR, LAYERINGS, afgl_dry_vmr, write_profile_csv,
     )
 
     parser = argparse.ArgumentParser(description=__doc__,
@@ -223,6 +95,9 @@ def main() -> None:
                              "41 molecules come from the climatology, because a species-scan "
                              "can only rank what the profile knows about and a stratospheric "
                              "gas cannot be described by one surface number.")
+    parser.add_argument("--layering", choices=LAYERINGS, default="weighted",
+                        help="weighted: LBLRTM's air-weighted layer averages; centre: "
+                             "sample each layer's centre, as profiles before 2026-10 were")
     parser.add_argument("--anchor", choices=("header", "era5", "auto"), default="auto",
                         help="where the station pressure comes from. 'auto' prefers the "
                              "header and falls back to ERA5, which is what every Gemini "
@@ -305,14 +180,12 @@ def main() -> None:
           f"its orography {column['grid_surface_m']:.0f} m against the telescope's "
           f"{altitude*1000:.0f} m")
 
-    if args.afgl_model is None:
-        dry_vmr = EPOCH_DRY_VMR[args.epoch]
-    else:
-        edges = np.asarray(DEFAULT_EDGES_KM, dtype=float)
-        centres = altitude + 0.5 * (edges[:-1] + edges[1:])
-        dry_vmr = afgl_dry_vmr(args.afgl_model, centres, args.epoch)
-    profile = build_profile(column, surface_pressure, altitude,
-                            dry_vmr, DEFAULT_EDGES_KM)
+    # A function of altitude, so build_era5_profile can sample the AFGL gases at the
+    # layer centres or average them across each layer, as --layering asks.
+    dry_vmr = (EPOCH_DRY_VMR[args.epoch] if args.afgl_model is None
+               else functools.partial(afgl_dry_vmr, args.afgl_model, epoch=args.epoch))
+    profile = build_era5_profile(column, surface_pressure, altitude,
+                            dry_vmr, DEFAULT_EDGES_KM, layering=args.layering)
     water = profile.pop("_precipitable_water_mm")
     lapse = profile.pop("_lapse_k_km")
     print(f"  ERA5 gives {water:.2f} mm of precipitable water and a {lapse:.2f} K/km "
@@ -325,6 +198,8 @@ def main() -> None:
         f"ARCO-ERA5 37-level.",
         f"anchored at {surface_pressure:.1f} hPa / {altitude:.3f} km from {source}; "
         f"{water:.2f} mm vertical water.",
+        f"{args.layering} layers."
+        + (" pressure_bar is each layer's air-weighted mean pressure." if args.layering == "weighted" else ""),
         "VMR columns are moist-air volume mixing ratios, dimensionless.",
     ])
     print(f"wrote {args.output} with {rows} layers")

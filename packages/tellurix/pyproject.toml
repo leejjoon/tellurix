@@ -20,6 +20,8 @@ dependencies = [
 
 [project.optional-dependencies]
 gpu = ["jax[cuda12]>=0.5,<0.7"]
+# Fetching ERA5 columns from ARCO-ERA5 (tellurix.era5.fetch_column).
+era5 = ["aiohttp>=3.9,<4", "fsspec>=2024.2", "requests>=2.31,<3", "zarr>=2.18,<3"]
 
 [project.scripts]
 tellurix-download-data = "tellurix.download:main"

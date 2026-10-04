@@ -7,7 +7,8 @@ name = "tellurix-workspace"
 version = "0.2.0"
 requires-python = ">=3.10,<3.11"
 dependencies = [
-  "tellurix",
+  # era5: the profile scripts fetch ERA5 columns.
+  "tellurix[era5]",
   "tellurix-fts",
   "tellurix-igrins",
 ]
