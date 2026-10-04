@@ -55,7 +55,12 @@ remains future work.
 foreign continua. Its reference 99th-percentile error is 0.0569 versus 0.0581
 for pressure-shifted lines alone. That gap is mostly a difference in the
 atmosphere the two codes were given, not in their physics; see "What the
-5000--5020 cm-1 gap is" in `docs/lblrtm_corrected_mode.md`.
+5000--5020 cm-1 gap is" in `docs/lblrtm_corrected_mode.md`. Given identical
+layers (`LBLRTMRunConfig(user_layers=True)`), the fitted transmission agrees
+with LBLRTM to 0.05% median and 0.69% at the 99th percentile at R=45,000
+(`docs/lblrtm_identical_layers.json`). That meets the median threshold below
+(1e-3) and misses the 99th-percentile one (5e-3); of the line residuals, CO2's
+is ten times H2O's.
 
 ## Layering
 

@@ -167,9 +167,9 @@ model = TelluricModel(
 the profile-calibrated line residuals and fixed background. In the tested
 order, MT_CKD alone changed the 99th-percentile LBLRTM error from 0.0581 to
 0.0569. That gap is mostly not line physics: the comparison gave LBLRTM 12%
-less water than tellurix (see [the corrected-mode guide](docs/lblrtm_corrected_mode.md)),
-and with the column scales fitted, as any fit does, the two agree to 0.15%
-median and 1.2% at the 99th percentile at R=45,000.
+less water than tellurix (see [the corrected-mode guide](docs/lblrtm_corrected_mode.md)).
+Given identical layers, with the column scales fitted as any fit does, the two
+agree to 0.05% median and 0.69% at the 99th percentile at R=45,000.
 
 Generate a template with `scripts/build_lblrtm_correction.py`. In the tested
 5000--5020 cm-1 order, the correction reduced the 99th-percentile absolute

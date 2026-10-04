@@ -108,6 +108,7 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/validate_aer_co.py           # writ
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_mt_ckd.py           # writes packages/tellurix/tests/data/native_mt_ckd_validation.json
 UV_CACHE_DIR=.uv-cache uv run python scripts/validate_mixed_precision.py [--resume]
 UV_CACHE_DIR=.uv-cache uv run python scripts/attribute_lblrtm_gap.py      # reads run_corrections -> docs/lblrtm_gap_attribution.json
+UV_CACHE_DIR=.uv-cache uv run python scripts/compare_lblrtm_layers.py     # LBLRTM given tellurix's layers -> docs/lblrtm_identical_layers.json
 UV_CACHE_DIR=.uv-cache uv run python scripts/compare_layering.py          # ERA5 + AER lines, ~20 min GPU -> docs/layering_comparison.json
 ```
 

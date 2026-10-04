@@ -97,8 +97,27 @@ built it:
   remainder still includes the two codes' different vertical distribution of
   water, so it is an upper bound on the physics difference.
 
-A comparison that hands LBLRTM tellurix's own layers -- user-supplied layer
-amounts, no auto-layering -- would isolate the physics; it has not been run.
+### With identical layers
+
+`scripts/compare_lblrtm_layers.py` hands LBLRTM tellurix's own layers as
+IATM=0 layer input (`LBLRTMRunConfig(user_layers=True)`): each layer's
+pressure, temperature and molecular columns, with the air-weighted mean
+pressure for both codes. LBLRTM's TAPE6 echoes the columns exactly. What is left
+is physics (`docs/lblrtm_identical_layers.json`), over 5000--5020 cm-1 at
+R=45,000 against LBLRTM with its continua:
+
+| | median | 99th percentile | max |
+|---|---:|---:|---:|
+| tellurix lines + MT_CKD, nothing fitted | 0.37% | 1.15% | 1.19% |
+| H2O, CO2 scales and a linear continuum fitted | 0.05% | 0.69% | 0.76% |
+
+The fitted scales are 1.001 for H2O and 1.000 for CO2: with the same
+atmosphere, nothing is left for a column to absorb. Per species, tellurix's
+integrated H2O line optical depth is 0.6% above LBLRTM's (residual RMS 0.0013,
+down from 0.093 with LBLRTM's own layering), CO2's 1.5% above (RMS 0.013).
+CO2 is now the larger line residual. The rest is continuum: LBLRTM's
+continua average an optical depth of 0.0066 here, MT_CKD's water part 0.0028;
+the remainder is smooth, and the fitted continuum absorbs it.
 
 All terms are vertical optical depths. The normal model airmass calculation
 therefore scales them with zenith angle. Templates are valid only for their

@@ -1,8 +1,10 @@
+import dataclasses
 from pathlib import Path
 import hashlib
 import json
 
 import numpy as np
+import pytest
 
 from tellurix import (
     LBLRTMRunConfig,
@@ -197,3 +199,25 @@ def test_tape5_supplies_the_layer_boundaries_instead_of_letting_lblrtm_invent_th
     # The level block must still follow, undisturbed by the extra records.
     assert int(lines[header][:5]) == expected
     assert lines[-1] == "%"
+
+
+def test_user_layers_hand_lblrtm_the_columns_tellurix_integrates(tmp_path):
+    """IATM=0: one layer record per model layer, from the observer up."""
+
+    source = load_atmosphere_csv(DATA / "profiles/example_midlatitude.csv")
+    profile = dataclasses.replace(source, mean_pressure_bar=source.continuum_pressure_bar)
+    output = tmp_path / "TAPE5"
+    write_tape5(output, profile, LBLRTMRunConfig(5000.0, 5100.0, 60.0, user_layers=True))
+    lines = output.read_text().splitlines()
+
+    assert lines[1][45:50] == "    0"  # IATM
+    assert int(lines[4][2:5]) == 6 and float(lines[4][10:20]) == pytest.approx(2.0)
+    layers = lines[5:17]
+    pressure_hpa = [float(record[:15]) for record in layers[0::2]]
+    np.testing.assert_allclose(pressure_hpa, profile.pressure_layer_bar[::-1] * 1000.0)
+    amounts = np.array([[float(r[i:i + 15]) for i in range(0, 120, 15)] for r in layers[1::2]])
+    air = profile.air_column_cm2[::-1]
+    np.testing.assert_allclose(amounts[:, 0], air * profile.vmr["H2O"][::-1], rtol=1e-7)
+    np.testing.assert_allclose(amounts[:, 6], air * profile.vmr["O2"][::-1], rtol=1e-7)
+    # Broadening air is what is left after every listed molecule.
+    np.testing.assert_allclose(amounts.sum(axis=1), air, rtol=1e-7)

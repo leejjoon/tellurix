@@ -68,6 +68,14 @@ class LBLRTMRunConfig:
     zenith_angle_deg: float = 0.0
     continuum_flag: int = 1
     description: str = "tellurix reference atmosphere"
+    # Pass the profile's own layers -- pressure, temperature and molecular
+    # column of each, as LBLRTM's IATM=0 layer input -- instead of levels for
+    # LBLRTM's path calculation. Levels make LBLRTM rebuild each layer by
+    # interpolating between them, which in the 5000-5020 cm-1 template gave it
+    # 13.8% less water than tellurix had (docs/lblrtm_corrected_mode.md); layers
+    # make the two codes integrate the same atmosphere, so a difference between
+    # them is the physics.
+    user_layers: bool = False
 
     def __post_init__(self) -> None:
         if not 0.0 < self.wavenumber_min_cm1 < self.wavenumber_max_cm1:
@@ -98,6 +106,9 @@ def write_tape5(
     nlayers = len(profile.temperature_k)
     if nlayers < 1:
         raise ValueError("LBLRTM user profiles need at least one layer")
+    if config.user_layers:
+        _write_layer_tape5(path, profile, config)
+        return
 
     # LBLRTM expects user profile levels from the observer upward.
     altitude = _hydrostatic_altitude_edges(profile)[::-1]
@@ -174,6 +185,64 @@ def write_tape5(
         for start in range(0, len(abundances), _ABUNDANCE_PER_LINE):
             lines.append("".join(f"{value:15.8E}"
                                  for value in abundances[start : start + _ABUNDANCE_PER_LINE]))
+    lines.extend((f"{-1.0:4.1f}", f"{-1.0:4.1f}", "%"))
+    Path(path).write_text("\n".join(lines) + "\n", encoding="ascii")
+
+
+def _write_layer_tape5(path, profile: AtmosphereProfile, config: LBLRTMRunConfig) -> None:
+    """TAPE5 with IATM=0: records 2.1-2.1.3, one layer each, from the observer up.
+
+    Each layer gets ``profile.pressure_layer_bar`` -- the pressure tellurix
+    evaluates its lines at -- its temperature, and the columns tellurix
+    integrates, ``air_column_cm2 * vmr``. LBLRTM takes one pressure per layer for
+    lines and continua alike, so a profile whose continua should agree too must
+    carry ``mean_pressure_bar``.
+    """
+
+    altitude = _hydrostatic_altitude_edges(profile)[::-1]
+    pressure_edges_hpa = np.asarray(profile.pressure_edges_bar)[::-1] * 1000.0
+    # Edge temperatures enter only LBLRTM's Planck function, not transmission.
+    temperature_edges = _layer_values_at_edges(profile.temperature_k)[::-1]
+    pressure_hpa = np.asarray(profile.pressure_layer_bar)[::-1] * 1000.0
+    temperature = np.asarray(profile.temperature_k)[::-1]
+    air = np.asarray(profile.air_column_cm2)[::-1]
+    present = [_LBLRTM_SPECIES.index(name) for name in profile.vmr]
+    nmol = max(7, max(present) + 1)
+    columns = np.zeros((len(air), nmol))
+    for name, values in profile.vmr.items():
+        columns[:, _LBLRTM_SPECIES.index(name)] = air * np.asarray(values)[::-1]
+    # WBROAD is every molecule of air not given a profile of its own.
+    broadening = air - columns.sum(axis=1)
+    secant = 1.0 / np.cos(np.deg2rad(config.zenith_angle_deg))
+
+    lines = [f"${config.description[:79]}"]
+    flags = (1, 1, config.continuum_flag, 0, 1, 0, 0, 0, 0, 0)
+    lines.append("".join(f"{value:5d}" for value in flags) + f"{0:5d}{0:5d}{0:5d}{0:5d}{0:5d}{0:5d}")
+    lines.append(
+        f"{config.wavenumber_min_cm1:10.3f}{config.wavenumber_max_cm1:10.3f}"
+        f"{4.0:10.3f}{0.0:10.3f}{0.04:10.3f}{36.0:10.3f}{-1.0:10.3f}{-1.0:10.3f}"
+        f"{0:5d}{0.0:15.3f}{0:5d}"
+    )
+    lines.append(
+        f"{float(temperature_edges[0]):10.3f}{1.0:10.3f}{0.0:10.3f}{0.0:10.3f}"
+        f"{0.0:10.3f}{0.0:10.3f}{0.0:10.3f}    s"
+    )
+    # Record 2.1: IFORM=1 (E15.7 amounts), NLAYRS, NMOL, SECNTO > 0 looking up.
+    lines.append(f" {1:1d}{len(air):3d}{nmol:5d}{secant:10.6f}{'':20s}"
+                 f"{altitude[0]:8.3f}{'':4s}{altitude[-1]:8.3f}{'':5s}{config.zenith_angle_deg:8.3f}")
+    for layer in range(len(air)):
+        # Record 2.1.1 in its IFORM=1 layout.
+        lines.append(
+            f"{pressure_hpa[layer]:15.7E}{temperature[layer]:10.4f}{0.0:10.4f}{'':3s}{0:2d}"
+            f" {altitude[layer]:7.2f}{pressure_edges_hpa[layer]:8.3f}{temperature_edges[layer]:7.2f}"
+            f"{altitude[layer + 1]:7.2f}{pressure_edges_hpa[layer + 1]:8.3f}"
+            f"{temperature_edges[layer + 1]:7.2f}"
+        )
+        # Records 2.1.2 and 2.1.3: molecules 1-7 and WBROAD, then 8 onward.
+        lines.append("".join(f"{value:15.7E}" for value in columns[layer, :7])
+                     + f"{broadening[layer]:15.7E}")
+        for start in range(7, nmol, 8):
+            lines.append("".join(f"{value:15.7E}" for value in columns[layer, start:start + 8]))
     lines.extend((f"{-1.0:4.1f}", f"{-1.0:4.1f}", "%"))
     Path(path).write_text("\n".join(lines) + "\n", encoding="ascii")
 
