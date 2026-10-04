@@ -1024,9 +1024,15 @@ standards, refitted in the CO2 orders with `fit_igrins_standard.py
 
 Coupling is worth 14% at the 2.0 um band centre, a little in the orders beside
 it, and costs 1-3% at the two band edges -- the edge orders' signs are
-consistent across all ten frames, so that is a real mismatch, not noise; whether
-it is tellurix's coupling term running 15% stronger than LBLRTM's at 2 um is not
-known. In H, where CO2 peaks near optical depth 2, it changes nothing at this
+consistent across all ten frames, so that is a real mismatch, not noise. **It is
+not the implementation**: over K86 and K92 themselves, with identical layers,
+tellurix's coupling term matches LBLRTM's to an RMS of 0.00014 against terms of
+0.004 and 0.002, and the fitted transmission agrees to 0.032% (K86) and 0.055%
+(K92, with the 25 cm-1 cutoff) at the 99th percentile; K89 agrees to 0.15%
+(`docs/lblrtm_identical_layers_k_orders.json`). LBLRTM would lose the same at the
+band edges, so the loss is in AER's coupling coefficients or in first-order
+coupling itself. The cost is small: the fit stages take the same time, and
+refreezing the opacity for the products adds 3% to an H run and 8% to a K run. In H, where CO2 peaks near optical depth 2, it changes nothing at this
 night's S/N. **It is not the CO2 per-night systematic**: the fitted CO2 columns
 and their airmass slopes move by at most 0.0016 in every order but H124, whose
 CO2 scale sits near 3.6 in both runs and is not a measurement. Coupling stays
