@@ -192,14 +192,16 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/results_archive.py fetch
 UV_CACHE_DIR=.uv-cache uv run python scripts/results_archive.py check
 ```
 
-The `results-2026-10-03` release is archived on Zenodo as
+The manifest pins `results-2026-10-05`, whose solar records include O2's
+collision-induced continuum (`docs/solar_fit_plan.md`, "Done 2026-10-05"). It has
+no Zenodo copy yet, so `fetch` downloads from the GitHub release only.
+
+The previous release, `results-2026-10-03`, is archived on Zenodo as
 [10.5281/zenodo.23121557](https://doi.org/10.5281/zenodo.23121557) (all
 versions: [10.5281/zenodo.23121556](https://doi.org/10.5281/zenodo.23121556)).
-The record holds both the repository at the release's tag -- the code and the
-manifest -- and the results archive itself, `tellurix-results-2026-10-03.tar.gz`,
-identical to the release asset (sha256 `d60d0790...48ef`, as the manifest pins
-it). Cite the DOI. `fetch` downloads from the GitHub release and falls back to
-the Zenodo copy if the release cannot be reached.
+That record holds both the repository at the release's tag -- the code and the
+manifest -- and its results archive, `tellurix-results-2026-10-03.tar.gz`
+(sha256 `d60d0790...48ef`). Cite the DOI for that version.
 
 ## Observational data, and how to cite it
 

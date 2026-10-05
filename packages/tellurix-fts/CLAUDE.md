@@ -97,9 +97,9 @@ UT times reproduces every header to 0.02 -- which is how `_3`, whose header prin
 `--o2-cia`, validated to 0.13%, §4o). It barely moves columns -- the fitted Chebyshev
 had been absorbing it; at 1.27 um, its strongest band, O2 moves by up to 8% but inside
 its error -- but without it the corrected spectra keep its dimming, up to 9.3% at 1.27
-um in photatl. **Every solar run was regenerated with it on 2026-10-05**, under
-`*_o2cia` names beside the old products (`docs/solar_fit_plan.md`, "Done 2026-10-05");
-promoting them over the old names is not yet done. "Open work" there lists the rest.
+um in photatl. **Every solar run and product was regenerated with it on 2026-10-05**
+and promoted to the usual paths (`docs/solar_fit_plan.md`, "Done 2026-10-05"; the old
+ones are in `data/corrected/superseded_pre_o2cia/`). "Open work" there lists the rest.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

@@ -1475,9 +1475,14 @@ Review pages republished to their URLs with the new bundles (Kitt Peak, niratl, 
 `export_solar_review.py` now passes `o2_cia` to its rebuild, which matters only for a
 fit saved without its species split.
 
-**Not done: promotion.** The new products sit under `*_o2cia` names. Making them the
-products -- renaming over the old ones, a new `results-<date>` archive, and the
-sibling project's handoff note -- is left for a decision.
+**Promoted the same day.** The new records are at the canonical paths (`solar/*.h5`,
+`solar/niratl/`), every product was re-exported from there under its usual name (so
+each names its real source record), and the review bundles took the usual
+directories. The superseded records, products and bundles are in
+`data/corrected/superseded_pre_o2cia/` (gitignored, not in the archive; the
+`results-2026-10-03` archive still holds the old records), the shard intermediates in
+`solar/o2cia_shards/`. The results archive is `results-2026-10-05`, and the sibling
+project's `docs/solar_telluric_handoff.md` carries the new numbers.
 
 ### Also open
 
