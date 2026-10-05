@@ -149,6 +149,15 @@ def main() -> None:
         path for directory in args.directory for path in directory.glob("*_summary.json"))
     if not summaries:
         raise SystemExit(f"no summaries in {', '.join(str(d) for d in args.directory)}")
+    # A refit that writes one summary per frame does not remove the shards an
+    # earlier sharded run left beside it, and every K run refitted for the
+    # zenith-angle fix still has them: reading both counts each order twice,
+    # half of it at the defective angle. The whole-frame summary supersedes.
+    shard = re.compile(r"\.s\d+_summary\.json$")
+    whole = {p.parent / p.name.removesuffix("_summary.json")
+             for p in summaries if not shard.search(p.name)}
+    summaries = [p for p in summaries
+                 if not (shard.search(p.name) and p.parent / shard.sub("", p.name) in whole)]
 
     # One exposure can arrive as several files: H and K are simultaneous
     # readouts of the same pointing, and sharding one band across devices by
