@@ -92,6 +92,8 @@ def settings_for(row, spectrum_path: Path, args, blob) -> WindowSettings:
         # was 2.3 s of every 6.6 s window.
         precompute_opacity=False, self_broadening="linear", layer_chunk_size=0,
         line_coupling=bool(blob.get("physics", {}).get("line_coupling", False)),
+        # A run without the key predates the O2 continuum and had none.
+        o2_cia=bool(blob.get("physics", {}).get("o2_cia", False)),
     )
 
 

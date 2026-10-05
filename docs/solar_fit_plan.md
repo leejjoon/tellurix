@@ -1430,39 +1430,54 @@ without the key had none). `export_transmission_hdf5.py` rebuilds accordingly.
 
 ## Open work (as of 2026-10-02)
 
-### TODO: regenerate every solar product with the O2 collision-induced continuum
+### Done 2026-10-05: every solar product regenerated with the O2 collision-induced continuum
 
-Every record and export written so far predates `--o2-cia` (§4o). Their columns and
-residuals stand -- the continuum moves neither by more than 0.4% -- but their
-**corrected spectra and transmissions still carry O2's collision-induced dimming**, up to
-6.7% at air mass 5.4 in the A-band and 5.6% at 1.07 um. Regenerate with the flag on, as
-whole runs rather than patched windows, so each record keeps one physics
-(`physics.o2_cia`). New output names, so the current records stay until the new ones are
-checked.
+Every run was refitted whole with `--o2-cia` (§4o) -- its original command (§4h, §4k,
+§4l, the records' `config`) plus the flag -- so each record keeps one physics
+(`physics.o2_cia`). Two GPUs, shards `I/2`, one summary per shard, merged and then
+rerun unsharded with `--resume`, which skips every window and writes one record from
+the saved fits. Species scans are keyed without the continuum, so all came from the
+cache. Wall time 4 h: niratl 31 min, file 5 48, file 4 49, `_3` 55, `_2` 56.
 
-| run | bands it touches | rough cost on 4 GPUs |
+| run | record | products |
 |---|---|---|
-| `ftsspec_901218_{4,5}` (and photatl, through file 5) | 1.27 um, 7536-8500 cm-1 | ~1 h fit + ~45 min export |
-| `niratl` | 1.06 um, A-band | ~25 min + ~15 min |
-| `ftsspec_830626_{2,3}` | 1.06 um, A-band, visible O2-O2 above 15140 cm-1 | ~2 h + ~1 h |
+| niratl | `solar/niratl_o2cia/niratl.h5` | `niratl_o2cia_corrected.h5`, `niratl_o2cia_transmission.h5` |
+| file 5 (photatl) | `solar/o2cia/ftsspec_901218_5.h5` | `photatl_o2cia_corrected.h5` (patch pages reused: no continuum there), `ftsspec_901218_5_o2cia_transmission.h5` |
+| file 4 | `solar/o2cia/ftsspec_901218_4.h5` | `ftsspec_901218_4_o2cia_transmission.h5` |
+| `_3`, `_2` | `solar/o2cia/ftsspec_830626_{3,2}.h5` | `ftsspec_830626_{3,2}_o2cia_transmission.h5` |
 
-Each is its original command (§4h, §4k, §4l and the run records' `config`) plus
-`--o2-cia`, e.g. for niratl:
+The old records and products are untouched beside them. Every round trip is exact
+(transmission `--check` 0 in all five; corrected spectra 3.5e-16 and 2.8e-16; photatl's
+0.223 sigma, as before). The same windows fitted in every run, the same seven `_2`
+failures past MT_CKD's table, no window newly at a column bound.
 
-    UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \
-        --spectrum .../nso/niratl --airmass 1.10 --fwhm-cm1 0.01859 \
-        --profile data/profiles/kitt_peak_19830626_era5_afgl.csv --o2-cia \
-        --shard I/4 --output-dir data/corrected/solar/niratl_o2cia ...
+**The corrected spectra change only where the continuum is.** New over old: exactly 1
+outside the continuum bands (median 1.00000, extremes 0.9988-1.0013 from refit noise);
+inside them up to +3.1% (1.06 um) and +2.5% (A-band) in niratl at air mass 1.1, and
+**up to +9.3% at 1.27 um in photatl** at 2.0 -- the 1.27 um band is the strongest term,
+larger than the 6.7% quoted for the A-band.
 
-then, per run: merge the shard summaries and write one record (as for niratl, §4k);
-`export_transmission_hdf5.py --check`; the corrected-spectrum export
-(`export_atlas_corrected.py` for niratl, `export_photatl_from_ftsspec.py --patch ...`
-for photatl, after file 5); `annotate_quality_flags.py` is not needed, the export writes
-the flag. Then the review bundles (`export_solar_review.py` + `merge_review_bundle.py`)
-and republish the three review pages to their URLs (Kitt Peak `13ajxPMQNfJxeZWgwTi6Lu`,
-niratl `1Gxrn927Fb9U6F1G37w8m4`, June 1983 `YZyzbzP2niCQovCh9yYcfs`). Check before
-promoting: columns within 0.4% of the current records, corrected spectra differing from
-them by exactly 1/T of the O2 continuum (§4o measured both), every round trip exact.
+**The columns move by more than the 0.4% this section expected, and by less than
+their errors.** The 0.4% was measured on A-band O2 windows; it does not hold at 1.27
+um, where the continuum is strong and the O2 lines share it: file 5's O2 moves -4.4%
+and -8.5% (sigma 6% and 10%), file 4's -30% at 7666 (sigma 56%), water and CH4 1-5%
+in the same band. Outside every continuum band a handful of columns moved by several
+percent with identical residuals (CO2 -10% at 3226, sigma 96%; N2O and NO2 off their
+lower bound at sigma ~5): ill-conditioned windows landing elsewhere on a flat
+objective. Every change is inside its formal sigma.
+
+**One small cost.** The A-band term fits the band's red edge slightly worse than the
+Chebyshev it replaces: 13150 cm-1 residual +2% in `_3` and +3.2% in `_2`, while 10780
+(1.06 um) improves 3%. Not chased.
+
+Review pages republished to their URLs with the new bundles (Kitt Peak, niratl, June
+1983); marks are kept, as they live in each page's store keyed by window.
+`export_solar_review.py` now passes `o2_cia` to its rebuild, which matters only for a
+fit saved without its species split.
+
+**Not done: promotion.** The new products sit under `*_o2cia` names. Making them the
+products -- renaming over the old ones, a new `results-<date>` archive, and the
+sibling project's handoff note -- is left for a decision.
 
 ### Also open
 

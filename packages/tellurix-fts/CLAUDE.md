@@ -94,11 +94,12 @@ UT times reproduces every header to 0.02 -- which is how `_3`, whose header prin
 (§4n): the line physics agree to 2-3%, and the fits still ask for ~5% more A-band and
 ~9% more B-band absorption -- so niratl's A-band air mass of 1.10 is uncertain, 1.05-1.12.
 **O2's collision-induced continuum is ported from LBLRTM** (`tellurix.o2_cia`,
-`--o2-cia`, validated to 0.13%, §4o). It does not move columns -- the fitted Chebyshev
-had been absorbing it -- but without it the corrected spectra keep its dimming, up to
-6.7% at air mass 5.4 in the A-band. **Every solar product still predates it:**
-regenerating them with `--o2-cia` is the first item in `docs/solar_fit_plan.md`
-"Open work", which also lists what else is open.
+`--o2-cia`, validated to 0.13%, §4o). It barely moves columns -- the fitted Chebyshev
+had been absorbing it; at 1.27 um, its strongest band, O2 moves by up to 8% but inside
+its error -- but without it the corrected spectra keep its dimming, up to 9.3% at 1.27
+um in photatl. **Every solar run was regenerated with it on 2026-10-05**, under
+`*_o2cia` names beside the old products (`docs/solar_fit_plan.md`, "Done 2026-10-05");
+promoting them over the old names is not yet done. "Open work" there lists the rest.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error
