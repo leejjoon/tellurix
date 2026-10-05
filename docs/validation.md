@@ -157,9 +157,15 @@ measuring before investing in more physics.
 
 - Speed-dependent line shapes (HITRAN2020 has parameters for CO2 and H2O); their
   signature is a W-shaped residual in line cores at the 1% level.
-- HITRAN2020 against AER 3.9 intensities -- the unexplained O2 excess in the
-  solar fits, ~5% in the A-band and ~9% in the B-band
-  (`docs/solar_fit_plan.md`, §4n), is the first case.
+- HITRAN2020 against AER 3.9 intensities. The first case, the solar O2 excess
+  (~5% A-band, ~9% B-band), is **answered and was not the line list**
+  (`docs/solar_fit_plan.md`, §4n, 2026-10-05): HITRAN's O2 parameters change the
+  absorption by under 1%, the lab puts AER's B-band 2.4% too strong, and two
+  independent atlases (IAG 2014, Kitt Peak 1989) give the lab's B/A ratio where the
+  1983 file pair does not. The lesson for the scorecard: a physics question is only
+  settled by observations once a second, independent spectrum agrees -- one
+  spectrum's excess can belong to that spectrum. A ratio that cancels air mass
+  (B/A of weak-line scales) let atlases with unknown or averaged air mass serve.
 - CO2 line mixing beyond first order, given the band-edge behaviour above.
 - The continuum LBLRTM carries at 2 um beyond MT_CKD's water part: mean optical
   depth 0.0066 against 0.0028 at 5000-5020 cm-1, the difference not identified.

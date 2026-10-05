@@ -90,9 +90,14 @@ file 5's; in flux units the fit is as good. The 1983 raw pair
 `ftsspec_830626_{2,3}` (8516-20735 cm-1, to 482 nm) is fitted too (§4l). Header air
 masses are **Kasten & Young 1989** at the Sun's position -- recomputing them from the
 UT times reproduces every header to 0.02 -- which is how `_3`, whose header prints
-`?.??`, gets 3.53 -> 2.64 (pass `--airmass 3.085`). Its O2 columns show an excess that LBLRTM on the same lines does not explain
-(§4n): the line physics agree to 2-3%, and the fits still ask for ~5% more A-band and
-~9% more B-band absorption -- so niratl's A-band air mass of 1.10 is uncertain, 1.05-1.12.
+`?.??`, gets 3.53 -> 2.64 (pass `--airmass 3.085`). **Its B-band O2 columns are ~5%
+high relative to its A-band, and that belongs to this file pair** (§4n, closed
+2026-10-05): not the line list (AER's B-band is 2.4% *above* the lab CRDS intensities),
+not widths or line shape (weak and saturated lines want the same excess), not the
+temperature profile, water, zero level or fitted line-spread width; the IAG atlas and
+Kitt Peak 1989 (`scripts/fit_atlas_o2.py`) both give the lab's weak-line B/A ratio. Do
+not quote that pair's B-band columns. niratl's air mass, from the A-band, is 1.10 to
+the ~2-3% the A-band line physics allow.
 **O2's collision-induced continuum is ported from LBLRTM** (`tellurix.o2_cia`,
 `--o2-cia`, validated to 0.13%, §4o). It barely moves columns -- the fitted Chebyshev
 had been absorbing it; at 1.27 um, its strongest band, O2 moves by up to 8% but inside
@@ -118,6 +123,36 @@ here.
 Their status document cites our export under a stale name
 (`arcturus_transmission_full.h5`); the file is `arcturus_transmission.h5` and
 comes from the promoted full-coverage record.
+
+## Rerunning a whole solar run
+
+How the 2026-10-05 regeneration was done; reuse it for any physics change.
+
+- **The command is the record's own**: its `config` and `physics`, plus the change.
+  Air masses the header lacks are passed (`_3` 3.085, file 4 4.73, niratl 1.10), the
+  1983 pair takes `--v1 8530 --v2 20740` and `_3` `--scan-fwhm-cm1 0.04167`. Species
+  scans are keyed on window, profile and scan settings, not on the fit physics, so a
+  physics change reuses all of `data/scans/`; check a profile's sha256 has not
+  changed first, or every scan reruns (~6 min a window).
+- **Shards**: `--shard I/N` with a per-shard `--summary` and `--record`, one GPU each
+  (`CUDA_VISIBLE_DEVICES`). Then `scripts/merge_fts_shards.py`, and the same command
+  without `--shard` (on CPU is fine): `--resume` skips every window and writes one
+  record. Two GPUs took 4 h for all five runs. Ask which GPUs are free -- the user
+  shares the machine.
+- **Check before promoting**: `scripts/compare_fts_runs.py old new --sigma`. Expect a
+  few columns to move by percents with identical residuals in ill-conditioned windows;
+  judge them against `sigma`.
+- **Exports are CPU-bound** (a model rebuilt per window): a 1990 file's
+  `export_transmission_hdf5.py` takes ~80 min on GPU or CPU alike. Run it on a GPU
+  only if no fit worker holds that GPU -- a worker preallocates 75% and the export ran
+  out of memory beside one. Exports record their source record's path, so export
+  *after* moving the record to its final place.
+- **Promote** by moving the old records, products and review bundles to
+  `data/corrected/superseded_pre_<change>/` (gitignored, never packed) and the new ones
+  to the canonical paths; then `results_archive.py check` should list exactly the
+  replaced records, `pack --release results-<date>`, commit the manifest, push, and
+  `gh release create` with the archive. `git push` over SSH fails inside these
+  sessions (no agent); push over HTTPS with `gh auth git-credential` as the helper.
 
 ## The Arcturus record and its products
 

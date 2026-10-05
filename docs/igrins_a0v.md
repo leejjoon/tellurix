@@ -1055,7 +1055,8 @@ off by default; turn it on for fits that lean on the 2.0 um CO2 band centre.
   night, which is impossible. Something per-night moves them and it is not the
   slant path. That is now the most interesting open question here. McDonald's
   high-airmass K frames, which a per-frame water scale cannot correct, are the
-  place to look first.
+  place to look first. Tracked as GitHub issue #1, with what is already ruled out
+  (CO2 line coupling among it: it moves the columns and slopes by at most 0.0016).
 - **Build and ship the master pattern.** The four nights above show it would
   capture 74-88% of each night's response and works across telescopes, so it is
   now a matter of measuring it from enough nights and storing it, not of

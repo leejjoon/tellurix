@@ -14,10 +14,18 @@ capability. The URLs are in the user's memory, not here.
 | `igrins.html` -- A0V standards, DCT 2018-12-20 | `export_igrins_review.py --shard I/N`, then `--merge` | `data/review_igrins/` |
 | `igrins_targets.html` -- science corrections, same night | `export_igrins_target_review.py` (numpy only, 30 s) | `data/review_igrins_targets/` |
 
-Publish with the Artifact tool, mapping `manifest.json` and every `*.wasm` in the
+Publish with the Artifact tool, mapping `manifest.json` and every chunk in the
 bundle through `files` (`contentType: application/wasm` -- binary chunks are
-`.wasm` because that is a type the host serves) and declaring `capabilities:
-{db: {}}` on the first publish. A bundle stays under the 64 MB a publish may
+published as `.wasm` because that is a type the host serves; the solar bundles
+write them as `chunk_NNN.bin`, so map `chunk_NNN.wasm` from `chunk_NNN.bin`) and
+declaring `capabilities: {db: {}}` on the first publish. Republishing from a new
+conversation: read the page and list its files (`scope: "files"`) first, or the
+publish is refused; check the chunk count matches, since files left out are kept.
+The marks survive a republish -- they live in the page's `db`, keyed by window.
+The solar bundles: `export_solar_review.py --summary ... --npz-dir <the run's output
+directory>` into a raw directory, then `merge_review_bundle.py <raw> --output <pub>`;
+Kitt Peak is `data/review` (raw `data/review_0`), niratl and June 1983 are
+`data/review_{niratl,1983}_pub`. A bundle stays under the 64 MB a publish may
 carry: 36 MB for the A0V page, 33 MB for the targets page.
 
 What the exporters check, and the traps that shaped them:

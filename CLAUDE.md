@@ -87,7 +87,9 @@ it covers.
   `export_atlas_*`, `export_photatl_*`, `export_spectra_hdf5`,
   `export_transmission_hdf5`, `scan_*`, `generate_payne_zero_{arcturus,solar}`,
   `build_arcturus_notebook` and `docs/arcturus_walkthrough.ipynb`, the sibling
-  project and the solar products it is asking for.
+  project and the solar products it is asking for, rerunning and promoting a solar
+  run (`merge_fts_shards`, `compare_fts_runs`), and the O2 checks (`compare_o2_*`,
+  `o2_*`, `fit_atlas_o2` for the IAG and Wallace 2011 flux atlases).
 - `packages/tellurix-igrins/CLAUDE.md` -- IGRINS: `*igrins*`,
   `download_rrisa_standard`, `era5_site_profile`, `generate_payne_zero_{a0v,star}`,
   the night calibrations under `data/calibration/`.

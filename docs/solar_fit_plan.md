@@ -574,9 +574,9 @@ Ordered by what each needs beyond Phases 1-3.
 | 3 | **`photatl`** | 1850-9000, 258 pages | page reader | fit `total`; per-page intensity scale absorbed by the continuum |
 | 4 | `niratl` | 8900-13600, 188 pages | source to 735 nm; mask the -1.0 fill | ships an observed column already at air mass 1.0; O2 A-band |
 | 5 | `ftsspec_830626_{2,3}` | 8516-20735 cm⁻¹ | visible source | `_2` is air mass 6.66 -> 4.08; `_3`'s header reads `?.??` |
-| 6 | IAG `spnir`, `spvis` | 1000-2300, 405-1065 nm | **re-download**; `vsini_kms ~ 1.9` | not on disk -- only `PROVENANCE.md` survives. Disc-integrated flux, so the source mode is correct. `spnir` has tellurics, ships no telluric column, and is what the sibling project's H band actually needs; its wavelength scale is anchored on telluric O2, which this work would make circular unless the fit is judged on other species |
+| 6 | IAG `spnir`, `spvis` | 1000-2300, 405-1065 nm | `vsini_kms ~ 1.9` | `spvis` re-downloaded 2026-10-05 to `data/databases/iag/` (gitignored, from CDS); its O2 windows fitted by `fit_atlas_o2.py iag` (§4n) -- a nine-day co-add, so no single air mass. Disc-integrated flux, so the source mode is correct. `spnir` has tellurics, ships no telluric column, and is what the sibling project's H band actually needs; its wavelength scale is anchored on telluric O2, which this work would make circular unless the fit is judged on other species |
 | 7 | `telluric_mid_ir` spec1-10 | TBD | header inspection | telluric-dominated; likely the best pure validation target, with 11 per-molecule line lists to check against |
-| 8 | `fluxatl`, `wallace2011_flux` | 296-1300 nm, 2958-9250 A | air -> vacuum; `vsini_kms ~ 1.9`; blue r-grid | disc-integrated, so Payne Zero's Eddington flux is the right quantity here. `fluxatl`'s pseudo-continuum is subjective and its scale is distorted by 10-100 m/s (Reiners+2016) |
+| 8 | `fluxatl`, `wallace2011_flux` | 296-1300 nm, 2958-9250 A | air -> vacuum; `vsini_kms ~ 1.9`; blue r-grid | disc-integrated, so Payne Zero's Eddington flux is the right quantity here. `fluxatl`'s pseudo-continuum is subjective and its scale is distorted by 10-100 m/s (Reiners+2016). `wallace2011_flux` regions 1-2 are single 1989/10/13 spectra (#8 at air mass 1.5, #7 at 1.4, to one decimal); their observed-flux column (the fourth; vacuum wavenumbers) is read by `fit_atlas_o2.py wallace2011` for the O2 windows (§4n) |
 | 9 | `spot1atl` | 1970-8640 cm⁻¹ | `--stellar flat` | Payne Zero floors at 4000 K; an umbra is ~3800 K and molecule-dominated. Or reuse a transmission fitted at matched air mass |
 
 Each writes an HDF5 record through `write_record` with `key_fields` chosen per
@@ -1486,8 +1486,8 @@ project's `docs/solar_telluric_handoff.md` carries the new numbers.
 
 ### Also open
 
-- **The O2 excess is unexplained** (§4n): ~5% A-band, ~9% B-band above what the line
-  physics predict. Ruled out: O2 collision-induced absorption, line coupling, AER's
+- **The O2 excess: closed 2026-10-05, cause inside the 1983 pair not identified** (§4n):
+  ~5% A-band, ~9% B-band above what the line physics predict. Ruled out: O2 collision-induced absorption, line coupling, AER's
   intensities and widths against HITRAN's (<1%), a temperature-profile error, water,
   line width and shape.
   The B-band part scales with the O2 column and is the same in weak and saturated lines,
@@ -1500,10 +1500,12 @@ project's `docs/solar_telluric_handoff.md` carries the new numbers.
   wavenumber-dependent zero, the disc-centre solar source). Kitt Peak 1989 (Wallace
   et al. 2011) gives the lab's ratio too, so it is this file pair, not the instrument.
   For use: B-band O2 columns from `ftsspec_830626_{2,3}` are ~5% high relative to
-  their A-band; their corrected spectra fit the data and are unaffected.
-  niratl's air mass stays at 1.05-1.12 until this is settled.
-- **`lsf_sigma_kms` at a bound** in 78 of 222 windows of file 5, 105 of 215 of file 4,
-  37 of 307 of `_2`. Not examined. The sibling project's W4.1 result -- telluric lines
+  their A-band; their corrected spectra fit the data and are unaffected. niratl's air
+  mass comes from the A-band, which behaves, so it is 1.10 to the ~2-3% the A-band line
+  physics allow. Going further needs the raw interferograms or observing logs.
+- **`lsf_sigma_kms` at a bound** in 81 of 224 windows of file 5, 112 of 223 of file 4,
+  36 of 307 of `_2` (2026-10-05 records). Not examined; tracked as GitHub issue #3.
+  Pinning it at the bound moved the 1983 A- and B-band O2 columns by under 0.4%. The sibling project's W4.1 result -- telluric lines
   constrain an ILS where stellar lines cannot -- is the lever not yet tried.
 - **The upper-bound flag (§4m) on the Arcturus export**: the rule should hold there and
   has not been checked.
@@ -1511,17 +1513,23 @@ project's `docs/solar_telluric_handoff.md` carries the new numbers.
   Zero's Eddington flux standing in for disc-centre intensity. It caps the species cut,
   causes the column railing, and limits every product. Needs a design discussion --
   a disc-centre intensity source, or an empirical solar template across files.
+  Tracked as GitHub issue #2. A data point: the IAG flux atlas, fitted with the right
+  (flux) quantity, still left ~1% rms in its O2 windows, so the mismatch may not be the
+  whole floor.
 - **Atlases not started**: `fluxatl` (disc-integrated, so the one atlas where Payne Zero's
   quantity is right -- a measure of how much of the floor is the flux/intensity mismatch;
   needs an air-wavelength, uneven-grid reader), `spot1atl` (waits on the solar model),
-  IAG (re-download first). `telluric_mid_ir` is not a target (§"What the atlases' own
+  IAG beyond its O2 windows (VIS setting re-downloaded 2026-10-05 into the gitignored
+  `data/databases/iag/`, from CDS J/A+A/587/A65; `fit_atlas_o2.py` reads it). `telluric_mid_ir` is not a target (§"What the atlases' own
   documentation says" in `solar_atlases.md`).
 - **The sibling project's handoff note**, `differentiable_stellar_spectroscopy/
-  docs/solar_telluric_handoff.md`, is written and deliberately uncommitted there. It
-  will need the regenerated products' numbers once the TODO above is done.
+  docs/solar_telluric_handoff.md`, carries the regenerated numbers (2026-10-05) and is
+  still deliberately uncommitted there.
 - **Untracked experiment directories** under `data/corrected/solar/` (`*_pilot`,
   `photatl_x1985`, `photatl_nooffset`, `niratl_cut2e-3`, `cia_test_*`): their numbers are
-  in §4j-§4o; delete when no longer wanted.
+  in §4j-§4o; delete when no longer wanted. Likewise `data/corrected/superseded_pre_o2cia/`
+  (the records, products and review bundles before the O2 continuum; the
+  `results-2026-10-03` archive still holds those records) and `solar/o2cia_shards/`.
 
 ## One decision left before writing code
 
