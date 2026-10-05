@@ -1338,6 +1338,29 @@ line files with and without AER's line coupling, recipe in the script's docstrin
   curve of growth demands, and shows as saturated cores below zero. They are: -0.4% to
   -1.1% of the continuum in the B-band, -0.1% to -0.3% in the A-band. That is worth
   ~0.5-1% of O2 scale in the B-band, not 4.5%.
+- **An independent atlas agrees with the lab, and the 1983 files do not**
+  (`scripts/fit_iag_o2.py`, then `o2_curve_of_growth.py`). The IAG solar flux atlas
+  (Reiners et al. 2016; Göttingen FTS, 2014) co-adds nine days, so its absolute column
+  is an air-mass average and means nothing; but a weak line's depth is linear in the
+  column, so the B/A ratio of weak-line scales survives the averaging, and it needs no
+  air mass, width or zero level. Same line list, code and estimator, lines of depth
+  0.1-0.3:
+
+  | | A | B | B/A |
+  |---|---|---|---|
+  | IAG 2014 | 1.770 +- 0.013 | 1.735 +- 0.010 | **0.980 +- 0.009** |
+  | `ftsspec_830626_2` | 1.021 +- 0.007 | 1.045 +- 0.008 | **1.024 +- 0.011** |
+  | `ftsspec_830626_3` | 1.024 +- 0.009 | 1.052 +- 0.006 | **1.027 +- 0.011** |
+
+  The lab predicts 0.969 (CRDS B-band 2.4% below AER, HITRAN2020's ABSCO A-band 0.8%
+  above it). IAG sits 1 sigma from it; both 1983 files sit 5% and ~5 sigma above. The
+  B-band excess belongs to these Kitt Peak spectra. Two things differ besides the
+  instrument and should be kept in mind: IAG is a flux atlas, fitted with the right
+  solar quantity, while the 1983 files are disc centre fitted with Payne Zero's flux;
+  and the IAG fit uses a sinc at the optics-limited 0.0145 cm-1 (the grid cannot go
+  finer than Payne Zero's sampling). A solar-model error would not scale with air mass,
+  and the 1983 excess does (1.051 at X 5.37, 1.057 at X 3.09), so the first is unlikely
+  to be the cause.
 - **niratl's air mass is 1.05-1.12, not pinned.** Its 1.10 came from the A-band at
   zenith 0; correcting for the line physics alone gives ~1.12, and if the A-band excess
   above is in the line intensities it is nearer 1.05.
@@ -1420,8 +1443,11 @@ them by exactly 1/T of the O2 continuum (§4o measured both), every round trip e
   The B-band part scales with the O2 column and is the same in weak and saturated lines,
   so it is a strength, not a width or line shape -- yet the lab (CRDS, in HITRAN since
   2016) puts AER's B-band 2.4% too *strong*, and TCCON retrieved 1.005 with it. The
-  excess is in these spectra or this analysis; a zero-level offset explains <1%. Open:
-  what scales every B-band depth by ~1.07 relative to the lab and A-band by ~1.03.
+  excess is in these spectra or this analysis; a zero-level offset explains <1%. The IAG
+  atlas gives the lab's B/A ratio (0.980 +- 0.009 against 0.969) where the 1983 files
+  give 1.024-1.027: the excess is in the 1983 Kitt Peak spectra. Open: what in them
+  deepens B-band lines by ~5% relative to the A-band (detector nonlinearity, a
+  wavenumber-dependent zero, the disc-centre solar source).
   niratl's air mass stays at 1.05-1.12 until this is settled.
 - **`lsf_sigma_kms` at a bound** in 78 of 222 windows of file 5, 105 of 215 of file 4,
   37 of 307 of `_2`. Not examined. The sibling project's W4.1 result -- telluric lines

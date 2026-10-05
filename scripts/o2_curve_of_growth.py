@@ -31,7 +31,12 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "docs/o2_curve_of_growth.json"
-FILES = ("ftsspec_830626_2", "ftsspec_830626_3")
+# Run name -> its summary. The IAG atlas (scripts/fit_iag_o2.py) is the independent
+# check: a different FTS, site and decade, and an air-mass average, so only its
+# B/A ratio of weak-line scales is comparable.
+FILES = {"ftsspec_830626_2": "ftsspec_830626_2_summary.json",
+         "ftsspec_830626_3": "ftsspec_830626_3_summary.json",
+         "iag_vis": "iag_o2/iag_vis_o2_summary.json"}
 BANDS = {"A": (12960.0, 13160.0), "B": (14370.0, 14540.0)}
 MIN_DEPTH = 0.02
 BLEND = 0.03
@@ -61,7 +66,7 @@ def segments(t_o2):
 def main():
     lines, windows = [], []
     for name in FILES:
-        blob = json.load(open(ROOT / f"data/corrected/solar/{name}_summary.json"))
+        blob = json.load(open(ROOT / "data/corrected/solar" / FILES[name]))
         for row in blob["results"]:
             band = next((b for b, (lo, hi) in BANDS.items() if lo <= row["v1"] <= hi), None)
             if band is None or "O2" not in row.get("species", []) or not row.get("parameters"):
