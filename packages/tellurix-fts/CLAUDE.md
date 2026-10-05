@@ -105,6 +105,12 @@ its error -- but without it the corrected spectra keep its dimming, up to 9.3% a
 um in photatl. **Every solar run and product was regenerated with it on 2026-10-05**
 and promoted to the usual paths (`docs/solar_fit_plan.md`, "Done 2026-10-05"; the old
 ones are in `data/corrected/superseded_pre_o2cia/`). "Open work" there lists the rest.
+**The ~1% residual floor is mostly Payne Zero's, not the flux/intensity mismatch**
+(§4p, `docs/solar_floor_split.json`): fitting niratl's pages in the Wallace 2011 and
+IAG flux atlases (`scripts/fit_solar_floor.py`, readers in `tellurix_fts.flux_atlas`)
+leaves 3.2% in solar lines against niratl's 3.8%, so the mismatch is 28% of the variance;
+the rest is shared at r = 0.996 by the two flux atlases. Wallace's interferograms give
+R 577,000 and 441,000 (regions 1, 2), not the paper's 676,000 and 698,000.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

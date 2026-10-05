@@ -1428,6 +1428,82 @@ so does the corrected spectrum, by 1.1-6.7% at air mass 5.37 in the A-band and 5
 the records written before it, and each record states which (`physics.o2_cia`; a record
 without the key had none). `export_transmission_hdf5.py` rebuilds accordingly.
 
+### 4p. The residual floor: under a third is the flux/intensity mismatch, the rest is Payne Zero's
+
+Every solar run stops at ~1% rms, ~4% inside solar lines, and the suspect was the source
+standing in for the wrong quantity (Phase 1: Payne Zero returns Eddington flux; niratl,
+photatl and the raw files are disc centre). GitHub issue #2. Measured like for like
+(`scripts/fit_solar_floor.py`, `scripts/solar_floor_report.py`,
+`docs/solar_floor_split.json`): niratl's 106 pages in 10800-13500 cm-1 fitted three
+times with the same source, settings and species, changing only the spectrum:
+
+- **niratl**: disc centre, the McMath FTS, air mass 1.10. Refitted rather than read from
+  its record (the refit reproduces the record's model to 6.5e-11) because the batch skips
+  the 19 pages with no telluric absorption, the ones that see the solar model alone.
+- **Wallace 2011 region 1**: disc-integrated flux, *the same instrument and site*,
+  one spectrum (1989/10/13 #8) at air mass 1.5. The pair that isolates the quantity.
+- **IAG**: disc-integrated flux, Göttingen 2014. A second instrument, for whether what
+  remains is Kitt Peak's.
+
+Disc centre at vsini 0, flux at 1.9 km/s, macroturbulence 1.5 for both, `--o2-cia`. The
+floor is measured only where the atmosphere leaves the pixel alone (effective
+transmission > 0.995), in continuum units, with the pixel noise removed in quadrature;
+"line" pixels are where the fitted solar model is >5% deep (62 windows have 100 such
+pixels in both niratl and Wallace).
+
+| line pixels, pooled | niratl (disc centre) | Wallace (flux) | IAG (flux) |
+|---|---|---|---|
+| floor, net of noise | **3.77%** | **3.19%** | 3.26% (60 windows; Wallace 3.19% on the same) |
+| per window, median (p16-p84) | 3.51% (2.2-5.8) | 2.77% (1.7-4.8) | 2.73% (1.4-5.5) |
+| continuum pixels, median | 0.49% | 0.46% | 0.42% |
+| whole window, median rms | 1.28% | 1.13% | 1.20% |
+
+- **The flux/intensity mismatch is 28% of the line floor's variance** (2.0% of 3.8% in
+  quadrature; per window median 34%, p16-p84 15-60%), about 15% of its rms. No trend
+  across 10800-13500 (28-57% per 600 cm-1 band). Fitting the right quantity takes a
+  window's rms from 1.28% to 1.13%: the floor stays.
+- **The remainder is Payne Zero's, not an instrument's.** Put on one solar frame (the
+  shift that aligns the two fitted solar models), Wallace's and IAG's residuals in solar
+  lines correlate at **0.996** (median over 57 windows; p16 0.990), with scale 0.98 and
+  0.18% left unshared -- two FTSs, two sites, 25 years apart, the same 3.2% residual. That
+  is the source's line list and atmosphere disagreeing with the Sun, and it would be
+  there in any spectrum.
+- **The mismatch amplifies that pattern more than it adds a new one.** niratl's residual
+  correlates with Wallace's at 0.958 (p16 0.84), and is a 1.14x copy of it (p16-p84
+  1.02-1.29) with 1.0% left over. Disc centre exaggerates the same per-line errors.
+- **"Lines ~12% too deep" does not hold here.** Observed solar depth regressed on the
+  model's over the line pixels gives 1.006 for niratl and 0.988 for Wallace (medians;
+  p16-p84 0.90-1.08 and 0.89-1.03): no uniform depth error in either quantity at 0.75-0.93
+  um. A per-line error of either sign is what the floor is.
+- **Not a width.** The fitted Gaussian (`lsf_sigma_kms`) is free in every fit and, in a
+  window the atmosphere leaves alone, acts only on the solar lines, so a broadening
+  mismatch is already fitted away: flux settles at 0.89 km/s, niratl at 0.63 (medians).
+  The floor is what remains after it.
+
+**What this says about the options**, which are the user's to choose:
+
+| option | what it costs | what the measurement says it gains |
+|---|---|---|
+| a disc-centre intensity source (Payne Zero has no mu option, so another synthesis code, or adding one) | a synthesis path outside this repository, per band | at most the 28%: line floor 3.8% -> 3.2%, window rms ~1.3% -> ~1.1% |
+| an empirical solar template from a flux atlas (IAG, telluric-corrected) as the source | a corrected-atlas pass; air vs vacuum, its own velocity and ILS | in a flux spectrum the line floor would fall to the 0.18% the two flux atlases do not share; in a disc-centre one to the ~1.0% niratl does not share with Wallace once scaled |
+| an empirical disc-centre template across Kitt Peak files (same Sun, different air masses) | a joint fit across files with overlapping coverage, or iterating corrected spectra; solar and telluric must be separable by air mass | both parts, down towards the noise -- what Wallace et al. did by hand, which leaves gaps where the sky is opaque |
+| correct Payne Zero's line parameters against a flux atlas (astrophysical gf, the sibling project's business) | a per-line fit in the sibling project | the 72% shared by every spectrum, for every atlas at once; the mismatch part stays |
+
+The order in which these pay is the reverse of the order in which the floor was blamed:
+the larger part is the solar model in any mode, and a template or corrected line
+parameters address it where an intensity source does not.
+
+Caveats: one band (0.74-0.93 um), where niratl's noise is 1-2e-4 and the floor is 100x
+it; the IR, where the floor first appeared (6000 cm-1, §"What limits the solar FTS fit"),
+has no flux atlas on disk and is not measured. IAG is fitted at zenith 0 with an air-mass
+average, which matters only through which pixels count as clean.
+
+**Wallace's resolving power, measured.** The interferograms give MOPD 26.6 cm
+(0.0227 cm-1, R 577,000 at 13050) for region 1 and 18.4 cm (0.0328 cm-1, R 441,000) for
+region 2, not the 676,000 and 698,000 of the paper's Table 1 (`flux_atlas.py`). §4n's
+Wallace O2 fit used the table's 0.0193 and 0.0207 cm-1; its weak-line B/A ratio was not
+refitted at the measured widths.
+
 ## Open work (as of 2026-10-02)
 
 ### Done 2026-10-05: every solar product regenerated with the O2 collision-induced continuum
@@ -1509,13 +1585,12 @@ project's `docs/solar_telluric_handoff.md` carries the new numbers.
   constrain an ILS where stellar lines cannot -- is the lever not yet tried.
 - **The upper-bound flag (§4m) on the Arcturus export**: the rule should hold there and
   has not been checked.
-- **The solar-model floor**: every run stops at ~1% (4-5% in solar lines), from Payne
-  Zero's Eddington flux standing in for disc-centre intensity. It caps the species cut,
-  causes the column railing, and limits every product. Needs a design discussion --
-  a disc-centre intensity source, or an empirical solar template across files.
-  Tracked as GitHub issue #2. A data point: the IAG flux atlas, fitted with the right
-  (flux) quantity, still left ~1% rms in its O2 windows, so the mismatch may not be the
-  whole floor.
+- **The solar-model floor**: every run stops at ~1% (~4% in solar lines). Measured
+  2026-10-05 (§4p, GitHub issue #2): the flux/intensity mismatch is 28% of the line
+  floor's variance; the other 72% is Payne Zero's own line errors, shared at r = 0.996 by
+  two flux atlases from different instruments. It caps the species cut, causes the column
+  railing, and limits every product. The options and what each would gain are in §4p's
+  table -- a decision for the user, not taken. Measured at 0.74-0.93 um only.
 - **Atlases not started**: `fluxatl` (disc-integrated, so the one atlas where Payne Zero's
   quantity is right -- a measure of how much of the floor is the flux/intensity mismatch;
   needs an air-wavelength, uneven-grid reader), `spot1atl` (waits on the solar model),
