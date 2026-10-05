@@ -31,12 +31,14 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "docs/o2_curve_of_growth.json"
-# Run name -> its summary. The IAG atlas (scripts/fit_iag_o2.py) is the independent
-# check: a different FTS, site and decade, and an air-mass average, so only its
-# B/A ratio of weak-line scales is comparable.
+# Run name -> its summary. The flux atlases (scripts/fit_atlas_o2.py) are the
+# checks: IAG is a different FTS, site and decade, and an air-mass average, so
+# only its B/A ratio of weak-line scales is comparable; Wallace 2011 is the 1983
+# instrument in 1989, at air masses given to one decimal.
 FILES = {"ftsspec_830626_2": "ftsspec_830626_2_summary.json",
          "ftsspec_830626_3": "ftsspec_830626_3_summary.json",
-         "iag_vis": "iag_o2/iag_vis_o2_summary.json"}
+         "iag_vis": "iag_o2/iag_vis_o2_summary.json",
+         "wallace2011": "wallace2011_o2/wallace2011_o2_summary.json"}
 BANDS = {"a1Delta": (9300.0, 9440.0), "A": (12960.0, 13160.0), "B": (14370.0, 14540.0), "gamma": (15720.0, 15920.0)}
 MIN_DEPTH = 0.02
 BLEND = 0.03

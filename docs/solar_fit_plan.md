@@ -1339,7 +1339,7 @@ line files with and without AER's line coupling, recipe in the script's docstrin
   -1.1% of the continuum in the B-band, -0.1% to -0.3% in the A-band. That is worth
   ~0.5-1% of O2 scale in the B-band, not 4.5%.
 - **An independent atlas agrees with the lab, and the 1983 files do not**
-  (`scripts/fit_iag_o2.py`, then `o2_curve_of_growth.py`). The IAG solar flux atlas
+  (`scripts/fit_atlas_o2.py iag`, then `o2_curve_of_growth.py`). The IAG solar flux atlas
   (Reiners et al. 2016; Göttingen FTS, 2014) co-adds nine days, so its absolute column
   is an air-mass average and means nothing; but a weak line's depth is linear in the
   column, so the B/A ratio of weak-line scales survives the averaging, and it needs no
@@ -1378,6 +1378,19 @@ line files with and without AER's line coupling, recipe in the script's docstrin
   B-band O2 scale of both files moves by under 0.4% (file 2 under 0.1%). The sinc
   itself is measured from each spectrum (`docs/solar_fts_ils.json`: MOPD 14.48 cm,
   spread 0.03 over 122 windows, in file 2; 14.71 in file 3).
+- **The 1983 instrument in 1989 agrees with the lab, too** (`scripts/fit_atlas_o2.py
+  wallace2011`). Kitt Peak flux atlas #2 (Wallace et al. 2011) takes its A- and B-band
+  regions from single McMath integrated-sun spectra, 1989/10/13 #8 at air mass 1.5
+  and #7 at 1.4; their observed-flux column is fitted (the corrected one borrowed its
+  transmission from the 1983-06-26 pair). Weak-line B/A **0.976 +- 0.013**, plus
+  +-0.026 from air masses given to one decimal -- on the lab's 0.969 and IAG's 0.980,
+  about 1.5 sigma from the 1983 pair on its own. Window by window the B-band runs
+  0.99-1.03 at its stated air mass, against 1.03-1.07 in 1983. So the excess is not
+  the McMath FTS in general but the 1983-06-26 spectra: one day, one configuration
+  (the pair shares it, and the excess with it, at air masses 3.09 and 5.37). Kurucz et
+  al. (1984) describe this instrument's detector nonlinearity as a varying zero
+  point; that is in the right direction here but, at the -0.4% to -1.1% the cores
+  show, worth under 1%.
 - **niratl's air mass is 1.05-1.12, not pinned.** Its 1.10 came from the A-band at
   zenith 0; correcting for the line physics alone gives ~1.12, and if the A-band excess
   above is in the line intensities it is nearer 1.05.
@@ -1464,9 +1477,10 @@ them by exactly 1/T of the O2 continuum (§4o measured both), every round trip e
   atlas gives the lab's B/A ratio (0.980 +- 0.009 against 0.969) where the 1983 files
   give 1.024-1.027: the excess is in the 1983 Kitt Peak spectra. Open: what in them
   deepens B-band lines by ~5% relative to the A-band (detector nonlinearity, a
-  wavenumber-dependent zero, the disc-centre solar source). Another Kitt Peak B-band
-  spectrum from a different date -- `fluxatl` (1981, flux, needs an air-wavelength
-  reader) -- would say whether it is this file pair or the instrument.
+  wavenumber-dependent zero, the disc-centre solar source). Kitt Peak 1989 (Wallace
+  et al. 2011) gives the lab's ratio too, so it is this file pair, not the instrument.
+  For use: B-band O2 columns from `ftsspec_830626_{2,3}` are ~5% high relative to
+  their A-band; their corrected spectra fit the data and are unaffected.
   niratl's air mass stays at 1.05-1.12 until this is settled.
 - **`lsf_sigma_kms` at a bound** in 78 of 222 windows of file 5, 105 of 215 of file 4,
   37 of 307 of `_2`. Not examined. The sibling project's W4.1 result -- telluric lines
