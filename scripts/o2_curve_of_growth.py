@@ -7,7 +7,7 @@ strength x width x column. A width error therefore shows as an excess that
 grows with depth, a strength or column error as one that does not
 (docs/solar_fit_plan.md §4n).
 
-Each A- and B-band window of `ftsspec_830626_{2,3}` is read from the run's own
+Each O2 window (1.06 um, A, B, gamma) of each run in FILES is read from its own
 fit (the window's `.npz` cache, O2 free). Its O2 transmission is split into one
 segment per line, at the transmission maxima between neighbouring minima, and
 each segment gets its own O2 scale as one linear step from the window's, by
@@ -37,7 +37,7 @@ OUTPUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "docs/o2_curve_of_gr
 FILES = {"ftsspec_830626_2": "ftsspec_830626_2_summary.json",
          "ftsspec_830626_3": "ftsspec_830626_3_summary.json",
          "iag_vis": "iag_o2/iag_vis_o2_summary.json"}
-BANDS = {"A": (12960.0, 13160.0), "B": (14370.0, 14540.0)}
+BANDS = {"a1Delta": (9300.0, 9440.0), "A": (12960.0, 13160.0), "B": (14370.0, 14540.0), "gamma": (15720.0, 15920.0)}
 MIN_DEPTH = 0.02
 BLEND = 0.03
 BLENDED_LEVERAGE = 0.2

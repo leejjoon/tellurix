@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Fit the O2 A- and B-band windows of the IAG solar flux atlas.
+"""Fit the O2 windows of the IAG solar flux atlas: 1.06 um, A, B and gamma bands.
 
 An independent check on the O2 excess of the June 1983 Kitt Peak spectra
 (docs/solar_fit_plan.md §4n): a different FTS, site and decade. The atlas
@@ -27,7 +27,10 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-WINDOWS = [12970.0 + 30 * k for k in range(7)] + [14380.0 + 30 * k for k in range(6)]
+# The 1983 files' O2 windows in each band; the atlas's VIS setting starts at 9387 cm-1.
+WINDOWS = ([9400.0, 9430.0] + [12970.0 + 30 * k for k in range(7)] + [14380.0 + 30 * k for k in range(6)]
+           + [15730.0 + 30 * k for k in range(7)])
+KEEP_CM1 = (9387.0, 16000.0)
 FWHM_CM1 = 0.0145
 
 
@@ -44,11 +47,11 @@ def main():
     from tellurix_fts.nso import FTSSpectrum
     from tellurix_fts.window import WindowSettings, fit_window
 
-    # 4 million rows; only the two bands are kept, and cached beside the download.
-    cache = args.spectrum.with_name(args.spectrum.name.split(".")[0] + "_o2_bands.npz")
+    # 4 million rows; only the O2 range is kept, and cached beside the download.
+    cache = args.spectrum.with_name(args.spectrum.name.split(".")[0] + f"_{KEEP_CM1[0]:.0f}_{KEEP_CM1[1]:.0f}.npz")
     if not cache.exists():
         data = np.loadtxt(gzip.open(args.spectrum), usecols=(0, 1))
-        keep = (data[:, 0] > 12800.0) & (data[:, 0] < 14700.0)
+        keep = (data[:, 0] > KEEP_CM1[0]) & (data[:, 0] < KEEP_CM1[1])
         np.savez(cache, nu=data[keep, 0], flux=data[keep, 1])
     z = np.load(cache)
     sha = hashlib.sha256(args.spectrum.read_bytes()).hexdigest()

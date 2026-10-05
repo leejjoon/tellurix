@@ -1361,6 +1361,16 @@ line files with and without AER's line coupling, recipe in the script's docstrin
   finer than Payne Zero's sampling). A solar-model error would not scale with air mass,
   and the 1983 excess does (1.051 at X 5.37, 1.057 at X 3.09), so the first is unlikely
   to be the cause.
+- **Whether it is B-specific or a trend in wavenumber cannot be told from these data.**
+  The double ratio (1983 over IAG, per band, over the same for the A-band) cancels the
+  line list and the air mass, and gives B 1.041-1.047 +- 0.014 again; but neither other
+  band answers. IAG's VIS setting starts at 9387 cm-1, on the 1.06 um band, and its
+  one window there is water (6 lines, scale 3.99). The gamma band has under eight weak
+  lines per file, scattering 1.24-1.42, and its intermediate lines are biased by IAG's
+  air-mass averaging (the A-band shows -4%) -- and HITRAN's gamma intensities were
+  themselves tuned (+20%) on a 1983-06-19 Kitt Peak spectrum (Gordon et al. 2011), so
+  that band is not independent of this instrument anyway. Both bands are kept in
+  `docs/o2_curve_of_growth.json` with these caveats.
 - **niratl's air mass is 1.05-1.12, not pinned.** Its 1.10 came from the A-band at
   zenith 0; correcting for the line physics alone gives ~1.12, and if the A-band excess
   above is in the line intensities it is nearer 1.05.
@@ -1447,7 +1457,9 @@ them by exactly 1/T of the O2 continuum (§4o measured both), every round trip e
   atlas gives the lab's B/A ratio (0.980 +- 0.009 against 0.969) where the 1983 files
   give 1.024-1.027: the excess is in the 1983 Kitt Peak spectra. Open: what in them
   deepens B-band lines by ~5% relative to the A-band (detector nonlinearity, a
-  wavenumber-dependent zero, the disc-centre solar source).
+  wavenumber-dependent zero, the disc-centre solar source). Another Kitt Peak B-band
+  spectrum from a different date -- `fluxatl` (1981, flux, needs an air-wavelength
+  reader) -- would say whether it is this file pair or the instrument.
   niratl's air mass stays at 1.05-1.12 until this is settled.
 - **`lsf_sigma_kms` at a bound** in 78 of 222 windows of file 5, 105 of 215 of file 4,
   37 of 307 of `_2`. Not examined. The sibling project's W4.1 result -- telluric lines
