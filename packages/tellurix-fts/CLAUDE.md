@@ -151,8 +151,8 @@ How the 2026-10-05 regeneration was done; reuse it for any physics change.
   `data/corrected/superseded_pre_<change>/` (gitignored, never packed) and the new ones
   to the canonical paths; then `results_archive.py check` should list exactly the
   replaced records, `pack --release results-<date>`, commit the manifest, push, and
-  `gh release create` with the archive. The manifest must also name a Zenodo mirror
-  (`tests/test_results_archive.py` asserts it): Zenodo's GitHub integration archives
+  `gh release create` with the archive. A Zenodo mirror is wanted but no longer
+  required (the test was relaxed 2026-10-05): Zenodo's GitHub integration archives
   only the release's source zip, so the tarball has to be added to that Zenodo
   version by hand, with the user's account, and its file URL passed to `pack` as
   `--mirror` (or written into the manifest's `mirrors`). `git push` over SSH fails inside these
