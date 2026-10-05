@@ -1371,6 +1371,13 @@ line files with and without AER's line coupling, recipe in the script's docstrin
   themselves tuned (+20%) on a 1983-06-19 Kitt Peak spectrum (Gordon et al. 2011), so
   that band is not independent of this instrument anyway. Both bands are kept in
   `docs/o2_curve_of_growth.json` with these caveats.
+- **Nor is it the fitted Gaussian on top of the sinc.** It is wider in the B-band than
+  the A-band in both files (file 2: 0.10-0.23 km/s against mostly the 0.05 bound;
+  file 3: 0.21-0.35 against 0.14-0.26), which could over-broaden the O2 lines and push
+  the column up to restore their depth. Refitted with it pinned at 0.05, every A- and
+  B-band O2 scale of both files moves by under 0.4% (file 2 under 0.1%). The sinc
+  itself is measured from each spectrum (`docs/solar_fts_ils.json`: MOPD 14.48 cm,
+  spread 0.03 over 122 windows, in file 2; 14.71 in file 3).
 - **niratl's air mass is 1.05-1.12, not pinned.** Its 1.10 came from the A-band at
   zenith 0; correcting for the line physics alone gives ~1.12, and if the A-band excess
   above is in the line intensities it is nearer 1.05.
