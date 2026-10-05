@@ -756,8 +756,10 @@ that night has the weakest airmass-time correlation of the three (-0.452, agains
 impossible trend is clearest. These systematics are real and are not a fitting
 degeneracy between airmass and time.
 
-**So the slant-path bound is set by night-to-night scatter, not by any one
-night's formal error.** Across three nights the well-mixed columns scatter by
+(Superseded: the per-night systematic was the exposure sequence's airmass --
+"What moves the well-mixed columns" below. With it the three nights agree at
+chi-squared 0.6 and 2.0.) **So the slant-path bound is set by night-to-night
+scatter, not by any one night's formal error.** Across three nights the well-mixed columns scatter by
 0.0297 (CH4) and 0.0307 (CO2) per unit airmass, about **3-4%** over a
 typical range, against the 1.7% a single night's error bar suggested. That is
 the number to quote.
@@ -1038,25 +1040,191 @@ and their airmass slopes move by at most 0.0016 in every order but H124, whose
 CO2 scale sits near 3.6 in both runs and is not a measurement. Coupling stays
 off by default; turn it on for fits that lean on the 2.0 um CO2 band centre.
 
+## What moves the well-mixed columns
+
+GitHub issue #1, **resolved: a PLP spectrum combines a whole sequence of
+exposures, up to 37 minutes long, and the airmass came from the first.** The
+story in order -- what the systematic looked like, what it was not, and what it
+was. `scripts/analyze_igrins_dry_systematic.py` rebuilds the
+three-night table from the run records alone (`docs/igrins_dry_systematic.json`)
+and then looks at the frames rather than the slopes. It uses one fixed order set
+per species -- CO2 in H108-H109, H111-H117 and K85-K92; CH4 in H104-H110 and
+K73-K83, the orders that pass the ladder's 0.15 optical-depth cut on every
+frame of every night -- because a record does not carry the optical depth.
+The table comes back as before: CO2 slopes +0.005, +0.048, -0.029 per airmass
+(chi-squared 8.8 on 2 dof, against 8.2 from the summaries), CH4 +0.010, +0.048,
+-0.027 (7.3 against 7.7); with ERA5, 4.5 and 7.4.
+
+### It is one number per exposure
+
+| night | PWV | frame scatter, CO2 / CH4 | per-frame error | H vs K, CO2 / CH4 | CO2 vs CH4 |
+|---|---:|---:|---:|---:|---:|
+| DCT 2018-12-20 | 2.4 mm | 0.004 / 0.006 | 0.005 / 0.008 | -0.71 / +0.03 | +0.61 |
+| Gemini S 2021-03-16 (ERA5) | 5.2 mm | 0.008 / 0.008 | 0.004 / 0.009 | +0.74 / +0.56 | +0.73 |
+| DCT 2016-12-08 | 6.9 mm | 0.024 / 0.026 | 0.007 / 0.007 | **+0.93 / +0.92** | **+0.98** |
+| McDonald 2017-04-20 | 10.7 mm | 0.037 / 0.038 | 0.005 / 0.006 | **+0.91 / +0.98** | **+1.00** |
+
+On the two wet nights the columns move by four to seven times their error, and
+the H and K detectors -- different bands, blazes, fringes and fitted LSFs --
+report the same movement, as do CO2 and CH4. McDonald's frame 0092 reads CO2
+-0.053 in H and -0.051 in K; frame 0039, +0.046 and +0.059. Call the mean of the
+four (two species, two bands, each about its night mean) the frame's **dry
+factor**. On the dry night it is noise -- the bands do not even agree in sign --
+and its size grows with the water across all four nights -- which turned out to
+be a coincidence of how those nights were observed. Each night's airmass
+and time slopes are that factor regressed against airmass and time, which is
+why CO2's and CH4's agree to the third decimal on both wet nights.
+
+Within a night it follows nothing recorded consistently: against time r = -0.73
+at McDonald and +0.73 at DCT 2016, against surface temperature +0.86 and -0.63,
+against the fitted water +0.56 and +0.13.
+
+### It scales the optical depth, and only that
+
+Every order moves with the frame (`order_response`): regressed on the dry
+factor, the median order slope is 0.93-1.11 in each band and species on both
+wet nights, with median r of 0.89-0.99. K89, the saturated 2.0 um band centre
+at peak optical depth 169, sits at 0.97 and 0.95, the same as H-band CO2 orders
+that peak near 2. And the residual against transmission is the same in the
+frames at both ends of the factor (`residual_vs_transmission`, K band): within
+0.1% everywhere for CO2 and within 0.2% for CH4, in frames whose columns differ by
+11% (McDonald) and 10% (DCT 2016). The spectra are fitted by a scaled dry optical
+depth, with nothing left over.
+
+### What that rules out
+
+- **Blaze and fringe.** Each belongs to one detector and acts through the
+  continuum and the order ends. The effect is common to H and K at r =
+  0.91-0.98 and has the same slope at optical depth 2 and 169. (That argument
+  does not reach the LSF: seeing sets the slit illumination of both arms at
+  once.)
+- **An additive offset or veiling, and a broad LSF wing** (scattered light,
+  sky residual, imperfect extraction background). Either dilutes line depth; a
+  column scale absorbs that for weak lines, but not for strong ones. To make the
+  observed spread it would need an offset of +-5% of the continuum, which leaves
+  2.0-2.5% of residual at transmission 0.15-0.3 and 1.2-1.5% at 0.3-0.45, of
+  opposite sign at the two ends of the factor (`veiling_signature`). The
+  measured curves are flat to 0.2% and do not differ between the frames.
+- **A per-frame atmosphere.** Replacing the night's whole analytic profile
+  with ERA5 -- up to 3.9 K warmer in the lower troposphere, 13 K colder in the
+  stratosphere, its water a different shape -- moves the frames' columns by
+  0.1-0.7% rms about their mean shift (`profile_sensitivity`). A profile built
+  per frame from the header would differ from the night's by 0.7-2.9 K at the
+  surface and at most 2 hPa, so it cannot reach the 2.5-3.7% frame scatter.
+- **Detector nonlinearity.** The same star 7 minutes apart on DCT 2016 (HD
+  26512, frames 0123 and 0127) at 5.9 times the counts differs by +0.016, the
+  wrong sign for a response that flattens at high counts.
+
+The slant path had been ruled out before (the headers agree with geometry to
+0.2 deg on both wet nights), and the frames seemed to agree: McDonald 0084 and
+0151, at airmass 1.14 and 1.02, differ by 2.8%, where a zenith-angle error can
+do almost nothing. Both conclusions were about the wrong exposure -- 0084 is
+eight 250 s exposures spanning 37 minutes (below).
+
+### Two refits
+
+Two GPU refits of McDonald 2017, H104-H117 and K73-K92 (`refits_mcd2017`):
+
+- **The response pattern is not it.** With the second pass off
+  (`--no-fixed-pattern`) the dry factor is unchanged: frame scatter 0.0346
+  against 0.0354, r = 0.997 with the full run.
+- **Nor is a trade with the water.** With CO2 and CH4 pinned at each order's
+  night median (`--fix-columns-from`, new), the water moves by at most 0.005 in
+  log column. Instead the residual grows where the factor was large -- frame
+  0039 by 3.5% (H) and 6.4% (K), frame 0092 by 1.5-2.1%, the frames near zero
+  by under 0.1% -- and the LSF narrows or widens by 2-4% in step (r = -0.97 to
+  -0.99) to deepen or fill the lines it can no longer scale. The spectra really
+  do carry more or less dry absorption than the model's path allows.
+
+### The cause: a frame is a sequence, and its header is one exposure
+
+The catalog row of McDonald 0039 lists `FILES` 39-46: the PLP spectrum is the
+combination of eight 90 s exposures, two ABBA sets. Its header's `DATE-OBS`,
+`DATE-END` and `ZDSTART` describe the first of them, and that is the zenith
+angle the fit used -- the one checked against geometry to 0.2 deg, correctly,
+for that exposure. k Tau was setting at airmass 3, and over the 16 minutes of
+the sequence its airmass rose by 9%. The combined spectrum saw the mean.
+
+Frames on DCT 2018 are single AB pairs of 30-60 s, 2-5 minutes in all;
+McDonald 2017 and DCT 2016 combine four to eight exposures of up to 300 s, 4-37
+minutes. That, not the water, is what separated the nights. The catalog's `JD`
+turns out to be the sequence midpoint (except on DCT 2018, a constant 241 s
+off), so it measures the readout-and-nod overhead per exposure: 24-46 s on
+these nights, against 36-39 s for thousands of back-to-back sequences across
+the archive. The prediction for each frame is ln(mean sec z over the sequence /
+the airmass used) (`sequence_prediction`):
+
+| night | longest sequence | r, predicted vs dry factor | slope | scatter before | left after |
+|---|---:|---:|---:|---:|---:|
+| DCT 2018-12-20 | 5 min | 0.15 | 0.16 | 0.0042 | 0.0053 |
+| McDonald 2017-04-20 | 37 min | **0.995** | **0.97** | 0.0354 | 0.0038 |
+| DCT 2016-12-08 | 22 min | **0.992** | **1.09** | 0.0249 | 0.0038 |
+
+No free parameter: the sequence length comes from the catalog. On DCT 2018 the
+prediction is under 0.6% and the factor is noise, as it should be.
+
+It also explains everything on the list above: one path factor for the whole
+exposure, so common to both bands and both gases and uniform in line strength;
+a pure optical-depth scale, so no residual signature; a setting star early in
+the night and a rising one later, so a "dependence on time"; and a link to the
+water only through which nights were observed with long sequences. Once more,
+a fit absorbs a slant-path error into the columns without moving its residual.
+The header check could not see it: geometry and header agree for the exposure
+they both describe.
+
+### The fix, and the three nights again
+
+`sequence_zenith_angle_deg` (`tellurix_igrins.igrins`) returns the zenith
+distance whose airmass is the mean of sec z over the sequence;
+`igrins_pointing.py --sequence --write all` computes it per frame from the
+catalog's `FILES`, `EXPTIME` and `JD` and writes `pointing.json` with source
+`sequence`, which the reader prefers for both bands. Refitted with it, the same
+frames, settings and orders as the analytic runs (`seq_*`, `*_sequence` in the
+report):
+
+| | CO2 per airmass, three nights | chi-squared | CH4 per airmass | chi-squared |
+|---|---|---:|---|---:|
+| first exposure's airmass | +0.005, +0.048, -0.029 | 8.8 | +0.010, +0.048, -0.027 | 7.3 |
+| **sequence airmass** | **-0.001, -0.001, -0.005** | **0.6** | **+0.003, +0.003, -0.006** | **2.0** |
+
+The per-frame dry scatter falls to 0.0033-0.0052 on all three nights, the
+bands no longer agree with each other about it (r between -0.63 and +0.18), the
+time-of-night slopes are within 1.4 sigma of zero, and the residuals do not
+move (median rms/noise identical to 0.002 in every run, the same 1,457 rows
+plus one). The weighted mean slope is -0.0016 for CO2 and +0.0006 for CH4 per
+unit airmass: **the slant path is now consistent across nights to a few
+tenths of a percent per airmass**, where the night-to-night scatter quoted
+before was 3-4%.
+
+What this does not cover: every other IGRINS product -- the ERA5 runs, the
+night calibrations, the master pattern, the transfer and science runs -- was
+fitted with first-exposure airmasses, and Gemini South 2021 and McDonald 2015
+have no sequence sidecars yet. A science frame is a sequence too.
+
+Two side findings. `--dry-shift` (`docs/igrins_science.md`) was this effect
+caught from the other side: it was added because McDonald 2017's K frames above
+airmass 2.4 needed CO2 and CH4 7-8% up together, and those are k Tau and HD
+53205, the two long sequences of setting stars. With sequence airmasses it
+should be unnecessary; that is to be measured, not assumed. And
+`analyze_igrins_ladder.py` had begun double-counting: every K run refitted for
+the zenith-angle fix kept its pre-fix shard summaries beside the new merged
+ones, so a rerun read each K order twice, half of it at the defective angle.
+It now drops a shard when a whole-frame summary exists, and reproduces the
+committed reports exactly.
+
+
 ## What is not done yet
 
 - **Science frames.** Whether a night's standards can set the telluric model of
   a frame they do not include is measured in `docs/igrins_transfer.md`: yes,
   with one velocity shift and one water scale fitted on the frame. Not yet on a
   target with lines of its own.
-- **What is left of the per-night systematic.** ERA5 reduces CO2's part of it
-  to borderline (chi-squared 8.2 to 5.7); CH4's inconsistent slopes survive a
-  real temperature and water profile, so they are not the atmosphere's vertical
-  structure. Nor are they the zenith-angle header defect, which was corrected
-  and left them as inconsistent as before.
-- **Where the per-night systematic comes from.** Three nights agree that the
-  well-mixed columns wander by 3-4% per unit airmass in inconsistent
-  directions, and that CO2 and CH4 can show a 3.5-sigma dependence on time of
-  night, which is impossible. Something per-night moves them and it is not the
-  slant path. That is now the most interesting open question here. McDonald's
-  high-airmass K frames, which a per-frame water scale cannot correct, are the
-  place to look first. Tracked as GitHub issue #1, with what is already ruled out
-  (CO2 line coupling among it: it moves the columns and slopes by at most 0.0016).
+- **Refit the rest with sequence airmasses.** The per-night systematic
+  (GitHub issue #1) was the airmass of a combined exposure sequence; three
+  standards nights are refitted (`seq_*`). Still on first-exposure airmasses:
+  the ERA5 runs, the night calibrations and master pattern, the transfer and
+  science runs; Gemini South 2021 and McDonald 2015 need `igrins_pointing.py
+  --sequence` first. Then measure whether `--dry-shift` is still needed.
 - **Build and ship the master pattern.** The four nights above show it would
   capture 74-88% of each night's response and works across telescopes, so it is
   now a matter of measuring it from enough nights and storing it, not of
@@ -1064,10 +1232,10 @@ off by default; turn it on for fits that lean on the 2.0 um CO2 band centre.
 - **Two unexplained order-frames**, H107 and H104 of the DCT A0V run, at 115 and
   33 sigma out of 516. They are excluded from the pooled statistics above by a
   cut rather than understood.
-- **A per-frame atmosphere.** One profile is built per night from the median
-  surface conditions, though the header gives T, P and humidity per frame and
-  they moved by 3 K and 2 hPa across this night. The fitted column scales
-  absorb most of that, and the airmass test above bounds what is left.
+- **A per-frame atmosphere.** Measured against the dry factor above: a whole
+  ERA5 profile moves each frame's columns by 0.1-0.7% rms, so the 0.7-2.9 K the
+  header's surface temperature moved within a night cannot matter. Not worth
+  building.
 - **`vsini` is fixed, not fitted.** The A0V run used 150 km/s for every
   standard. A0V rotation velocities range over roughly 100-250 km/s, and the
   Brackett lines are already hundreds of km/s wide from Stark broadening, so

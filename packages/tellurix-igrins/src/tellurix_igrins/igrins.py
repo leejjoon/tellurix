@@ -617,6 +617,43 @@ def geometric_zenith_angle_deg(ra_deg: float, dec_deg: float, date_obs: str, dat
     return angle
 
 
+# Seconds between the end of one exposure and the start of the next inside a
+# combined sequence (readout, nod, settle), when the catalog cannot give it.
+# Measured from the archive's own cadence: 4,192 back-to-back sequences of one
+# target, median 39 s, interquartile 37.5-40.5.
+EXPOSURE_OVERHEAD_S = 38.0
+
+
+def sequence_zenith_angle_deg(ra_deg: float, dec_deg: float, start: str, duration_s: float,
+                              site: Site, samples: int = 64) -> float:
+    """The zenith distance whose airmass is the mean over a whole exposure sequence.
+
+    A PLP spectrum combines every exposure of an ABBA set -- 4 to 10 of them,
+    up to 35 minutes on the nights fitted -- but the header's DATE-OBS/DATE-END
+    and ZDSTART/ZDEND describe one. At airmass 3 a setting star gains 7% of
+    airmass in 14 minutes, and that is what moved the dry columns frame by frame
+    (docs/igrins_a0v.md, "What moves the well-mixed columns"). The combined
+    flux is the mean of the exposures', so for optically thin absorption the
+    effective airmass is the mean of sec z, not sec of the mean z.
+    """
+
+    import astropy.units as u
+    from astropy.coordinates import AltAz, EarthLocation, SkyCoord
+    from astropy.time import Time
+
+    if duration_s < 0:
+        raise ValueError(f"a sequence cannot last {duration_s} s")
+    location = EarthLocation(lat=site.latitude_deg * u.deg, lon=site.longitude_deg * u.deg,
+                             height=site.altitude_km * u.km)
+    times = Time(start.strip(), scale="utc") + np.linspace(0.0, duration_s, samples) * u.s
+    altitude = SkyCoord(ra_deg * u.deg, dec_deg * u.deg).transform_to(
+        AltAz(obstime=times, location=location)).alt.deg
+    if np.any(altitude <= 0.0):
+        raise ValueError("the target is not above the horizon for the whole sequence")
+    airmass = float(np.mean(1.0 / np.sin(np.radians(altitude))))
+    return float(np.degrees(np.arccos(1.0 / airmass)))
+
+
 @dataclass(frozen=True)
 class IGRINSOrder:
     """One echelle order, ascending in vacuum wavelength.
@@ -863,7 +900,11 @@ def read_igrins_observation(
     sidecar = spec_path.parent / POINTING_SIDECAR
     if sidecar.exists():
         pointing = json.loads(sidecar.read_text())
-        zenith, zenith_source = float(pointing["zenith_angle_deg"]), "geometry"
+        zenith = float(pointing["zenith_angle_deg"])
+        # "geometry" for one exposure's pointing, "sequence" for the whole
+        # combined sequence; sidecars written before the field existed are
+        # geometry.
+        zenith_source = str(pointing.get("source", "geometry"))
         if not 0.0 <= zenith < 90.0:
             raise ValueError(f"{sidecar}: zenith distance {zenith} is outside [0, 90)")
     else:

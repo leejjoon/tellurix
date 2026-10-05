@@ -230,6 +230,28 @@ def test_a_pointing_sidecar_overrides_the_header(tmp_path):
     assert observation.zenith_angle_deg == 42.5
     assert observation.zenith_source == "geometry"
     assert observation.order(observation.orders[0]).meta["zenith_source"] == "geometry"
+    (tmp_path / "pointing.json").write_text(
+        json.dumps({"zenith_angle_deg": 44.0, "source": "sequence"}))
+    assert read_igrins_observation(spec).zenith_source == "sequence"
+
+
+def test_a_sequence_takes_the_mean_airmass_of_a_setting_star():
+    """McDonald 2017-04-20 frame 0039, k Tau setting at airmass 3: eight 90 s
+    exposures over 16 minutes, of which the header describes the first."""
+
+    from tellurix_igrins.igrins import SITES, geometric_zenith_angle_deg, sequence_zenith_angle_deg
+
+    start = "2017-04-21T03:21:53.464"
+    instant = sequence_zenith_angle_deg(74.53913355, 25.05040692, start, 0.0, SITES["McDonald"])
+    assert instant == pytest.approx(geometric_zenith_angle_deg(
+        74.53913355, 25.05040692, start, start, SITES["McDonald"]), abs=1e-6)
+    whole = sequence_zenith_angle_deg(74.53913355, 25.05040692, start, 969.1, SITES["McDonald"])
+    airmass = 1.0 / np.cos(np.radians([instant, whole]))
+    # 9% more air than at the first exposure's start -- the size of the dry-gas
+    # excess this frame showed before the correction.
+    assert 1.07 < airmass[1] / airmass[0] < 1.11
+    with pytest.raises(ValueError):
+        sequence_zenith_angle_deg(74.53913355, 25.05040692, start, -1.0, SITES["McDonald"])
 
 
 def test_the_all_minus_one_sentinel_is_missing_weather():

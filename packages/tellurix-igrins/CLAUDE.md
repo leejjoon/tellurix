@@ -39,7 +39,9 @@ Three extensions, each measured (`docs/igrins_science.md`). **`--dry-shift`**
 adds one per-frame dry-gas scale, CO2's, applied to CH4 as well: McDonald 2017's
 K frames above airmass 2.4 need CO2 and CH4 7-8% up together, which a water scale
 cannot absorb, and it takes them from 1.6-2.0 of the noise to 0.3-0.4 while
-costing nothing elsewhere. Keep it **tied** -- freed separately, a line-rich
+costing nothing elsewhere. Those frames are long sequences of setting stars, so this was
+the sequence airmass seen from the science side (below); recheck it once the
+calibrations use sequence airmasses. Keep it **tied** -- freed separately, a line-rich
 target pulls CH4 by 3% through the 2.3 um CO bandheads. **A master pattern**
 (`MasterPattern`, the median of other nights') stands in for a thin night's own:
 DCT 2018 thinned to three standards corrects the other eleven within 5-7% of the
@@ -201,15 +203,11 @@ column.
 
 Three nights are fitted: DCT 2018-12-20 (~2 mm PWV), McDonald 2017-04-20
 (~10 mm, and the only one that exercises the degF/inHg branch end to end) and
-DCT 2016-12-08 (~7 mm). **Quote a slant-path bound from the scatter between
-nights, not from one night's error bar**: the three give CH4 slopes of +0.010,
-+0.046 and -0.027 per unit airmass, chi-squared 7.7 on 2 dof, so the 2 sigma
-one night shows is a per-night systematic. CO2 does the same (8.2). On DCT 2016
-both show a 3.5-sigma dependence on *time of night*, which neither can
-physically have. The honest bound is the 3-4% night-to-night scatter. These are
-the numbers after the zenith-angle header fix, which halved the within-night
-CO2 scatter on DCT 2018 but left the between-night disagreement in place (7.1
-and 6.8 before) -- the defect was not the systematic. Separately, the response
+DCT 2016-12-08 (~7 mm). With first-exposure airmasses they gave CH4 slopes of
++0.010, +0.046 and -0.027 per unit airmass (chi-squared 7.7 on 2 dof), CO2 the
+same, and a 3.5-sigma dependence on time of night; **that was the exposure
+sequence's airmass** (below), and with sequence airmasses the three agree at
+chi-squared 0.6 (CO2) and 2.0 (CH4), weighted slopes -0.0016 and +0.0006. Separately, the response
 pattern **is** stable: DCT 2016 and 2018 agree at median r = +0.943 across 26
 orders, their difference only 34% of the pattern, so nine tenths of it belongs
 to the instrument rather than the night. The
@@ -256,6 +254,33 @@ ERA5 also supplies the **station pressure** via `station_pressure_from_era5`,
 matching the header's `BARPRESS` to 0.2% on the three nights that carry it.
 That is what makes the no-weather nights work at all, since the column has to be
 anchored somewhere; `--anchor auto` prefers the header and falls back.
+
+**A PLP spectrum is a sequence of exposures; its header is one of them**
+(GitHub #1, `docs/igrins_a0v.md` "What moves the well-mixed columns",
+`analyze_igrins_dry_systematic.py`). The catalog's `FILES` lists 4-10
+exposures combined into one spectrum, up to 37 minutes, while `DATE-OBS`,
+`DATE-END` and `ZDSTART/ZDEND` describe the first; at airmass 3 a setting star
+gains 9% of air over the sequence. Uncorrected, every gas in the exposure is
+scaled by that factor -- CO2 and CH4 in H and K moved together by up to +-6%,
+which read as inconsistent airmass slopes between nights and a "time of night"
+trend; the fit absorbs it into the columns and the residual never moves.
+**Run `igrins_pointing.py --spec ... --sequence --write all` on every night
+before fitting**: it writes `pointing.json` with the mean-airmass zenith
+(`sequence_zenith_angle_deg`), the overhead taken from the catalog's `JD`, which
+is the sequence midpoint (24-46 s per exposure; DCT 2018's JD is off by a
+constant 241 s, so it falls back to the archive's 38 s). Predicted against the
+measured factor: r = 0.995 and 0.992, slope 0.97 and 1.09, no free parameter.
+Done for DCT 2018, McDonald 2017 and DCT 2016 (`seq_*` runs); everything else
+-- ERA5 runs, calibrations, master pattern, transfer and science runs, Gemini
+2021, McDonald 2015 -- still has first-exposure airmasses. `--dry-shift` was
+this effect seen from the science side and may now be unnecessary; measure it.
+Ruled out on the way, do not redo: blaze, fringe, veiling, a per-frame
+atmosphere, nonlinearity, the response pattern, a water/dry trade
+(`--fix-columns-from` pins species at a record's per-order night median).
+That script reads only `record.h5`; **the K run
+directories still hold the pre-zenith-fix shard summaries** (`*.s0_summary.json`)
+beside the refit's merged ones, which `analyze_igrins_ladder.py` now skips --
+anything else that globs `*_summary.json` must too.
 
 An airmass ladder is confounded by its targets: a night observes few stars, each
 over a limited airmass span. On the DCT night chi Cap is the only target above
