@@ -139,6 +139,11 @@ def main() -> None:
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"),
                         help="pass an empty string to disable")
     parser.add_argument("--platform", choices=("cpu", "gpu"), default="gpu")
+    parser.add_argument("--fix-columns-from", type=Path, default=None,
+                        help="a run record of the same night and band: hold --fix-species at "
+                             "each order's median over that run's frames instead of fitting "
+                             "them (a diagnostic for what their per-frame freedom absorbs)")
+    parser.add_argument("--fix-species", default="CO2,CH4")
     args = parser.parse_args()
 
     rule = dict(ORDER_RULE)
@@ -146,7 +151,17 @@ def main() -> None:
         rule["mask_hydrogen_kms"] = args.hydrogen_mask_kms
     if args.throughput_floor is not None:
         rule["throughput_floor"] = args.throughput_floor
+    fixed_columns = {}
+    if args.fix_columns_from is not None:
+        from tellurix.record import read_record
+
+        pages = read_record(args.fix_columns_from).pages
+        for species in (s.strip().upper() for s in args.fix_species.split(",")):
+            for number in sorted(set(int(n) for n in pages["order_number"])):
+                values = pages[f"log_column_{species}"][pages["order_number"] == number]
+                fixed_columns.setdefault(number, {})[species] = float(np.median(values))
     settings = StandardFitSettings(
+        fixed_columns=fixed_columns,
         stellar=args.stellar, vsini_kms=args.vsini_kms, resolving_power=args.resolving_power,
         samples_per_resolution=args.samples_per_resolution, margin_cm1=args.margin_cm1,
         grid_margin_cm1=args.grid_margin_cm1, continuum_degree=args.continuum_degree,
@@ -313,6 +328,9 @@ def main() -> None:
                 "blaze": None if args.blaze is None else str(args.blaze),
                 "pattern_smooth_pixels": args.pattern_smooth_pixels,
                 "frames_in_run": len(observations),
+                "fixed_columns": {str(n): dict(v) for n, v in settings.fixed_columns.items()},
+                "fixed_columns_from": (None if args.fix_columns_from is None
+                                       else str(args.fix_columns_from)),
             },
             "physics": {**PHYSICS, "line_coupling": args.line_coupling,
                        "stages": list(stages_for(args.stellar))},
@@ -369,6 +387,8 @@ def main() -> None:
                     "vsini_kms": args.vsini_kms, "stellar": args.stellar,
                     "blaze": "" if args.blaze is None else str(args.blaze),
                     "line_coupling": args.line_coupling,
+                    "fixed_columns_from": ("" if args.fix_columns_from is None
+                                           else str(args.fix_columns_from)),
                     **settings.order_rule},
             physics={**PHYSICS, "line_coupling": args.line_coupling,
                        "stages": list(stages_for(args.stellar))},

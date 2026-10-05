@@ -131,6 +131,11 @@ class StandardFitSettings:
     # made before it existed.
     line_coupling: bool = False
     order_rule: Mapping = field(default=ORDER_RULE)
+    # {order number: {species: log column scale}} held fixed in that order
+    # rather than fitted. A diagnostic: pinned at each order's night median, it
+    # takes away only the frame-to-frame freedom, so what moves instead -- the
+    # water, the residual -- shows what that freedom was absorbing.
+    fixed_columns: Mapping = field(default_factory=dict)
 
     def __post_init__(self):
         unknown = set(self.order_rule) - set(ORDER_RULE)
@@ -138,11 +143,17 @@ class StandardFitSettings:
             raise ValueError(f"unknown order-rule keys: {', '.join(sorted(unknown))}")
         object.__setattr__(self, "order_rule",
                            MappingProxyType({**ORDER_RULE, **self.order_rule}))
+        object.__setattr__(self, "fixed_columns", MappingProxyType({
+            int(number): MappingProxyType({str(s).upper(): float(v) for s, v in values.items()})
+            for number, values in self.fixed_columns.items()}))
 
 
 def stage_bounds(stage, model_species, free_species, parameters, degree, fit_stellar,
-                 continuum_bound=ORDER_RULE["continuum_bound"]):
-    """Which parameters each stage frees, and within what range."""
+                 continuum_bound=ORDER_RULE["continuum_bound"], fixed_columns=None):
+    """Which parameters each stage frees, and within what range.
+
+    A species in ``fixed_columns`` is pinned at its value in every stage.
+    """
 
     free = {
         "continuum": {"continuum", "log_jitter"},
@@ -154,7 +165,11 @@ def stage_bounds(stage, model_species, free_species, parameters, degree, fit_ste
     pinned = lambda value: (float(value), float(value))  # noqa: E731
     bounds = {}
     for species in model_species:
-        bounds[species] = (-2.0, 2.0) if ("species" in free and species in free_species) else (0.0, 0.0)
+        if fixed_columns and species in fixed_columns:
+            bounds[species] = pinned(fixed_columns[species])
+        else:
+            bounds[species] = ((-2.0, 2.0) if ("species" in free and species in free_species)
+                               else (0.0, 0.0))
     bounds["velocity_kms"] = (-8.0, 8.0) if "velocity_kms" in free else pinned(parameters.velocity_kms)
     bounds["wavelength_stretch"] = (0.0, 0.0)
     # The whole line spread function is this Gaussian: R = 45,000 puts it near
@@ -365,8 +380,9 @@ def fit_one(context, observation, settings: StandardFitSettings, objective, *, r
 
     degree = settings.continuum_degree
     usable = np.asarray(order.flux)[np.asarray(order.mask)]
+    fixed = settings.fixed_columns.get(number, {})
     parameters = TelluricParameters(
-        log_column_scales={s: 0.0 for s in model.species},
+        log_column_scales={s: fixed.get(s, 0.0) for s in model.species},
         velocity_kms=0.0, wavelength_stretch=0.0,
         # R = 45,000 in FWHM is 6.66 km/s, so 2.83 km/s in sigma.
         lsf_sigma_kms=299792.458 / (settings.resolving_power * 2.3548200),
@@ -396,7 +412,7 @@ def fit_one(context, observation, settings: StandardFitSettings, objective, *, r
             fit_model, order, parameters,
             stage_bounds(stage, model.species, context["free_species"], parameters, degree,
                          fit_stellar=settings.stellar != "flat",
-                         continuum_bound=rule["continuum_bound"]),
+                         continuum_bound=rule["continuum_bound"], fixed_columns=fixed),
             objective=objective,
             # Only this call ever compiles the Hessian, and that compilation
             # costs 8.2 s against 3.1 ms to run it. The intermediate stages'

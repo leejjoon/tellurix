@@ -47,3 +47,19 @@ def test_the_continuum_bound_comes_from_the_rule():
     assert bounds["continuum_3"] == (-1.5, 1.5)
     assert bounds["H2O"] == (-2.0, 2.0)
     assert bounds["stellar_velocity_kms"] == (0.0, 0.0)
+
+
+def test_a_fixed_column_is_pinned_in_every_stage_and_the_rest_stay_free():
+    settings = StandardFitSettings(fixed_columns={"89": {"co2": -0.02}})
+    fixed = settings.fixed_columns[89]
+    assert dict(fixed) == {"CO2": -0.02}
+    parameters = SimpleNamespace(
+        velocity_kms=0.0, lsf_sigma_kms=2.8, continuum_coeffs=np.zeros(4), log_jitter=-5.0,
+        stellar_velocity_kms=0.0)
+    for stage in stages_for("a0v.npz"):
+        bounds = stage_bounds(stage, ("H2O", "CO2"), ("H2O", "CO2"), parameters, 3,
+                              fit_stellar=True, fixed_columns=fixed)
+        assert bounds["CO2"] == (-0.02, -0.02)
+    assert bounds["H2O"] == (-2.0, 2.0)
+    with pytest.raises(TypeError):
+        settings.fixed_columns[89]["CO2"] = 0.0
