@@ -193,8 +193,10 @@ UV_CACHE_DIR=.uv-cache uv run python scripts/results_archive.py check
 ```
 
 The manifest pins `results-2026-10-05`, whose solar records include O2's
-collision-induced continuum (`docs/solar_fit_plan.md`, "Done 2026-10-05"). It has
-no Zenodo copy yet, so `fetch` downloads from the GitHub release only.
+collision-induced continuum (`docs/solar_fit_plan.md`, "Done 2026-10-05"). Zenodo's
+GitHub integration archived that release's source as record 23156334, but not yet the
+results archive itself, so the manifest names no mirror and `fetch` downloads from the
+GitHub release only.
 
 The previous release, `results-2026-10-03`, is archived on Zenodo as
 [10.5281/zenodo.23121557](https://doi.org/10.5281/zenodo.23121557) (all
