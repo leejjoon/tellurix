@@ -190,6 +190,17 @@ freeing them separately lets a line-rich target pull CH4 by -3.3% and CO2 by
 default, `--dry-shift` with no value, **ties** them: CO2's shift, applied to
 both. That keeps all of the benefit and none of the penalty.
 
+**Later: what the shift was measuring.** The two frames are k Tau and HD 53205,
+eight-exposure sequences of setting stars, 16 and 20 minutes long, whose
+airmass the header gives for the first exposure only (`igrins_a0v.md`, "What
+moves the well-mixed columns"; GitHub #1). Their sequence airmasses are 3.23 and
+2.69 against the 2.96 and 2.48 used here, ln ratios of +0.089 and +0.082 -- the
++0.081 and +0.074 the shift measured. A dry-gas scale is a slant-path
+correction in disguise, and it worked because one path factor scales every gas;
+water's scale was absorbing its share. With `igrins_pointing.py --sequence`
+it should be unnecessary. That is measured in GitHub #4, not assumed: until then
+keep using it.
+
 ## Running it
 
 ```bash

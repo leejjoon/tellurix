@@ -113,7 +113,11 @@ missing dry column. A per-frame dry-gas scale fixes it -- one CO2 scale per
 frame, applied to CH4 too, takes the two frames to 0.41 and 0.31 and the
 night's absorbing orders from 0.96 to 0.46, and costs nothing on DCT 2018 or
 with Arcturus injected (`--dry-shift`; `igrins_science.md`, "A dry-gas scale";
-`igrins_transfer_dry_*.json`).
+`igrins_transfer_dry_*.json`). The deficit was the exposure sequence's airmass:
+k Tau's spectrum combines eight exposures over 16 minutes whose mean airmass is
+3.23, so the "defective" 3.16 was nearer the truth than the corrected 2.96, which
+describes the first exposure only (`igrins_a0v.md`, "What moves the well-mixed
+columns").
 
 Two cross-checks that the frame shift is the atmosphere and not a fitting
 artefact:

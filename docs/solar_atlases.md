@@ -141,8 +141,10 @@ see `arcturus_fit.md`):
 
 The two 1990 files are the same sky, the same day and the same instrument at air
 mass ~4.7 against ~2.0. That is a cleaner slant-path test than the IGRINS
-airmass ladder could give, where per-night systematics left the honest bound at
-~3% night-to-night scatter. Not mentioned in the sibling project's status
+airmass ladder could give at the time, where per-night systematics left the
+honest bound at ~3% night-to-night scatter (since traced to the airmass of
+combined exposure sequences; with it the three IGRINS nights agree to a few
+tenths of a percent per airmass, `igrins_a0v.md`). Not mentioned in the sibling project's status
 document, so treat it as an observation from here rather than an agreed plan.
 
 ## A finding of theirs that bears on a problem of ours

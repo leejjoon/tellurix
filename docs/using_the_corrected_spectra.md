@@ -401,9 +401,20 @@ It is flat against transmission — 0.97 in deep absorption, 1.52 at the continu
 — which means the 4.22 sigma of the trimmed run, and the 4.48 of the full one,
 are a K1.5 III line-list limit. Do not read either as telluric accuracy.
 
-**The IGRINS well-mixed columns are good to about 3%**, set by night-to-night
-scatter rather than any single night's error bar. Slopes against airmass differ
-in *sign* between nights, so do not quote a trend from one night.
+**In the published IGRINS records a frame's column scale carries its own
+airmass error, up to +-6%.** A PLP spectrum combines 4-10 exposures, up to 37
+minutes, but the records' `zenith_angle_deg` and airmass are the first
+exposure's (GitHub #1, `igrins_a0v.md`, "What moves the well-mixed columns").
+The fit absorbed the difference into the column scales, so the *slant*
+transmission and the corrected spectra are right, and T rebuilt from a row's
+own scales and angle is right too; what is off is the *vertical* column, by
+ln(sequence airmass / recorded airmass), largest for long sequences of setting
+or rising stars at high airmass. That is why airmass slopes differed in sign
+between nights and the columns looked good only to about 3%. Refitted with
+sequence airmasses the three nights agree to a few tenths of a percent per
+airmass; those records replace these once GitHub #4 is done. Until then do not
+compare vertical columns between frames, and do not quote a trend from one
+night.
 
 **IGRINS `plp_telluric` is not a cross-check.** The pipeline's own
 `MODEL_TELTRANS` over-absorbs by 0.23-0.32 in transmission wherever there is

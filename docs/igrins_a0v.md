@@ -651,7 +651,10 @@ airmass 2.99, had been read as 3.16 in K; corrected, the CO2 and CH4 slopes
 *steepen* from about 1.4σ to 2.0-2.1σ. The wrong airmass had been hiding part
 of a real deficit at the top of the ladder -- one the transfer test
 (`igrins_transfer.md`) also sees, as K frames above airmass 2.4 on this night
-that a per-frame water scale cannot correct.
+that a per-frame water scale cannot correct. (Later: the deficit was the
+airmass of the frame's eight-exposure sequence, 3.23, which the defective 3.16
+had been nearer than the corrected 2.99 -- "What moves the well-mixed columns"
+below.)
 
 **Water behaves the same way at both sites**: 1.4 sigma against airmass and
 7.4 sigma against time here, the airmass term collapsing in a joint fit.
@@ -831,7 +834,10 @@ Fitting against ERA5 leaves the water scale near unity (1.00, 1.22, 0.90 against
 | CH4 chi-squared | 7.7 | 7.8 |
 | residual, H band | 1.33 / 1.78 / 1.89 | 1.30 / 1.76 / 1.86 |
 
-**CO2 improves, but less than it first seemed.** Its chi-squared falls from
+(Later: the inconsistency both columns show here was the exposure
+sequence's airmass, not the profile -- "What moves the well-mixed columns"
+below. ERA5's part in it was small.) **CO2 improves, but less than it first
+seemed.** Its chi-squared falls from
 8.2 to 5.7, from inconsistent with a common value (p = 0.02) to borderline
 (p = 0.06). Before the zenith-angle fix this read as 6.8 to 3.4, p = 0.03 to
 0.18 -- the header defect had flattered ERA5. **CH4 does not move** and its

@@ -15,6 +15,8 @@ MT_CKD inputs; the spectra come from the RRISA reduced archive, not the atlas:
 ```bash
 UV_CACHE_DIR=.uv-cache uv run python scripts/download_rrisa_standard.py --catalog
 UV_CACHE_DIR=.uv-cache uv run python scripts/download_rrisa_standard.py --list --facility DCT --night 20181220
+# before fitting a night: each frame's airmass over its whole exposure sequence (below)
+UV_CACHE_DIR=.uv-cache uv run python scripts/igrins_pointing.py --spec data/igrins/<night>_*/SDCH_*.spec.fits --sequence --write all
 UV_CACHE_DIR=.uv-cache uv run python scripts/fit_igrins_standard.py --spec <SDCH_*.spec.fits>
 UV_CACHE_DIR=.uv-cache uv run python scripts/summarize_igrins_fit.py --summary <*_summary.json>
 ```
@@ -277,10 +279,12 @@ this effect seen from the science side and may now be unnecessary; measure it.
 Ruled out on the way, do not redo: blaze, fringe, veiling, a per-frame
 atmosphere, nonlinearity, the response pattern, a water/dry trade
 (`--fix-columns-from` pins species at a record's per-order night median).
-That script reads only `record.h5`; **the K run
-directories still hold the pre-zenith-fix shard summaries** (`*.s0_summary.json`)
-beside the refit's merged ones, which `analyze_igrins_ladder.py` now skips --
-anything else that globs `*_summary.json` must too.
+That script reads only `record.h5`; **the K run directories still hold the pre-zenith-fix shard summaries** (`*.s0_summary.json`)
+beside the refit's merged ones. Read a run's summaries with
+`tellurix_igrins.summary_paths`, never a bare glob: it drops shards a
+whole-frame summary superseded (the ladder, residual-structure, review-export
+and run-comparison scripts use it; the committed reports were checked and did
+not change).
 
 An airmass ladder is confounded by its targets: a night observes few stars, each
 over a limited airmass span. On the DCT night chi Cap is the only target above

@@ -72,7 +72,9 @@ UV_CACHE_DIR=.uv-cache uv run pytest packages/tellurix/tests/test_model.py::test
 
 Always prefix with `UV_CACHE_DIR=.uv-cache`; the default cache location is not
 used in this project. Set `JAX_PLATFORMS=cpu` to keep test/benchmark runs off
-the GPU.
+the GPU. A fit driver run in the background with its output redirected to a log
+needs `PYTHONUNBUFFERED=1`, or the log stays empty until the run ends; pin one
+job per GPU with `CUDA_VISIBLE_DEVICES`.
 
 ## Instrument notes -- read the one you are working on
 
@@ -371,7 +373,10 @@ opt-in to keep the default numerically identical to ExoJAX.
   the run's when the species present depend on the window, so remap each row's
   sigma and correlation into the union rather than assuming one length; and
   `ils_fingerprint(None, ...)` is the built-in Gaussian branch, for a model with
-  no `InstrumentProfile` object.
+  no `InstrumentProfile` object. A record's `inputs` hold paths as the run saw
+  them, and runs made in a git worktree recorded that worktree's absolute path,
+  which no longer exists: find an input by name and hold it to the recorded
+  `*_sha256` (`analyze_igrins_dry_systematic.py` does this for the profile).
   `scripts/rebuild_arcturus_page.py --check` reconstructs a page from the record
   alone and agrees to 1e-13. It shares no code with the fitting driver on
   purpose — an independent reconstruction is the evidence; calling one function
