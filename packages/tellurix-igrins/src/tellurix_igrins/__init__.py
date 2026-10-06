@@ -38,7 +38,7 @@ from .igrins import (
     surface_conditions,
     zenith_angle_deg,
 )
-from .standard import StandardFitSettings, build_order_context, fit_one
+from .standard import StandardFitSettings, build_order_context, fit_one, summary_paths
 
 __all__ = [
     "continuum_level",
@@ -58,6 +58,7 @@ __all__ = [
     "precipitable_water_mm",
     "read_igrins_observation",
     "saturation_vapour_pressure_hpa",
+    "summary_paths",
     "Site",
     "site_for",
     "smoothed_frame_median",

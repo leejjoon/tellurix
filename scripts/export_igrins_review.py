@@ -59,7 +59,9 @@ def quantize(values: np.ndarray) -> tuple[bytes, float, float]:
 def read_run(run: Path) -> dict:
     """Every frame's rows, joined across the order shards that wrote them."""
     frames: dict[str, dict] = {}
-    for path in sorted(run.glob("*summary.json")):
+    from tellurix_igrins import summary_paths
+
+    for path in summary_paths(run, "*summary.json"):
         blob = json.loads(path.read_text())
         stem = Path(blob["observation"]["path"]).name.split(".")[0]
         frame = frames.setdefault(stem, {"observation": blob["observation"],

@@ -27,6 +27,7 @@ ladder exists to measure.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import re
 from pathlib import Path
 import time
 from types import MappingProxyType
@@ -146,6 +147,26 @@ class StandardFitSettings:
         object.__setattr__(self, "fixed_columns", MappingProxyType({
             int(number): MappingProxyType({str(s).upper(): float(v) for s, v in values.items()})
             for number, values in self.fixed_columns.items()}))
+
+
+_SHARD = re.compile(r"\.s\d+(?=_summary\.json$)")
+
+
+def summary_paths(directory: Path, pattern: str = "*_summary.json") -> list[Path]:
+    """A run directory's per-frame summaries, without the shards a later run superseded.
+
+    A run sharded by order writes ``<frame>.s0_summary.json``, ``.s1`` ...; a
+    later whole-frame refit into the same directory writes
+    ``<frame>_summary.json`` and leaves the shards behind. Every K run refitted
+    for the zenith-angle fix (2026-09-30) is like that, and reading both counts
+    each order twice, half of it at the defective angle -- and a frame's
+    ``observation`` taken from the first file read is the stale shard's. Shards
+    stay where no whole-frame summary exists, so a sharded run still reads.
+    """
+
+    paths = sorted(Path(directory).glob(pattern))
+    whole = {p.name for p in paths if not _SHARD.search(p.name)}
+    return [p for p in paths if not (_SHARD.search(p.name) and _SHARD.sub("", p.name) in whole)]
 
 
 def stage_bounds(stage, model_species, free_species, parameters, degree, fit_stellar,

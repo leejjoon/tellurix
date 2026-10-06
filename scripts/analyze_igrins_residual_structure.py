@@ -45,7 +45,6 @@ night's lamp flat, and optionally other nights' runs, and measures four things:
 from __future__ import annotations
 
 import argparse
-import glob
 import json
 import re
 from pathlib import Path
@@ -148,7 +147,9 @@ def median(values):
 def summaries(run: Path):
     """Each frame's summary, merged over order shards (``.s0``, ``.s1``, ...)."""
     frames = {}
-    for path in sorted(glob.glob(str(run / "*_summary.json"))):
+    from tellurix_igrins import summary_paths
+
+    for path in map(str, summary_paths(run)):
         stem = re.sub(r"(\.s\d+)?_summary\.json$", "", path)
         summary = json.loads(Path(path).read_text())
         entry = frames.setdefault(stem, {"observation": summary["observation"], "results": []})

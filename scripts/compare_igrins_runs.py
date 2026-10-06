@@ -25,7 +25,6 @@ serve, so a blaze run and a run without one are compared like for like.
 from __future__ import annotations
 
 import argparse
-import glob
 import json
 from pathlib import Path
 
@@ -51,7 +50,9 @@ def measure(record_dir: Path, cache: Path, band: str, orders: set[int],
     pages = h5py.File(record_dir / "record.h5", "r")["pages"][:]
     pages = pages[[int(n) in orders for n in pages["order_number"]]]
     first = []
-    for path in glob.glob(str(cache / f"SDC{band}_*_summary.json")):
+    from tellurix_igrins import summary_paths
+
+    for path in summary_paths(cache, f"SDC{band}_*_summary.json"):
         for row in json.loads(Path(path).read_text())["results"]:
             if int(row["order"]) in orders and "residual_rms_over_noise_uncorrected" in row:
                 first.append(row["residual_rms_over_noise_uncorrected"])

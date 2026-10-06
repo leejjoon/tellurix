@@ -63,3 +63,16 @@ def test_a_fixed_column_is_pinned_in_every_stage_and_the_rest_stay_free():
     assert bounds["H2O"] == (-2.0, 2.0)
     with pytest.raises(TypeError):
         settings.fixed_columns[89]["CO2"] = 0.0
+
+
+def test_a_whole_frame_summary_supersedes_the_shards_left_beside_it(tmp_path):
+    from tellurix_igrins.standard import summary_paths
+
+    for name in ("SDCK_1_0039.s0_summary.json", "SDCK_1_0039.s1_summary.json",
+                 "SDCK_1_0039_summary.json", "SDCK_1_0055.s0_summary.json",
+                 "SDCK_1_0055.s1_summary.json", "SDCK_1_0055_K80.npz"):
+        (tmp_path / name).write_text("{}")
+    names = [p.name for p in summary_paths(tmp_path)]
+    # 0039 was refitted whole; 0055 only ever ran sharded and still reads.
+    assert names == ["SDCK_1_0039_summary.json", "SDCK_1_0055.s0_summary.json",
+                     "SDCK_1_0055.s1_summary.json"]
