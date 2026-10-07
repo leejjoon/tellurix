@@ -1,0 +1,95 @@
+{
+ "frame": "0084",
+ "frame_median_z": 1.5642074665139036,
+ "frame_rank": 5,
+ "frames": 10,
+ "orders": {
+  "H": {
+   "order": "H122",
+   "stem": "SDCH_20181220_0084",
+   "object": "HD  53205 V 6.6",
+   "airmass": 1.448596231120367,
+   "residual_z_rms": 1.674837765478782,
+   "z_rms_recomputed": 1.674837765478782,
+   "residual_rms_over_noise": 1.4601606516893433,
+   "percentile_in_band": 58.95522388059702,
+   "band_order_frames": 268,
+   "band_median_z": 1.5526553617623218,
+   "order_median_z": 1.70494165526873,
+   "strong_fraction_T_lt_0.8": 0.40689415005108437,
+   "candidates": [
+    "H122",
+    "H123",
+    "H124",
+    "H98",
+    "H99"
+   ],
+   "free_species": [
+    "CO2",
+    "H2O"
+   ],
+   "log_column_scales": {
+    "CH4": 0.0,
+    "CO2": -0.062062122176011,
+    "H2O": -0.5971799284915466,
+    "N2O": 0.0
+   },
+   "fitted_pixels": 1135,
+   "min_effective_transmission": 0.1504164530222488,
+   "zoom_um": [
+    1.4788109454374803,
+    1.480659800417761
+   ],
+   "zoom_columns": [
+    1696.0,
+    1497.0
+   ]
+  },
+  "K": {
+   "order": "K88",
+   "stem": "SDCK_20181220_0084",
+   "object": "HD  53205 V 6.6",
+   "airmass": 1.448596231120367,
+   "residual_z_rms": 1.5757877826074325,
+   "z_rms_recomputed": 1.5757877826074325,
+   "residual_rms_over_noise": 1.3447516387503864,
+   "percentile_in_band": 51.6260162601626,
+   "band_order_frames": 246,
+   "band_median_z": 1.5624852396375848,
+   "order_median_z": 1.5687567518571846,
+   "strong_fraction_T_lt_0.8": 0.29352956989247314,
+   "candidates": [
+    "K71",
+    "K86",
+    "K87",
+    "K88",
+    "K89",
+    "K91",
+    "K92",
+    "K93",
+    "K94",
+    "K95"
+   ],
+   "free_species": [
+    "CO2",
+    "H2O"
+   ],
+   "log_column_scales": {
+    "CH4": 0.0,
+    "CO2": -0.015471276972590431,
+    "H2O": -0.5706938976891288,
+    "N2O": 0.0
+   },
+   "fitted_pixels": 1434,
+   "min_effective_transmission": 0.12445088064456049,
+   "zoom_um": [
+    2.0192844250601762,
+    2.0221444767337142
+   ],
+   "zoom_columns": [
+    727.0,
+    528.0
+   ]
+  }
+ }
+}

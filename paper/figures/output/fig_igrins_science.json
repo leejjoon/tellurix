@@ -1,0 +1,96 @@
+{
+ "frame": "0059",
+ "object": "LkCa 15",
+ "airmass": 1.3205153686524262,
+ "zenith_source": "header",
+ "water_shift": {
+  "H": -0.002279930029669086,
+  "K": 0.007615059422887538
+ },
+ "velocity_shift_kms": {
+  "H": -0.291266334888715,
+  "K": -0.27635093758017387
+ },
+ "band_disagreement_all_targets": {
+  "0037": 0.0011303359655498446,
+  "0074": 0.0038484771105243842,
+  "0053": 0.004826720216670577,
+  "0059": 0.009894989452556624,
+  "0142": 0.015703434249561,
+  "0092": 0.022192218329330493
+ },
+ "orders": {
+  "H": {
+   "order": "H122",
+   "standard_used_by_plp": {
+    "object": "HR 1558",
+    "date_obs": "2018-12-21T02:44:05.396",
+    "file": "SDCH_20181220_0059.spec_a0v.fits"
+   },
+   "residual_rms_over_noise": 2.242466985819952,
+   "median_transmission": 0.854878374448337,
+   "clipped_fraction": 0.02549342105263158,
+   "reliable_pixels": 1118,
+   "plp_continuum_quadratic": [
+    -473201.1662012092,
+    63492.891235642135,
+    943667.9349964611
+   ],
+   "zoom_um": [
+    1.4758473927832263,
+    1.4777547494847159
+   ],
+   "zoom_columns": [
+    1385,
+    1186
+   ],
+   "stats": {
+    "tellurix": {
+     "imprint_slope": -0.007491102182577792,
+     "point_noise": 0.009405248818380762
+    },
+    "plp": {
+     "imprint_slope": 0.07686605597092505,
+     "point_noise": 0.010428690854024288
+    }
+   },
+   "rms_plp_minus_tellurix_reliable": 0.032793277964708795
+  },
+  "K": {
+   "order": "K88",
+   "standard_used_by_plp": {
+    "object": "HR 1558",
+    "date_obs": "2018-12-21T02:44:05.396",
+    "file": "SDCK_20181220_0059.spec_a0v.fits"
+   },
+   "residual_rms_over_noise": 2.052772704860595,
+   "median_transmission": 0.9063321466725117,
+   "clipped_fraction": 0.029589778076664425,
+   "reliable_pixels": 1440,
+   "plp_continuum_quadratic": [
+    4948.339722940247,
+    -20125.209782372604,
+    549204.5171088063
+   ],
+   "zoom_um": [
+    2.0192844250601762,
+    2.0221444767337142
+   ],
+   "zoom_columns": [
+    727,
+    528
+   ],
+   "stats": {
+    "tellurix": {
+     "imprint_slope": 0.0012314685437411583,
+     "point_noise": 0.005390786125391397
+    },
+    "plp": {
+     "imprint_slope": 0.02522880945977536,
+     "point_noise": 0.0067448046076538865
+    }
+   },
+   "rms_plp_minus_tellurix_reliable": 0.020910451886232823
+  }
+ }
+}

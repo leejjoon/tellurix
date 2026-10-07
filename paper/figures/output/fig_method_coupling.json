@@ -1,0 +1,60 @@
+{
+ "lines_cm1": [
+  "4997.246255",
+  "4998.354232",
+  "4999.432285"
+ ],
+ "g_all_zero": true,
+ "y_at_200_250_296_340K": [
+  [
+   -0.0150745,
+   -0.0107316,
+   -0.00807066,
+   -0.00623213
+  ],
+  [
+   -0.0160628,
+   -0.011455,
+   -0.00869693,
+   -0.00679498
+  ],
+  [
+   -0.0161712,
+   -0.0119166,
+   -0.00922819,
+   -0.00736058
+  ]
+ ],
+ "800hPa": {
+  "mixing_Yp": [
+   -0.0071028507064010565,
+   -0.007623989100934359,
+   -0.008024309207350434
+  ],
+  "dispersion_peak_lblrtm": 0.014535665512084961,
+  "dispersion_peak_tellurix": 0.014589311174824093,
+  "max_abs_difference_over_lblrtm_peak": 0.005642282533831897,
+  "far_wing_mean_lblrtm": -0.0002791057698918834,
+  "far_wing_mean_tellurix": -0.0003209591652050725,
+  "far_wing_mean_tellurix_with_lblrtm_co2_pedestal": -0.00028076945645634575,
+  "integrated_dispersion_lblrtm": -2.273079423837454e-05,
+  "integrated_dispersion_tellurix": -2.531121439634332e-05,
+  "uncoupled_peak_ratio_tellurix_over_lblrtm": 1.0000643010234989
+ },
+ "50hPa": {
+  "mixing_Yp": [
+   -0.0006581465581051073,
+   -0.0007016866518628176,
+   -0.0007140074019245004
+  ],
+  "dispersion_peak_lblrtm": 0.0006272792816162109,
+  "dispersion_peak_tellurix": 0.0006837949003428712,
+  "max_abs_difference_over_lblrtm_peak": 0.2255382645470439,
+  "far_wing_mean_lblrtm": -8.020537130150166e-07,
+  "far_wing_mean_tellurix": -1.4493979210815058e-06,
+  "far_wing_mean_tellurix_with_lblrtm_co2_pedestal": -1.2654040729368514e-06,
+  "integrated_dispersion_lblrtm": -6.621418060093884e-08,
+  "integrated_dispersion_tellurix": -1.2209066977481399e-07,
+  "uncoupled_peak_ratio_tellurix_over_lblrtm": 0.9975199502263523
+ }
+}

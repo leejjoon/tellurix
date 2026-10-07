@@ -1,0 +1,46 @@
+{
+ "line": "H2O 5004.584965 cm-1 (AER 3.9)",
+ "layer": "800.0 hPa, 280.0 K, H2O vmr 0.01",
+ "lblrtm_dv_cm1": 0.00862,
+ "dvr4_cm1": 0.55168,
+ "alpha_lorentz_cm1": 0.07350022572693052,
+ "alpha_doppler_cm1": 0.0070665395369758155,
+ "alpha_voigt_lblrtm_cm1": 0.07422394991397217,
+ "zeta": 0.9122896455650353,
+ "voicon_coefficients": {
+  "cf1": 0.9852519884009457,
+  "cf2": 0.9918581540193738,
+  "cf3": 0.9901477398419751,
+  "cgauss": 0.025219170361947527,
+  "cer": -0.0129335873145489
+ },
+ "sub_function_limits_cm1": {
+  "4aV": 0.2968957996558887,
+  "16aV": 1.1875831986235548,
+  "64aV": 4.750332794494219,
+  "cutoff": 25.0
+ },
+ "pedestal_over_peak": 8.700467655317113e-06,
+ "transcription_vs_lblrtm_max_abs_over_peak": 0.0010573256997209867,
+ "lblrtm_SN_fitted_over_tellurix_SN": 0.9996452047053405,
+ "lblrtm_minus_voigt_max_abs_over_peak": {
+  "<4aV": 0.0008183450153956917,
+  "4-16aV": 0.00011816394902197667,
+  "16-64aV": 1.577112125419874e-05,
+  "64aV-25": 8.995629177228115e-06,
+  ">25": 8.683681050877233e-06
+ },
+ "lblrtm_minus_voigt_max_relative": {
+  "<4aV": 0.002420738041611043,
+  "4-16aV": 0.0059093009951458305,
+  "16-64aV": 0.03818684161856859,
+  "64aV-25": 0.9980855108270369
+ },
+ "lblrtm_min_value_beyond_cutoff_over_peak": -2.7362860359876648e-08,
+ "lblrtm_area_within_window": 0.9962751587823316,
+ "tellurix_grid_spacing_cm1": 0.027803521779425393,
+ "tellurix_minus_voigt_max_abs_over_peak": 2.375607686055712e-08,
+ "tellurix_minus_voigt_max_relative": 3.7038118186616395e-08,
+ "tellurix_algorithm916_half_width_cm1": 0.05091516425334713,
+ "tellurix_core_list_half_width_cm1": 0.14659824161967883
+}

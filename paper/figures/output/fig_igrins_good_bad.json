@@ -1,0 +1,90 @@
+{
+ "order": "K88",
+ "strong_fraction_dry": 0.29352956989247314,
+ "order_candidates": [
+  "K86",
+  "K87",
+  "K88",
+  "K89",
+  "K91",
+  "K92"
+ ],
+ "zoom_um": [
+  2.0189783742697416,
+  2.022130283463769
+ ],
+ "nights": {
+  "dry": {
+   "order_frames": 514,
+   "median_z": 1.5617764550691664,
+   "p5_p95_z": [
+    1.034637302531916,
+    2.955115670834559
+   ],
+   "order_median_z": 1.5687567518571846,
+   "order_frames_of_order": 10,
+   "best": {
+    "stem": "SDCK_20181220_0090",
+    "object": "HR  2893 V 6.3",
+    "airmass": 1.2958337565416445,
+    "residual_z_rms": 1.3811024091449775,
+    "residual_rms_over_noise": 1.1985082952543016,
+    "percentile_in_night": 37.7431906614786,
+    "z_rms_in_zoom": 1.7778022509257694,
+    "log_column_H2O": -0.6245790744941725,
+    "median_transmission": 0.9089502414489745,
+    "fitted_pixels": 1447,
+    "pixel_sigma": 0.006133375558017748
+   },
+   "worst": {
+    "stem": "SDCK_20181220_0033",
+    "object": "chi Cap V 5.3",
+    "airmass": 2.4753559739545747,
+    "residual_z_rms": 2.461756299213497,
+    "residual_rms_over_noise": 2.0603170147660284,
+    "percentile_in_night": 89.6887159533074,
+    "z_rms_in_zoom": 2.7883421109822524,
+    "log_column_H2O": -0.3947816676508151,
+    "median_transmission": 0.8492997465599771,
+    "fitted_pixels": 1327,
+    "pixel_sigma": 0.003914733409807424
+   }
+  },
+  "wet": {
+   "order_frames": 388,
+   "median_z": 2.275557985971364,
+   "p5_p95_z": [
+    1.5018557221019826,
+    4.71367044047323
+   ],
+   "order_median_z": 2.345595848613957,
+   "order_frames_of_order": 8,
+   "best": {
+    "stem": "SDCK_20170420_0151",
+    "object": "HR 7384",
+    "airmass": 1.0184713557077396,
+    "residual_z_rms": 1.8528159629091958,
+    "residual_rms_over_noise": 1.494356594326002,
+    "percentile_in_night": 27.835051546391753,
+    "z_rms_in_zoom": 1.5100472222974453,
+    "log_column_H2O": -0.7334339644278405,
+    "median_transmission": 0.9079165231043939,
+    "fitted_pixels": 1481,
+    "pixel_sigma": 0.004989618554237182
+   },
+   "worst": {
+    "stem": "SDCK_20170420_0074",
+    "object": "HR 3651",
+    "airmass": 1.9324739907410955,
+    "residual_z_rms": 2.658741621513175,
+    "residual_rms_over_noise": 2.474652753608322,
+    "percentile_in_night": 65.20618556701031,
+    "z_rms_in_zoom": 2.5326772115270604,
+    "log_column_H2O": 0.10395576578751907,
+    "median_transmission": 0.8198896485440264,
+    "fitted_pixels": 1337,
+    "pixel_sigma": 0.0032875306207835768
+   }
+  }
+ }
+}

@@ -1,0 +1,170 @@
+{
+ "layer1": {
+  "pressure_hpa": 720.96615,
+  "lblrtm_dv_cm1": 0.0077,
+  "tape6_hirac_read_kept": [
+   4207,
+   372
+  ],
+  "emulated_hirac_read_tested_kept": [
+   4207,
+   3710,
+   371
+  ],
+  "hirac_rejected_fraction_of_tested": 0.9,
+  "tape6_linf4_read_after_shrink": [
+   8857,
+   627
+  ],
+  "emulated_linf4_read_after_shrink": [
+   8857,
+   618
+  ],
+  "tape6_lblf4_after_reject_printed": [
+   627,
+   70
+  ],
+  "emulated_lblf4_kept_per_call": 34,
+  "optical_depth_lost_fraction": 0.007426046515550659,
+  "optical_depth_lost_mean": 0.00046437939943880517,
+  "optical_depth_lost_min_max": [
+   0.00018906709738075733,
+   0.0008959770202636719
+  ]
+ },
+ "path": {
+  "per_layer_tape6": [
+   {
+    "layer": 1,
+    "dv_cm1": 0.0077,
+    "hirac_read": 4207,
+    "hirac_kept": 372,
+    "hirac_rejected_fraction_of_read": 0.9115759448538151,
+    "lblf4_merged": 627,
+    "lblf4_after_reject_as_printed": 70
+   },
+   {
+    "layer": 2,
+    "dv_cm1": 0.0077,
+    "hirac_read": 4207,
+    "hirac_kept": 385,
+    "hirac_rejected_fraction_of_read": 0.908485856905158,
+    "lblf4_merged": 627,
+    "lblf4_after_reject_as_printed": 72
+   },
+   {
+    "layer": 3,
+    "dv_cm1": 0.0077,
+    "hirac_read": 4207,
+    "hirac_kept": 376,
+    "hirac_rejected_fraction_of_read": 0.9106251485619206,
+    "lblf4_merged": 627,
+    "lblf4_after_reject_as_printed": 66
+   },
+   {
+    "layer": 4,
+    "dv_cm1": 0.0077,
+    "hirac_read": 4207,
+    "hirac_kept": 358,
+    "hirac_rejected_fraction_of_read": 0.9149037318754457,
+    "lblf4_merged": 627,
+    "lblf4_after_reject_as_printed": 54
+   },
+   {
+    "layer": 5,
+    "dv_cm1": 0.00616,
+    "hirac_read": 3820,
+    "hirac_kept": 327,
+    "hirac_rejected_fraction_of_read": 0.9143979057591622,
+    "lblf4_merged": 779,
+    "lblf4_after_reject_as_printed": 56
+   },
+   {
+    "layer": 6,
+    "dv_cm1": 0.00616,
+    "hirac_read": 3820,
+    "hirac_kept": 343,
+    "hirac_rejected_fraction_of_read": 0.9102094240837696,
+    "lblf4_merged": 778,
+    "lblf4_after_reject_as_printed": 65
+   },
+   {
+    "layer": 7,
+    "dv_cm1": 0.004928,
+    "hirac_read": 3503,
+    "hirac_kept": 286,
+    "hirac_rejected_fraction_of_read": 0.9183556951184699,
+    "lblf4_merged": 974,
+    "lblf4_after_reject_as_printed": 52
+   },
+   {
+    "layer": 8,
+    "dv_cm1": 0.0039424,
+    "hirac_read": 3268,
+    "hirac_kept": 263,
+    "hirac_rejected_fraction_of_read": 0.9195226438188494,
+    "lblf4_merged": 1203,
+    "lblf4_after_reject_as_printed": 52
+   },
+   {
+    "layer": 9,
+    "dv_cm1": 0.00262827,
+    "hirac_read": 2975,
+    "hirac_kept": 190,
+    "hirac_rejected_fraction_of_read": 0.9361344537815126,
+    "lblf4_merged": 1767,
+    "lblf4_after_reject_as_printed": 54
+   },
+   {
+    "layer": 10,
+    "dv_cm1": 0.00210261,
+    "hirac_read": 2856,
+    "hirac_kept": 157,
+    "hirac_rejected_fraction_of_read": 0.9450280112044818,
+    "lblf4_merged": 2172,
+    "lblf4_after_reject_as_printed": 52
+   },
+   {
+    "layer": 11,
+    "dv_cm1": 0.00140174,
+    "hirac_read": 2712,
+    "hirac_kept": 152,
+    "hirac_rejected_fraction_of_read": 0.943952802359882,
+    "lblf4_merged": 3041,
+    "lblf4_after_reject_as_printed": 50
+   },
+   {
+    "layer": 12,
+    "dv_cm1": 0.00140174,
+    "hirac_read": 2712,
+    "hirac_kept": 160,
+    "hirac_rejected_fraction_of_read": 0.9410029498525074,
+    "lblf4_merged": 3038,
+    "lblf4_after_reject_as_printed": 46
+   }
+  ],
+  "optical_depth_lost_fraction_T>0.05": 0.011626937861504339,
+  "dT_monochromatic_max_abs": 0.006367743015289307,
+  "dT_monochromatic_mean": 0.002648774741053803,
+  "dT_R45000_max_abs": 0.0061866993895170926,
+  "dT_R45000_mean": 0.002645599975299467
+ },
+ "tellurix_select_significant_lines": {
+  "budget_per_species": 0.0005,
+  "selection": {
+   "H2O": {
+    "lines": 1938,
+    "discarded": 664,
+    "bound_sum_discarded": 0.000498321729957213
+   },
+   "CO2": {
+    "lines": 6470,
+    "discarded": 3802,
+    "bound_sum_discarded": 0.0004993734128819055
+   }
+  },
+  "dT_monochromatic_max_abs": 4.5896448928051115e-06,
+  "dT_R45000_max_abs": 3.551794301719857e-06,
+  "discarded_tau_max": 6.563411576402878e-06
+ }
+}

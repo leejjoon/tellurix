@@ -1,0 +1,24 @@
+{
+ "scale_range": [
+  0.5,
+  2.718281828459045
+ ],
+ "linear_max": 0.0003060876347457109,
+ "linear_rms_max_over_scales": 2.3712835950920027e-05,
+ "linear_rms_over_all": 7.30902818369474e-06,
+ "frozen_max": 0.008638955269548887,
+ "frozen_over_linear_max": 28.223797007435113,
+ "linear_max_full_grid": 0.0006727762877296595,
+ "frozen_max_full_grid": 0.015391246489897925,
+ "at_reference_linear_max": 4.536654102382798e-08,
+ "lines": [
+  1978,
+  6496
+ ],
+ "line_centre_cm1": 5014.582171,
+ "self_over_linear_sensitivity": {
+  "min": -0.018407856148727073,
+  "max": 0.017986655936828737,
+  "median_abs": 0.009064012748845227
+ }
+}

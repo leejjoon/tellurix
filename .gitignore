@@ -60,3 +60,8 @@ data/review_*/
 data/corrected/
 data/calibration/
 data/scans/
+
+# Paper figures: scripts and their numbers are committed; renders and caches are not
+paper/figures/cache/
+paper/figures/output/*.png
+paper/figures/output/*.pdf

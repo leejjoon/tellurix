@@ -1,0 +1,192 @@
+{
+ "rule": "Windows are chosen by rule, not by eye. The fit's residual/noise is not used\nto rank solar windows: the noise differs by 100x between windows (and niratl's\nis 5x below file 5's), so it ranks windows by their signal-to-noise and by the\nsolar model, not by the atmosphere. The ranking metric instead is\n\n    rms of (observed - model) / fitted continuum over reliable pixels whose\n    effective transmission is below 0.9,\n\nthe residual where the correction is actually applied, in continuum units.\n\n* telluric-rich = at least 25% of reliable pixels below T_eff = 0.9;\n* the typical windows (file 5, niratl) are the telluric-rich windows nearest\n  that atlas's median of the metric;\n* the O2 window is the niratl window with the most pixels in which O2 alone\n  absorbs (the A band head region);\n* the worst window is the largest metric over both atlases among windows with at\n  least 200 telluric pixels (fewer and the rms is a handful of stellar lines).",
+ "file5_windows": 222,
+ "file5_rich_windows": 125,
+ "file5_rich_telluric_rms_p10_p50_p90": [
+  0.004791565426846237,
+  0.009313575503878612,
+  0.017514128717527052
+ ],
+ "file5_all_telluric_rms_p10_p50_p90": [
+  0.005229149685307886,
+  0.010868151432711267,
+  0.02132250557827212
+ ],
+ "niratl_windows": 164,
+ "niratl_rich_windows": 33,
+ "niratl_rich_telluric_rms_p10_p50_p90": [
+  0.010382881238367987,
+  0.013863697544177673,
+  0.01835666597515952
+ ],
+ "niratl_all_telluric_rms_p10_p50_p90": [
+  0.006773252175319546,
+  0.011958936163331043,
+  0.018792861409442793
+ ],
+ "file5_typical": {
+  "atlas": "file5",
+  "window": "1996-2026",
+  "telluric_rms": 0.009313575503878612,
+  "telluric_pixels": 2017,
+  "reliable_pixels": 2738,
+  "telluric_fraction": 0.7366691015339664,
+  "residual_rms_over_noise": 1.971579276735077,
+  "o2_only_pixels": 0,
+  "v1_cm1": 1996.0,
+  "v2_cm1": 2026.0,
+  "pixel_sigma": 0.00484085176601277,
+  "residual_rms": 0.009544123023617178,
+  "free_species": "CO+CO2+H2O+O3",
+  "at_bound": "lsf_sigma_kms",
+  "converged": true,
+  "airmass": 1.9849999999999999,
+  "lsf_sigma_kms": 0.05,
+  "min_effective_transmission": 0.15212275091958583,
+  "percentile_all_windows": 42.7906976744186,
+  "percentile_rich_windows": 50.4,
+  "log_columns_free": {
+   "CO": 0.45814474004510053,
+   "CO2": -0.01932370736169372,
+   "H2O": -0.391208392569522,
+   "O3": -0.08229957813558511
+  },
+  "clean_rms": null,
+  "telluric_rms_on_solar_lines": 0.017029920125400506,
+  "telluric_rms_off_solar_lines": 0.007216182646460857,
+  "telluric_pixels_on_solar_lines": 243,
+  "atlas_total_vs_observed_median_sigma": 0.01862212699103551,
+  "atlas_solar_scale": 1.0606890422962076,
+  "rms_corrected_minus_atlas_solar": 0.015638371430800733,
+  "rms_corrected_minus_payne_zero": 0.011671452059080033,
+  "rms_atlas_solar_minus_payne_zero": 0.01588059159706674,
+  "atlas_solar_measured_pixels": 2511,
+  "zoom_cm1": [
+   2019.66347537512,
+   2024.65790384645
+  ]
+ },
+ "niratl_typical": {
+  "atlas": "niratl",
+  "window": "10622-10653",
+  "telluric_rms": 0.013863697544177673,
+  "telluric_pixels": 2103,
+  "reliable_pixels": 3779,
+  "telluric_fraction": 0.5564964276263562,
+  "residual_rms_over_noise": 68.55340619659863,
+  "o2_only_pixels": 0,
+  "v1_cm1": 10622.497956190007,
+  "v2_cm1": 10652.500061121034,
+  "pixel_sigma": 0.00020958609224316801,
+  "residual_rms": 0.014367840514703686,
+  "free_species": "H2O",
+  "at_bound": "",
+  "converged": true,
+  "airmass": 1.1,
+  "lsf_sigma_kms": 0.6499705080124409,
+  "min_effective_transmission": 0.14109608612486724,
+  "percentile_all_windows": 64.91228070175438,
+  "percentile_rich_windows": 51.515151515151516,
+  "log_columns_free": {
+   "H2O": 0.18511913739727082
+  },
+  "clean_rms": null,
+  "telluric_rms_on_solar_lines": 0.024418205782380232,
+  "telluric_rms_off_solar_lines": 0.00845170473537966,
+  "telluric_pixels_on_solar_lines": 315,
+  "atlas_total_vs_observed_median_sigma": 0.0,
+  "atlas_solar_scale": 1.0015134089617632,
+  "rms_corrected_minus_atlas_solar": 0.021562803657789825,
+  "rms_corrected_minus_payne_zero": 0.02045269777581357,
+  "rms_atlas_solar_minus_payne_zero": 0.02374076428236625,
+  "atlas_solar_measured_pixels": 3779,
+  "zoom_cm1": [
+   10629.209049747229,
+   10634.198410787041
+  ]
+ },
+ "o2_window": {
+  "atlas": "niratl",
+  "window": "13097-13128",
+  "telluric_rms": 0.008645459339957246,
+  "telluric_pixels": 2576,
+  "reliable_pixels": 3436,
+  "telluric_fraction": 0.7497089639115251,
+  "residual_rms_over_noise": 81.13432050443107,
+  "o2_only_pixels": 2516,
+  "v1_cm1": 13097.499852353578,
+  "v2_cm1": 13127.50195247504,
+  "pixel_sigma": 0.0002718908817824862,
+  "residual_rms": 0.022059681944772615,
+  "free_species": "O2",
+  "at_bound": "",
+  "converged": true,
+  "airmass": 1.1,
+  "lsf_sigma_kms": 0.25584072370400895,
+  "min_effective_transmission": 0.12116454718021077,
+  "percentile_all_windows": 18.421052631578945,
+  "percentile_rich_windows": 3.0303030303030303,
+  "log_columns_free": {
+   "O2": -0.006711291737790765
+  },
+  "clean_rms": null,
+  "telluric_rms_on_solar_lines": 0.02196596503146301,
+  "telluric_rms_off_solar_lines": 0.006998804264621224,
+  "telluric_pixels_on_solar_lines": 110,
+  "atlas_total_vs_observed_median_sigma": 0.0,
+  "atlas_solar_scale": 0.9936275247347189,
+  "percentile_in_pool": 26.77165354330709,
+  "zoom_cm1": [
+   13101.23637764343,
+   13105.22933113945
+  ]
+ },
+ "worst_window": {
+  "atlas": "file5",
+  "window": "6706-6736",
+  "telluric_rms": 0.03103807206781343,
+  "telluric_pixels": 1501,
+  "reliable_pixels": 2982,
+  "telluric_fraction": 0.5033534540576794,
+  "residual_rms_over_noise": 46.841972368801954,
+  "o2_only_pixels": 0,
+  "v1_cm1": 6706.0,
+  "v2_cm1": 6736.0,
+  "pixel_sigma": 0.00051340218534772,
+  "residual_rms": 0.024048770980140438,
+  "free_species": "CO2+H2O",
+  "at_bound": "lsf_sigma_kms",
+  "converged": true,
+  "airmass": 1.9849999999999999,
+  "lsf_sigma_kms": 0.05,
+  "min_effective_transmission": 0.1371708120868906,
+  "percentile_all_windows": 96.74418604651163,
+  "percentile_rich_windows": 100.0,
+  "log_columns_free": {
+   "CO2": 1.3809311668743245,
+   "H2O": -0.34730410659028
+  },
+  "clean_rms": null,
+  "telluric_rms_on_solar_lines": 0.060866089966864254,
+  "telluric_rms_off_solar_lines": 0.017458638614735445,
+  "telluric_pixels_on_solar_lines": 280,
+  "atlas_total_vs_observed_median_sigma": 0.013851169231395366,
+  "atlas_solar_scale": 1.030036181448297,
+  "pool_size": 254,
+  "pool_p50_p90": [
+   0.011496736464816098,
+   0.019611984251827332
+  ],
+  "zoom_cm1": [
+   6718.43504913368,
+   6722.42490565442
+  ]
+ },
+ "photatl_page_solar_scales": {
+  "wn1975": 0.9811535900963588,
+  "wn2000": 0.9772820471867952,
+  "wn2025": 0.9869972122660295,
+  "wn6700": 5.435578046429821,
+  "wn6725": 1.0132057025304588
+ }
+}
