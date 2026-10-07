@@ -72,7 +72,7 @@ class LBLRTMRunConfig:
     # column of each, as LBLRTM's IATM=0 layer input -- instead of levels for
     # LBLRTM's path calculation. Levels make LBLRTM rebuild each layer by
     # interpolating between them, which in the 5000-5020 cm-1 template gave it
-    # 13.8% less water than tellurix had (docs/lblrtm_corrected_mode.md); layers
+    # 12.2% less water than tellurix had (docs/lblrtm_corrected_mode.md); layers
     # make the two codes integrate the same atmosphere, so a difference between
     # them is the physics.
     user_layers: bool = False
@@ -347,8 +347,11 @@ def lblrtm_line_shape_optical_depth(
     value there, L(B) for most molecules and (2 - x^2/B^2) L(B) for CO2, whose
     chi factor 12.17 overrides to 1. ``truncated - full`` is what the cutoff
     changes for lines both codes carry; ``truncated`` alone is what LBLRTM adds
-    for lines only it carries. Line coupling is not included. Evaluated in
-    numpy, line by line, for validation rather than fitting.
+    for lines only it carries. Line coupling is not included, nor is the
+    radiation term LBLF4 applies at each far-wing grid point (``oprop.f90``);
+    both shapes here carry the term at line centre, which is worth up to about
+    0.5% of the wing at the cutoff. Evaluated in numpy, line by line, for
+    validation rather than fitting.
     """
 
     from scipy.special import voigt_profile

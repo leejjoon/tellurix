@@ -195,7 +195,8 @@ many times it compiles. Two seams exist for that, and both drivers use them:
   self-broadening partial pressure (`LinearizedOpacityBackend`) -- the only
   route a fitted parameter takes into the kernel, and a weak one. Column scales
   stay free and differentiable. `self_broadening="frozen"` drops that term and
-  is 70x less accurate; a fit using it must be repeated from its own result.
+  is 23x less accurate in maximum error (70x in rms); a fit using it must be
+  repeated from its own result.
 
 Measured together: 61 s to 3.3 s for a three-stage fit, 8.1x end to end
 including the precompute, with fitted parameters agreeing to 1.8e-5.

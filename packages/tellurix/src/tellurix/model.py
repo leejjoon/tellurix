@@ -292,7 +292,8 @@ class LinearizedOpacityBackend:
     Measured on the Kitt Peak profile at 5005-5025 cm-1 against the exact
     calculator, over water columns from 0.50x to 2.72x the reference: maximum
     transmission error 6.7e-4 and rms 2.9e-5, against 5.5e-3 of photon noise.
-    Simply holding the cross sections fixed is 70x worse (1.5e-2 maximum).
+    Simply holding the cross sections fixed is 23x worse in maximum error
+    (1.5e-2) and 70x in rms.
     Accuracy degrades away from the reference, so build this from a converged
     fit when the column is known to be far from the profile's own value.
     """

@@ -126,10 +126,13 @@ class SparseCoreDirect(OpaDirect):
     database's coupling coefficients, as LBLRTM applies AER's: each line becomes
     S (1 + G p^2) [Re w(z) + Y p Im w(z)] with p the pressure in atmospheres,
     Y and G interpolated in temperature (``AERLineDatabase.coupling``). The
-    Im w term is cut at 25 cm-1 less a pedestal, as LBLRTM cuts it; the line
-    itself keeps its full Voigt shape. LBLRTM approximates the dispersion
-    profile as the Voigt line times its offset in Voigt widths, which is exact
-    in the Lorentz limit; Im w is exact everywhere. Off by default, so earlier
+    Im w term is cut at 25 cm-1 less a Lorentz pedestal; the line itself keeps
+    its full Voigt shape. For CO2, LBLRTM subtracts (2 - x^2/B^2) L(B) instead,
+    which makes its far-wing dispersion about 15% smaller -- the whole of the
+    0.90% against 1.04% difference in the coupling effect at 5000 cm-1. LBLRTM
+    also approximates the dispersion profile as the Voigt line times its
+    offset in Voigt widths, which is exact in the Lorentz limit; Im w is exact
+    everywhere (docs/lblrtm_corrected_mode.md). Off by default, so earlier
     results reproduce.
     """
 

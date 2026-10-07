@@ -167,6 +167,11 @@ they are now recomputed inside the kernel and XLA fuses them into the reduction.
 | Opacity compile + first call | 22.4 s | 4.3 s |
 | Opacity steady state | 16.7 ms | 16.7 ms |
 
+The "before" implementation no longer exists, so the compile times cannot be
+re-measured. Against ExoJAX's own `OpaDirect` on 5000--5100 cm-1 (12 layers,
+H2O), compile plus first call is now 10.7 s against 2.3 s
+(`paper/figures/fig_method_sparse_core.py`).
+
 Steady state does not move: the kernel is compute-bound, not bandwidth-bound.
 What changes is compile time, and the memory ceiling that previously forced
 `layer_chunk_size` on fine grids. Agreement with the previous implementation is
@@ -189,9 +194,9 @@ through the continuum.
 
 Accuracy, against the exact calculator over water columns from 0.50x to 2.72x
 the reference: maximum transmission error 6.7e-4, rms 2.9e-5, against 5.5e-3 of
-photon noise. `self_broadening="frozen"` drops the first-order term and is 70x
-worse (1.5e-2 maximum); it is accurate only near the reference and a fit using
-it must be repeated from its own result.
+photon noise. `self_broadening="frozen"` drops the first-order term and is 23x
+worse in maximum error (1.5e-2) and 70x in rms; it is accurate only near the
+reference and a fit using it must be repeated from its own result.
 
 ### One compilation per page, not one per stage
 
@@ -346,7 +351,9 @@ The wider **5000--5100 cm-1, 2048-pixel order** also completed: 4,669 lines,
 5,348 high-resolution samples, six layers, 61.4 ms forward and 73.2 ms
 value + gradient on GPU (20 timed calls). Compile + first call took 11.6 s
 and 14.5 s. Only 35,862 of its 24,969,812 line/grid pairs (0.144%) can enter
-the expensive core branch. The wider case is a scaling measurement; its
+the expensive core branch; that count uses the default 400 K bound, and with
+the profile's own maximum temperature it is 0.12%
+(`paper/figures/fig_method_sparse_core.py`). The wider case is a scaling measurement; its
 full-order agreement with original Direct was not separately measured.
 
 The optimized CPU path with unrolled layers measured 118 ms forward and

@@ -46,6 +46,13 @@ Against isolated LBLRTM 12.17 continuum calculations at 5000--5020 cm-1, the
 three cases give median relative optical-depth errors of 0.024%, 0.076%, and
 0.029%. The largest 99th-percentile error is 0.107%; see
 `packages/tellurix/tests/data/native_mt_ckd_validation.json` for the states and complete metrics.
+Those numbers are an upper bound set by LBLRTM's single-precision TAPE12, which
+cannot resolve these small optical depths. With the columns scaled 100x so that
+it can, over 4000--6500 cm-1 on a 12-layer ERA5 column, the median relative
+difference is 0.0013% (self) and 0.0003% (foreign), the 99th percentile 0.14%
+and 0.026% in the weakest wings (`paper/figures/fig_method_continuum.py`).
+LBLRTM's two-stage interpolation (MT_CKD onto 1 cm-1, then XINT onto the line
+grid) differs from tellurix's single stage by about 1e-7.
 
 The builder first uses the same pressure edges as the JAX layers and enables
 the AER/HITRAN air-pressure line shifts that ExoJAX 2.5 Direct omits. LBLRTM
@@ -82,9 +89,11 @@ built it:
 
 - **Mostly, a different atmosphere.** The TAPE5 writer hands LBLRTM the
   6-layer profile as 7 levels, chosen so that adjacent levels average to the
-  layer values. LBLRTM re-layers them into 18 and interpolates water
+  layer values. LBLRTM re-layers them into 13 layers (AUTLAY; 18 integration
+  sub-layers once the given levels are merged in) and interpolates water
   exponentially between levels, which sags below that average: its water
-  column is 2.143e22 cm-2 against tellurix's 2.440e22, 13.8% less. Air and CO2
+  column is 2.143e22 cm-2 against tellurix's 2.440e22, 12.2% less (tellurix
+  carries 13.8% more). Air and CO2
   agree to 0.4%. tellurix's integrated H2O line optical depth is 11.7% high and
   CO2's 2.3% low.
 - **Not LBLRTM's 25 cm-1 line cutoff.** LBLRTM truncates every line at
@@ -160,12 +169,30 @@ G at 200, 250, 296 and 340 K from `lncpl_lines` (the per-molecule files carry
 the flag, not the coefficients), and `ExoJAXOpacityBackend.prepare(...,
 line_coupling=True)` applies them in `direct_sparse`: each line becomes
 S (1 + G p^2) [Re w(z) + Y p Im w(z)], with Y and G interpolated in temperature
-as LBLRTM does and the Im w term cut at 25 cm-1 less a pedestal, as LBLRTM cuts
-it -- a Rosenkranz term decays only as 1/x and its tails cancel over a whole
-band, not over a window's line list. The line itself keeps its full Voigt
-shape. LBLRTM approximates the dispersion profile as the Voigt line times its
-offset in Voigt widths; tellurix uses Im w, exact everywhere, and the two forms
-differ by 0.03% of this window's CO2. Coupling is off by default, so every
+as LBLRTM does and the Im w term cut at 25 cm-1 less a Lorentz pedestal
+x / pi(gamma^2 + B^2) -- a Rosenkranz term decays only as 1/x and its tails
+cancel over a whole band, not over a window's line list. The line itself keeps
+its full Voigt shape. (LBLRTM puts the dispersion term outside the 1 + G p^2
+factor, as S Y p; G is zero for every coupled CO2 and O2 line in AER 3.9, so
+the two are the same.)
+
+Two differences from LBLRTM remain, measured on three coupled CO2 lines near
+4998 cm-1 by `paper/figures/fig_method_coupling.py`:
+
+- **The pedestal.** For CO2, LBLRTM subtracts (2 - x^2/B^2) L(B) from coupled
+  lines as from all others (`oprop.f90`, CONVF4), not the plain Lorentz value.
+  At 800 hPa that leaves tellurix's far-wing dispersion 15% larger than
+  LBLRTM's; with LBLRTM's CO2 pedestal the two agree to 0.6%. This is what
+  separates the 1.04% and 0.90% coupling effects in the table above.
+- **The shape.** LBLRTM approximates the dispersion profile as its tabulated
+  Voigt line times the offset in Voigt widths (CNVFNV, CONVF4), which is exact
+  in the Lorentz limit; tellurix uses Im w, exact everywhere. At 800 hPa the
+  terms agree to 0.56% of their peak; at 50 hPa, where Doppler broadening
+  matters, Im w is broader by up to 23% of the peak, and LBLRTM's far wing is
+  low by alpha_L / alpha_V.
+
+Both are far below what a fit sees: with coupling the fitted agreement is
+0.039% at the 99th percentile. Coupling is off by default, so every
 earlier result reproduces. AER 3.9 couples CO2 (632,976 lines), CH4 and O2;
 two O2 lines use a reduced-width form (flag -3) that is refused rather than
 approximated.
