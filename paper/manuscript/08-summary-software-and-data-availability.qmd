@@ -1,0 +1,13 @@
+---
+title: "8. Summary; software and data availability"
+---
+
+The summary repeats the four results in one line each: speed (Section 3), LBLRTM agreement (Section 4), FTS atlases (Section 5) and IGRINS (Section 6).
+
+AJ requires software and data citations. Planned statement:
+
+- **Code:** tellurix, tellurix-fts and tellurix-igrins, open source on GitHub. Cite a Zenodo DOI for the exact release used in the paper.
+- **Results:** run records (HDF5), night calibrations and species scans, published as a release archive pinned by `data/results_manifest.json`. `results-2026-10-03` has DOI 10.5281/zenodo.23121557. The current release, `results-2026-10-05`, has a source-only Zenodo record (23156334) and needs its results tarball deposited.
+- **Inputs:** AER Line File 3.9 and MT\_CKD 4.3, downloaded with SHA-256 pins (`tellurix-download-data`); LBLRTM 12.17 used offline only; ERA5 (Copernicus, Hersbach et al. 2020).
+- **Observations:** the Arcturus atlas (Hinkle, Wallace & Livingston 1995; ask in the README for a citation); NSO/Kitt Peak FTS data (required acknowledgement: “NSO/Kitt Peak FTS data used here were produced by NSF/NOAO”); IGRINS RRISA, with its citation and acknowledgement to be confirmed.
+- **Software cited:** JAX, ExoJAX, NumPy, SciPy, h5py, Astropy if used. AJ's `\software{}` block lists them.

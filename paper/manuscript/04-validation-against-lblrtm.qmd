@@ -1,0 +1,56 @@
+---
+title: "4. Validation against LBLRTM"
+---
+
+Given the same layers, tellurix matches LBLRTM 12.17 to 0.010% median and 0.039% at the 99th percentile at R = 45,000 after a fit, with line coupling on. The section's message is that agreement with LBLRTM tests the implementation, not the physics; the observations judge the physics (Sections 5–7).
+
+Acceptance thresholds, for pixels with reference transmission > 0.05: median |ΔT| < 1e−3, 99th percentile < 5e−3, line displacement < 0.1 resolution element.
+
+| Test | Window (cm−1) | Median | 99th pct. | Source |
+| --- | --- | --: | --: | --- |
+| CO only, no continuum, R = 45,000 | 4290–4310 | 4.6e−5 | 2.2e−3 | `aer_co_validation.json` |
+| MT\_CKD 4.3 water continuum, 3 P–T–H2O states (relative τ) | 5000–5020 | 0.024–0.076% | ≤ 0.107% (limited by LBLRTM's float32 output; see 2.7) | `native_mt_ckd_validation.json` |
+| Full atmosphere, identical layers, columns + linear continuum fitted | 5000–5020 | 0.047% | 0.69% | `lblrtm_identical_layers.json` |
+| Same, with first-order CO2 line coupling | 5000–5020 | 0.010% | 0.039% | `lblrtm_identical_layers.json` |
+| Same with coupling, K orders K86 / K89 / K92 | IGRINS K | — | 0.032 / 0.146 / 0.25% | `lblrtm_identical_layers_k_orders.json` |
+| Layering: 12 weighted layers vs a 150-layer reference, fitted | 4 IGRINS windows | — | 0.04–0.06% | `layering_comparison.json` |
+
+The CO-only line displacement is 0.015 resolution element.
+
+Points to make in the text:
+
+- **The apparent 5.8% gap was the harness, not the physics.** Handed 7 levels, LBLRTM re-layers them into 13 layers (18 integration sub-layers) and interpolates water exponentially between levels, giving 12.2% less water column (2.143e22 against 2.440e22 cm−2). Passing tellurix's own layers (IATM = 0) removes it. Fitted scales then come out at 1.001 for H2O and 1.000 for CO2.
+- **CO2 line coupling is the remaining physics difference.** LBLRTM applies AER first-order coupling to 5,679 of 11,849 CO2 lines near this window. Coupling lowers the window's CO2 optical depth by 0.90% in LBLRTM and by 1.04% in tellurix. The 25 cm−1 cutoff and pedestal carry 0.7% of CO2, but at 5000–5020 cm−1 the fitted continuum absorbs them. Not in K92: there the cutoff in far water-line wings leaves 0.25% at the 99th percentile, falling to 0.055% when tellurix also applies the cutoff (\`lblrtm\_identical\_layers\_k\_orders.json\`).
+- **The continuum residual is not identified.** LBLRTM's continua average τ = 0.0066 against MT\_CKD water's 0.0028; the difference is smooth and absorbed by the fitted continuum.
+- **The offline correction template** (`lblrtm_corrected`) brings the 99th percentile to 4.75e−5 for its fixed profile, and stays below 2.34e−3 at 0.5–2× water and air mass 1–2.5. Present it briefly, as a consistency demonstration.
+- **Gradients and recovery.** Mixed-precision checks: 588 molecular states, 45 spectra, Jacobian columns, and paired fits on 3 noise seeds (table in Section 3).
+
+## 4.1 Figures
+
+All numbers below are recomputed by `paper/figures/fig_lblrtm_comparison.py` from the saved LBLRTM TAPE12s and agree with the committed JSON reports to every printed digit.
+
+![](../figures/output/fig_lblrtm_5000.png){fig-alt="tellurix vs LBLRTM 5000-5020" width=100%}
+
+**Figure 4a. tellurix against LBLRTM 12.17 at 5000–5020 cm−1, identical layers.** Shown at R = 45,000 after fitting H2O and CO2 scales and a linear continuum. Without line coupling the residual is a CO2 band pattern of ±0.7% (median 0.047%, 99th percentile 0.69%). With first-order coupling it is flat at 0.010% / 0.039%. Gaps are saturated cores (T ≤ 0.05), excluded by the metric.
+
+![](../figures/output/fig_lblrtm_5000_zoom.png){fig-alt="zoom on worst residual" width=100%}
+
+**Figure 4b. Zoom on the worst residual without coupling** (5001.29 cm−1), monochromatic and at R = 45,000. Without coupling the monochromatic difference is an antisymmetric ±0.8% around a saturated CO2 line, the signature of line mixing. With coupling it is about ±0.03%, so the agreement holds line by line, not only after convolution.
+
+![](../figures/output/fig_lblrtm_K92.png){fig-alt="K92 order" width=100%}
+
+**Figure 4c. The worst K order, K92 (5122–5193 cm−1).** Coupling lowers the 99th percentile only from 0.43% to 0.25%. All three K orders (median / 99th percentile):
+
+| Order | No coupling | With coupling |
+| --- | --- | --- |
+| K86 | 0.077% / 0.52% | 0.0072% / 0.032% |
+| K89 | 0.27% / 1.28% | 0.034% / 0.146% |
+| K92 | 0.071% / 0.43% | 0.058% / 0.25% |
+
+![](../figures/output/fig_lblrtm_K92_zoom.png){fig-alt="K92 zoom" width=100%}
+
+**Figure 4d. K92 zoom at its worst residual** (5182.11 cm−1). tellurix absorbs about 0.25% more across a broad, smooth stretch between strong water lines, and the coupled and uncoupled curves coincide there. This is LBLRTM's 25 cm−1 line cutoff acting on far water wings, not coupling.
+
+![](../figures/output/fig_lblrtm_co.png){fig-alt="CO only" width=100%}
+
+**Figure 4e. The first rung: CO only, 4290–4310 cm−1, no continuum** (median 0.005%, 99th percentile 0.22%). tellurix's CO cores are uniformly deeper, by up to 0.27%. This rung used LBLRTM's own re-layered atmosphere, no pressure shifts and plain Direct opacity, so it is not like-for-like with Figures 4a–d. It belongs as a historical rung, or should be rerun with identical layers.

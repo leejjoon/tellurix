@@ -1,0 +1,88 @@
+---
+title: "3. Fitting and computational cost"
+---
+
+A three-stage fit takes 3.3 s on one GPU instead of 61 s. The gain comes from compiling once and taking the line-by-line kernel out of the optimizer loop; making each evaluation faster contributes less (`docs/precomputed_opacity_results.json`).
+
+## 3.1 The fitter
+
+- Bounded MAP by L-BFGS-B over `jax.value_and_grad` (`fit_order`). Fixed dimensions are removed, free ones rescaled to physical steps, and a convergence with a large projected gradient is rejected. That hardening fixed a 10.88σ LSF-width discrepancy found in validation (`docs/mixed_precision_validation.md`).
+- Staged fits: continuum, then velocity, then columns, all sharing one compiled `OrderObjective`.
+
+## 3.2 Where the time goes
+
+| Configuration (synthetic Arcturus-like page, RTX 5000 Ada) | Wall clock | Speedup |
+| --- | --: | --: |
+| Compile per stage | 61.2 s | 1.0× |
+| One shared compilation | 35.4 s | 1.7× |
+| Precomputed opacity + shared compilation | 3.3 s | 18.4× |
+
+- **Precomputed opacity.** A fitted parameter reaches the kernel only through the H2O self-broadening partial pressure, so the opacity is expanded to first order in it and frozen. The maximum transmission error is 6.7e−4 (rms 2.9e−5) over water columns 0.50–2.72× the reference, against 5.5e−3 photon noise. End to end, including the 4.2 s precompute, the fit is 8.1× faster; parameters agree to 1.8e−5.
+- **Sparse core and no dense offset matrix.** The forward model is 7.0× faster and value-plus-gradient 10.4× faster than ExoJAX Direct, agreeing to 3.3e−16. Device memory falls from 426 MB to 1.8 MB.
+- **Mixed precision.** A further 11.1× forward and 8.0× gradient speedup on a 2048-pixel H2O order; it passes 588-state opacity, Jacobian and paired-fit checks (worst parameter shift 1.09e−4 σ).
+- **Grid margin ≠ line margin.** Lines are selected 25 cm−1 wide, but the grid is trimmed to 5 cm−1: 3.3× fewer points atlas-wide, at a maximum flux difference of 2.5e−4.
+- A real Arcturus page now costs about 13 s, against about 57 s before. The 598 page-epochs take about 45 min on three GPUs (`docs/arcturus_batch_timing.json`).
+
+For context, one LBLRTM 12.17 run over the same 20 cm−1 interval takes 266 ms. The warmed GPU forward model was about 2.4× faster even before these changes, and it also returns gradients.
+
+## 3.3 Against LBLRTM, stage by stage
+
+On one GPU, tellurix beats LBLRTM at every warm stage. The biggest gain is the gradient: with precomputed opacity, a gradient costs 3.6–4.4 ms against 1.05 s for LBLRTM finite differences (237–294× on K92). A cold fit still loses: an LBLRTM-in-the-loop fit converges in about 21 runs (5 s), while tellurix spends about 8 s compiling. tellurix wins once the compilation is reused across orders or frames. Source: `docs/lblrtm_tellurix_performance.json`, `benchmarks/benchmark_lblrtm_stages.py`.
+
+**Setup.** Both codes use identical 12-layer ERA5 layers, AER 3.9 H2O and CO2 lines, MT\_CKD and pressure shifts, a 30° zenith angle, and no line coupling. LBLRTM runs on one CPU core; tellurix runs on one RTX 5000 Ada GPU and, for comparison, on 64 CPU threads. Windows are W1 = 5000–5020 cm−1, W2 = 5000–5100 cm−1 and W3 = IGRINS K92 (2048 px, 13,317 lines). Warm times are medians of at least 10 calls.
+
+| Stage, W3 (K92) | LBLRTM | tellurix GPU | tellurix CPU |
+| --- | --: | --: | --: |
+| Line preparation (LNFL; AER read + core lists) | 12.3 s | 0.95 s (13×) | 1.4 s (9×) |
+| Line-by-line optical depth | 103 ms | 13.4 ms (7.7×) | 900 ms (0.11×) |
+| Continuum, layers, slant path | 28 ms | 0.15 ms | 0.62 ms |
+| Instrument: LSF, pixels, continuum | 15 ms | 1.4 ms | 1.2 ms |
+| Forward model | 167 ms | 13.4 ms (12×) | 970 ms (0.17×) |
+| Forward, precomputed opacity | — | 1.3 ms | 1.4 ms |
+| Gradient: central FD (5 runs) against autodiff | 1.05 s | 29 ms (36×) | 1.22 s (0.86×) |
+| Gradient, precomputed opacity | — | 4.4 ms (237×) | 3.6 ms (294×) |
+| Full fit, cold (first call, compilation included) | 5.1 s | 25.5 s | 17.6 s |
+| Full fit, compiled objective reused | — | 5.1 s | 6.7 s |
+
+The LBLRTM fit column counts the runs (21) its least-squares fit needed.
+
+![](../figures/output/fig_performance_stages.png){fig-alt="stage by stage" width=100%}
+
+**Figure 3a. Stage by stage, three windows.** Whiskers mark the first call, including XLA compilation. The live-opacity forward model on CPU is the one stage where LBLRTM wins.
+
+**Which stage gains most from JAX:**
+
+1. **Gradients (150–330× with precomputed opacity).** The fitted columns enter linearly, so the kernel runs once and each gradient takes milliseconds on either device. This comes from reformulating the model for autodiff, not from GPU arithmetic.
+2. **The line-by-line kernel on GPU (5–13×).** It is pure arithmetic over line–sample pairs. On CPU tellurix is 5–15× slower than LBLRTM, which evaluates far wings on a coarse grid and rejects about 90% of near lines per layer, while tellurix evaluates every line in full Voigt.
+3. **Continuum, layer merge and instrument (10–190×).** These are small in absolute terms, under 30 ms in LBLRTM.
+4. **Line preparation (9–13×)** against LNFL. It is one-time in both codes.
+
+![](../figures/output/fig_performance_scaling.png){fig-alt="scaling" width=100%}
+
+**Figure 3b. Scaling with window width.** LBLRTM's run time grows slowly with width; tellurix's live opacity grows with the line count, while precomputed opacity stays flat at 1–4 ms.
+
+**Autodiff.**
+
+- **Cost.** A gradient costs 1.8–2.2× a forward run with live opacity, and 3–4× with precomputed opacity. The cost is flat from 1 to 16 free parameters. LBLRTM needs P + 1 or 2P + 1 runs, though only column scales need reruns; velocity, LSF and continuum act on the stored spectrum.
+- **Accuracy.** Autodiff matches tellurix's own central difference to 1e−5 rms (2e−4 at worst on the χ2 gradient). Against LBLRTM's finite-difference Jacobian it agrees to 1.8–3.4% rms (correlation ≥ 0.999), which is the size of the flux difference between the two codes.
+- **Full Jacobian** (`jacfwd`, 16 parameters): 2–3 ms with precomputed opacity, and 48–260 ms live on GPU.
+
+![](../figures/output/fig_performance_gradient.png){fig-alt="gradient vs parameters" width=100%}
+
+**Figure 3c. Gradient cost against the number of free parameters, K92.** LBLRTM finite differences grow linearly; tellurix reverse-mode autodiff is flat. Open squares and diamonds are measured LBLRTM finite differences.
+
+![](../figures/output/fig_performance_fit.png){fig-alt="end to end fit" width=100%}
+
+**Figure 3d. End-to-end fit to S/N 200 synthetic spectra, and the columns it recovers.** An LBLRTM-in-the-loop fit (scipy `least_squares` with finite differences) converges in 20–23 runs and 3.6–5.9 s. A cold tellurix fit takes 22–26 s on GPU, of which about 8 s is compilation; reusing the compiled objective brings it to 0.65–5.1 s. Both recover the columns to within 1%.
+
+**Caveats.**
+
+- LBLRTM uses its own monochromatic grid (0.0014–0.0078 cm−1) with line rejection and a 25 cm−1 cutoff, and writes single-precision output. tellurix uses a 0.028 cm−1 grid with full Voigt lines.
+- LBLRTM includes all its continua; tellurix only MT\_CKD H2O.
+- The machine was shared (load average 1–12), and the tellurix CPU row used all 64 threads.
+- Float64 wings are 7–15× slower on GPU, and the float64 W2 gradient ran out of the 32 GB of GPU memory, so the GPU rows use mixed precision.
+
+## 3.4 Uncertainties
+
+- `FitResult.covariance` inverts the actual Hessian of the free, unbounded parameters. It is a formal error that assumes independent pixels.
+- The residual is dominated by correlated stellar error, so formal errors are 3–9× too small. For the water column, the formal error is 0.76% while sub-window scatter is 6.5–9%. The paper quotes empirical scatter and uses `FitResult.correlation` only for degeneracies.

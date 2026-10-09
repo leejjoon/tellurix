@@ -1,0 +1,102 @@
+---
+title: "Getting started"
+---
+
+## Install
+
+tellurix needs Python 3.10. The repository is a [uv](https://docs.astral.sh/uv/) workspace, and installing from a checkout gives all three packages, editable, in one environment:
+
+```bash
+git clone https://github.com/leejjoon/tellurix.git
+cd tellurix
+uv sync --dev --extra gpu   # CUDA 12 JAX; drop --extra gpu for a CPU-only install
+```
+
+::: {.callout-warning}
+A plain `uv sync --dev` removes the CUDA wheels and leaves JAX CPU-only. Keep `--extra gpu` on every sync if you want the GPU.
+:::
+
+To use only the core in another project, install it from GitHub with pip:
+
+```bash
+pip install "tellurix[gpu] @ git+https://github.com/leejjoon/tellurix.git#subdirectory=packages/tellurix"
+```
+
+## Line data
+
+tellurix downloads its spectroscopy but does not bundle it. One command fetches SHA-256-pinned copies of the official AER sources:
+
+```bash
+tellurix-download-data mt-ckd       # MT_CKD 4.3 water continuum coefficients (small)
+tellurix-download-data aer-lines    # AER Line File 3.9, about 406 MB compressed
+tellurix-download-data all          # both
+```
+
+Files go to `$TELLURIX_DATA`, or `~/.local/share/tellurix` by default; `--output` chooses another place. In code, `DataPaths.downloaded()` points at them.
+
+## A first transmission spectrum
+
+The example computes the transmission of an ERA5 atmosphere over Gemini South between 2.30 and 2.32 µm, where water, methane and CO absorb. It takes about 8 s on a CPU, most of it compilation. Run it from the repository root.
+
+```python
+import jax
+import numpy as np
+
+import tellurix  # enables float64; import before ExoJAX
+from tellurix import (
+    AERLineDatabase, DataPaths, ExoJAXOpacityBackend, MTCKDWaterContinuum,
+    TelluricModel, TelluricParameters, constant_velocity_grid, load_atmosphere_csv,
+)
+from tellurix.aer import AER_MOLECULE_IDS
+
+data = DataPaths.downloaded()  # or DataPaths.bootstrapped(".") after scripts/bootstrap_lblrtm.sh
+profile = load_atmosphere_csv("data/profiles/gemini_2021_era5.csv")
+nu = constant_velocity_grid(2300.0, 2320.0, resolving_power=45_000)  # wavenumber grid, cm-1
+
+species = ("H2O", "CH4", "CO")
+lines = {
+    s: AERLineDatabase(data.line_file(s, AER_MOLECULE_IDS[s]), s, (nu[0], nu[-1]))
+    for s in species
+}
+opacity = ExoJAXOpacityBackend.prepare(
+    lines, nu, methods="direct_sparse", vectorize_layers=True, pressure_shift=True
+)
+model = TelluricModel(
+    profile, nu, opacity,
+    accuracy_mode="mt_ckd", continuum=MTCKDWaterContinuum.from_netcdf(data.mt_ckd, nu),
+)
+
+parameters = TelluricParameters(
+    log_column_scales={s: 0.0 for s in species},  # the profile's own columns
+    velocity_kms=0.0, wavelength_stretch=0.0, lsf_sigma_kms=2.83,
+    continuum_coeffs=np.zeros(1), log_jitter=-10.0,
+)
+# Compile once: an uncompiled call on a live opacity backend is very slow.
+transmission = jax.jit(model.transmission)(parameters, 48.2)  # zenith angle for air mass 1.5
+```
+
+From here, `TelluricModel.predict` adds the stellar spectrum, the line-spread function and detector pixels. `fit_order` fits the parameters to an observed `SpectralOrder` with exact gradients. The [forward-model chapter](manuscript/02-the-forward-model.qmd) of the paper explains each step.
+
+## Fitting real data
+
+The fitting pipelines are command-line scripts in the repository's `scripts/` directory, built on the instrument packages:
+
+- **IGRINS:** `tellurix_igrins` reads RRISA reduced spectra, fits A0V standards order by order and builds night calibrations. See [`docs/igrins_a0v.md`](https://github.com/leejjoon/tellurix/blob/main/docs/igrins_a0v.md).
+- **FTS atlases:** `tellurix_fts` reads the Arcturus and NSO solar atlases and fits them window by window. See [`docs/arcturus_fit.md`](https://github.com/leejjoon/tellurix/blob/main/docs/arcturus_fit.md) and [`docs/solar_atlases.md`](https://github.com/leejjoon/tellurix/blob/main/docs/solar_atlases.md).
+
+## Corrected spectra
+
+The fitted products (run records, night calibrations, corrected spectra) are published as a release archive pinned by `data/results_manifest.json`:
+
+```bash
+uv run python scripts/results_archive.py fetch   # download and unpack
+uv run python scripts/results_archive.py check   # verify every file's checksum
+```
+
+[Using the corrected spectra](https://github.com/leejjoon/tellurix/blob/main/docs/using_the_corrected_spectra.md) explains the files. Use the `corrected` spectrum, the model ratio, rather than dividing by the unconvolved transmission yourself.
+
+## Further reading
+
+- [Validation workflow](https://github.com/leejjoon/tellurix/blob/main/docs/validation.md): the LBLRTM comparison ladder and its acceptance thresholds
+- [Performance](https://github.com/leejjoon/tellurix/blob/main/docs/performance.md): what a fit costs and why
+- [LBLRTM-corrected mode](https://github.com/leejjoon/tellurix/blob/main/docs/lblrtm_corrected_mode.md): MT_CKD, line coupling and the correction templates

@@ -1,8 +1,43 @@
 project:
-  type: default
+  type: website
   output-dir: _site
   render:
     - index.qmd
+    - getting-started.qmd
+    - manuscript/*.qmd
+
+website:
+  title: "tellurix"
+  site-url: https://leejjoon.github.io/tellurix/
+  repo-url: https://github.com/leejjoon/tellurix
+  search:
+    location: navbar
+    type: overlay
+  page-navigation: true
+  back-to-top-navigation: true
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: getting-started.qmd
+        text: Getting started
+      - href: manuscript/index.qmd
+        text: Paper
+    right:
+      - icon: github
+        href: https://github.com/leejjoon/tellurix
+        aria-label: tellurix on GitHub
+  sidebar:
+    - id: paper
+      title: "Paper (draft)"
+      style: docked
+      collapse-level: 1
+      contents:
+        - manuscript/index.qmd
+        - auto: manuscript/0*.qmd
+  page-footer:
+    left: "tellurix · a differentiable telluric forward model"
+    right: "Built with [Quarto](https://quarto.org)"
 
 format:
   html:
@@ -11,9 +46,12 @@ format:
       dark: darkly
     toc: true
     toc-depth: 3
-    toc-location: left
-    number-sections: false
+    toc-location: right
+    toc-title: "On this page"
     html-math-method: mathjax
+    lightbox: true
     fig-align: center
-    page-layout: article
+    code-copy: true
+    anchor-sections: true
     smooth-scroll: true
+    link-external-newwindow: true

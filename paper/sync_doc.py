@@ -1,8 +1,9 @@
-"""Turn a Markdown export of the Claude Doc draft into paper/index.qmd.
+"""Turn a Markdown export of the Claude Doc draft into the paper's pages.
 
-The Claude Doc is where the paper is drafted and commented on; this file is
-the repository's copy, regenerated on request and rendered by Quarto to the
-gh-pages site. The export flattens pictures to placeholders -- an uploaded
+The Claude Doc is where the paper is drafted and commented on; the pages under
+``paper/manuscript/`` are the repository's copy, regenerated on request and
+rendered by Quarto into the paper section of the gh-pages site, one page per
+chapter so the sidebar and the previous/next links can navigate it. The export flattens pictures to placeholders -- an uploaded
 image becomes ``[image: <alt>]`` and a drawn diagram ``[embedded content:
 <caption>]`` -- so ``doc_sync.json`` maps each one back to a file under
 ``paper/figures``. A placeholder with no mapping stops the sync rather than
@@ -10,7 +11,7 @@ silently dropping a figure.
 
 Usage::
 
-    python paper/sync_doc.py EXPORT [--output paper/index.qmd]
+    python paper/sync_doc.py EXPORT
 
 EXPORT is either the ``.md`` file or the JSON the docs connector's export
 returns (the Markdown is base64 inside it).
@@ -50,7 +51,8 @@ def figure_for(kind: str, label: str, config: dict) -> str:
         raise SystemExit(f"no figure mapped for {kind} {label!r}; add it to doc_sync.json")
     if not (HERE / target).exists():
         raise SystemExit(f"{target} is missing; render it with its script in paper/figures/")
-    return f"![]({target}){{fig-alt=\"{label}\" width=100%}}"
+    # Chapter pages sit one directory below the figures.
+    return f"![](../{target}){{fig-alt=\"{label}\" width=100%}}"
 
 
 def convert(markdown: str, config: dict) -> str:
@@ -107,36 +109,70 @@ def convert(markdown: str, config: dict) -> str:
     return re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip() + "\n"
 
 
-def front_matter(config: dict) -> str:
-    return "\n".join(
-        [
-            "---",
-            f"title: \"{config['title']}\"",
-            f"subtitle: \"{config['subtitle']}\"",
-            f"author: \"{config['author']}\"",
-            "date: last-modified",
-            "---",
-            "",
-            "::: {.callout-note}",
-            "This page is generated from the working draft; numbers and figures may change "
-            "before submission.",
-            ":::",
-            "",
-            "",
-        ]
+DRAFT_NOTE = (
+    "::: {.callout-note}\n"
+    "This paper is a working draft; numbers and figures may change before submission.\n"
+    ":::\n"
+)
+
+
+def slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+def split_chapters(body: str) -> list[tuple[str, str]]:
+    """``(heading, text)`` per level-2 section, in order."""
+
+    parts = re.split(r"^## (.*)$", body, flags=re.M)
+    return [(parts[i].strip(), parts[i + 1].strip()) for i in range(1, len(parts), 2)]
+
+
+def page(title: str, text: str) -> str:
+    # Inside a chapter page its subsections become the page's own sections, so
+    # the right-hand table of contents lists them.
+    text = re.sub(r"^### ", "## ", text, flags=re.M)
+    return f"---\ntitle: \"{title}\"\n---\n\n{text}\n"
+
+
+def write_pages(body: str, config: dict, directory: Path) -> list[Path]:
+    directory.mkdir(exist_ok=True)
+    for old in directory.glob("*.qmd"):
+        old.unlink()
+    written = []
+    chapters = []
+    abstract = ""
+    for heading, text in split_chapters(body):
+        number = re.match(r"^(\d+)\.\s*(.*)$", heading)
+        if number is None:
+            if heading.lower() == "abstract":
+                abstract = text
+                continue
+            raise SystemExit(f"unnumbered section {heading!r}; exclude it or number it in the doc")
+        name = f"{int(number.group(1)):02d}-{slug(number.group(2))}.qmd"
+        (directory / name).write_text(page(heading, text))
+        written.append(directory / name)
+        chapters.append((heading, name))
+
+    contents = "\n".join(f"{i + 1}. [{h.split('. ', 1)[1]}]({n})" for i, (h, n) in enumerate(chapters))
+    overview = (
+        f"---\ntitle: \"{config['title']}\"\nsubtitle: \"{config['subtitle']}\"\n"
+        f"author: \"{config['author']}\"\ndate: last-modified\n---\n\n"
+        f"{DRAFT_NOTE}\n## Abstract\n\n{abstract}\n\n## Contents\n\n{contents}\n"
     )
+    (directory / "index.qmd").write_text(overview)
+    return [directory / "index.qmd", *written]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("export", type=Path)
-    parser.add_argument("--output", type=Path, default=HERE / "index.qmd")
+    parser.add_argument("--output", type=Path, default=HERE / "manuscript")
     args = parser.parse_args()
 
     config = json.loads((HERE / "doc_sync.json").read_text())
     body = convert(read_export(args.export), config)
-    args.output.write_text(front_matter(config) + body)
-    print(f"wrote {args.output}")
+    for path in write_pages(body, config, args.output):
+        print(f"wrote {path.relative_to(HERE)}")
 
 
 if __name__ == "__main__":

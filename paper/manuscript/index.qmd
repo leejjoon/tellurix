@@ -1,0 +1,25 @@
+---
+title: "tellurix: a differentiable line-by-line telluric model, validated against LBLRTM and applied to IGRINS and FTS atlases"
+subtitle: "Working draft for the Astronomical Journal"
+author: "Jae-Joon Lee"
+date: last-modified
+---
+
+::: {.callout-note}
+This paper is a working draft; numbers and figures may change before submission.
+:::
+
+## Abstract
+
+We present tellurix, a differentiable forward model of terrestrial atmospheric absorption for high-resolution spectra, built on JAX and ExoJAX. It combines line-by-line Voigt opacity from the AER line file, the MT\_CKD 4.3 water continuum, a layered atmosphere from ERA5 or standard profiles, and an instrument model with a Gaussian or FTS line-spread function. A bounded maximum a posteriori fitter uses exact gradients. Evaluating only line–sample pairs that can reach the Voigt core, linearizing the opacity in the one fitted quantity that enters it, and compiling once per spectral order make a staged fit 18× faster, taking 3.3 s on one GPU. Given identical atmospheric layers, the fitted transmission agrees with LBLRTM 12.17 to 0.010% median and 0.039% at the 99th percentile at R = 45,000, once first-order CO2 line coupling is included. We correct the full Arcturus infrared atlas (598 page-epochs, 0.91–5.4 µm) and NSO Kitt Peak solar atlases, measuring each spectrum's instrumental profile from its own interferogram envelope. In both, the residual floor of about 1% comes from the stellar model, not the telluric one. On IGRINS A0V standards from three sites, H and K orders fit to about 1.3σ on a dry night. A night calibration then corrects held-out stars to 0.3–0.5× noise in absorbing orders with one water scale and one velocity per frame. A per-night systematic in the dry-gas columns is traced to header air masses describing only the first exposure of a sequence. The code and all fitted products are public.
+
+## Contents
+
+1. [Introduction](01-introduction.qmd)
+2. [The forward model](02-the-forward-model.qmd)
+3. [Fitting and computational cost](03-fitting-and-computational-cost.qmd)
+4. [Validation against LBLRTM](04-validation-against-lblrtm.qmd)
+5. [Application to FTS atlases](05-application-to-fts-atlases.qmd)
+6. [Application to IGRINS](06-application-to-igrins.qmd)
+7. [Discussion](07-discussion.qmd)
+8. [Summary; software and data availability](08-summary-software-and-data-availability.qmd)

@@ -1,0 +1,76 @@
+---
+title: "6. Application to IGRINS"
+---
+
+On A0V standards from three sites, tellurix fits every H and K order to about 1.3σ on a dry night. A night calibration from standards then corrects held-out stars and science targets with one water scale and one velocity per frame. The one per-night systematic found came from the header air mass, not from the model: averaging sec z over the exposure sequence takes the three-night χ² from 8.81 to 0.62.
+
+## 6.1 Data
+
+All data are RRISA reduced spectra: H has 28 orders over 1.430–1.835 µm, K has 26 over 1.847–2.519 µm, 2048 px each.
+
+| Night | Site | Frames | Air mass | PWV (mm) | Role |
+| --- | --- | --: | --- | --: | --- |
+| 2021-03-16 | Gemini South | 14 | 1.27–1.78 | 5.2 | ladder (ERA5 only) |
+| 2018-12-20 | DCT | 10 (5 stars) | 1.07–2.50 | \~2.4 | ladder, transfer, science (6 targets) |
+| 2018-04-03 | Gemini South | 1 (HIP 53433) | 1.04 | — | single-frame demonstration, H |
+| 2017-04-20 | McDonald | 8 (7 stars) | 1.02–2.99 | \~10.7 | ladder, transfer |
+| 2016-12-08 | DCT | 11 (10 stars) | 1.06–2.59 | \~6.9 | ladder |
+| 2015-12-01, 2015-12-03 | McDonald | 7, 6 | — | — | residual structure only |
+
+## 6.2 Method
+
+- **Per-order fit:** per-species columns, velocity, Gaussian LSF width, and a degree-9 log-Chebyshev continuum, with Simpson pixel integration. A fixed order rule decides which pixels count: throughput ≥ 0.25 of the smoothed peak, T ≥ 0.15, ±600 km/s around H lines, and ≥ 256 px per order.
+- **Atmosphere** from ERA5, anchored at the header station pressure; ERA5 pressure matches BARPRESS to 0.2%.
+- **Stellar source:** Payne Zero A0V (9,500 K, log g 4.1, v sin i fixed at 150 km/s) with its own velocity stage. It reduces the Brackett-window residual 6× (13.97σ to 2.33σ) and recovers 41% more H pixels.
+- **Lamp-flat blaze** (`flat.py`) and a leave-one-out **response pattern**. The pattern belongs to the spectrograph: it correlates across sites at r = 0.89–0.95, and a master pattern captures 74–88% of it.
+- **Night calibration:** median dry columns, LSF and velocity; water linear in time. A science frame fits only one velocity shift and one water scale.
+- **Sequence air mass:** mean sec z over the exposure sequence (`igrins_pointing.py --sequence`). The header gives the first exposure's value; for example, k Tau's 8 exposures span a mean of 3.23 against 2.96 at the first.
+
+## 6.3 Results
+
+- **Fit quality.** Ladder residuals with the pattern are 1.30σ (H) and 1.29σ (K) on DCT 2018. The flat blaze brings per-pixel z from 1.43 to 1.15 (H) and 1.58 to 1.41 (K). Line-free pixels on DCT 2018 sit at z = 0.98 (H) and 0.83 (K).
+- **Across nights.** Residuals rise with water: H/K = 1.30/1.32 (DCT 2018), 1.86/1.59 (DCT 2016), 1.76/1.64 (Gemini 2021), 1.76/2.24 (McDonald 2017). The wettest night is about 1.4× worse at every transmission level.
+- **The per-night systematic** (table below, `igrins_dry_systematic.json`). Predicted and measured dry factors correlate at r = 0.995 (McDonald 2017) and 0.992 (DCT 2016). Frame scatter falls from 0.035/0.025 to 0.004, and the residuals do not change. Line coupling, blaze, fringe, veiling, per-frame atmosphere and non-linearity were all ruled out first.
+
+| Air mass used | CO2 slopes per air mass (3 nights) | χ² (2 dof), CO2 | χ², CH4 |
+| --- | --- | --: | --: |
+| Header, first exposure | +0.0051, +0.0481, −0.0285 | 8.81 | 7.34 |
+| Exposure-sequence mean | −0.0010, −0.0012, −0.0050 | 0.62 | 1.99 |
+
+- **Transfer to held-out standards** (5 night-bands, 1,282 order-frames). Pure interpolation of the night calibration is 1.2–1.9× noise. Fitting one water scale and one shift per frame brings this to 0.3–0.5× noise in absorbing orders (0.95× for McDonald K). H and K water shifts agree to 0.005–0.006 (r = 0.997/0.998).
+- **Science targets** (DCT 2018). 4 extra standards reach 0.89–1.11σ, and the median H−K water difference across targets is 0.007. GJ 281 is flagged at 0.022.
+- **CO2 line coupling** improves the 2.0 µm band centre: K89 z falls from 1.97 to 1.68 in 10 of 10 frames. It costs 1–3% at the band edges (K86, K92), where tellurix still matches LBLRTM.
+- **Comparison:** the PLP's MODEL\_TELTRANS is off by −0.316 at T = 0.4–0.6 on the demonstration frame.
+
+## 6.4 Known limitations
+
+Known limitations: the Gaussian LSF misses deep cores by about 3σ, v sin i is fixed, the ±600 km/s mask biases absolute columns by a few percent, and O2, CO and N2O are not measurable here.
+
+## 6.5 Figures
+
+Each order and frame below was chosen by a rule, not by eye. Orders: those with at least 25% of fitted pixels below T = 0.8 on the dry night, taking the one whose median z\_rms is closest to its band's median, which gives H122 (1.474 µm) and K88 (2.02 µm). z\_rms is the rms of (observed − model)/σ over reliable pixels. Scripts are in `paper/figures/fig_igrins_*.py`.
+
+![](../figures/output/fig_igrins_standard.png){fig-alt="IGRINS standard, H122 and K88" width=100%}
+
+**Figure 6a. A median frame on the dry night** (DCT 2018-12-20, frame 0084, HD 53205, air mass 1.45). Rows: observed flux with model, telluric transmission, corrected spectrum against the A0V model, residual/σ, then 200-pixel zooms. H122 has z\_rms 1.67 (59th percentile of 268 H order-frames) and K88 has 1.58 (52nd of 246). Residuals reach ±5σ in deep cores, the Gaussian-LSF limitation noted in Section 6.4.
+
+![](../figures/output/fig_igrins_good_bad.png){fig-alt="IGRINS good and bad, dry and wet" width=100%}
+
+**Figure 6b. Good and bad, dry and wet.** (a) Cumulative z\_rms over every order-frame: dry DCT 2018 has a median of 1.56 (N = 514) and wet McDonald 2017 one of 2.28 (N = 388). (b) K88 z\_rms against sequence air mass. (c–f) The best and worst K88 frame of each night over the same 220 pixels:
+
+| Panel | Night | Frame | Air mass | K88 z\_rms (percentile) |
+| --- | --- | --- | --: | --- |
+| (c) best | dry | 0090, HR 2893 | 1.30 | 1.38 (38th) |
+| (e) worst | dry | 0033, χ Cap | 2.48 | 2.46 (90th) |
+| (d) best | wet | 0151, HR 7384 | 1.02 | 1.85 (28th) |
+| (f) worst | wet | 0074, HR 3651 | 1.93 | 2.66 (65th) |
+
+The worst frames leave line-core residuals of about −5σ. DCT H107 (z = 115) and H104 (z = 33) are excluded and named on the panel.
+
+![](../figures/output/fig_igrins_science.png){fig-alt="IGRINS science target" width=100%}
+
+**Figure 6c. A science target corrected from the night calibration** (LkCa 15, DCT 2018 frame 0059, air mass 1.32), compared with the pipeline's `SPEC_DIVIDE_A0V`. Only one water scale and one velocity shift are fitted to the frame. Telluric imprint, measured as the slope of corrected flux against 1 − T, is −0.007 (H) and +0.001 (K) for tellurix against +0.077 and +0.025 for the A0V division. Continuum noise is 0.94% against 1.04% (H) and 0.54% against 0.67% (K). Caveat: this run predates the sequence-air-mass fix.
+
+![](../figures/output/fig_igrins_coupling.png){fig-alt="K89 line coupling" width=100%}
+
+**Figure 6d. CO2 line coupling at the 2.0 µm band centre (K89).** For the median frame, z\_rms falls from 1.98 to 1.76 with first-order coupling. It improves in 10 of 10 frames (median 1.97 to 1.68), and the 10-frame mean residual's rms falls from 1.49 to 1.22, while the CO2 column moves by only 0.0001. Uses first-exposure air masses and ERA5; both arms share them.

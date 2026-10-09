@@ -1,0 +1,18 @@
+---
+title: "7. Discussion"
+---
+
+Across three instruments, the residual left after a tellurix fit is mostly not telluric. On IGRINS it is the LSF shape and the detector; on the FTS atlases it is the stellar model. Better line physics therefore pays only once those are reduced, and the discussion should say so plainly.
+
+Planned subsections:
+
+1. **What limits a correction today.**
+   - IGRINS: the Gaussian LSF leaves about 3σ in deep cores, plus fringe and bad pixels at high S/N, and residuals grow about 1.4× from the driest night to the wettest.
+   - FTS: Payne Zero line errors leave a \~1% floor (Section 5.3).
+2. **LBLRTM as a regression test, not the truth** (`docs/validation.md`, “Beyond LBLRTM”). Line coupling helps the IGRINS 2.0 µm band centre and hurts its edges, where tellurix still matches LBLRTM, so LBLRTM shares that error. Propose a fixed scorecard of IGRINS night-bands, solar windows and column-consistency checks for judging physics options.
+3. **Lessons that generalize.**
+   - A header air mass can masquerade as atmospheric physics (Section 6.3).
+   - One spectrum's anomaly can belong to that spectrum (the O2 B band, Section 5.3); a physics claim needs a second, independent spectrum.
+   - Formal covariances understate errors 3–9× when the residual is stellar.
+4. **Other instruments.** The core knows no instrument; a new one needs a reader, an LSF and an order rule. Name concrete next targets (open question: which ones? For example, IGRINS-2 on Gemini North, or other R \~ 40,000–100,000 NIR spectrographs).
+5. **Future physics.** Speed-dependent line shapes, HITRAN2020 against AER intensities, CO2 mixing beyond first order, a non-Gaussian IGRINS LSF, and a joint stellar–telluric fit through the shared gradient.

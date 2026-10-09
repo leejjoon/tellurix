@@ -1,0 +1,11 @@
+---
+title: "1. Introduction"
+---
+
+The introduction argues one point: telluric correction needs a forward model that is accurate, differentiable and fast enough to fit every order of every frame. Today no single code is all three. Planned paragraphs:
+
+1. **The problem.** Ground-based near-infrared spectra at R \~ 45,000 (IGRINS H and K) carry H2O, CO2, CH4, N2O, CO and O2 absorption at the percent-to-saturated level. Correction by an observed A0V standard transfers its errors: the standard's own lines, an air-mass and time mismatch, and changes in water.
+2. **Synthetic correction today.** TelFit (Gullikson et al. 2014) and molecfit (Smette et al. 2015; Kausch et al. 2015) wrap LBLRTM in a derivative-free or finite-difference optimizer. Each fit re-runs LBLRTM, so cost scales with the number of evaluations, and the model cannot share a gradient with a stellar fit.
+3. **Differentiable radiative transfer.** ExoJAX (Kawahara et al. 2022, 2025) gives line-by-line opacity in JAX with autodiff on GPUs. It targets exoplanet and brown-dwarf atmospheres, not a layered Earth atmosphere seen along a slant path at an instrument's resolution.
+4. **This paper.** tellurix couples ExoJAX opacity to a layered terrestrial atmosphere, the MT\_CKD 4.3 water continuum, AER Line File 3.9, an instrument model and a bounded MAP fitter. LBLRTM 12.17 serves as the regression reference, not the runtime. We validate it against LBLRTM, then apply it to three kinds of data: the Arcturus FTS atlas, the NSO Kitt Peak solar atlases and IGRINS A0V standards from three sites.
+5. **Outline** of the remaining sections.

@@ -1,0 +1,70 @@
+---
+title: "5. Application to FTS atlases"
+---
+
+The FTS atlases test the line physics at 4–10× IGRINS resolution and very high S/N. There, the stellar model, not the telluric model, sets the residual floor. tellurix corrects the whole Arcturus IR atlas (598 page-epochs, 0.91–5.36 µm) and four NSO Kitt Peak solar data sets.
+
+## 5.1 Instrument profile measured from the spectrum
+
+- Every atlas is fitted with an unapodized sinc ILS applied by FFT. Each page's MOPD is measured from its own interferogram envelope (`ils.py`).
+- **Arcturus:** five sampling bands, MOPD 25.3–25.6 cm at 0.010 cm−1 down to 6.74 cm at 0.040 cm−1. The two epochs differ by 11.5% in R at 2 µm (126,000 against 113,000).
+- **Solar:** FWHM 0.01753 cm−1 for photatl and the 1990 pair, 0.01859 for niratl, 0.041–0.042 for the 1983 pair. The ftsspec headers misstate resolution by up to 3.02×, and Wallace 2011's measured R is 577,000/441,000 rather than the stated 676,000/698,000.
+- A Gaussian ILS in place of the sinc raises the rms 1.24× and biases CO2 by +0.61% (synthetic test, `arcturus_validation.json`).
+
+## 5.2 Arcturus (Hinkle, Wallace & Livingston 1995)
+
+- **Source:** a fixed Payne Zero synthesis (T\_eff 4286 K, log g 1.66, \[M/H\] −0.52, \[α/M\] 0.30). Converging its atmosphere changes residuals by only about 0.5%, so the stellar error is in the line list.
+- **Atlas-wide:** 822,928 pixels fitted, median residual 4.48σ; 19.4% of fits have a parameter at a bound.
+- **Error budget at 2 µm (ab5000):** rms 0.0221 against photon noise 0.0055, telluric about 0.009, stellar about 0.012.
+- **Two-epoch test** (`arcturus_two_epoch.json`). The fitted stellar velocity separation is 40.427 km/s against 40.44 from the atlas. Residuals correlate at r = 0.824 in the stellar frame and r = 0.152 in the telluric frame, so what remains is stellar. The model-ratio correction halves the epoch difference (0.0357 to 0.0183).
+- **Against the atlas's own telluric spectrum:** H2O agrees to −0.3% on ab5000, but CO2 differs by −10.3%. Atlas-wide, the published telluric spectrum carries 8–10% less absorption (k = 0.901 summer, 0.918 winter). It came from separate McMath lunar observations, so agreement with it is only a consistency check.
+- **Caveat:** the atlas gives no air mass, so fitted column scales include it and cannot be compared between pages. Only ratios of species on one page are free of air mass.
+
+## 5.3 NSO Kitt Peak solar atlases
+
+| Data set | Coverage (cm−1) | Air mass | Windows | Residual rms | Solar-line rms |
+| --- | --- | --- | --: | --: | --: |
+| ftsspec 1990-12-18, file 5 (= photatl, rescaled) | 1876–9091 | 1.985 | 224 × 30 cm−1 | 1.03% | 4.69% |
+| ftsspec 1990-12-18, file 4 | 1876–9091 | 4.73 | 224 | — | — |
+| niratl | 8900–13600 | 1.10 (from the O2 A band) | 188 pages | 1.20% | 3.82% |
+| ftsspec 1983-06-26, files 2 and 3 | 8516–20735 | 5.37, 3.09 | — | 1.67%, 1.62% | — |
+
+- **Source:** Payne Zero (5772 K, log g 4.438, solar metallicity) as disc-integrated flux, fitted with v sin i = 0 to the disc-centre atlases.
+- **The \~1% floor is the stellar model.** The flux/intensity mismatch is 28.5% of the line-floor variance. The Wallace 2011 and IAG residuals correlate at r = 0.996, so the rest belongs to Payne Zero (`solar_floor_split.json`). This was measured at 0.74–0.93 µm only.
+- **Air-mass fold.** Folding file 4 onto file 5 is exact for CO and CO2 (≤ 0.01%), and water is low by 0.40–1.18% (saturation). Files 4 and 5 still disagree by about 4%, attributed to the scan-averaged air mass.
+- **Minor species.** Adding OCS and O3 takes the 2030–2060 cm−1 window from 3.75× to 1.47× noise.
+- **O2.** The O2 collision-induced continuum, ported from LBLRTM, agrees with it to 0.13%. It changes the corrected spectra by up to 9.3% at 1.27 µm. The 1983 file pair shows a B/A excess of 1.024–1.027 that two independent atlases do not: IAG 2014 gives 0.980 ± 0.009, Kitt Peak 1989 gives 0.976 ± 0.013, and the lab value is 0.969. AER against HITRAN, line coupling, temperature and line width are each ruled out at under 1%. The paper reports the excess as a property of that file pair.
+
+## 5.4 Figures
+
+In every typical and bad case below, the largest residuals sit on stellar lines that Payne Zero draws wrong, not on telluric lines. Pages and windows are chosen by a rule written in each script (`paper/figures/fig_arcturus_pages.py`, `fig_solar_pages.py`). Solar windows are ranked by the telluric residual: the rms of (observed − model)/continuum over pixels with T\_eff < 0.9. Residual/noise is not used for them, because solar noise varies about 100× between windows and that ranking would only order them by S/N.
+
+![](../figures/output/fig_arcturus_typical.png){fig-alt="Arcturus typical page" width=100%}
+
+**Figure 5a. A typical Arcturus page, 2.05 µm CO2** (ab4850 winter). Its residual is 4.52σ, the 51st percentile of the atlas. Rows: data and model, effective transmission, corrected spectrum against Payne Zero, residual/σ; right, a 5 cm−1 zoom. The residual is 15.0σ rms where Payne Zero has a line deeper than 5% and 3.0σ elsewhere. Payne Zero lacks the 4857.3 cm−1 line and draws 4872 cm−1 too deep.
+
+![](../figures/output/fig_arcturus_good_bad.png){fig-alt="Arcturus good and bad" width=100%}
+
+**Figure 5b. Good and bad Arcturus pages** (10th and 90th percentiles of telluric-rich pages).
+
+- **Good:** ab8650 summer, 1.15 µm water, 2.52σ. The residual is near noise at every depth, yet the corrected spectrum scatters by up to 10% in water-line wings, because the noise is divided by T ≈ 0.5.
+- **Bad:** ab1993 winter, 5.0 µm, 8.11σ. T\_eff is a featureless 0.7–0.8, yet residuals reach ±25σ on every stellar line. Our corrected spectrum agrees with the atlas's own telluric-divided spectrum to rms 0.031, and both differ from Payne Zero by 0.078. The failure is the stellar model.
+
+![](../figures/output/fig_arcturus_atlas_telluric.png){fig-alt="Arcturus vs atlas telluric" width=100%}
+
+**Figure 5c. Our transmission against the atlas's published telluric spectrum.** On ab4850 the median |difference| is 0.0069 and k = 0.98. The atlas column exceeds 1 in saturated cores, so those points are excluded (grey). Atlas-wide, the median |difference| is 0.0142, and the atlas carries about 9% less optical depth (k = 0.90 summer, 0.92 winter). It comes from a separate lunar observation, so this is a consistency check, not a truth test.
+
+![](../figures/output/fig_solar_photatl_typical.png){fig-alt="Solar photatl typical" width=100%}
+
+**Figure 5d. A typical solar window, photatl / file 5, 1996–2026 cm−1** (5.0 µm CO, CO2, H2O, O3). It is the median telluric-rich window, with a telluric residual of 0.93%. The photatl solar column is overlaid. corrected − Payne Zero has rms 1.17%, while photatl solar − Payne Zero has 1.66%. The telluric residual is 1.70% on solar lines and 0.72% off them.
+
+![](../figures/output/fig_solar_niratl_typical.png){fig-alt="Solar niratl typical" width=100%}
+
+**Figure 5e. A typical niratl window, 10622–10653 cm−1** (0.94 µm water). Its telluric residual is 1.39%, the 52nd percentile. corrected − Payne Zero has rms 2.05%, against 2.37% for the atlas's own solar column. The atlas column dips in saturated water wings where ours stays flat, but ours overshoots by about 7% at 10630.2 cm−1.
+
+![](../figures/output/fig_solar_o2_worst.png){fig-alt="O2 A band and worst window" width=100%}
+
+**Figure 5f. The O2 A band, and the worst window.**
+
+- **A band** (niratl 13097–13128 cm−1): telluric residual 0.86%. The O2 column is nominal (log scale −0.007) and the corrected spectrum is within about 1% of Payne Zero.
+- **Worst of 254 windows** (file 5, 6706–6736 cm−1, 1.49 µm): 3.10%, against a median of 1.15%. A broad solar line near 6719.6 cm−1 (possibly Mg I 1.488 µm, not yet identified) is too shallow in Payne Zero, and it sits under water lines where the atlas's solar column is interpolated. CO2 is fitted at 4.0× nominal there, probably absorbing that stellar error.
