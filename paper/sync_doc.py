@@ -59,15 +59,36 @@ def convert(markdown: str, config: dict) -> str:
     while lines and (lines[0].startswith("# ") or not lines[0].strip() or "· @" in lines[0]):
         lines.pop(0)
 
+    # The doc carries working notes -- plans, checklists, open questions -- that
+    # stay in the Claude Doc and are left out of the public page.
     out: list[str] = []
-    skipping = False
+    skip_level = 0
+    skip_list = False
     in_latex = False
     for line in lines:
-        if line.startswith("## "):
-            heading = line[3:].strip()
-            skipping = any(heading.startswith(s) for s in config["exclude_sections"])
-        if skipping:
+        heading = re.match(r"^(#{2,3}) (.*)$", line)
+        if heading:
+            level = len(heading.group(1))
+            if skip_level and level <= skip_level:
+                skip_level = 0
+            if not skip_level and any(heading.group(2).startswith(s) for s in config["exclude_sections"]):
+                skip_level = level
+            line = config["rename_headings"].get(line.strip(), line)
+        if skip_level:
             continue
+        if skip_list:
+            if not line.strip() or line.lstrip().startswith("- ") or line.startswith("    "):
+                continue
+            skip_list = False
+        if any(line.startswith(p) for p in config["drop_paragraph_and_list_prefixes"]):
+            skip_list = True
+            continue
+        if any(line.lstrip().startswith(p) for p in config["drop_line_prefixes"]):
+            continue
+        for old, new in config["replace_text"].items():
+            line = line.replace(old, new)
+        for pattern in config["drop_inline_patterns"]:
+            line = re.sub(pattern, "", line)
         if line.strip() == "```latex":
             in_latex = True
             out.append("$$")
@@ -82,7 +103,8 @@ def convert(markdown: str, config: dict) -> str:
             out.append(figure_for(kind, match.group(2), config))
             continue
         out.append(line)
-    return "\n".join(out).strip() + "\n"
+    # Dropped lines leave runs of blank lines behind.
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip() + "\n"
 
 
 def front_matter(config: dict) -> str:

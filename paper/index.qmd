@@ -9,27 +9,9 @@ date: last-modified
 This page is generated from the working draft; numbers and figures may change before submission.
 :::
 
-## Status and plan
-
-This is a working outline for one AJ paper covering the tellurix method and its use on IGRINS and FTS atlases. It moves to AASTeX in the repo once the structure settles. Every number here comes from a committed JSON report or record under `docs/`; a claim without one is marked as an open question.
-
-- [ ] Agree the section structure and the paper's central claim
-- [ ] Fix the author list and affiliations
-- [ ] Choose the figures (plan near the end) and regenerate them from the scripts
-- [ ] Mint a Zenodo DOI for the code release and the results archive (`results-2026-10-05` has none yet)
-- [ ] Port to AASTeX 7 in `paper/` and collect the BibTeX
-
-## Title and abstract
-
-**Working title:** tellurix: A Differentiable Line-by-line Telluric Model
-
-**Authors:** Jae-Joon Lee (affiliation to confirm), co-authors to be decided
-
-**Abstract (draft, about 240 words):**
+## Abstract
 
 We present tellurix, a differentiable forward model of terrestrial atmospheric absorption for high-resolution spectra, built on JAX and ExoJAX. It combines line-by-line Voigt opacity from the AER line file, the MT\_CKD 4.3 water continuum, a layered atmosphere from ERA5 or standard profiles, and an instrument model with a Gaussian or FTS line-spread function. A bounded maximum a posteriori fitter uses exact gradients. Evaluating only line–sample pairs that can reach the Voigt core, linearizing the opacity in the one fitted quantity that enters it, and compiling once per spectral order make a staged fit 18× faster, taking 3.3 s on one GPU. Given identical atmospheric layers, the fitted transmission agrees with LBLRTM 12.17 to 0.010% median and 0.039% at the 99th percentile at R = 45,000, once first-order CO2 line coupling is included. We correct the full Arcturus infrared atlas (598 page-epochs, 0.91–5.4 µm) and NSO Kitt Peak solar atlases, measuring each spectrum's instrumental profile from its own interferogram envelope. In both, the residual floor of about 1% comes from the stellar model, not the telluric one. On IGRINS A0V standards from three sites, H and K orders fit to about 1.3σ on a dry night. A night calibration then corrects held-out stars to 0.3–0.5× noise in absorbing orders with one water scale and one velocity per frame. A per-night systematic in the dry-gas columns is traced to header air masses describing only the first exposure of a sequence. The code and all fitted products are public.
-
-Open question: lead with the method or with the IGRINS result? The draft leads with the method.
 
 ## 1. Introduction
 
@@ -40,8 +22,6 @@ The introduction argues one point: telluric correction needs a forward model tha
 3. **Differentiable radiative transfer.** ExoJAX (Kawahara et al. 2022, 2025) gives line-by-line opacity in JAX with autodiff on GPUs. It targets exoplanet and brown-dwarf atmospheres, not a layered Earth atmosphere seen along a slant path at an instrument's resolution.
 4. **This paper.** tellurix couples ExoJAX opacity to a layered terrestrial atmosphere, the MT\_CKD 4.3 water continuum, AER Line File 3.9, an instrument model and a bounded MAP fitter. LBLRTM 12.17 serves as the regression reference, not the runtime. We validate it against LBLRTM, then apply it to three kinds of data: the Arcturus FTS atlas, the NSO Kitt Peak solar atlases and IGRINS A0V standards from three sites.
 5. **Outline** of the remaining sections.
-
-Open question: should the paper also position tellurix against data-driven methods (PCA or wobble-style telluric models)? A sentence is probably enough.
 
 ## 2. The forward model
 
@@ -319,8 +299,6 @@ Both codes add AER's first-order (Rosenkranz) dispersion term S·Y·p to the lin
 - (c) In the far wing tellurix's term is 15% larger, because it subtracts a plain Lorentz pedestal where LBLRTM subtracts its CO2 form (2 − x²/B²)L(B). Applying LBLRTM's form closes the gap to 0.6%. This one difference explains LBLRTM's 0.90% against tellurix's 1.04% coupling effect.
 - (d) At 50 hPa, where Doppler broadening matters, LBLRTM's term is exactly Voigt × x/α\_V, and the exact Im w is broader.
 
-Repo correction: `direct.py` and `docs/lblrtm_corrected_mode.md` say tellurix cuts Im w “as LBLRTM cuts it”. For CO2 it does not, and the docs attribute only 0.03% to the shape difference.
-
 ### 2.9 Instrument model
 
 *In plain terms.* Convolving with the LSF means replacing every sample by a weighted average of its neighbours, with the LSF as the weights. This can be done directly, as a weighted sum over a kernel of finite length, or with the Fourier transform, where convolution becomes a multiplication. Direct summation is fine for a Gaussian, which falls to zero within a few widths. The FTS sinc does not fall to zero: its side lobes decay only as 1/distance. Any kernel cut at a finite length therefore drops part of the response. The FFT treats the whole spectrum at once and avoids the cut.
@@ -370,12 +348,6 @@ The column scales reach the optical depth through three routes: linearly, throug
 **Figure 2.10d. Autodiff against finite differences** of the fitting objective, for the H2O column, velocity and LSF width. Finite differences show the usual V: truncation error falls with the step and round-off grows as ε|f|/h. The best central difference agrees with autodiff to 7e−12 (H2O) and 8e−12 (LSF), but only 1.6e−8 for velocity, because a velocity step enters as λ(1 + v/c) and is lost below εc. On the live float32 kernel the H2O difference stalls at 0.5%: small P\_self steps fall below float32 resolution. Autodiff needs no step to be chosen.
 
 **Why `precompute_opacity` itself uses a central difference.** The sparse kernel sits inside a `lax.cond` that falls back to full Direct outside its temperature and pressure range. Under `vmap` over layers, the batched predicate turns `cond` into `select`, so a JVP would also run the dense fallback. Two extra forward evaluations at ±25% of P\_self avoid that.
-
-Corrections to the repo docs found here:
-
-- “Frozen is 70× worse” is the ratio of rms errors; in maximum error it is 23–28×.
-- The 0.144% core fraction uses the default 400 K bound; at the profile's own maximum temperature it is 0.121%.
-- The compile-time comparison 22.4 s → 4.3 s can no longer be re-measured; Direct against sparse now measures 10.7 s against 2.3 s.
 
 ## 3. Fitting and computational cost
 
@@ -459,10 +431,6 @@ The LBLRTM fit column counts the runs (21) its least-squares fit needed.
 - The machine was shared (load average 1–12), and the tellurix CPU row used all 64 threads.
 - Float64 wings are 7–15× slower on GPU, and the float64 W2 gradient ran out of the 32 GB of GPU memory, so the GPU rows use mixed precision.
 
-**What this means for the paper.** Do not claim tellurix is faster than LBLRTM for one fit to one spectrum with few parameters. Claim it for gradients, for many parameters, and for compiled models reused across orders and frames, which is how IGRINS nights and the FTS atlases are processed (598 Arcturus page-epochs; 10–14 frames × 54 orders per IGRINS night).
-
-Figure polish: the left panel of 3b is labelled “central FD” for LBLRTM but shows a single run. The 3c precomputed autodiff points (1–2 ms) and the table's 4.4 ms are different timing measures and need reconciling before submission.
-
 ### 3.4 Uncertainties
 
 - `FitResult.covariance` inverts the actual Hessian of the free, unbounded parameters. It is a formal error that assumes independent pixels.
@@ -492,8 +460,6 @@ Points to make in the text:
 - **The continuum residual is not identified.** LBLRTM's continua average τ = 0.0066 against MT\_CKD water's 0.0028; the difference is smooth and absorbed by the fitted continuum.
 - **The offline correction template** (`lblrtm_corrected`) brings the 99th percentile to 4.75e−5 for its fixed profile, and stays below 2.34e−3 at 0.5–2× water and air mass 1–2.5. Present it briefly, as a consistency demonstration.
 - **Gradients and recovery.** Mixed-precision checks: 588 molecular states, 45 spectra, Jacobian columns, and paired fits on 3 noise seeds (table in Section 3).
-
-Open question: drop the `lblrtm_corrected` mode from the paper, or keep it as one paragraph?
 
 ### 4.1 Figures
 
@@ -560,16 +526,7 @@ The FTS atlases test the line physics at 4–10× IGRINS resolution and very hig
 - **Minor species.** Adding OCS and O3 takes the 2030–2060 cm−1 window from 3.75× to 1.47× noise.
 - **O2.** The O2 collision-induced continuum, ported from LBLRTM, agrees with it to 0.13%. It changes the corrected spectra by up to 9.3% at 1.27 µm. The 1983 file pair shows a B/A excess of 1.024–1.027 that two independent atlases do not: IAG 2014 gives 0.980 ± 0.009, Kitt Peak 1989 gives 0.976 ± 0.013, and the lab value is 0.969. AER against HITRAN, line coupling, temperature and line width are each ruled out at under 1%. The paper reports the excess as a property of that file pair.
 
-### 5.4 Before submission
-
-- [ ] Regenerate `arcturus_atlas_summary.json` from the current full-coverage record; it still holds the trimmed run (median 4.22σ)
-- [ ] Fix the stale “no solar equivalent yet” in `using_the_corrected_spectra.md` and the README
-- [ ] Decide what to say about `lsf_sigma_kms` railing in 81/224 (file 5) and 112/223 (file 4) windows (GitHub #3)
-- [ ] Decide whether the 10% Arcturus CO2 offset from the atlas's telluric spectrum needs explaining or only stating
-
-Open question: the solar products were made for the sibling project. Should the paper present them as a deliverable, or only as a test of the line physics?
-
-### 5.5 Figures
+### 5.4 Figures
 
 In every typical and bad case below, the largest residuals sit on stellar lines that Payne Zero draws wrong, not on telluric lines. Pages and windows are chosen by a rule written in each script (`paper/figures/fig_arcturus_pages.py`, `fig_solar_pages.py`). Solar windows are ranked by the telluric residual: the rms of (observed − model)/continuum over pixels with T\_eff < 0.9. Residual/noise is not used for them, because solar noise varies about 100× between windows and that ranking would only order them by S/N.
 
@@ -602,8 +559,6 @@ In every typical and bad case below, the largest residuals sit on stellar lines 
 
 - **A band** (niratl 13097–13128 cm−1): telluric residual 0.86%. The O2 column is nominal (log scale −0.007) and the corrected spectrum is within about 1% of Payne Zero.
 - **Worst of 254 windows** (file 5, 6706–6736 cm−1, 1.49 µm): 3.10%, against a median of 1.15%. A broad solar line near 6719.6 cm−1 (possibly Mg I 1.488 µm, not yet identified) is too shallow in Payne Zero, and it sits under water lines where the atlas's solar column is interpolated. CO2 is fitted at 4.0× nominal there, probably absorbing that stellar error.
-
-Figure polish to do: panel tags touch the data in a few panels, and the legend in 5c(f) overlaps the reference line.
 
 ## 6. Application to IGRINS
 
@@ -645,15 +600,11 @@ All data are RRISA reduced spectra: H has 28 orders over 1.430–1.835 µm, K ha
 - **Transfer to held-out standards** (5 night-bands, 1,282 order-frames). Pure interpolation of the night calibration is 1.2–1.9× noise. Fitting one water scale and one shift per frame brings this to 0.3–0.5× noise in absorbing orders (0.95× for McDonald K). H and K water shifts agree to 0.005–0.006 (r = 0.997/0.998).
 - **Science targets** (DCT 2018). 4 extra standards reach 0.89–1.11σ, and the median H−K water difference across targets is 0.007. GJ 281 is flagged at 0.022.
 - **CO2 line coupling** improves the 2.0 µm band centre: K89 z falls from 1.97 to 1.68 in 10 of 10 frames. It costs 1–3% at the band edges (K86, K92), where tellurix still matches LBLRTM.
-- **Comparison:** the PLP's MODEL\_TELTRANS is off by −0.316 at T = 0.4–0.6 on the demonstration frame. Open question: compare instead with a standard A0V division, or with molecfit or TelFit, on the same frames?
+- **Comparison:** the PLP's MODEL\_TELTRANS is off by −0.316 at T = 0.4–0.6 on the demonstration frame.
 
-### 6.4 Before submission
+### 6.4 Known limitations
 
-- [ ] Refit the products still on first-exposure air masses: calibrations, master pattern, ERA5 runs, transfer, science, Gemini 2021, McDonald 2015 (GitHub #4)
-- [ ] Decide whether `--dry-shift` is still needed once those are refit
-- [ ] Account for the two outlier order-frames (H107 at 115σ, H104 at 33σ) or exclude them with a stated reason
-
-Known limitations to state: the Gaussian LSF misses deep cores by about 3σ, v sin i is fixed, the ±600 km/s mask biases absolute columns by a few percent, and O2, CO and N2O are not measurable here.
+Known limitations: the Gaussian LSF misses deep cores by about 3σ, v sin i is fixed, the ±600 km/s mask biases absolute columns by a few percent, and O2, CO and N2O are not measurable here.
 
 ### 6.5 Figures
 
@@ -712,47 +663,3 @@ AJ requires software and data citations. Planned statement:
 - **Inputs:** AER Line File 3.9 and MT\_CKD 4.3, downloaded with SHA-256 pins (`tellurix-download-data`); LBLRTM 12.17 used offline only; ERA5 (Copernicus, Hersbach et al. 2020).
 - **Observations:** the Arcturus atlas (Hinkle, Wallace & Livingston 1995; ask in the README for a citation); NSO/Kitt Peak FTS data (required acknowledgement: “NSO/Kitt Peak FTS data used here were produced by NSF/NOAO”); IGRINS RRISA, with its citation and acknowledgement to be confirmed.
 - **Software cited:** JAX, ExoJAX, NumPy, SciPy, h5py, Astropy if used. AJ's `\software{}` block lists them.
-
-## Figure and table plan
-
-Ten figures and four tables are proposed. Every one must be regenerated from a script in the repo: no IGRINS figure exists yet, and the Arcturus figures are in `docs/arcturus_walkthrough.ipynb` (20 figures, built by `build_arcturus_notebook.py`). Spectral plots carry a pixel-index axis beside the wavelength axis.
-
-| # | Section | Content | Data source | Status |
-| --- | --- | --- | --- | --- |
-| F1 | 2 | Model composition: atmosphere, opacity, continuum, instrument, fitter | diagram | to draw |
-| F2 | 2 | One order decomposed: transmission per species, LSF, stellar source, continuum, data | walkthrough “factor breakdown” | adapt |
-| F3 | 3 | Fit wall-clock by configuration; precompute error against water column | `precomputed_opacity_results.json` | new |
-| F4 | 4 | tellurix against LBLRTM at R = 45,000, with and without line coupling, plus residual | `lblrtm_identical_layers.json` + `compare_lblrtm_layers.py` | new |
-| F5 | 5 | MOPD against wavenumber for the Arcturus and solar atlases, with R | `measure_atlas_ils.py`, `measure_solar_ils.py` | adapt |
-| F6 | 5 | Arcturus page: data, model, residual; naive division against model-ratio correction | walkthrough | adapt |
-| F7 | 5 | Two-epoch residual correlation in stellar and telluric frames | `compare_arcturus_epochs.py` | new |
-| F8 | 5 | O2 B/A ratio by atlas against the lab value | `fit_atlas_o2.py`, `o2_*.json` | new |
-| F9 | 6 | IGRINS orders H and K: data, model, residual against transmission, dry and wet nights | `igrins_a0v_results.json`, run records | new |
-| F10 | 6 | Dry-gas slope per air mass: header against sequence air mass, three nights | `igrins_dry_systematic.json` | new |
-| T1 | 4 | Validation ladder (Section 4 table) | JSON reports | drafted |
-| T2 | 5 | Solar data sets (Section 5.3 table) | `solar_fit_plan.md` | drafted |
-| T3 | 6 | IGRINS nights (Section 6.1 table) | `igrins_a0v.md` | drafted |
-| T4 | 6 | Transfer test levels L0–S2 per night-band | `igrins_transfer_*.json` | new |
-
-Open question: F3 and F4 could merge, and F7 could move to an appendix, if AJ length becomes a concern.
-
-## References to collect
-
-The `literature-search-arxiv` skill can pull these into BibTeX. Each entry needs checking against the published version.
-
-- [ ] LBLRTM: Clough et al. 2005 (JQSRT 91, 233)
-- [ ] MT\_CKD: Mlawer et al. 2012, and the 2023 MT\_CKD 4 paper
-- [ ] AER line file and the line-coupling coefficients (AER documentation; Rosenkranz 1975 for first-order mixing)
-- [ ] HITRAN2020: Gordon et al. 2022
-- [ ] ExoJAX: Kawahara et al. 2022; ExoJAX 2: Kawahara et al. 2025
-- [ ] JAX: Bradbury et al. 2018
-- [ ] Algorithm 916 (Zaghloul & Ali 2011)
-- [ ] TelFit: Gullikson et al. 2014; molecfit: Smette et al. 2015, Kausch et al. 2015
-- [ ] IGRINS: Yuk et al. 2010, Park et al. 2014, Mace et al. 2016/2018; IGRINS PLP; RRISA reference
-- [ ] Arcturus atlas: Hinkle, Wallace & Livingston 1995 (PASP 107, 1042)
-- [ ] NSO solar atlases: Wallace et al. (photatl and the 2011 atlas), Livingston & Wallace 1991
-- [ ] IAG solar atlas: Reiners et al. 2016
-- [ ] Payne / The Payne Zero: Ting et al. 2019 and the stellar model actually used
-- [ ] ERA5: Hersbach et al. 2020
-- [ ] O2 band intensities: Gordon et al. 2011; lab CRDS (Domysławska et al.)
-- [ ] L-BFGS-B: Byrd et al. 1995; Zhu et al. 1997

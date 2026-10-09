@@ -4,7 +4,37 @@
   "title": "tellurix: a differentiable line-by-line telluric model, validated against LBLRTM and applied to IGRINS and FTS atlases",
   "subtitle": "Working draft for the Astronomical Journal",
   "author": "Jae-Joon Lee",
-  "exclude_sections": [],
+  "exclude_sections": [
+    "Status and plan",
+    "Figure and table plan",
+    "References to collect",
+    "5.4 Before submission"
+  ],
+  "drop_line_prefixes": [
+    "Open question",
+    "Figure polish",
+    "Repo correction",
+    "**Working title:**",
+    "**Authors:**",
+    "**Abstract (draft",
+    "**What this means for the paper.**",
+    "- [ ]",
+    "- [x]"
+  ],
+  "drop_paragraph_and_list_prefixes": [
+    "Corrections to the repo docs"
+  ],
+  "rename_headings": {
+    "## Title and abstract": "## Abstract",
+    "### 5.5 Figures": "### 5.4 Figures",
+    "### 6.4 Before submission": "### 6.4 Known limitations"
+  },
+  "replace_text": {
+    "Known limitations to state: ": "Known limitations: "
+  },
+  "drop_inline_patterns": [
+    " Open question: .*$"
+  ],
   "images": {
     "line shape anatomy": "figures/output/fig_intro_lineshape.png",
     "sky transmission 0.9-5.3 um": "figures/output/fig_intro_transmission_overview.png",
