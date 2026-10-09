@@ -209,7 +209,7 @@
     "href": "index.html#status-and-citation",
     "title": "tellurix",
     "section": "Status and citation",
-    "text": "Status and citation\ntellurix is research software under active development, and a paper describing it is in preparation; its working draft is on this site. To cite a released version of the code and its fitted products, use the Zenodo record 10.5281/zenodo.23121556, which covers all versions."
+    "text": "Status and citation\ntellurix is research software under active development, and a paper describing it is in preparation; its working draft is on this site. To cite a released version of the code and its fitted products, use the Zenodo record 10.5281/zenodo.23121556, which covers all versions.\ntellurix is released under the MIT License. The three modules derived from AER’s MT_CKD and LBLRTM continuum code stay under AER’s terms: free for research use, but not for commercial software without AER’s consent."
   },
   {
     "objectID": "getting-started.html",
