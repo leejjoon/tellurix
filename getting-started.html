@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>tellurix</title>
+<title>Getting started – tellurix</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -85,9 +85,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
 <link href="site_libs/bootstrap/bootstrap-dark-4f51704981e3ec334486724785a1ff10.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <link href="site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
-<script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
-<link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
-<link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -299,11 +296,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./getting-started.html"> 
+    <a class="nav-link active" href="./getting-started.html" aria-current="page"> 
 <span class="menu-text">Getting started</span></a>
   </li>  
   <li class="nav-item">
@@ -326,23 +323,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#install" id="toc-install" class="nav-link active" data-scroll-target="#install">Install</a></li>
+  <li><a href="#line-data" id="toc-line-data" class="nav-link" data-scroll-target="#line-data">Line data</a></li>
+  <li><a href="#a-first-transmission-spectrum" id="toc-a-first-transmission-spectrum" class="nav-link" data-scroll-target="#a-first-transmission-spectrum">A first transmission spectrum</a></li>
+  <li><a href="#fitting-real-data" id="toc-fitting-real-data" class="nav-link" data-scroll-target="#fitting-real-data">Fitting real data</a></li>
+  <li><a href="#corrected-spectra" id="toc-corrected-spectra" class="nav-link" data-scroll-target="#corrected-spectra">Corrected spectra</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further reading</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">tellurix</h1>
-<p class="subtitle lead">Differentiable telluric absorption for high-resolution spectra</p>
+<h1 class="title">Getting started</h1>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -354,91 +363,97 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Every ground-based spectrum is the source multiplied by the transmission of Earth’s atmosphere. <strong>tellurix</strong> computes that transmission line by line, from the molecules’ laboratory line parameters and the atmosphere’s pressure, temperature and composition at the time of observation. It then fits it to the observed spectrum and divides it out.</p>
-<p>It is written in <a href="https://github.com/jax-ml/jax">JAX</a> on top of <a href="https://github.com/HajimeKawahara/exojax">ExoJAX</a>. The whole model, from line opacity to detector pixels, is therefore one compiled, differentiable function: it runs on a GPU and returns exact gradients for fitting. <a href="https://github.com/AER-RCG/LBLRTM">LBLRTM</a>, the standard atmospheric line-by-line code, is its accuracy reference.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><a href="figures/output/fig_intro_transmission.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Sky transmission over the IGRINS H and K bands at R = 45,000, total and molecule by molecule, computed by tellurix for an ERA5 atmosphere over Gemini South at air mass 1.5."><img src="figures/output/fig_intro_transmission.png" class="img-fluid figure-img" style="width:100.0%" alt="Sky transmission over the IGRINS H and K bands at R = 45,000, total and molecule by molecule, computed by tellurix for an ERA5 atmosphere over Gemini South at air mass 1.5."></a></p>
-<figcaption>Sky transmission over the IGRINS H and K bands at R = 45,000, total and molecule by molecule, computed by tellurix for an ERA5 atmosphere over Gemini South at air mass 1.5.</figcaption>
-</figure>
-</div>
-<div class="grid">
-<section id="accurate" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="accurate">Accurate</h3>
-<p>Given the same atmospheric layers, tellurix matches LBLRTM 12.17 to <strong>0.010% median and 0.039% at the 99th percentile</strong> at R = 45,000. It uses AER Line File 3.9, the MT_CKD 4.3 water continuum, pressure shifts and first-order CO₂ line coupling.</p>
-<p><a href="figures/output/fig_lblrtm_5000.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="figures/output/fig_lblrtm_5000.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/04-validation-against-lblrtm.html">Validation against LBLRTM →</a></p>
-</section>
-<section id="fast-and-differentiable" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="fast-and-differentiable">Fast and differentiable</h3>
-<p>Reverse-mode autodiff gives the gradient of the fit objective with respect to every parameter in one pass. With the opacity precomputed, a gradient costs a few milliseconds on one GPU, <strong>about 240× faster</strong> than the finite differences an LBLRTM-based fit needs.</p>
-<p><a href="figures/output/fig_performance_gradient.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="figures/output/fig_performance_gradient.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/03-fitting-and-computational-cost.html">Fitting and computational cost →</a></p>
-</section>
-<section id="igrins" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="igrins">IGRINS</h3>
-<p>Per-order fits of A0V standards from Gemini South, DCT and McDonald reach about <strong>1.3σ on a dry night</strong>. A night calibration then corrects science targets with only one water scale and one velocity per frame.</p>
-<p><a href="figures/output/fig_igrins_standard.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="figures/output/fig_igrins_standard.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/06-application-to-igrins.html">Application to IGRINS →</a></p>
-</section>
-<section id="fts-atlases" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="fts-atlases">FTS atlases</h3>
-<p>The whole Arcturus infrared atlas (598 page-epochs, 0.91–5.4 µm) and the NSO Kitt Peak solar atlases are corrected. Each spectrum’s instrumental profile is measured from its own interferogram envelope.</p>
-<p><a href="figures/output/fig_arcturus_typical.png" class="lightbox" data-gallery="quarto-lightbox-gallery-5"><img src="figures/output/fig_arcturus_typical.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/05-application-to-fts-atlases.html">Application to FTS atlases →</a></p>
-</section>
-</div>
-<section id="how-it-works" class="level2">
-<h2 class="anchored" data-anchor-id="how-it-works">How it works</h2>
-<p><a href="figures/diagrams/model_composition.png" class="lightbox" data-gallery="quarto-lightbox-gallery-6"><img src="figures/diagrams/model_composition.png" class="img-fluid" style="width:100.0%"></a></p>
-<p>The atmosphere, line opacity and continuum are interchangeable components. Together they give the transmission, which an observation model turns into detector pixels: stellar spectrum, Doppler shifts, line-spread function, pixel integration and a smooth continuum. A bounded fit then adjusts a handful of parameters: one column scale per gas, the velocity, the line-spread-function width and the continuum. The <a href="./manuscript/02-the-forward-model.html">forward-model chapter</a> explains each step from first principles and compares it with LBLRTM’s implementation.</p>
-</section>
-<section id="packages" class="level2">
-<h2 class="anchored" data-anchor-id="packages">Packages</h2>
-<p>The repository is a workspace of three packages. The core knows no instrument; instrument packages build on it.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Package</th>
-<th>Import</th>
-<th>What it contains</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>tellurix</code></td>
-<td><code>tellurix</code></td>
-<td>Forward model, line opacity, MT_CKD and O₂ continua, fitter, stellar source, site profiles, run records, LBLRTM reference tooling</td>
-</tr>
-<tr class="even">
-<td><code>tellurix-fts</code></td>
-<td><code>tellurix_fts</code></td>
-<td>Readers for the Arcturus and NSO solar FTS atlases, interferogram-based instrument profiles, the solar window fit</td>
-</tr>
-<tr class="odd">
-<td><code>tellurix-igrins</code></td>
-<td><code>tellurix_igrins</code></td>
-<td>IGRINS reduced-spectrum reader, night calibration, lamp-flat blaze, the per-order standard-star fit</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="get-started" class="level2">
-<h2 class="anchored" data-anchor-id="get-started">Get started</h2>
+<section id="install" class="level2">
+<h2 class="anchored" data-anchor-id="install">Install</h2>
+<p>tellurix needs Python 3.10. The repository is a <a href="https://docs.astral.sh/uv/">uv</a> workspace, and installing from a checkout gives all three packages, editable, in one environment:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/leejjoon/tellurix.git</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> tellurix</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--dev</span> <span class="at">--extra</span> gpu        <span class="co"># Python 3.10; omit --extra gpu for CPU only</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run tellurix-download-data all  <span class="co"># AER Line File 3.9 and MT_CKD 4.3, SHA-256 checked</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>See <a href="./getting-started.html">Getting started</a> for a first transmission spectrum in about twenty lines.</p>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--dev</span> <span class="at">--extra</span> gpu   <span class="co"># CUDA 12 JAX; drop --extra gpu for a CPU-only install</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A plain <code>uv sync --dev</code> removes the CUDA wheels and leaves JAX CPU-only. Keep <code>--extra gpu</code> on every sync if you want the GPU.</p>
+</div>
+</div>
+<p>To use only the core in another project, install it from GitHub with pip:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="st">"tellurix[gpu] @ git+https://github.com/leejjoon/tellurix.git#subdirectory=packages/tellurix"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="status-and-citation" class="level2">
-<h2 class="anchored" data-anchor-id="status-and-citation">Status and citation</h2>
-<p>tellurix is research software under active development, and a paper describing it is in preparation; its <a href="./manuscript/index.html">working draft</a> is on this site. To cite a released version of the code and its fitted products, use the Zenodo record <a href="https://doi.org/10.5281/zenodo.23121556">10.5281/zenodo.23121556</a>, which covers all versions.</p>
+<section id="line-data" class="level2">
+<h2 class="anchored" data-anchor-id="line-data">Line data</h2>
+<p>tellurix downloads its spectroscopy but does not bundle it. One command fetches SHA-256-pinned copies of the official AER sources:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tellurix-download-data</span> mt-ckd       <span class="co"># MT_CKD 4.3 water continuum coefficients (small)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tellurix-download-data</span> aer-lines    <span class="co"># AER Line File 3.9, about 406 MB compressed</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">tellurix-download-data</span> all          <span class="co"># both</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Files go to <code>$TELLURIX_DATA</code>, or <code>~/.local/share/tellurix</code> by default; <code>--output</code> chooses another place. In code, <code>DataPaths.downloaded()</code> points at them.</p>
+</section>
+<section id="a-first-transmission-spectrum" class="level2">
+<h2 class="anchored" data-anchor-id="a-first-transmission-spectrum">A first transmission spectrum</h2>
+<p>The example computes the transmission of an ERA5 atmosphere over Gemini South between 2.30 and 2.32 µm, where water, methane and CO absorb. It takes about 8 s on a CPU, most of it compilation. Run it from the repository root.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tellurix  <span class="co"># enables float64; import before ExoJAX</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tellurix <span class="im">import</span> (</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    AERLineDatabase, DataPaths, ExoJAXOpacityBackend, MTCKDWaterContinuum,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    TelluricModel, TelluricParameters, constant_velocity_grid, load_atmosphere_csv,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tellurix.aer <span class="im">import</span> AER_MOLECULE_IDS</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> DataPaths.downloaded()  <span class="co"># or DataPaths.bootstrapped(".") after scripts/bootstrap_lblrtm.sh</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>profile <span class="op">=</span> load_atmosphere_csv(<span class="st">"data/profiles/gemini_2021_era5.csv"</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>nu <span class="op">=</span> constant_velocity_grid(<span class="fl">2300.0</span>, <span class="fl">2320.0</span>, resolving_power<span class="op">=</span><span class="dv">45_000</span>)  <span class="co"># wavenumber grid, cm-1</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>species <span class="op">=</span> (<span class="st">"H2O"</span>, <span class="st">"CH4"</span>, <span class="st">"CO"</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>lines <span class="op">=</span> {</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    s: AERLineDatabase(data.line_file(s, AER_MOLECULE_IDS[s]), s, (nu[<span class="dv">0</span>], nu[<span class="op">-</span><span class="dv">1</span>]))</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> s <span class="kw">in</span> species</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>opacity <span class="op">=</span> ExoJAXOpacityBackend.prepare(</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    lines, nu, methods<span class="op">=</span><span class="st">"direct_sparse"</span>, vectorize_layers<span class="op">=</span><span class="va">True</span>, pressure_shift<span class="op">=</span><span class="va">True</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> TelluricModel(</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    profile, nu, opacity,</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    accuracy_mode<span class="op">=</span><span class="st">"mt_ckd"</span>, continuum<span class="op">=</span>MTCKDWaterContinuum.from_netcdf(data.mt_ckd, nu),</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>parameters <span class="op">=</span> TelluricParameters(</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    log_column_scales<span class="op">=</span>{s: <span class="fl">0.0</span> <span class="cf">for</span> s <span class="kw">in</span> species},  <span class="co"># the profile's own columns</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    velocity_kms<span class="op">=</span><span class="fl">0.0</span>, wavelength_stretch<span class="op">=</span><span class="fl">0.0</span>, lsf_sigma_kms<span class="op">=</span><span class="fl">2.83</span>,</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    continuum_coeffs<span class="op">=</span>np.zeros(<span class="dv">1</span>), log_jitter<span class="op">=-</span><span class="fl">10.0</span>,</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Compile once: an uncompiled call on a live opacity backend is very slow.</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>transmission <span class="op">=</span> jax.jit(model.transmission)(parameters, <span class="fl">48.2</span>)  <span class="co"># zenith angle for air mass 1.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>From here, <code>TelluricModel.predict</code> adds the stellar spectrum, the line-spread function and detector pixels. <code>fit_order</code> fits the parameters to an observed <code>SpectralOrder</code> with exact gradients. The <a href="./manuscript/02-the-forward-model.html">forward-model chapter</a> of the paper explains each step.</p>
+</section>
+<section id="fitting-real-data" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-real-data">Fitting real data</h2>
+<p>The fitting pipelines are command-line scripts in the repository’s <code>scripts/</code> directory, built on the instrument packages:</p>
+<ul>
+<li><strong>IGRINS:</strong> <code>tellurix_igrins</code> reads RRISA reduced spectra, fits A0V standards order by order and builds night calibrations. See <a href="https://github.com/leejjoon/tellurix/blob/main/docs/igrins_a0v.md"><code>docs/igrins_a0v.md</code></a>.</li>
+<li><strong>FTS atlases:</strong> <code>tellurix_fts</code> reads the Arcturus and NSO solar atlases and fits them window by window. See <a href="https://github.com/leejjoon/tellurix/blob/main/docs/arcturus_fit.md"><code>docs/arcturus_fit.md</code></a> and <a href="https://github.com/leejjoon/tellurix/blob/main/docs/solar_atlases.md"><code>docs/solar_atlases.md</code></a>.</li>
+</ul>
+</section>
+<section id="corrected-spectra" class="level2">
+<h2 class="anchored" data-anchor-id="corrected-spectra">Corrected spectra</h2>
+<p>The fitted products (run records, night calibrations, corrected spectra) are published as a release archive pinned by <code>data/results_manifest.json</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/results_archive.py fetch   <span class="co"># download and unpack</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/results_archive.py check   <span class="co"># verify every file's checksum</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><a href="https://github.com/leejjoon/tellurix/blob/main/docs/using_the_corrected_spectra.md">Using the corrected spectra</a> explains the files. Use the <code>corrected</code> spectrum, the model ratio, rather than dividing by the unconvolved transmission yourself.</p>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further reading</h2>
+<ul>
+<li><a href="https://github.com/leejjoon/tellurix/blob/main/docs/validation.md">Validation workflow</a>: the LBLRTM comparison ladder and its acceptance thresholds</li>
+<li><a href="https://github.com/leejjoon/tellurix/blob/main/docs/performance.md">Performance</a>: what a fit costs and why</li>
+<li><a href="https://github.com/leejjoon/tellurix/blob/main/docs/lblrtm_corrected_mode.md">LBLRTM-corrected mode</a>: MT_CKD, line coupling and the correction templates</li>
+</ul>
 
 
 </section>
@@ -876,38 +891,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
   </div>
 </footer>
-<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
-(function() {
-  let previousOnload = window.onload;
-  window.onload = () => {
-    if (previousOnload) {
-      previousOnload();
-    }
-    lightboxQuarto.on('slide_before_load', (data) => {
-      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
-      const href = trigger.getAttribute('href');
-      if (href !== null) {
-        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
-        if (imgEl !== null) {
-          const srcAttr = imgEl.getAttribute("src");
-          if (srcAttr && srcAttr.startsWith("data:")) {
-            slideConfig.href = srcAttr;
-          }
-        }
-      } 
-    });
-  
-    lightboxQuarto.on('slide_after_load', (data) => {
-      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
-      if (window.Quarto?.typesetMath) {
-        window.Quarto.typesetMath(slideNode);
-      }
-    });
-  
-  };
-  
-})();
-          </script>
 
 
 

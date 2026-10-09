@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>tellurix</title>
+<title>4. Validation against LBLRTM – tellurix</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -26,68 +26,35 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-4f51704981e3ec334486724785a1ff10.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
-<script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
-<link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
-<link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../manuscript/05-application-to-fts-atlases.html" rel="next">
+<link href="../manuscript/03-fitting-and-computational-cost.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-4f51704981e3ec334486724785a1ff10.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -119,7 +86,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </head>
 
-<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+<body class="nav-sidebar docked nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
       const mode = bsSheetEl.getAttribute("data-mode");
       const bodyEl = window.document.querySelector("body");
@@ -288,7 +255,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../index.html">
     <span class="navbar-title">tellurix</span>
     </a>
   </div>
@@ -299,15 +266,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./getting-started.html"> 
+    <a class="nav-link" href="../getting-started.html"> 
 <span class="menu-text">Getting started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./manuscript/index.html"> 
+    <a class="nav-link active" href="../manuscript/index.html" aria-current="page"> 
 <span class="menu-text">Paper</span></a>
   </li>  
 </ul>
@@ -324,25 +291,114 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
       </div> <!-- /container-fluid -->
     </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../manuscript/01-introduction.html">Manuscript</a></li><li class="breadcrumb-item"><a href="../manuscript/04-validation-against-lblrtm.html">4. Validation against LBLRTM</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tellurix: a differentiable line-by-line telluric model, validated against LBLRTM and applied to IGRINS and FTS atlases</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Manuscript</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Introduction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/02-the-forward-model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. The forward model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/03-fitting-and-computational-cost.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Fitting and computational cost</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/04-validation-against-lblrtm.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">4. Validation against LBLRTM</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/05-application-to-fts-atlases.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Application to FTS atlases</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/06-application-to-igrins.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. Application to IGRINS</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/07-discussion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. Discussion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/08-summary-software-and-data-availability.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">8. Summary; software and data availability</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#figures" id="toc-figures" class="nav-link active" data-scroll-target="#figures">4.1 Figures</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 
-<header id="title-block-header" class="quarto-title-block default">
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../manuscript/01-introduction.html">Manuscript</a></li><li class="breadcrumb-item"><a href="../manuscript/04-validation-against-lblrtm.html">4. Validation against LBLRTM</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">tellurix</h1>
-<p class="subtitle lead">Differentiable telluric absorption for high-resolution spectra</p>
+<h1 class="title">4. Validation against LBLRTM</h1>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -354,91 +410,118 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Every ground-based spectrum is the source multiplied by the transmission of Earth’s atmosphere. <strong>tellurix</strong> computes that transmission line by line, from the molecules’ laboratory line parameters and the atmosphere’s pressure, temperature and composition at the time of observation. It then fits it to the observed spectrum and divides it out.</p>
-<p>It is written in <a href="https://github.com/jax-ml/jax">JAX</a> on top of <a href="https://github.com/HajimeKawahara/exojax">ExoJAX</a>. The whole model, from line opacity to detector pixels, is therefore one compiled, differentiable function: it runs on a GPU and returns exact gradients for fitting. <a href="https://github.com/AER-RCG/LBLRTM">LBLRTM</a>, the standard atmospheric line-by-line code, is its accuracy reference.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><a href="figures/output/fig_intro_transmission.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Sky transmission over the IGRINS H and K bands at R = 45,000, total and molecule by molecule, computed by tellurix for an ERA5 atmosphere over Gemini South at air mass 1.5."><img src="figures/output/fig_intro_transmission.png" class="img-fluid figure-img" style="width:100.0%" alt="Sky transmission over the IGRINS H and K bands at R = 45,000, total and molecule by molecule, computed by tellurix for an ERA5 atmosphere over Gemini South at air mass 1.5."></a></p>
-<figcaption>Sky transmission over the IGRINS H and K bands at R = 45,000, total and molecule by molecule, computed by tellurix for an ERA5 atmosphere over Gemini South at air mass 1.5.</figcaption>
-</figure>
-</div>
-<div class="grid">
-<section id="accurate" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="accurate">Accurate</h3>
-<p>Given the same atmospheric layers, tellurix matches LBLRTM 12.17 to <strong>0.010% median and 0.039% at the 99th percentile</strong> at R = 45,000. It uses AER Line File 3.9, the MT_CKD 4.3 water continuum, pressure shifts and first-order CO₂ line coupling.</p>
-<p><a href="figures/output/fig_lblrtm_5000.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="figures/output/fig_lblrtm_5000.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/04-validation-against-lblrtm.html">Validation against LBLRTM →</a></p>
-</section>
-<section id="fast-and-differentiable" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="fast-and-differentiable">Fast and differentiable</h3>
-<p>Reverse-mode autodiff gives the gradient of the fit objective with respect to every parameter in one pass. With the opacity precomputed, a gradient costs a few milliseconds on one GPU, <strong>about 240× faster</strong> than the finite differences an LBLRTM-based fit needs.</p>
-<p><a href="figures/output/fig_performance_gradient.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="figures/output/fig_performance_gradient.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/03-fitting-and-computational-cost.html">Fitting and computational cost →</a></p>
-</section>
-<section id="igrins" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="igrins">IGRINS</h3>
-<p>Per-order fits of A0V standards from Gemini South, DCT and McDonald reach about <strong>1.3σ on a dry night</strong>. A night calibration then corrects science targets with only one water scale and one velocity per frame.</p>
-<p><a href="figures/output/fig_igrins_standard.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="figures/output/fig_igrins_standard.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/06-application-to-igrins.html">Application to IGRINS →</a></p>
-</section>
-<section id="fts-atlases" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="fts-atlases">FTS atlases</h3>
-<p>The whole Arcturus infrared atlas (598 page-epochs, 0.91–5.4 µm) and the NSO Kitt Peak solar atlases are corrected. Each spectrum’s instrumental profile is measured from its own interferogram envelope.</p>
-<p><a href="figures/output/fig_arcturus_typical.png" class="lightbox" data-gallery="quarto-lightbox-gallery-5"><img src="figures/output/fig_arcturus_typical.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/05-application-to-fts-atlases.html">Application to FTS atlases →</a></p>
-</section>
-</div>
-<section id="how-it-works" class="level2">
-<h2 class="anchored" data-anchor-id="how-it-works">How it works</h2>
-<p><a href="figures/diagrams/model_composition.png" class="lightbox" data-gallery="quarto-lightbox-gallery-6"><img src="figures/diagrams/model_composition.png" class="img-fluid" style="width:100.0%"></a></p>
-<p>The atmosphere, line opacity and continuum are interchangeable components. Together they give the transmission, which an observation model turns into detector pixels: stellar spectrum, Doppler shifts, line-spread function, pixel integration and a smooth continuum. A bounded fit then adjusts a handful of parameters: one column scale per gas, the velocity, the line-spread-function width and the continuum. The <a href="./manuscript/02-the-forward-model.html">forward-model chapter</a> explains each step from first principles and compares it with LBLRTM’s implementation.</p>
-</section>
-<section id="packages" class="level2">
-<h2 class="anchored" data-anchor-id="packages">Packages</h2>
-<p>The repository is a workspace of three packages. The core knows no instrument; instrument packages build on it.</p>
+<p>Given the same layers, tellurix matches LBLRTM 12.17 to 0.010% median and 0.039% at the 99th percentile at R = 45,000 after a fit, with line coupling on. The section’s message is that agreement with LBLRTM tests the implementation, not the physics; the observations judge the physics (Sections 5–7).</p>
+<p>Acceptance thresholds, for pixels with reference transmission &gt; 0.05: median |ΔT| &lt; 1e−3, 99th percentile &lt; 5e−3, line displacement &lt; 0.1 resolution element.</p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
 </colgroup>
 <thead>
 <tr class="header">
-<th>Package</th>
-<th>Import</th>
-<th>What it contains</th>
+<th>Test</th>
+<th>Window (cm−1)</th>
+<th style="text-align: right;">Median</th>
+<th style="text-align: right;">99th pct.</th>
+<th>Source</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>tellurix</code></td>
-<td><code>tellurix</code></td>
-<td>Forward model, line opacity, MT_CKD and O₂ continua, fitter, stellar source, site profiles, run records, LBLRTM reference tooling</td>
+<td>CO only, no continuum, R = 45,000</td>
+<td>4290–4310</td>
+<td style="text-align: right;">4.6e−5</td>
+<td style="text-align: right;">2.2e−3</td>
+<td><code>aer_co_validation.json</code></td>
 </tr>
 <tr class="even">
-<td><code>tellurix-fts</code></td>
-<td><code>tellurix_fts</code></td>
-<td>Readers for the Arcturus and NSO solar FTS atlases, interferogram-based instrument profiles, the solar window fit</td>
+<td>MT_CKD 4.3 water continuum, 3 P–T–H2O states (relative τ)</td>
+<td>5000–5020</td>
+<td style="text-align: right;">0.024–0.076%</td>
+<td style="text-align: right;">≤ 0.107% (limited by LBLRTM’s float32 output; see 2.7)</td>
+<td><code>native_mt_ckd_validation.json</code></td>
 </tr>
 <tr class="odd">
-<td><code>tellurix-igrins</code></td>
-<td><code>tellurix_igrins</code></td>
-<td>IGRINS reduced-spectrum reader, night calibration, lamp-flat blaze, the per-order standard-star fit</td>
+<td>Full atmosphere, identical layers, columns + linear continuum fitted</td>
+<td>5000–5020</td>
+<td style="text-align: right;">0.047%</td>
+<td style="text-align: right;">0.69%</td>
+<td><code>lblrtm_identical_layers.json</code></td>
+</tr>
+<tr class="even">
+<td>Same, with first-order CO2 line coupling</td>
+<td>5000–5020</td>
+<td style="text-align: right;">0.010%</td>
+<td style="text-align: right;">0.039%</td>
+<td><code>lblrtm_identical_layers.json</code></td>
+</tr>
+<tr class="odd">
+<td>Same with coupling, K orders K86 / K89 / K92</td>
+<td>IGRINS K</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">0.032 / 0.146 / 0.25%</td>
+<td><code>lblrtm_identical_layers_k_orders.json</code></td>
+</tr>
+<tr class="even">
+<td>Layering: 12 weighted layers vs a 150-layer reference, fitted</td>
+<td>4 IGRINS windows</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">0.04–0.06%</td>
+<td><code>layering_comparison.json</code></td>
 </tr>
 </tbody>
 </table>
-</section>
-<section id="get-started" class="level2">
-<h2 class="anchored" data-anchor-id="get-started">Get started</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/leejjoon/tellurix.git</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> tellurix</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--dev</span> <span class="at">--extra</span> gpu        <span class="co"># Python 3.10; omit --extra gpu for CPU only</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run tellurix-download-data all  <span class="co"># AER Line File 3.9 and MT_CKD 4.3, SHA-256 checked</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>See <a href="./getting-started.html">Getting started</a> for a first transmission spectrum in about twenty lines.</p>
-</section>
-<section id="status-and-citation" class="level2">
-<h2 class="anchored" data-anchor-id="status-and-citation">Status and citation</h2>
-<p>tellurix is research software under active development, and a paper describing it is in preparation; its <a href="./manuscript/index.html">working draft</a> is on this site. To cite a released version of the code and its fitted products, use the Zenodo record <a href="https://doi.org/10.5281/zenodo.23121556">10.5281/zenodo.23121556</a>, which covers all versions.</p>
+<p>The CO-only line displacement is 0.015 resolution element.</p>
+<p>Points to make in the text:</p>
+<ul>
+<li><strong>The apparent 5.8% gap was the harness, not the physics.</strong> Handed 7 levels, LBLRTM re-layers them into 13 layers (18 integration sub-layers) and interpolates water exponentially between levels, giving 12.2% less water column (2.143e22 against 2.440e22 cm−2). Passing tellurix’s own layers (IATM = 0) removes it. Fitted scales then come out at 1.001 for H2O and 1.000 for CO2.</li>
+<li><strong>CO2 line coupling is the remaining physics difference.</strong> LBLRTM applies AER first-order coupling to 5,679 of 11,849 CO2 lines near this window. Coupling lowers the window’s CO2 optical depth by 0.90% in LBLRTM and by 1.04% in tellurix. The 25 cm−1 cutoff and pedestal carry 0.7% of CO2, but at 5000–5020 cm−1 the fitted continuum absorbs them. Not in K92: there the cutoff in far water-line wings leaves 0.25% at the 99th percentile, falling to 0.055% when tellurix also applies the cutoff (`lblrtm_identical_layers_k_orders.json`).</li>
+<li><strong>The continuum residual is not identified.</strong> LBLRTM’s continua average τ = 0.0066 against MT_CKD water’s 0.0028; the difference is smooth and absorbed by the fitted continuum.</li>
+<li><strong>The offline correction template</strong> (<code>lblrtm_corrected</code>) brings the 99th percentile to 4.75e−5 for its fixed profile, and stays below 2.34e−3 at 0.5–2× water and air mass 1–2.5. Present it briefly, as a consistency demonstration.</li>
+<li><strong>Gradients and recovery.</strong> Mixed-precision checks: 588 molecular states, 45 spectra, Jacobian columns, and paired fits on 3 noise seeds (table in Section 3).</li>
+</ul>
+<section id="figures" class="level2">
+<h2 class="anchored" data-anchor-id="figures">4.1 Figures</h2>
+<p>All numbers below are recomputed by <code>paper/figures/fig_lblrtm_comparison.py</code> from the saved LBLRTM TAPE12s and agree with the committed JSON reports to every printed digit.</p>
+<p><a href="../figures/output/fig_lblrtm_5000.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="../figures/output/fig_lblrtm_5000.png" class="img-fluid" style="width:100.0%" alt="tellurix vs LBLRTM 5000-5020"></a></p>
+<p><strong>Figure 4a. tellurix against LBLRTM 12.17 at 5000–5020 cm−1, identical layers.</strong> Shown at R = 45,000 after fitting H2O and CO2 scales and a linear continuum. Without line coupling the residual is a CO2 band pattern of ±0.7% (median 0.047%, 99th percentile 0.69%). With first-order coupling it is flat at 0.010% / 0.039%. Gaps are saturated cores (T ≤ 0.05), excluded by the metric.</p>
+<p><a href="../figures/output/fig_lblrtm_5000_zoom.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="../figures/output/fig_lblrtm_5000_zoom.png" class="img-fluid" style="width:100.0%" alt="zoom on worst residual"></a></p>
+<p><strong>Figure 4b. Zoom on the worst residual without coupling</strong> (5001.29 cm−1), monochromatic and at R = 45,000. Without coupling the monochromatic difference is an antisymmetric ±0.8% around a saturated CO2 line, the signature of line mixing. With coupling it is about ±0.03%, so the agreement holds line by line, not only after convolution.</p>
+<p><a href="../figures/output/fig_lblrtm_K92.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="../figures/output/fig_lblrtm_K92.png" class="img-fluid" style="width:100.0%" alt="K92 order"></a></p>
+<p><strong>Figure 4c. The worst K order, K92 (5122–5193 cm−1).</strong> Coupling lowers the 99th percentile only from 0.43% to 0.25%. All three K orders (median / 99th percentile):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Order</th>
+<th>No coupling</th>
+<th>With coupling</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>K86</td>
+<td>0.077% / 0.52%</td>
+<td>0.0072% / 0.032%</td>
+</tr>
+<tr class="even">
+<td>K89</td>
+<td>0.27% / 1.28%</td>
+<td>0.034% / 0.146%</td>
+</tr>
+<tr class="odd">
+<td>K92</td>
+<td>0.071% / 0.43%</td>
+<td>0.058% / 0.25%</td>
+</tr>
+</tbody>
+</table>
+<p><a href="../figures/output/fig_lblrtm_K92_zoom.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="../figures/output/fig_lblrtm_K92_zoom.png" class="img-fluid" style="width:100.0%" alt="K92 zoom"></a></p>
+<p><strong>Figure 4d. K92 zoom at its worst residual</strong> (5182.11 cm−1). tellurix absorbs about 0.25% more across a broad, smooth stretch between strong water lines, and the coupled and uncoupled curves coincide there. This is LBLRTM’s 25 cm−1 line cutoff acting on far water wings, not coupling.</p>
+<p><a href="../figures/output/fig_lblrtm_co.png" class="lightbox" data-gallery="quarto-lightbox-gallery-5"><img src="../figures/output/fig_lblrtm_co.png" class="img-fluid" style="width:100.0%" alt="CO only"></a></p>
+<p><strong>Figure 4e. The first rung: CO only, 4290–4310 cm−1, no continuum</strong> (median 0.005%, 99th percentile 0.22%). tellurix’s CO cores are uniformly deeper, by up to 0.27%. This rung used LBLRTM’s own re-layered atmosphere, no pressure shifts and plain Direct opacity, so it is not like-for-like with Figures 4a–d.&nbsp;It belongs as a historical rung, or should be rerun with identical layers.</p>
 
 
 </section>
@@ -862,6 +945,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
   });
   </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../manuscript/03-fitting-and-computational-cost.html" class="pagination-link" aria-label="3. Fitting and computational cost">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">3. Fitting and computational cost</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../manuscript/05-application-to-fts-atlases.html" class="pagination-link" aria-label="5. Application to FTS atlases">
+        <span class="nav-page-text">5. Application to FTS atlases</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
 </div> <!-- /content -->
 <footer class="footer">
   <div class="nav-footer">
@@ -912,5 +1007,5 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+<script src="../site_libs/quarto-html/zenscroll-min.js"></script>
 </body></html>

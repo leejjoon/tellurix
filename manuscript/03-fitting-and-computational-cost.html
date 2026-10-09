@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>tellurix</title>
+<title>3. Fitting and computational cost – tellurix</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -26,68 +26,35 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-4f51704981e3ec334486724785a1ff10.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
-<script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
-<link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
-<link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../manuscript/04-validation-against-lblrtm.html" rel="next">
+<link href="../manuscript/02-the-forward-model.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-4f51704981e3ec334486724785a1ff10.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -119,7 +86,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </head>
 
-<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+<body class="nav-sidebar docked nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
       const mode = bsSheetEl.getAttribute("data-mode");
       const bodyEl = window.document.querySelector("body");
@@ -288,7 +255,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../index.html">
     <span class="navbar-title">tellurix</span>
     </a>
   </div>
@@ -299,15 +266,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./getting-started.html"> 
+    <a class="nav-link" href="../getting-started.html"> 
 <span class="menu-text">Getting started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./manuscript/index.html"> 
+    <a class="nav-link active" href="../manuscript/index.html" aria-current="page"> 
 <span class="menu-text">Paper</span></a>
   </li>  
 </ul>
@@ -324,25 +291,117 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
       </div> <!-- /container-fluid -->
     </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../manuscript/01-introduction.html">Manuscript</a></li><li class="breadcrumb-item"><a href="../manuscript/03-fitting-and-computational-cost.html">3. Fitting and computational cost</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tellurix: a differentiable line-by-line telluric model, validated against LBLRTM and applied to IGRINS and FTS atlases</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Manuscript</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Introduction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/02-the-forward-model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. The forward model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/03-fitting-and-computational-cost.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">3. Fitting and computational cost</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/04-validation-against-lblrtm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Validation against LBLRTM</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/05-application-to-fts-atlases.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Application to FTS atlases</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/06-application-to-igrins.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. Application to IGRINS</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/07-discussion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. Discussion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/08-summary-software-and-data-availability.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">8. Summary; software and data availability</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-fitter" id="toc-the-fitter" class="nav-link active" data-scroll-target="#the-fitter">3.1 The fitter</a></li>
+  <li><a href="#where-the-time-goes" id="toc-where-the-time-goes" class="nav-link" data-scroll-target="#where-the-time-goes">3.2 Where the time goes</a></li>
+  <li><a href="#against-lblrtm-stage-by-stage" id="toc-against-lblrtm-stage-by-stage" class="nav-link" data-scroll-target="#against-lblrtm-stage-by-stage">3.3 Against LBLRTM, stage by stage</a></li>
+  <li><a href="#uncertainties" id="toc-uncertainties" class="nav-link" data-scroll-target="#uncertainties">3.4 Uncertainties</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 
-<header id="title-block-header" class="quarto-title-block default">
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../manuscript/01-introduction.html">Manuscript</a></li><li class="breadcrumb-item"><a href="../manuscript/03-fitting-and-computational-cost.html">3. Fitting and computational cost</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">tellurix</h1>
-<p class="subtitle lead">Differentiable telluric absorption for high-resolution spectra</p>
+<h1 class="title">3. Fitting and computational cost</h1>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -354,48 +413,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Every ground-based spectrum is the source multiplied by the transmission of Earth’s atmosphere. <strong>tellurix</strong> computes that transmission line by line, from the molecules’ laboratory line parameters and the atmosphere’s pressure, temperature and composition at the time of observation. It then fits it to the observed spectrum and divides it out.</p>
-<p>It is written in <a href="https://github.com/jax-ml/jax">JAX</a> on top of <a href="https://github.com/HajimeKawahara/exojax">ExoJAX</a>. The whole model, from line opacity to detector pixels, is therefore one compiled, differentiable function: it runs on a GPU and returns exact gradients for fitting. <a href="https://github.com/AER-RCG/LBLRTM">LBLRTM</a>, the standard atmospheric line-by-line code, is its accuracy reference.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><a href="figures/output/fig_intro_transmission.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Sky transmission over the IGRINS H and K bands at R = 45,000, total and molecule by molecule, computed by tellurix for an ERA5 atmosphere over Gemini South at air mass 1.5."><img src="figures/output/fig_intro_transmission.png" class="img-fluid figure-img" style="width:100.0%" alt="Sky transmission over the IGRINS H and K bands at R = 45,000, total and molecule by molecule, computed by tellurix for an ERA5 atmosphere over Gemini South at air mass 1.5."></a></p>
-<figcaption>Sky transmission over the IGRINS H and K bands at R = 45,000, total and molecule by molecule, computed by tellurix for an ERA5 atmosphere over Gemini South at air mass 1.5.</figcaption>
-</figure>
-</div>
-<div class="grid">
-<section id="accurate" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="accurate">Accurate</h3>
-<p>Given the same atmospheric layers, tellurix matches LBLRTM 12.17 to <strong>0.010% median and 0.039% at the 99th percentile</strong> at R = 45,000. It uses AER Line File 3.9, the MT_CKD 4.3 water continuum, pressure shifts and first-order CO₂ line coupling.</p>
-<p><a href="figures/output/fig_lblrtm_5000.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="figures/output/fig_lblrtm_5000.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/04-validation-against-lblrtm.html">Validation against LBLRTM →</a></p>
+<p>A three-stage fit takes 3.3 s on one GPU instead of 61 s. The gain comes from compiling once and taking the line-by-line kernel out of the optimizer loop; making each evaluation faster contributes less (<code>docs/precomputed_opacity_results.json</code>).</p>
+<section id="the-fitter" class="level2">
+<h2 class="anchored" data-anchor-id="the-fitter">3.1 The fitter</h2>
+<ul>
+<li>Bounded MAP by L-BFGS-B over <code>jax.value_and_grad</code> (<code>fit_order</code>). Fixed dimensions are removed, free ones rescaled to physical steps, and a convergence with a large projected gradient is rejected. That hardening fixed a 10.88σ LSF-width discrepancy found in validation (<code>docs/mixed_precision_validation.md</code>).</li>
+<li>Staged fits: continuum, then velocity, then columns, all sharing one compiled <code>OrderObjective</code>.</li>
+</ul>
 </section>
-<section id="fast-and-differentiable" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="fast-and-differentiable">Fast and differentiable</h3>
-<p>Reverse-mode autodiff gives the gradient of the fit objective with respect to every parameter in one pass. With the opacity precomputed, a gradient costs a few milliseconds on one GPU, <strong>about 240× faster</strong> than the finite differences an LBLRTM-based fit needs.</p>
-<p><a href="figures/output/fig_performance_gradient.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="figures/output/fig_performance_gradient.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/03-fitting-and-computational-cost.html">Fitting and computational cost →</a></p>
-</section>
-<section id="igrins" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="igrins">IGRINS</h3>
-<p>Per-order fits of A0V standards from Gemini South, DCT and McDonald reach about <strong>1.3σ on a dry night</strong>. A night calibration then corrects science targets with only one water scale and one velocity per frame.</p>
-<p><a href="figures/output/fig_igrins_standard.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="figures/output/fig_igrins_standard.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/06-application-to-igrins.html">Application to IGRINS →</a></p>
-</section>
-<section id="fts-atlases" class="level3 g-col-12 g-col-md-6">
-<h3 class="anchored" data-anchor-id="fts-atlases">FTS atlases</h3>
-<p>The whole Arcturus infrared atlas (598 page-epochs, 0.91–5.4 µm) and the NSO Kitt Peak solar atlases are corrected. Each spectrum’s instrumental profile is measured from its own interferogram envelope.</p>
-<p><a href="figures/output/fig_arcturus_typical.png" class="lightbox" data-gallery="quarto-lightbox-gallery-5"><img src="figures/output/fig_arcturus_typical.png" class="img-fluid" style="width:100.0%"></a></p>
-<p><a href="./manuscript/05-application-to-fts-atlases.html">Application to FTS atlases →</a></p>
-</section>
-</div>
-<section id="how-it-works" class="level2">
-<h2 class="anchored" data-anchor-id="how-it-works">How it works</h2>
-<p><a href="figures/diagrams/model_composition.png" class="lightbox" data-gallery="quarto-lightbox-gallery-6"><img src="figures/diagrams/model_composition.png" class="img-fluid" style="width:100.0%"></a></p>
-<p>The atmosphere, line opacity and continuum are interchangeable components. Together they give the transmission, which an observation model turns into detector pixels: stellar spectrum, Doppler shifts, line-spread function, pixel integration and a smooth continuum. A bounded fit then adjusts a handful of parameters: one column scale per gas, the velocity, the line-spread-function width and the continuum. The <a href="./manuscript/02-the-forward-model.html">forward-model chapter</a> explains each step from first principles and compares it with LBLRTM’s implementation.</p>
-</section>
-<section id="packages" class="level2">
-<h2 class="anchored" data-anchor-id="packages">Packages</h2>
-<p>The repository is a workspace of three packages. The core knows no instrument; instrument packages build on it.</p>
+<section id="where-the-time-goes" class="level2">
+<h2 class="anchored" data-anchor-id="where-the-time-goes">3.2 Where the time goes</h2>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 33%">
@@ -404,41 +431,156 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </colgroup>
 <thead>
 <tr class="header">
-<th>Package</th>
-<th>Import</th>
-<th>What it contains</th>
+<th>Configuration (synthetic Arcturus-like page, RTX 5000 Ada)</th>
+<th style="text-align: right;">Wall clock</th>
+<th style="text-align: right;">Speedup</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>tellurix</code></td>
-<td><code>tellurix</code></td>
-<td>Forward model, line opacity, MT_CKD and O₂ continua, fitter, stellar source, site profiles, run records, LBLRTM reference tooling</td>
+<td>Compile per stage</td>
+<td style="text-align: right;">61.2 s</td>
+<td style="text-align: right;">1.0×</td>
 </tr>
 <tr class="even">
-<td><code>tellurix-fts</code></td>
-<td><code>tellurix_fts</code></td>
-<td>Readers for the Arcturus and NSO solar FTS atlases, interferogram-based instrument profiles, the solar window fit</td>
+<td>One shared compilation</td>
+<td style="text-align: right;">35.4 s</td>
+<td style="text-align: right;">1.7×</td>
 </tr>
 <tr class="odd">
-<td><code>tellurix-igrins</code></td>
-<td><code>tellurix_igrins</code></td>
-<td>IGRINS reduced-spectrum reader, night calibration, lamp-flat blaze, the per-order standard-star fit</td>
+<td>Precomputed opacity + shared compilation</td>
+<td style="text-align: right;">3.3 s</td>
+<td style="text-align: right;">18.4×</td>
 </tr>
 </tbody>
 </table>
+<ul>
+<li><strong>Precomputed opacity.</strong> A fitted parameter reaches the kernel only through the H2O self-broadening partial pressure, so the opacity is expanded to first order in it and frozen. The maximum transmission error is 6.7e−4 (rms 2.9e−5) over water columns 0.50–2.72× the reference, against 5.5e−3 photon noise. End to end, including the 4.2 s precompute, the fit is 8.1× faster; parameters agree to 1.8e−5.</li>
+<li><strong>Sparse core and no dense offset matrix.</strong> The forward model is 7.0× faster and value-plus-gradient 10.4× faster than ExoJAX Direct, agreeing to 3.3e−16. Device memory falls from 426 MB to 1.8 MB.</li>
+<li><strong>Mixed precision.</strong> A further 11.1× forward and 8.0× gradient speedup on a 2048-pixel H2O order; it passes 588-state opacity, Jacobian and paired-fit checks (worst parameter shift 1.09e−4 σ).</li>
+<li><strong>Grid margin ≠ line margin.</strong> Lines are selected 25 cm−1 wide, but the grid is trimmed to 5 cm−1: 3.3× fewer points atlas-wide, at a maximum flux difference of 2.5e−4.</li>
+<li>A real Arcturus page now costs about 13 s, against about 57 s before. The 598 page-epochs take about 45 min on three GPUs (<code>docs/arcturus_batch_timing.json</code>).</li>
+</ul>
+<p>For context, one LBLRTM 12.17 run over the same 20 cm−1 interval takes 266 ms. The warmed GPU forward model was about 2.4× faster even before these changes, and it also returns gradients.</p>
 </section>
-<section id="get-started" class="level2">
-<h2 class="anchored" data-anchor-id="get-started">Get started</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/leejjoon/tellurix.git</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> tellurix</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync <span class="at">--dev</span> <span class="at">--extra</span> gpu        <span class="co"># Python 3.10; omit --extra gpu for CPU only</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run tellurix-download-data all  <span class="co"># AER Line File 3.9 and MT_CKD 4.3, SHA-256 checked</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>See <a href="./getting-started.html">Getting started</a> for a first transmission spectrum in about twenty lines.</p>
+<section id="against-lblrtm-stage-by-stage" class="level2">
+<h2 class="anchored" data-anchor-id="against-lblrtm-stage-by-stage">3.3 Against LBLRTM, stage by stage</h2>
+<p>On one GPU, tellurix beats LBLRTM at every warm stage. The biggest gain is the gradient: with precomputed opacity, a gradient costs 3.6–4.4 ms against 1.05 s for LBLRTM finite differences (237–294× on K92). A cold fit still loses: an LBLRTM-in-the-loop fit converges in about 21 runs (5 s), while tellurix spends about 8 s compiling. tellurix wins once the compilation is reused across orders or frames. Source: <code>docs/lblrtm_tellurix_performance.json</code>, <code>benchmarks/benchmark_lblrtm_stages.py</code>.</p>
+<p><strong>Setup.</strong> Both codes use identical 12-layer ERA5 layers, AER 3.9 H2O and CO2 lines, MT_CKD and pressure shifts, a 30° zenith angle, and no line coupling. LBLRTM runs on one CPU core; tellurix runs on one RTX 5000 Ada GPU and, for comparison, on 64 CPU threads. Windows are W1 = 5000–5020 cm−1, W2 = 5000–5100 cm−1 and W3 = IGRINS K92 (2048 px, 13,317 lines). Warm times are medians of at least 10 calls.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Stage, W3 (K92)</th>
+<th style="text-align: right;">LBLRTM</th>
+<th style="text-align: right;">tellurix GPU</th>
+<th style="text-align: right;">tellurix CPU</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Line preparation (LNFL; AER read + core lists)</td>
+<td style="text-align: right;">12.3 s</td>
+<td style="text-align: right;">0.95 s (13×)</td>
+<td style="text-align: right;">1.4 s (9×)</td>
+</tr>
+<tr class="even">
+<td>Line-by-line optical depth</td>
+<td style="text-align: right;">103 ms</td>
+<td style="text-align: right;">13.4 ms (7.7×)</td>
+<td style="text-align: right;">900 ms (0.11×)</td>
+</tr>
+<tr class="odd">
+<td>Continuum, layers, slant path</td>
+<td style="text-align: right;">28 ms</td>
+<td style="text-align: right;">0.15 ms</td>
+<td style="text-align: right;">0.62 ms</td>
+</tr>
+<tr class="even">
+<td>Instrument: LSF, pixels, continuum</td>
+<td style="text-align: right;">15 ms</td>
+<td style="text-align: right;">1.4 ms</td>
+<td style="text-align: right;">1.2 ms</td>
+</tr>
+<tr class="odd">
+<td>Forward model</td>
+<td style="text-align: right;">167 ms</td>
+<td style="text-align: right;">13.4 ms (12×)</td>
+<td style="text-align: right;">970 ms (0.17×)</td>
+</tr>
+<tr class="even">
+<td>Forward, precomputed opacity</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">1.3 ms</td>
+<td style="text-align: right;">1.4 ms</td>
+</tr>
+<tr class="odd">
+<td>Gradient: central FD (5 runs) against autodiff</td>
+<td style="text-align: right;">1.05 s</td>
+<td style="text-align: right;">29 ms (36×)</td>
+<td style="text-align: right;">1.22 s (0.86×)</td>
+</tr>
+<tr class="even">
+<td>Gradient, precomputed opacity</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">4.4 ms (237×)</td>
+<td style="text-align: right;">3.6 ms (294×)</td>
+</tr>
+<tr class="odd">
+<td>Full fit, cold (first call, compilation included)</td>
+<td style="text-align: right;">5.1 s</td>
+<td style="text-align: right;">25.5 s</td>
+<td style="text-align: right;">17.6 s</td>
+</tr>
+<tr class="even">
+<td>Full fit, compiled objective reused</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">5.1 s</td>
+<td style="text-align: right;">6.7 s</td>
+</tr>
+</tbody>
+</table>
+<p>The LBLRTM fit column counts the runs (21) its least-squares fit needed.</p>
+<p><a href="../figures/output/fig_performance_stages.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="../figures/output/fig_performance_stages.png" class="img-fluid" style="width:100.0%" alt="stage by stage"></a></p>
+<p><strong>Figure 3a. Stage by stage, three windows.</strong> Whiskers mark the first call, including XLA compilation. The live-opacity forward model on CPU is the one stage where LBLRTM wins.</p>
+<p><strong>Which stage gains most from JAX:</strong></p>
+<ol type="1">
+<li><strong>Gradients (150–330× with precomputed opacity).</strong> The fitted columns enter linearly, so the kernel runs once and each gradient takes milliseconds on either device. This comes from reformulating the model for autodiff, not from GPU arithmetic.</li>
+<li><strong>The line-by-line kernel on GPU (5–13×).</strong> It is pure arithmetic over line–sample pairs. On CPU tellurix is 5–15× slower than LBLRTM, which evaluates far wings on a coarse grid and rejects about 90% of near lines per layer, while tellurix evaluates every line in full Voigt.</li>
+<li><strong>Continuum, layer merge and instrument (10–190×).</strong> These are small in absolute terms, under 30 ms in LBLRTM.</li>
+<li><strong>Line preparation (9–13×)</strong> against LNFL. It is one-time in both codes.</li>
+</ol>
+<p><a href="../figures/output/fig_performance_scaling.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="../figures/output/fig_performance_scaling.png" class="img-fluid" style="width:100.0%" alt="scaling"></a></p>
+<p><strong>Figure 3b. Scaling with window width.</strong> LBLRTM’s run time grows slowly with width; tellurix’s live opacity grows with the line count, while precomputed opacity stays flat at 1–4 ms.</p>
+<p><strong>Autodiff.</strong></p>
+<ul>
+<li><strong>Cost.</strong> A gradient costs 1.8–2.2× a forward run with live opacity, and 3–4× with precomputed opacity. The cost is flat from 1 to 16 free parameters. LBLRTM needs P + 1 or 2P + 1 runs, though only column scales need reruns; velocity, LSF and continuum act on the stored spectrum.</li>
+<li><strong>Accuracy.</strong> Autodiff matches tellurix’s own central difference to 1e−5 rms (2e−4 at worst on the χ2 gradient). Against LBLRTM’s finite-difference Jacobian it agrees to 1.8–3.4% rms (correlation ≥ 0.999), which is the size of the flux difference between the two codes.</li>
+<li><strong>Full Jacobian</strong> (<code>jacfwd</code>, 16 parameters): 2–3 ms with precomputed opacity, and 48–260 ms live on GPU.</li>
+</ul>
+<p><a href="../figures/output/fig_performance_gradient.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="../figures/output/fig_performance_gradient.png" class="img-fluid" style="width:100.0%" alt="gradient vs parameters"></a></p>
+<p><strong>Figure 3c. Gradient cost against the number of free parameters, K92.</strong> LBLRTM finite differences grow linearly; tellurix reverse-mode autodiff is flat. Open squares and diamonds are measured LBLRTM finite differences.</p>
+<p><a href="../figures/output/fig_performance_fit.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="../figures/output/fig_performance_fit.png" class="img-fluid" style="width:100.0%" alt="end to end fit"></a></p>
+<p><strong>Figure 3d. End-to-end fit to S/N 200 synthetic spectra, and the columns it recovers.</strong> An LBLRTM-in-the-loop fit (scipy <code>least_squares</code> with finite differences) converges in 20–23 runs and 3.6–5.9 s. A cold tellurix fit takes 22–26 s on GPU, of which about 8 s is compilation; reusing the compiled objective brings it to 0.65–5.1 s. Both recover the columns to within 1%.</p>
+<p><strong>Caveats.</strong></p>
+<ul>
+<li>LBLRTM uses its own monochromatic grid (0.0014–0.0078 cm−1) with line rejection and a 25 cm−1 cutoff, and writes single-precision output. tellurix uses a 0.028 cm−1 grid with full Voigt lines.</li>
+<li>LBLRTM includes all its continua; tellurix only MT_CKD H2O.</li>
+<li>The machine was shared (load average 1–12), and the tellurix CPU row used all 64 threads.</li>
+<li>Float64 wings are 7–15× slower on GPU, and the float64 W2 gradient ran out of the 32 GB of GPU memory, so the GPU rows use mixed precision.</li>
+</ul>
 </section>
-<section id="status-and-citation" class="level2">
-<h2 class="anchored" data-anchor-id="status-and-citation">Status and citation</h2>
-<p>tellurix is research software under active development, and a paper describing it is in preparation; its <a href="./manuscript/index.html">working draft</a> is on this site. To cite a released version of the code and its fitted products, use the Zenodo record <a href="https://doi.org/10.5281/zenodo.23121556">10.5281/zenodo.23121556</a>, which covers all versions.</p>
+<section id="uncertainties" class="level2">
+<h2 class="anchored" data-anchor-id="uncertainties">3.4 Uncertainties</h2>
+<ul>
+<li><code>FitResult.covariance</code> inverts the actual Hessian of the free, unbounded parameters. It is a formal error that assumes independent pixels.</li>
+<li>The residual is dominated by correlated stellar error, so formal errors are 3–9× too small. For the water column, the formal error is 0.76% while sub-window scatter is 6.5–9%. The paper quotes empirical scatter and uses <code>FitResult.correlation</code> only for degeneracies.</li>
+</ul>
 
 
 </section>
@@ -862,6 +1004,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
   });
   </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../manuscript/02-the-forward-model.html" class="pagination-link" aria-label="2. The forward model">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">2. The forward model</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../manuscript/04-validation-against-lblrtm.html" class="pagination-link" aria-label="4. Validation against LBLRTM">
+        <span class="nav-page-text">4. Validation against LBLRTM</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
 </div> <!-- /content -->
 <footer class="footer">
   <div class="nav-footer">
@@ -912,5 +1066,5 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+<script src="../site_libs/quarto-html/zenscroll-min.js"></script>
 </body></html>

@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>2. The forward model – tellurix</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../manuscript/03-fitting-and-computational-cost.html" rel="next">
+<link href="../manuscript/01-introduction.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-4f51704981e3ec334486724785a1ff10.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-1adecdf1b1a85d410916b43716b16d57.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">tellurix</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../getting-started.html"> 
+<span class="menu-text">Getting started</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="../manuscript/index.html" aria-current="page"> 
+<span class="menu-text">Paper</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/leejjoon/tellurix"> <i class="bi bi-github" role="img" aria-label="tellurix on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../manuscript/01-introduction.html">Manuscript</a></li><li class="breadcrumb-item"><a href="../manuscript/02-the-forward-model.html">2. The forward model</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tellurix: a differentiable line-by-line telluric model, validated against LBLRTM and applied to IGRINS and FTS atlases</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Manuscript</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Introduction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/02-the-forward-model.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">2. The forward model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/03-fitting-and-computational-cost.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Fitting and computational cost</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/04-validation-against-lblrtm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Validation against LBLRTM</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/05-application-to-fts-atlases.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Application to FTS atlases</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/06-application-to-igrins.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. Application to IGRINS</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/07-discussion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. Discussion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../manuscript/08-summary-software-and-data-availability.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">8. Summary; software and data availability</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#light-through-a-layered-atmosphere" id="toc-light-through-a-layered-atmosphere" class="nav-link active" data-scroll-target="#light-through-a-layered-atmosphere">2.1 Light through a layered atmosphere</a></li>
+  <li><a href="#molecular-absorption-lines" id="toc-molecular-absorption-lines" class="nav-link" data-scroll-target="#molecular-absorption-lines">2.2 Molecular absorption lines</a></li>
+  <li><a href="#the-continuum" id="toc-the-continuum" class="nav-link" data-scroll-target="#the-continuum">2.3 The continuum</a></li>
+  <li><a href="#from-the-sky-to-the-detector" id="toc-from-the-sky-to-the-detector" class="nav-link" data-scroll-target="#from-the-sky-to-the-detector">2.4 From the sky to the detector</a></li>
+  <li><a href="#implementation-side-by-side-with-lblrtm" id="toc-implementation-side-by-side-with-lblrtm" class="nav-link" data-scroll-target="#implementation-side-by-side-with-lblrtm">2.5 Implementation, side by side with LBLRTM</a></li>
+  <li><a href="#line-shape-evaluation-and-line-rejection" id="toc-line-shape-evaluation-and-line-rejection" class="nav-link" data-scroll-target="#line-shape-evaluation-and-line-rejection">2.6 Line-shape evaluation and line rejection</a></li>
+  <li><a href="#layering-and-continuum" id="toc-layering-and-continuum" class="nav-link" data-scroll-target="#layering-and-continuum">2.7 Layering and continuum</a></li>
+  <li><a href="#line-coupling" id="toc-line-coupling" class="nav-link" data-scroll-target="#line-coupling">2.8 Line coupling</a></li>
+  <li><a href="#instrument-model" id="toc-instrument-model" class="nav-link" data-scroll-target="#instrument-model">2.9 Instrument model</a></li>
+  <li><a href="#numerics-that-make-it-fast-and-differentiable" id="toc-numerics-that-make-it-fast-and-differentiable" class="nav-link" data-scroll-target="#numerics-that-make-it-fast-and-differentiable">2.10 Numerics that make it fast and differentiable</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../manuscript/01-introduction.html">Manuscript</a></li><li class="breadcrumb-item"><a href="../manuscript/02-the-forward-model.html">2. The forward model</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">2. The forward model</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>A ground-based spectrum is the star’s light multiplied by the transmission of Earth’s atmosphere and then blurred and sampled by the spectrograph. To remove the atmosphere we model it: we write down, from physics, the spectrum the instrument <em>should</em> record for a given atmosphere, star and instrument. This is called a <strong>forward model</strong>. We then adjust the model’s few free parameters, such as the amount of water vapour, until the prediction matches the data. Once it does, dividing the data by the fitted atmospheric transmission leaves the star.</p>
+<p>This chapter builds that forward model in the order light meets it:</p>
+<ul>
+<li><strong>Absorption along the path (2.1).</strong> Light passes through a layered atmosphere and loses intensity by absorption.</li>
+<li><strong>Molecular lines (2.2).</strong> Most of that absorption happens in narrow lines, each with a strength and a shape.</li>
+<li><strong>The continuum (2.3).</strong> A smooth component that individual lines miss.</li>
+<li><strong>The instrument (2.4).</strong> The spectrograph smears and samples the result.</li>
+<li><strong>Implementation (2.5–2.10).</strong> How tellurix computes all of this quickly enough to fit, and with derivatives, compared step by step with LBLRTM, the reference code of the field.</li>
+</ul>
+<p>The symbols used throughout the chapter:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Meaning</th>
+<th>Typical unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ν</td>
+<td>wavenumber, 1/λ; spectroscopists’ unit of frequency</td>
+<td>cm−1 (5000 cm−1 = 2.0 µm)</td>
+</tr>
+<tr class="even">
+<td>I, I₀</td>
+<td>intensity after and before absorption</td>
+<td>any</td>
+</tr>
+<tr class="odd">
+<td>T(ν)</td>
+<td>transmission, I/I₀, between 0 and 1</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>τ(ν)</td>
+<td>optical depth, −ln T</td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td>σ(ν)</td>
+<td>absorption cross-section per molecule</td>
+<td>cm²</td>
+</tr>
+<tr class="even">
+<td>N</td>
+<td>column density: molecules per unit area along the path</td>
+<td>cm−2</td>
+</tr>
+<tr class="odd">
+<td>S</td>
+<td>line strength (integrated cross-section of one line)</td>
+<td>cm−1/(molecule cm−2)</td>
+</tr>
+<tr class="even">
+<td>ν₀</td>
+<td>line centre</td>
+<td>cm−1</td>
+</tr>
+<tr class="odd">
+<td>α_D, α_L, α_V</td>
+<td>Doppler, Lorentz (pressure) and Voigt half-widths of a line</td>
+<td>cm−1</td>
+</tr>
+<tr class="even">
+<td>P, T_k, P_self</td>
+<td>pressure, temperature, partial pressure of the absorbing gas itself</td>
+<td>bar or atm, K</td>
+</tr>
+<tr class="odd">
+<td>z</td>
+<td>zenith angle: the angle between the line of sight and vertical</td>
+<td>degrees</td>
+</tr>
+<tr class="even">
+<td>X = 1/cos z</td>
+<td>air mass: path length relative to looking straight up</td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td>s</td>
+<td>fitted column scale of one gas, relative to the model atmosphere</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>R = λ/Δλ</td>
+<td>resolving power of the spectrograph</td>
+<td>45,000 for IGRINS</td>
+</tr>
+</tbody>
+</table>
+<section id="light-through-a-layered-atmosphere" class="level2">
+<h2 class="anchored" data-anchor-id="light-through-a-layered-atmosphere">2.1 Light through a layered atmosphere</h2>
+<p><strong>Absorption along a path.</strong> When light of intensity I crosses a thin slab containing n absorbing molecules per cm³, each with cross-section σ (the effective area it blocks), a fraction σn ds is removed over a length ds: dI = −I σ n ds. Integrating gives the Beer–Lambert law,</p>
+<p><span class="math display">\[
+I(\nu) = I_0(\nu)\,e^{-\tau(\nu)}, \qquad \tau(\nu) = \int \sigma(\nu)\, n\, ds = \sigma(\nu)\,N
+\]</span></p>
+<p>Here τ is the <strong>optical depth</strong> and N = ∫n ds is the <strong>column density</strong>: the number of molecules in a 1 cm² tube along the line of sight. Optical depths of different gases add, so their transmissions multiply. Everything that depends on wavenumber sits in σ(ν), and most of the next section is about computing it.</p>
+<p><strong>Why layers.</strong> The atmosphere is not uniform:</p>
+<ul>
+<li>Pressure falls roughly exponentially with height, by a factor e about every 8 km.</li>
+<li>Temperature changes by tens of kelvin between the ground and the stratosphere.</li>
+<li>Water vapour is concentrated in the lowest few kilometres.</li>
+</ul>
+<p>Because σ itself depends on pressure and temperature (Section 2.2), the integral cannot be done with one σ. We therefore cut the atmosphere into layers ℓ, typically 12, each with a single pressure, temperature and composition, and sum their contributions. Choosing those layer values well is a numerical question of its own (Section 2.7).</p>
+<p><strong>Air mass.</strong> A star observed at zenith angle z is seen through a path longer than the vertical one by 1/cos z, called the <strong>air mass</strong> X. Treating the layers as flat (plane-parallel), which is accurate except close to the horizon, the transmission of the whole path is</p>
+<p><span class="math display">\[
+T(\nu) = \exp\Big[-\frac{1}{\cos z}\sum_{\ell}\Big(\sum_{\rm gas} s_{\rm gas}\,N_{{\rm gas},\ell}\;\sigma_{\rm gas}(\nu;P_\ell,T_\ell,P_{{\rm self},\ell}) + \tau^{\rm cont}_\ell(\nu)\Big)\Big]
+\]</span></p>
+<p><a href="../figures/diagrams/light_path.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="../figures/diagrams/light_path.png" class="img-fluid" style="width:100.0%" alt="schematic · plane-parallel layered atmosphere, as in TelluricModel.transmission"></a></p>
+<p><strong>Where the atmosphere comes from.</strong> Pressure, temperature and composition at the site and time of an observation come from ERA5, a global weather reanalysis, or from standard AFGL model atmospheres. The water content changes from hour to hour, and well-mixed gases such as CO2 and CH4 drift slowly. Each gas’s column is therefore multiplied by a free <strong>column scale</strong> s_gas, fitted to the data. tellurix keeps the layers top to bottom, with pressure increasing downward (<code>AtmosphereProfile</code>, <code>site_profile.py</code>, <code>tellurix.era5</code>).</p>
+</section>
+<section id="molecular-absorption-lines" class="level2">
+<h2 class="anchored" data-anchor-id="molecular-absorption-lines">2.2 Molecular absorption lines</h2>
+<p><strong>What a line is.</strong> A molecule can only absorb a photon whose energy matches the difference between two of its quantized energy levels. In the near infrared these are mostly vibration–rotation transitions: a change in how the atoms vibrate, together with a change in how fast the molecule rotates. Each transition absorbs at its own wavenumber ν₀, called a <strong>line</strong>. Molecules have many rotational levels, so every vibrational change produces a <strong>band</strong> of hundreds to thousands of lines. Examples are the water bands at 1.4 and 1.9 µm and the CO2 bands at 1.6 and 2.0 µm (Figure 2.4). The positions, strengths and broadening coefficients of these lines are measured in laboratories and compiled in line lists such as HITRAN. tellurix uses AER Line File 3.9, the list LBLRTM uses.</p>
+<p>The cross-section of one line is its integrated strength S times a normalized shape function f:</p>
+<p><span class="math display">\[
+\sigma(\nu) = S(T)\, f(\nu - \nu_0;\, \alpha_D, \alpha_L), \qquad \int f\, d\nu = 1
+\]</span></p>
+<p>The total σ is the sum over every line of the gas.</p>
+<p><strong>Strength depends on temperature.</strong> A line absorbs only from molecules in its lower energy level E″, and how many sit there follows the Boltzmann distribution. Line lists give S at T_ref = 296 K, and it is scaled to the layer temperature with the partition function Q(T) and the second radiation constant c₂ = hc/k = 1.4388 cm K:</p>
+<p><span class="math display">\[
+S(T) = S(T_{\rm ref})\,\frac{Q(T_{\rm ref})}{Q(T)}\,\exp\!\Big[-c_2 E''\Big(\frac{1}{T}-\frac{1}{T_{\rm ref}}\Big)\Big]\,\frac{1-e^{-c_2\nu_0/T}}{1-e^{-c_2\nu_0/T_{\rm ref}}}
+\]</span></p>
+<p>Lines from high-lying levels weaken quickly in cold layers. That is one reason the vertical temperature profile matters.</p>
+<p><strong>Shape: two broadening mechanisms.</strong></p>
+<ul>
+<li><strong>Doppler broadening.</strong> Molecules move thermally along the line of sight, so each sees the light Doppler-shifted. This gives a Gaussian profile of half-width α_D = (ν₀/c)√(2 ln 2 kT/m). For water at 2 µm, α_D ≈ 0.007 cm−1.</li>
+<li><strong>Pressure (collisional) broadening.</strong> Collisions interrupt the molecule while it absorbs. This gives a Lorentzian profile of half-width α_L = (γ_air · (P − P_self) + γ_self · P_self) · (T_ref / T)ⁿ, proportional to pressure. Near the ground α_L ≈ 0.07 cm−1, ten times the Doppler width. Above about 20 km (57 hPa), Doppler broadening dominates (Figure 2.2).</li>
+<li><strong>The Voigt profile.</strong> Both act at once, so the true shape is their convolution, the Voigt profile. It has no closed form. It is computed from the complex Faddeeva function w(z): the Voigt profile is proportional to Re w(x + ia), with x the distance from line centre and a the ratio of the Lorentz to Doppler widths, both in units of the Doppler width. Evaluating w accurately and quickly is the computational heart of the problem.</li>
+</ul>
+<p><strong>Wings and why the calculation is expensive.</strong> Far from its centre a Lorentzian falls only as 1/(ν − ν₀)², so a strong line still absorbs measurably tens of cm−1 away. A model of one spectral window must therefore include every line within a 25 cm−1 margin around it. For one IGRINS K order this means about 13,000 lines, 2,800 spectral samples and 12 layers: roughly 4 × 10⁸ evaluations of w for a single model spectrum. Sections 2.6 and 2.10 explain how the two codes make this affordable.</p>
+<p><strong>Two refinements.</strong></p>
+<ul>
+<li><strong>Pressure shift.</strong> Collisions also shift each line centre slightly, by δ_air × P, typically 0.01 cm−1 per atmosphere. Both codes apply it; tellurix makes it optional.</li>
+<li><strong>Line coupling (line mixing).</strong> When neighbouring lines overlap at high pressure, collisions transfer intensity between them. To first order this adds a small antisymmetric term to each line, proportional to a coupling coefficient Y times pressure (Section 2.8). It matters for the dense CO2 bands at 2.0 and 1.6 µm.</li>
+</ul>
+<p><a href="../figures/output/fig_intro_lineshape.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="../figures/output/fig_intro_lineshape.png" class="img-fluid" style="width:100.0%" alt="line shape anatomy"></a></p>
+<p><strong>Figure 2.2. How one water line gets its shape and strength</strong> (H2O at 5004.585 cm−1, AER 3.9, in each layer of an ERA5 atmosphere over Gemini South).</p>
+<ul>
+<li><strong>(a) Widths against height.</strong> The Doppler width barely changes (0.006–0.007 cm−1), while the pressure width falls with pressure, from 0.065 cm−1 in the lowest layer. The two are equal at 57 hPa, about 20 km: below that, pressure broadening dominates the line; above it, Doppler does. The dotted line marks half of IGRINS’s resolution element, so lines from the lowest layers are about as wide as what the spectrograph can resolve.</li>
+<li><strong>(b) The profile in four layers.</strong> Near the ground the Voigt profile is essentially Lorentzian. In the stratosphere its core is Gaussian, but its far wings are still Lorentzian, falling as 1/(ν − ν₀)², and it is those wings that make far-away lines matter.</li>
+<li><strong>(c) Temperature.</strong> A line from a low-lying level (E″ = 135 cm−1) strengthens slightly in cold air. One from a high level (E″ = 1813 cm−1) weakens by an order of magnitude over the temperatures of this atmosphere, which is why each layer’s temperature enters the calculation.</li>
+</ul>
+</section>
+<section id="the-continuum" class="level2">
+<h2 class="anchored" data-anchor-id="the-continuum">2.3 The continuum</h2>
+<p>Adding up individual Voigt lines does not reproduce all the absorption measured in the laboratory or in the field. A smooth extra component, varying over hundreds of cm−1, remains. This is the <strong>continuum</strong>. For water it has two parts:</p>
+<ul>
+<li>the <strong>self continuum</strong>, from water molecules colliding with each other, proportional to the square of the water density;</li>
+<li>the <strong>foreign continuum</strong>, from water colliding with N2 and O2, proportional to water density times air density.</li>
+</ul>
+<p>Its physical origin is still debated: far line wings that are not exactly Lorentzian, and short-lived water dimers, both contribute. In practice it is modelled semi-empirically. MT_CKD (Mlawer et al.&nbsp;2012, 2023) tabulates coefficients fitted to measurements on a 10 cm−1 grid, and both codes use the same version 4.3.</p>
+<p>One convention matters for consistency with the lines. MT_CKD is defined as what remains once every line has been cut at 25 cm−1 from its centre and its value at the cut has been subtracted (the “pedestal”). LBLRTM shapes its lines exactly that way. tellurix keeps the full Voigt wing, so the two descriptions overlap slightly. The overlap is smooth over a spectral order, and the fitted continuum of Section 2.4 absorbs it (Sections 2.6 and 4).</p>
+<p>The water continuum is weak inside the IGRINS bands: a mean optical depth of about 0.003 at 2.0 µm on a dry night. It is strongest in the opaque 1.9 µm water band between H and K (Figure 2.7b). Its importance is that it is smooth across an entire order, where a bias would otherwise mimic a wrong column. For the solar spectra tellurix also includes the collision-induced absorption of O2 (O2–O2 and O2–N2 pairs), ported from LBLRTM. It changes the spectrum near 1.27 µm by up to 9%.</p>
+</section>
+<section id="from-the-sky-to-the-detector" class="level2">
+<h2 class="anchored" data-anchor-id="from-the-sky-to-the-detector">2.4 From the sky to the detector</h2>
+<p>The atmosphere’s transmission is not what the detector records. Four more steps connect it to the data.</p>
+<p><strong>1. The star.</strong> The light entering the atmosphere is the star’s own spectrum F★(ν), with its own absorption lines. Telluric lines stay fixed in the observatory’s frame. Stellar lines are Doppler-shifted by the star’s radial velocity and by Earth’s orbital motion, which changes by up to ±30 km/s over a year. This difference is what lets the two be separated. tellurix multiplies the transmission by a synthetic stellar spectrum from The Payne Zero (an A0V star for IGRINS standards, the Sun or Arcturus for the atlases), shifted by a fitted stellar velocity (<code>stellar.py</code>).</p>
+<p><strong>2. Finite resolution.</strong> A spectrograph cannot separate features closer than about Δλ = λ/R, where R is its <strong>resolving power</strong>. Its output is the true spectrum convolved with the <strong>line-spread function</strong> (LSF), the response to an infinitely narrow line. Two kinds of instrument are treated:</p>
+<ul>
+<li><strong>IGRINS</strong>, a slit-fed echelle spectrograph with R ≈ 45,000, whose LSF is close to a Gaussian 6.7 km/s wide (FWHM).</li>
+<li><strong>Fourier-transform spectrometers (FTS)</strong>, which made the solar and Arcturus atlases. An FTS measures an interferogram up to a maximum optical path difference L and Fourier-transforms it. Cutting the interferogram at L makes the LSF a sinc function, sin(x)/x, whose width is set by L. That sinc has slowly decaying side lobes, and how they are handled matters (Section 2.9).</li>
+</ul>
+<p>Telluric lines at R = 45,000 are only partly resolved: a typical water line, 0.15 cm−1 wide, spans about one resolution element. That is why the model is computed on a grid four times finer than the instrument’s resolution and then convolved.</p>
+<p><strong>3. Pixels and wavelengths.</strong> Each detector pixel collects light over a finite wavelength range. The model integrates over each pixel with Simpson’s rule rather than sampling its centre (an FTS samples points, so there it is switched off). The pipeline’s wavelength solution can be off by a fraction of a pixel, so a velocity shift and a small linear stretch are fitted.</p>
+<p><strong>4. The continuum level.</strong> The echelle’s blaze function, the flat field and the star’s slope multiply the spectrum by a smooth function. It is modelled as the exponential of a low-order Chebyshev polynomial, with fitted coefficients.</p>
+<p>Putting the steps together, the model flux in pixel i is</p>
+<p><span class="math display">\[
+F_i = \exp\Big(\sum_k c_k\,T_k(x_i)\Big)\;\frac{1}{\Delta\lambda_i}\int_{\rm pixel\ i}\big[(F_\star\cdot T)\otimes{\rm LSF}\big](\lambda)\,d\lambda
+\]</span></p>
+<p>Here T_k are Chebyshev polynomials and x_i is the pixel position scaled to [−1, 1]. The free parameters of a fit are few:</p>
+<ul>
+<li>one column scale per absorbing gas;</li>
+<li>the telluric and stellar velocities and the wavelength stretch;</li>
+<li>the LSF width;</li>
+<li>the continuum coefficients;</li>
+<li>an extra noise term (“jitter”).</li>
+</ul>
+<p><strong>What the model produces.</strong> The figures below are the transmission of one real atmosphere: ERA5 over Gemini South on 2021-03-17, 4.3 mm of precipitable water, air mass 1.5. They come from the full line-by-line calculation at IGRINS sampling: about 1.3 million lines of seven gases, with the water continuum and O2 collision-induced absorption.</p>
+<p><a href="../figures/output/fig_intro_transmission_overview.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="../figures/output/fig_intro_transmission_overview.png" class="img-fluid" style="width:100.0%" alt="sky transmission 0.9-5.3 um"></a></p>
+<p><strong>Figure 2.4a. The near-infrared sky, 0.9–5.3 µm, smoothed to R = 2,000.</strong> Absorption bands of water, CO2 and CH4 divide the spectrum into the familiar J, H, K, L′ and M′ windows (grey). Even inside the windows the sky is far from transparent. IGRINS covers H and K (blue bars).</p>
+<p><a href="../figures/output/fig_intro_transmission.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="../figures/output/fig_intro_transmission.png" class="img-fluid" style="width:100.0%" alt="H and K by molecule"></a></p>
+<p><strong>Figure 2.4b. H and K at IGRINS resolution, and who absorbs what.</strong></p>
+<ul>
+<li><strong>(b) All gases together, R = 45,000.</strong> H is mostly clear, with mean transmission 0.94 and 13% of samples below 0.9. K is much harder, with mean 0.83 and 41% of samples below 0.9.</li>
+<li><strong>(c) One gas at a time:</strong>
+<ul>
+<li>water, with its continuum, closes the gaps between the bands;</li>
+<li>CO2 saturates at 2.0 µm and absorbs up to 50% at 1.57 and 1.60 µm;</li>
+<li>CH4 fills the red half of K, with its deepest line 81% deep at 2.3 µm;</li>
+<li>N2O and CO are weak, at most 6–7% (their rows are magnified);</li>
+<li>O2 and O3 absorb under 1% anywhere in H and K.</li>
+</ul></li>
+<li><strong>(d) A 2 nm zoom at 2.318 µm.</strong> The grey curve is the atmosphere at infinite resolution; the black curve is what the spectrograph records. The deepest line reaches 0.17 but appears only as 0.52 after the line-spread function. Fitting at the instrument’s resolution therefore depends on a correct LSF as much as on correct lines.</li>
+</ul>
+<p><a href="../figures/diagrams/model_composition.png" class="lightbox" data-gallery="quarto-lightbox-gallery-5"><img src="../figures/diagrams/model_composition.png" class="img-fluid" style="width:100.0%" alt="F1 draft · model composition, from model.py and fit.py"></a></p>
+<p>The whole model at a glance. The four inputs on the left (atmosphere, line opacity, continuum and an optional LBLRTM correction template) are interchangeable components, so tests can run without spectroscopic data. They produce the transmission, which the observation model turns into pixel fluxes (Section 2.4), and a bounded fit adjusts the parameters using exact gradients (Section 2.5).</p>
+</section>
+<section id="implementation-side-by-side-with-lblrtm" class="level2">
+<h2 class="anchored" data-anchor-id="implementation-side-by-side-with-lblrtm">2.5 Implementation, side by side with LBLRTM</h2>
+<p>Before comparing the two codes, here is what a modern fitting code needs, briefly.</p>
+<p><strong>Fitting needs gradients.</strong> A fit adjusts the parameters θ to minimize χ²(θ) = Σ_i (data_i − model_i)²/σ_i². The most efficient optimizers use the gradient ∂χ²/∂θ, which says which way is downhill. tellurix uses L-BFGS-B, which also builds up an estimate of the curvature from successive gradients and respects parameter bounds. Each iteration needs χ² and its gradient.</p>
+<p><strong>Two ways to get a gradient.</strong></p>
+<ul>
+<li><strong>Finite differences.</strong> Nudge each parameter by a small step h and rerun the model: P + 1 runs for P parameters, or 2P + 1 for the more accurate central difference. The answer depends on h. Too large a step gives truncation error; too small a step loses the difference in rounding error (Figure 2.10d). An LBLRTM-based fit has no other option, because LBLRTM computes only spectra.</li>
+<li><strong>Automatic differentiation (autodiff).</strong> A program, however long, is a chain of elementary operations (add, multiply, exp, …), each with a known derivative. An autodiff system applies the chain rule through that chain mechanically, giving derivatives exact to rounding error with no step to choose. In <strong>reverse mode</strong> (back-propagation, as used to train neural networks), the gradient of one number such as χ² with respect to <em>all</em> parameters costs a single backward pass. That pass costs a few times one model evaluation, whatever the number of parameters.</li>
+</ul>
+<p><strong>JAX, compilation and GPUs.</strong> tellurix is written in JAX, a Python library with a NumPy-like interface:</p>
+<ul>
+<li><code>jax.grad</code> turns a function into one that returns its gradient.</li>
+<li><code>jax.jit</code> traces the function once and compiles it, through the XLA compiler, into fused machine code for a CPU or a GPU. Compilation takes seconds, but each later call takes milliseconds, so a fit should compile once and reuse the result (Section 3).</li>
+<li><code>jax.vmap</code> vectorizes a function, for example over atmospheric layers.</li>
+</ul>
+<p>A GPU has thousands of simple arithmetic units. The line-by-line calculation is the same arithmetic repeated over roughly 10⁸ independent line–sample pairs, which suits it ideally. GPUs are fastest in single precision, which motivates the mixed-precision scheme of Section 2.10.</p>
+<p><strong>The price.</strong> Compiled, differentiable code must be written as operations on whole arrays of fixed shape. An <code>if</code> statement whose outcome differs from element to element is usually computed both ways, with the unwanted result discarded. Several of tellurix’s techniques (Section 2.10) exist to avoid that waste. The Voigt opacity itself comes from ExoJAX (Kawahara et al.&nbsp;2022), a JAX code for exoplanet atmospheres, and tellurix builds the terrestrial model around it.</p>
+<p>tellurix computes the same physics as LBLRTM, stage for stage, but it changes three things about how that physics is executed:</p>
+<ol type="1">
+<li>It evaluates every line exactly rather than approximating cheaply.</li>
+<li>It puts all layers on one grid, so there is no merge step.</li>
+<li>It keeps the whole chain from opacity to detector pixels inside one compiled function that JAX can differentiate.</li>
+</ol>
+<p>Sections 2.6–2.10 compare each stage, with LBLRTM routines cited from its 12.17 source.</p>
+<p><a href="../figures/diagrams/pipelines.png" class="lightbox" data-gallery="quarto-lightbox-gallery-6"><img src="../figures/diagrams/pipelines.png" class="img-fluid" style="width:100.0%" alt="pipelines · LBLRTM from lblrtm.f90, oprop.f90, xmerge.f90, postsub.f90; tellurix from model.py, direct.py"></a></p>
+<p>LBLRTM passes files between stages: TAPE3, TAPE10 per layer and TAPE12. Its output stops at a scanned spectrum, so a fit has to rerun it. In tellurix, rows 3–6 are one compiled function, and its gradient comes from the same call.</p>
+</section>
+<section id="line-shape-evaluation-and-line-rejection" class="level2">
+<h2 class="anchored" data-anchor-id="line-shape-evaluation-and-line-rejection">2.6 Line-shape evaluation and line rejection</h2>
+<p><em>In plain terms.</em> Section 2.2 showed that a model spectrum needs the Voigt profile of every line at every spectral sample, about 10⁸ times. Near a line’s centre the Faddeeva function needs a careful, comparatively slow algorithm; tellurix uses Algorithm 916 of Zaghloul &amp; Ali (2011). Far from the centre (large x) a short asymptotic series, w(z) ≈ (i/√π)(1/z + 1/(2z³) + 3/(4z⁵) + …), is accurate and cheap. A code can save time in two ways:</p>
+<ol type="1">
+<li>Evaluate the expensive part only where it is needed. LBLRTM does this by splitting each line into pieces stored on grids of different spacing; tellurix by choosing, pair by pair, which formula to use.</li>
+<li>Skip lines too weak to matter. LBLRTM does this by default; tellurix does not.</li>
+</ol>
+<p>Below, “grid” means the set of wavenumbers at which the spectrum is computed, and DV its spacing.</p>
+<p>LBLRTM makes each line cheap by splitting it into four pieces on progressively coarser grids, and by dropping weak lines. tellurix evaluates the exact Voigt at every grid point and keeps every line; the sparse core keeps that affordable (Section 2.10). Both reach the same core, and they differ in the far wing at the 1e−5 level.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>LBLRTM 12.17 (<code>oprop.f90</code>)</th>
+<th>tellurix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Line profile</td>
+<td>Four sub-functions: F1–F3 out to 4, 16 and 64 α_V on grids DV, 4DV and 16DV (HIRAC1/CNVFNV, 168–1349), and F4 from 64 α_V to 25 cm−1 on 64DV (LBLF4/CONVF4, 3938–4010), joined by 4-point Lagrange (PANEL) and cubic (XINT) interpolation</td>
+<td>Exact Voigt (ExoJAX <code>hjert</code>): Algorithm 916 where x² + a² &lt; 111, asymptotic series elsewhere, at every grid point of a constant-velocity grid</td>
+</tr>
+<tr class="even">
+<td>Lookup</td>
+<td>Pre-tabulated shapes, nearest node (1313–1319)</td>
+<td>Evaluated directly</td>
+</tr>
+<tr class="odd">
+<td>Cutoff</td>
+<td>25 cm−1, less a pedestal; CO2 uses (2 − x²/B²) L(B) (3956); χ forced to 1 (4075)</td>
+<td>None: every line within the 25 cm−1 selection margin, full wing</td>
+</tr>
+<tr class="even">
+<td>Weak lines</td>
+<td>Rejected per layer when S·N/α_V ≤ DPTMIN + DPTFAC·R4 (2e−4, 1e−3; 1153–1171, 3900–3917); coupled lines exempt</td>
+<td>All kept; optional <code>select_significant_lines</code> with a guaranteed error bound</td>
+</tr>
+<tr class="odd">
+<td>Grid</td>
+<td>Per layer, DV from the mean Voigt width of a nominal line (0.0014–0.0077 cm−1 here)</td>
+<td>One grid for all layers (0.028 cm−1 at R = 45,000 × 4)</td>
+</tr>
+</tbody>
+</table>
+<p><a href="../figures/output/fig_method_lineshape.png" class="lightbox" data-gallery="quarto-lightbox-gallery-7"><img src="../figures/output/fig_method_lineshape.png" class="img-fluid" style="width:100.0%" alt="line shape"></a></p>
+<p><strong>Figure 2.6a. One H2O line (5004.585 cm−1, 800 hPa, 280 K) in both codes.</strong> (a) LBLRTM’s four sub-functions and their sum, compared with its own output (circles). (b) tellurix’s branches: Algorithm 916 within 0.051 cm−1, the core list within 0.147 cm−1, the asymptotic series beyond, with no cutoff. (c) The core, where both sample the same Voigt. (d) Departure from the exact Voigt: LBLRTM reaches 8e−4 of the peak in the core from table lookup, then levels off at the pedestal (8.7e−6 of the peak); tellurix stays below 2.4e−8.</p>
+<p><a href="../figures/output/fig_method_rejection.png" class="lightbox" data-gallery="quarto-lightbox-gallery-8"><img src="../figures/output/fig_method_rejection.png" class="img-fluid" style="width:100.0%" alt="rejection"></a></p>
+<p><strong>Figure 2.6b. LBLRTM’s line rejection, bottom layer of the ERA5 profile, 5000–5020 cm−1.</strong></p>
+<ul>
+<li><ol type="a">
+<li>HIRAC1 keeps 372 of the 4207 lines it tests: 90% are rejected.</li>
+</ol></li>
+<li><ol start="2" type="a">
+<li>The rejected lines carry 0.74% of the layer’s line optical depth, as a smooth floor of 2–9e−4.</li>
+</ol></li>
+<li><ol start="3" type="a">
+<li>Over the 12-layer path, rejection changes the transmission by up to 0.62% at R = 45,000. tellurix’s optional selection with a 1e−3 budget changes it by at most 4.6e−6, and its default changes nothing.</li>
+</ol></li>
+</ul>
+<p>The floor is smooth, so a fitted continuum absorbs it, which is why the fitted comparisons in Section 4 agree far better than 0.6%.</p>
+</section>
+<section id="layering-and-continuum" class="level2">
+<h2 class="anchored" data-anchor-id="layering-and-continuum">2.7 Layering and continuum</h2>
+<p><em>In plain terms.</em> A layer is described by one pressure and one temperature, yet the real air inside it spans a range of both. Which single values best represent the layer? The standard answer, the Curtis–Godson approximation, averages pressure and temperature weighted by the amount of air, and adds up (integrates) each gas’s molecules exactly. Done carelessly, for example by taking the values at the layer’s mid-point, the water column can be wrong by tens of percent in a single layer, because water falls off steeply with height. The continuum (Section 2.3) is evaluated per layer as well.</p>
+<p>Both codes average each layer the same way: density-weighted pressure and temperature, and gas amounts integrated with exponential interpolation between levels. They differ in where they put the boundaries. Given the same levels, they agree on the water column to 0.001%.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>LBLRTM 12.17</th>
+<th>tellurix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Layer boundaries</td>
+<td>AUTLAY (<code>lblatm.f90:5774</code>): a new layer when the Voigt-width ratio reaches 1.5 or the temperature range exceeds 5–8 K; rounded to 0.1 km</td>
+<td>fixed count (12 by default) from the ERA5 or AFGL levels (<code>site_profile.py</code>)</td>
+</tr>
+<tr class="even">
+<td>Layer means</td>
+<td>ALAYER/FPACK (<code>lblatm.f90:5640–6175</code>): density-weighted P and T, exponentially interpolated densities</td>
+<td><code>weighted_layers</code>: the same weighting, written to the profile’s <code>pressure_bar</code> column; centre sampling kept for old records</td>
+</tr>
+<tr class="odd">
+<td>H2O continuum</td>
+<td>MT_CKD 4.3 on a 1 cm−1 grid (<code>lblrtm.f90:6215</code>), then interpolated onto the line grid by XINT (<code>oprop.f90:519</code>)</td>
+<td>the same coefficients and formulas in JAX; P–T factors fixed at construction, so the continuum stays differentiable in water: self ∝ c², foreign ∝ c(1 − cx)</td>
+</tr>
+</tbody>
+</table>
+<p><a href="../figures/output/fig_method_layering.png" class="lightbox" data-gallery="quarto-lightbox-gallery-9"><img src="../figures/output/fig_method_layering.png" class="img-fluid" style="width:100.0%" alt="layering"></a></p>
+<p><strong>Figure 2.7a. One ERA5 column (DCT 2018-12-21) given to both codes as the same 24 levels.</strong> (a, b) Temperature and water, with each scheme’s boundaries and layer means: LBLRTM’s AUTLAY makes 19 layers, tellurix 12. (c) Each layer’s water column against a fine integral of the same atmosphere. LBLRTM and weighted tellurix are both within 0.001% in total; centre sampling is 1.55% high overall and up to 36% off in single layers. (d) The earlier 6-layer comparison case: given 7 levels, LBLRTM’s exponential interpolation sags below the layer values by up to 23% in the second layer, which is why its water column came out 12.2% lower.</p>
+<p><a href="../figures/output/fig_method_continuum.png" class="lightbox" data-gallery="quarto-lightbox-gallery-10"><img src="../figures/output/fig_method_continuum.png" class="img-fluid" style="width:100.0%" alt="continuum"></a></p>
+<p><strong>Figure 2.7b. MT_CKD 4.3 water continuum, 4000–6500 cm−1, LBLRTM against tellurix on identical layers.</strong> The median relative difference is 0.0013% (self) and 0.0003% (foreign); the 99th percentile is 0.14% and 0.026%, in the weak, noisy wings. LBLRTM was run with the columns scaled ×100 so that its float32 output resolves τ ~ 1e−5. The committed 0.024–0.107% agreement is therefore an upper bound set by that precision. (c) LBLRTM runs at c = 0.5, 1 and 2 follow tellurix’s analytic scaling, which is what makes the continuum differentiable in the water scale.</p>
+</section>
+<section id="line-coupling" class="level2">
+<h2 class="anchored" data-anchor-id="line-coupling">2.8 Line coupling</h2>
+<p><em>In plain terms.</em> Treating each line independently assumes that a collision changes only one transition at a time. When lines crowd together at high pressure, as in a CO2 band, collisions also move intensity from one line to its neighbours. The band’s centre then absorbs more than the sum of independent lines, and its edges less. To first order, Rosenkranz (1975) showed that this adds an antisymmetric partner to each line:</p>
+<p><span class="math display">\[
+\sigma(\nu) \propto S\,\big[\,{\rm Re}\,w(z) + Y p\,{\rm Im}\,w(z)\,\big]
+\]</span></p>
+<p>Here Re w is the ordinary Voigt shape, Im w its dispersive companion, which is positive on one side of the line and negative on the other, and Y a coupling coefficient that comes with the line list. The effect is small, about 1% of the CO2 optical depth at 2 µm, but it is systematic across a whole band.</p>
+<p>Both codes add AER’s first-order (Rosenkranz) dispersion term S·Y·p to the line. Y is interpolated linearly in temperature between 200, 250, 296 and 340 K (<code>oprop.f90:959–1061</code>). They differ in how the term’s shape is computed:</p>
+<ul>
+<li><strong>LBLRTM</strong> multiplies its tabulated Voigt by x/α_V (CNVFNV 1322–1349; CONVF4 3943–4003). This is exact for a Lorentz line, but it understates the far-wing dispersion by α_L/α_V (0.63 at 50 hPa).</li>
+<li><strong>tellurix</strong> uses the exact Im w(z) with a custom JVP. Differentiating Algorithm 916’s series directly would store every term.</li>
+</ul>
+<p><a href="../figures/output/fig_method_coupling.png" class="lightbox" data-gallery="quarto-lightbox-gallery-11"><img src="../figures/output/fig_method_coupling.png" class="img-fluid" style="width:100.0%" alt="coupling"></a></p>
+<p><strong>Figure 2.8. Three coupled CO2 lines near 4998 cm−1 (Yp ≈ −0.007).</strong></p>
+<ul>
+<li>(a, b) At 800 hPa the two dispersion terms agree to 0.56% of their peak.</li>
+<li><ol start="3" type="a">
+<li>In the far wing tellurix’s term is 15% larger, because it subtracts a plain Lorentz pedestal where LBLRTM subtracts its CO2 form (2 − x²/B²)L(B). Applying LBLRTM’s form closes the gap to 0.6%. This one difference explains LBLRTM’s 0.90% against tellurix’s 1.04% coupling effect.</li>
+</ol></li>
+<li><ol start="4" type="a">
+<li>At 50 hPa, where Doppler broadening matters, LBLRTM’s term is exactly Voigt × x/α_V, and the exact Im w is broader.</li>
+</ol></li>
+</ul>
+</section>
+<section id="instrument-model" class="level2">
+<h2 class="anchored" data-anchor-id="instrument-model">2.9 Instrument model</h2>
+<p><em>In plain terms.</em> Convolving with the LSF means replacing every sample by a weighted average of its neighbours, with the LSF as the weights. This can be done directly, as a weighted sum over a kernel of finite length, or with the Fourier transform, where convolution becomes a multiplication. Direct summation is fine for a Gaussian, which falls to zero within a few widths. The FTS sinc does not fall to zero: its side lobes decay only as 1/distance. Any kernel cut at a finite length therefore drops part of the response. The FFT treats the whole spectrum at once and avoids the cut.</p>
+<p>LBLRTM stops at a scanned spectrum. tellurix carries the model through to detector pixels inside the differentiated function, which is what lets the velocity, LSF width and continuum be fitted with the columns.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>LBLRTM post-processor</th>
+<th>tellurix <code>TelluricModel.predict</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Line-spread function</td>
+<td>SCANFN kernels in direct space (<code>postsub.f90:80–108</code>): rectangle, triangle, Gauss (±4 HWHM), sinc², sinc (±119 HWHM, 72 zeros); FFTSCN with apodizations and MOPD input (<code>fftscn.f90:110–160</code>)</td>
+<td>Gaussian by direct convolution on the constant-velocity grid; unapodized FTS sinc by FFT with the MOPD measured from the spectrum</td>
+</tr>
+<tr class="even">
+<td>Wavelength</td>
+<td>none (output on the line grid; INTRPL four-point interpolation, <code>postsub.f90:2527</code>)</td>
+<td>velocity shift and stretch, both fitted</td>
+</tr>
+<tr class="odd">
+<td>Detector sampling</td>
+<td>none found in the routines read</td>
+<td>Simpson integration over each pixel, or point sampling for FTS data</td>
+</tr>
+<tr class="even">
+<td>Continuum</td>
+<td>none</td>
+<td>Chebyshev log-continuum, fitted</td>
+</tr>
+</tbody>
+</table>
+<p><a href="../figures/output/fig_method_instrument.png" class="lightbox" data-gallery="quarto-lightbox-gallery-12"><img src="../figures/output/fig_method_instrument.png" class="img-fluid" style="width:100.0%" alt="instrument"></a></p>
+<p><strong>Figure 2.9. The instrument model step by step, 4290–4300 cm−1 on IGRINS K pixels 145–460.</strong> (a) Monochromatic transmission on the 0.42 km/s grid. (b) Gaussian LSF, σ = 2.83 km/s. (c) Simpson pixel averages against point samples, which differ by up to 4.6e−3 (rms 7e−4). (d) A +2 km/s shift times the log-Chebyshev continuum. (e) Gaussian and unapodized sinc kernels at equal FWHM. (f) The error of a truncated sinc kernel falls only about as 1/N and is still 3.4e−3 at LBLRTM’s 72-zero extent, which is why tellurix applies the sinc by FFT.</p>
+</section>
+<section id="numerics-that-make-it-fast-and-differentiable" class="level2">
+<h2 class="anchored" data-anchor-id="numerics-that-make-it-fast-and-differentiable">2.10 Numerics that make it fast and differentiable</h2>
+<p><em>In plain terms.</em> The previous sections fixed the physics; this one covers four implementation choices that make it fast enough to fit, without changing the answer beyond stated tolerances:</p>
+<ol type="1">
+<li><strong>Sparse core:</strong> use the expensive Voigt formula only for the 0.1% of line–sample pairs close enough to need it.</li>
+<li><strong>Precomputed opacity:</strong> a fit changes the line opacity only weakly, so compute it once and update it with a first-order (Taylor) correction.</li>
+<li><strong>Mixed precision:</strong> do the bulk of the arithmetic in 32-bit floating point, after rewriting one formula that would otherwise lose all its accuracy.</li>
+<li><strong>Exact gradients:</strong> let autodiff differentiate the whole chain, and show why that beats finite differences.</li>
+</ol>
+<p>Four techniques carry the speed, and none of them changes the physics. Each is checked against the exact calculation below.</p>
+<p><a href="../figures/diagrams/gradient_flow.png" class="lightbox" data-gallery="quarto-lightbox-gallery-13"><img src="../figures/diagrams/gradient_flow.png" class="img-fluid" style="width:100.0%" alt="gradient data flow · from model.py and fit.py"></a></p>
+<p>The column scales reach the optical depth through three routes: linearly, through the self-broadening partial pressure, and through MT_CKD. Everything above the optical depth is fixed once the opacity is precomputed. Velocity, LSF width and continuum act only on the stored spectrum, so they never touch the line kernel.</p>
+<p><a href="../figures/output/fig_method_sparse_core.png" class="lightbox" data-gallery="quarto-lightbox-gallery-14"><img src="../figures/output/fig_method_sparse_core.png" class="img-fluid" style="width:100.0%" alt="sparse core"></a></p>
+<p><strong>Figure 2.10a. Sparse core.</strong> (a) Of 4,669 H2O lines × 5,348 samples at 5000–5100 cm−1, only 30,130 pairs (0.121%) can reach Algorithm 916 (x² + a² &lt; 111). (b) Which branch each pair takes in the bottom layer. (c) Under vectorization ExoJAX’s Direct evaluates both branches everywhere, and Algorithm 916 on all pairs costs 1018 of its 1270 ms. SparseCoreDirect evaluates it on the core list only, found by <code>searchsorted</code>: 124 ms (10×), agreeing to 2.6e−16, and 7.9 ms (160×) with float32 wings. (d) Recomputing offsets inside the kernel removes 426 MB of (line, grid) matrices, leaving 1.9 MB.</p>
+<p><a href="../figures/output/fig_method_precompute.png" class="lightbox" data-gallery="quarto-lightbox-gallery-15"><img src="../figures/output/fig_method_precompute.png" class="img-fluid" style="width:100.0%" alt="precompute"></a></p>
+<p><strong>Figure 2.10b. Precomputed, linearized opacity.</strong> (a) Transmission error against the H2O scale (0.5–2.7). The first-order expansion in P_self stays below 3.1e−4, against 5.5e−3 photon noise; frozen opacity exceeds the noise at s ≳ 2. (b) The strongest H2O line in the bottom layer: frozen opacity misses its peak by 4% at s = 2.7, linearized opacity by 0.1%. (c) Self-broadening is only about ±2% of dτ/d ln s; the rest is the linear τ = σN term.</p>
+<p><a href="../figures/output/fig_method_mixed_precision.png" class="lightbox" data-gallery="quarto-lightbox-gallery-16"><img src="../figures/output/fig_method_mixed_precision.png" class="img-fluid" style="width:100.0%" alt="mixed precision"></a></p>
+<p><strong>Figure 2.10c. Mixed-precision wings.</strong> Relative error of H, ∂H/∂x and ∂H/∂a in the asymptotic wing, against an extended-precision reference. ExoJAX’s derivative identity (∂H/∂a = 2xL + 2aH − 2/√π) cancels catastrophically in float32, with error growing as x²ε: 15% at x = 1000. tellurix substitutes the truncated series into w′ = −2zw + 2i/√π, which with u = 1/z² gives ∂H/∂x = Im(u + 1.5u² + 3.75u³)/√π. That leaves nothing to cancel, and the error stays at float32 ε (about 1e−7). (d) About 89% of real wing pairs lie at x &gt; 1000.</p>
+<p><a href="../figures/output/fig_method_gradients.png" class="lightbox" data-gallery="quarto-lightbox-gallery-17"><img src="../figures/output/fig_method_gradients.png" class="img-fluid" style="width:100.0%" alt="gradients"></a></p>
+<p><strong>Figure 2.10d. Autodiff against finite differences</strong> of the fitting objective, for the H2O column, velocity and LSF width. Finite differences show the usual V: truncation error falls with the step and round-off grows as ε|f|/h. The best central difference agrees with autodiff to 7e−12 (H2O) and 8e−12 (LSF), but only 1.6e−8 for velocity, because a velocity step enters as λ(1 + v/c) and is lost below εc. On the live float32 kernel the H2O difference stalls at 0.5%: small P_self steps fall below float32 resolution. Autodiff needs no step to be chosen.</p>
+<p><strong>Why <code>precompute_opacity</code> itself uses a central difference.</strong> The sparse kernel sits inside a <code>lax.cond</code> that falls back to full Direct outside its temperature and pressure range. Under <code>vmap</code> over layers, the batched predicate turns <code>cond</code> into <code>select</code>, so a JVP would also run the dense fallback. Two extra forward evaluations at ±25% of P_self avoid that.</p>
+
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/leejjoon\.github\.io\/tellurix\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../manuscript/01-introduction.html" class="pagination-link" aria-label="1. Introduction">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">1. Introduction</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../manuscript/03-fitting-and-computational-cost.html" class="pagination-link" aria-label="3. Fitting and computational cost">
+        <span class="nav-page-text">3. Fitting and computational cost</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>tellurix · a differentiable telluric forward model</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+<p>Built with <a href="https://quarto.org">Quarto</a></p>
+</div>
+  </div>
+</footer>
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
+
+
+
+
+<script src="../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
