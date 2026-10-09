@@ -1,0 +1,1012 @@
+<title>Arcturus Fit Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.iife.min.js"></script>
+
+<style>
+  :root {
+    --ground: #eef2f3;
+    --panel: #ffffff;
+    --sunk: #e3e9eb;
+    --ink: #10181c;
+    --muted: #5b6b72;
+    --faint: #8a9aa1;
+    --line: #cfd9dd;
+    --hair: #dde5e8;
+
+    --observed: #10181c;
+    --telluric: #0e7c8c;
+    --solar: #c07b12;
+    --continuum: #6f5bb5;
+    --corrected: #a83f6b;
+
+    --good: #2c7f56;
+    --warn: #a86a12;
+    --bad: #b4402c;
+
+    --focus: #0e7c8c;
+    --shadow: 0 1px 2px rgba(16, 40, 48, .07), 0 8px 24px rgba(16, 40, 48, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0c1216;
+      --panel: #141c21;
+      --sunk: #101a1f;
+      --ink: #e6edf0;
+      --muted: #93a6ad;
+      --faint: #6b7f87;
+      --line: #27343a;
+      --hair: #1d282d;
+
+      --observed: #e6edf0;
+      --telluric: #4bc3d4;
+      --solar: #e8a33c;
+      --continuum: #a48ff0;
+      --corrected: #f18cb4;
+
+      --good: #4cb583;
+      --warn: #d69a3a;
+      --bad: #e4705a;
+
+      --focus: #4bc3d4;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0c1216;
+    --panel: #141c21;
+    --sunk: #101a1f;
+    --ink: #e6edf0;
+    --muted: #93a6ad;
+    --faint: #6b7f87;
+    --line: #27343a;
+    --hair: #1d282d;
+
+    --observed: #e6edf0;
+    --telluric: #4bc3d4;
+    --solar: #e8a33c;
+    --continuum: #a48ff0;
+    --corrected: #f18cb4;
+
+    --good: #4cb583;
+    --warn: #d69a3a;
+    --bad: #e4705a;
+
+    --focus: #4bc3d4;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+  #app {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 252px minmax(0, 1fr) 312px;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0;
+  }
+
+  /* ---- top bar ------------------------------------------------------- */
+  header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 8px 18px;
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: 4px; }
+  .brand b { font-weight: 600; letter-spacing: -0.01em; }
+  .brand span { color: var(--faint); font-size: 12px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--sunk); border: 1px solid var(--hair);
+    font-size: 12px; white-space: nowrap;
+  }
+  .badge i { font-style: normal; color: var(--faint); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .badge b { font-weight: 600; }
+  .badge.is-good { border-color: color-mix(in srgb, var(--good) 45%, var(--hair)); }
+  .badge.is-warn { border-color: color-mix(in srgb, var(--warn) 55%, var(--hair)); }
+  .badge.is-bad  { border-color: color-mix(in srgb, var(--bad) 55%, var(--hair)); background: color-mix(in srgb, var(--bad) 10%, var(--sunk)); }
+  .spacer { flex: 1 1 24px; }
+
+  .ctl {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: var(--sunk); border: 1px solid var(--hair); border-radius: 8px; padding: 2px;
+  }
+  .ctl button {
+    border: 0; background: transparent; cursor: pointer;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--muted);
+  }
+  .ctl button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+  .ctl button:hover { color: var(--ink); }
+
+  /* ---- rails --------------------------------------------------------- */
+  aside {
+    background: var(--panel);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  aside.left { border-right: 1px solid var(--line); }
+  aside.right { border-left: 1px solid var(--line); }
+  .rail-head {
+    padding: 10px 12px 8px; border-bottom: 1px solid var(--hair);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .rail-title { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+  .filters { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip {
+    border: 1px solid var(--hair); background: var(--sunk); color: var(--muted);
+    border-radius: 999px; padding: 2px 9px; font-size: 11.5px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+  .list { overflow-y: auto; min-height: 0; flex: 1; }
+  .row {
+    width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer;
+    display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 9px;
+    padding: 7px 12px; border-bottom: 1px solid var(--hair);
+  }
+  .row:hover { background: var(--sunk); }
+  .row[aria-current="true"] { background: color-mix(in srgb, var(--telluric) 12%, var(--panel)); box-shadow: inset 3px 0 0 var(--telluric); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  .dot.warn { background: var(--warn); }
+  .dot.bad { background: var(--bad); }
+  .row .who { font-size: 12.5px; }
+  .row .who em { font-style: normal; color: var(--faint); }
+  .row .q { font-size: 12px; color: var(--muted); }
+  .row .marked { font-size: 11px; color: var(--faint); }
+
+  /* ---- centre -------------------------------------------------------- */
+  main { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 12px 14px 14px; gap: 10px; overflow: hidden; }
+  .plotwrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 4px; box-shadow: var(--shadow); }
+  .plotwrap.main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .plotwrap.resid { flex: 0 0 auto; }
+  /* Reserved, not left to the chart: both charts are destroyed before the main
+     one measures its space, so an empty strip here handed the main chart this
+     strip's 118 px and put its x axis on top of the residuals. */
+  #rplot { min-height: 118px; }
+  .plot-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 2px 2px 8px; }
+  .trace { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; background: none; border: 0; padding: 0; color: var(--muted); }
+  .trace[aria-pressed="true"] { color: var(--ink); }
+  .trace .swatch { width: 15px; height: 3px; border-radius: 2px; background: currentColor; flex: none; }
+  .trace[aria-pressed="false"] .swatch { opacity: .3; }
+
+  .hint { color: var(--faint); font-size: 11.5px; padding: 0 2px; }
+
+  /* ---- species ------------------------------------------------------- */
+  .species-groups { overflow-y: auto; min-height: 0; flex: 1; }
+  .group-title {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--panel); padding: 9px 12px 5px;
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint);
+    border-bottom: 1px solid var(--hair);
+  }
+  .sp {
+    display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 9px;
+    padding: 6px 12px; width: 100%; text-align: left; border: 0; background: transparent;
+    border-bottom: 1px solid var(--hair); font-size: 12.5px;
+  }
+  .sp.active { cursor: pointer; }
+  .sp.active:hover { background: var(--sunk); }
+  .sp.off { color: var(--faint); }
+  .sp .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--hair); }
+  .sp .name { font-weight: 500; }
+  .sp .why { font-size: 11.5px; color: var(--faint); }
+  .sp .num { font-size: 11.5px; color: var(--muted); }
+  .sp .flag { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--bad); }
+
+  /* ---- review -------------------------------------------------------- */
+  .review { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--sunk); }
+  .marks { display: flex; gap: 6px; }
+  .mark {
+    flex: 1; border: 1px solid var(--hair); background: var(--panel); color: var(--muted);
+    border-radius: 7px; padding: 5px 4px; font-size: 12px; cursor: pointer;
+  }
+  .mark[aria-pressed="true"][data-mark="good"]    { background: var(--good); border-color: var(--good); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="suspect"] { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="reject"]  { background: var(--bad);  border-color: var(--bad);  color: #fff; }
+  .review textarea {
+    width: 100%; min-height: 54px; resize: vertical;
+    background: var(--panel); border: 1px solid var(--hair); border-radius: 7px;
+    padding: 6px 8px; font-size: 12.5px; font-family: inherit;
+  }
+  .review .status { font-size: 11.5px; color: var(--faint); min-height: 1.2em; }
+
+  /* ---- uPlot --------------------------------------------------------- */
+  .uplot, .uplot *, .uplot *::before, .uplot *::after { box-sizing: border-box; }
+  .uplot { width: min-content; font-family: "IBM Plex Mono", ui-monospace, monospace; line-height: 1.5; }
+  .u-wrap { position: relative; user-select: none; }
+  .u-over, .u-under, .u-axis { position: absolute; }
+  .u-under { overflow: hidden; }
+  .uplot canvas { display: block; position: relative; width: 100%; height: 100%; }
+  .u-select { background: rgba(14, 124, 140, .12); position: absolute; pointer-events: none; }
+  .u-cursor-x, .u-cursor-y { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; z-index: 100; }
+  .u-hz .u-cursor-x, .u-vt .u-cursor-y { height: 100%; border-right: 1px dashed var(--faint); }
+  .u-hz .u-cursor-y, .u-vt .u-cursor-x { width: 100%; border-bottom: 1px dashed var(--faint); }
+  .u-cursor-pt { position: absolute; top: 0; left: 0; border-radius: 50%; border: 0 solid;
+    pointer-events: none; will-change: transform; z-index: 100;
+    /* uPlot sets `background` inline as a shorthand, so this must win. */
+    background-clip: padding-box !important; }
+  .u-axis.u-off, .u-select.u-off, .u-cursor-x.u-off, .u-cursor-y.u-off,
+  .u-cursor-pt.u-off { display: none; }
+  .u-legend { display: none; }
+
+  .readout {
+    display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 2px 0;
+    font-size: 11.5px; color: var(--muted); min-height: 1.4em;
+  }
+  .readout b { color: var(--ink); font-weight: 500; }
+
+  #boot { padding: 40px 20px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
+
+  @media (max-width: 1080px) {
+    #app { grid-template-columns: 216px minmax(0, 1fr) 268px; }
+  }
+  @media (max-width: 900px) {
+    html, body { height: auto; }
+    #app { display: flex; flex-direction: column; }
+    main { order: 1; }
+    aside.right { order: 2; }
+    aside.left { order: 3; }
+    header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+    main { padding: 12px 16px; overflow: visible; }
+    .plotwrap.main { min-height: 340px; }
+    aside { border: 0 !important; border-top: 1px solid var(--line) !important; }
+    .list, .species-groups { max-height: 340px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<style>
+  :root { --atlas: #8a6a1f; --pz: #c07b12; --effective: #0e7c8c; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --atlas: #d8b45a; --pz: #e8a33c; --effective: #4bc3d4; }
+  }
+  :root[data-theme="dark"] { --atlas: #d8b45a; --pz: #e8a33c; --effective: #4bc3d4; }
+
+  .filter-label { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); width: 100%; margin-top: 2px; }
+  .facts { overflow-y: auto; min-height: 0; flex: 1; }
+  .fact {
+    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: baseline;
+    padding: 4px 12px; border-bottom: 1px solid var(--hair); font-size: 12.5px;
+  }
+  .fact .k { color: var(--muted); }
+  .fact .v { text-align: right; }
+  .fact .v small { color: var(--faint); font-size: 11px; }
+  .fact.warn .v { color: var(--warn); }
+  .fact.bad .v { color: var(--bad); }
+  .caveat { padding: 6px 12px 8px; font-size: 11.5px; color: var(--faint); border-bottom: 1px solid var(--hair); }
+  .sp .sigma { font-size: 11px; color: var(--faint); }
+</style>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <b>Arcturus Fit Review</b>
+      <span class="mono" id="window-name">loading…</span>
+    </div>
+    <div class="badges" id="badges"></div>
+    <div class="spacer"></div>
+    <div class="ctl" role="group" aria-label="Epoch">
+      <button type="button" data-epoch="summer" aria-pressed="true">summer</button>
+      <button type="button" data-epoch="winter" aria-pressed="false">winter</button>
+    </div>
+    <div class="ctl" role="group" aria-label="What to draw">
+      <button type="button" data-view="fit" aria-pressed="true">fit</button>
+      <button type="button" data-view="star" aria-pressed="false">star</button>
+    </div>
+    <div class="ctl" role="group" aria-label="View options">
+      <button type="button" id="cmp" aria-pressed="false">other epoch</button>
+      <button type="button" id="logy" aria-pressed="false">log flux</button>
+    </div>
+  </header>
+
+  <aside class="left">
+    <div class="rail-head">
+      <div class="rail-title" id="list-count">pages</div>
+      <div class="filters" id="filters"></div>
+    </div>
+    <div class="list" id="list" role="listbox" aria-label="Pages"></div>
+  </aside>
+
+  <main>
+    <div class="plotwrap main">
+      <div class="plot-legend" id="legend"></div>
+      <div class="hint" id="view-note"></div>
+      <div id="plot" style="flex:1 1 auto; min-height:0;"></div>
+      <div class="readout mono" id="readout"></div>
+    </div>
+    <div class="plotwrap resid">
+      <div class="hint">residual / pixel noise &mdash; the shaded band is &plusmn;1&sigma;; the main panel&rsquo;s top axis is the atlas row (pixel) index</div>
+      <div id="rplot"></div>
+    </div>
+  </main>
+
+  <aside class="right">
+    <div class="rail-head">
+      <div class="rail-title">this page-epoch</div>
+      <div class="hint" id="facts-hint">click a species to overlay its transmission</div>
+    </div>
+    <div class="facts" id="facts"></div>
+    <div class="review">
+      <div class="rail-title">your verdict</div>
+      <div class="marks">
+        <button type="button" class="mark" data-mark="good" aria-pressed="false">good</button>
+        <button type="button" class="mark" data-mark="suspect" aria-pressed="false">suspect</button>
+        <button type="button" class="mark" data-mark="reject" aria-pressed="false">reject</button>
+      </div>
+      <textarea id="note" placeholder="What did you see?" maxlength="400"></textarea>
+      <div class="status" id="review-status">connecting…</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Scale "f" is flux in the atlas's continuum units; "t" is transmission.
+  var TRACES = [
+    { key: "observed",  label: "observed",              token: "--observed",  width: 1.1, scale: "f" },
+    { key: "model",     label: "fitted model",          token: "--telluric",  width: 1.2, scale: "f" },
+    { key: "stellar",   label: "stellar-only model",    token: "--solar",     width: 1.1, scale: "f" },
+    { key: "continuum", label: "fitted continuum",      token: "--continuum", width: 1.6, scale: "f", dash: [6, 4] },
+    // observed / model x stellar_only / continuum: the pipeline's own
+    // correction (corrected_normalized), blanked where it is not reliable.
+    { key: "corrnorm",  label: "corrected ÷ continuum", token: "--corrected", width: 1.1, scale: "f" },
+    // stellar_only / continuum: Payne Zero as the fit drew it -- broadened,
+    // shifted, normalized by its page median (not its own continuum).
+    { key: "pznorm",    label: "Payne Zero ÷ continuum", token: "--pz",       width: 1.1, scale: "f", dash: [4, 2] },
+    // model_flux / stellar_only: the convolved operator the correction divides by.
+    { key: "effective", label: "effective transmission", token: "--effective", width: 0.9, scale: "t", alpha: 0.55 },
+    { key: "transmission", label: "unconvolved T",      token: "--muted",     width: 0.8, scale: "t", dash: [2, 2] },
+    { key: "atlas",     label: "atlas telluric (HWL)",  token: "--atlas",     width: 0.9, scale: "t" }
+  ];
+  var VIEWS = {
+    fit:  { observed: true, model: true, stellar: false, continuum: true, corrnorm: false, pznorm: false,
+            effective: true, transmission: false, atlas: false },
+    star: { observed: false, model: false, stellar: false, continuum: false, corrnorm: true, pznorm: true,
+            effective: true, transmission: false, atlas: false }
+  };
+  var VIEW_NOTE = {
+    fit: "observed and the fitted model in continuum units (left axis); transmissions on the right axis. " +
+         "Masked pixels are blank. The atlas telluric column is blanked above 1.05, where the authors' division blew up.",
+    star: "corrected = observed ÷ model × stellar-only, divided by the fitted continuum, blanked where it is not reliable " +
+          "(effective T < 0.15). Payne Zero is drawn on the same zero point: its page median, which sits ~1.3% below its " +
+          "true continuum on a blanketed page, so values above 1 are expected."
+  };
+
+  var SPECIES_COLOR = {
+    H2O: "#2f7ad6", CO2: "#d1493f", CH4: "#4aa564", N2O: "#a35fd1", CO: "#d4881f",
+    O2: "#2a9d9d", O3: "#c0398a", continuum: "#8a9aa1"
+  };
+  function speciesColor(name) { return SPECIES_COLOR[name] || "#7f8f96"; }
+
+  var BANDS = [
+    { key: "all", label: "all" },
+    { key: "m",  label: "> 4 µm",    lo: 0,    hi: 2500 },
+    { key: "l",  label: "2.5–4 µm",  lo: 2500, hi: 4000 },
+    { key: "k",  label: "2–2.5 µm",  lo: 4000, hi: 5000 },
+    { key: "h",  label: "1.43–2 µm", lo: 5000, hi: 7000 },
+    { key: "j",  label: "1.11–1.43", lo: 7000, hi: 9000 },
+    { key: "y",  label: "< 1.11 µm", lo: 9000, hi: 1e9 }
+  ];
+  var QUALITY = [
+    { key: "all", label: "all" },
+    { key: "p90", label: "worst 10% rms", test: function (e) { return rmsPercentile(e) >= 90; } },
+    { key: "p75", label: "worst 25% rms", test: function (e) { return rmsPercentile(e) >= 75; } },
+    { key: "rich", label: "telluric-rich", test: function (e) { return e.quality.median_transmission < 0.9; } },
+    { key: "bound", label: "at a bound", test: function (e) { return e.at_bound.length > 0; } },
+    { key: "unconverged", label: "not converged", test: function (e) { return !e.quality.all_stages_converged; } },
+    { key: "marked", label: "marked", test: function (e) { return !!markFor(e); } },
+    { key: "unmarked", label: "unmarked", test: function (e) { return !markFor(e); } }
+  ];
+  // Telluric-rich: median transmission below 0.9 is roughly the most
+  // absorbed quarter of the atlas (p25 = 0.87).
+
+  var STATE = {
+    manifest: null, pages: [], byPage: new Map(), chunks: new Map(), pending: new Map(),
+    page: null, epoch: "summer", view: "fit", compare: false, logy: false,
+    traces: Object.assign({}, VIEWS.fit),
+    species: new Set(), band: "all", quality: "all", rmsSorted: {}, marks: {},
+    plot: null, rplot: null, plotKey: null, db: null, writing: Promise.resolve()
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fmt(v, d) { return v == null || !isFinite(v) ? "—" : Number(v).toFixed(d); }
+  function withAlpha(color, a) {
+    if (/^#[0-9a-f]{6}$/i.test(color)) return color + Math.round(a * 255).toString(16).padStart(2, "0");
+    return color;
+  }
+
+  // ---- data ------------------------------------------------------------
+  function chunkBuffer(n) {
+    if (STATE.chunks.has(n)) return Promise.resolve(STATE.chunks.get(n));
+    if (STATE.pending.has(n)) return STATE.pending.get(n);
+    var p = fetch("chunk_" + String(n).padStart(3, "0") + ".wasm")
+      .then(function (r) {
+        if (!r.ok) throw new Error("chunk " + n + " did not load (" + r.status + ")");
+        return r.arrayBuffer();
+      })
+      .then(function (buf) { STATE.chunks.set(n, buf); STATE.pending.delete(n); return buf; });
+    STATE.pending.set(n, p);
+    return p;
+  }
+
+  function decode(buf, entry, name) {
+    var meta = entry.arrays[name];
+    if (!meta) return null;
+    var codes = new Uint16Array(buf, meta.offset, entry.n);
+    var out = new Float64Array(entry.n);
+    var nanCode = meta.nan_code;
+    var top = nanCode != null ? nanCode - 1 : 65535;
+    var span = (meta.hi - meta.lo) / top;
+    for (var i = 0; i < entry.n; i++) {
+      out[i] = (nanCode != null && codes[i] === nanCode) ? NaN : meta.lo + codes[i] * span;
+    }
+    return out;
+  }
+
+  function bits(buf, offset, n) {
+    var bytes = new Uint8Array(buf, offset, Math.ceil(n / 8));
+    var out = new Uint8Array(n);
+    for (var i = 0; i < n; i++) out[i] = (bytes[i >> 3] >> (7 - (i & 7))) & 1;
+    return out;
+  }
+
+  function load(entry) {
+    return chunkBuffer(entry.chunk).then(function (buf) {
+      var offsets = new Float32Array(buf, entry.axis_offset, entry.n);
+      var x = new Float64Array(entry.n);
+      for (var i = 0; i < entry.n; i++) x[i] = entry.nu0 + offsets[i];
+      var pack = { entry: entry, x: x, mask: bits(buf, entry.mask_offset, entry.n),
+                   reliable: bits(buf, entry.reliable_offset, entry.n), series: {}, species: {} };
+      ["observed", "model", "stellar", "continuum", "effective", "transmission", "residual"].forEach(function (k) {
+        pack.series[k] = decode(buf, entry, k);
+      });
+      pack.series.atlas = decode(buf, entry, "atlas_telluric");
+      Object.keys(entry.arrays).forEach(function (k) {
+        if (k.indexOf("species:") === 0) pack.species[k.slice(8)] = decode(buf, entry, k);
+      });
+      // Masked pixels carry a placeholder (code 0); they are not data.
+      ["observed", "model", "stellar", "continuum", "residual"].forEach(function (k) {
+        var s = pack.series[k];
+        for (var j = 0; j < entry.n; j++) if (!pack.mask[j]) s[j] = NaN;
+      });
+      var o = pack.series.observed, m = pack.series.model, st = pack.series.stellar, c = pack.series.continuum;
+      var corr = new Float64Array(entry.n), pz = new Float64Array(entry.n);
+      for (var k = 0; k < entry.n; k++) {
+        corr[k] = pack.reliable[k] ? o[k] / Math.max(m[k], 1e-6) * st[k] / Math.max(c[k], 1e-12) : NaN;
+        pz[k] = pack.mask[k] ? st[k] / Math.max(c[k], 1e-12) : NaN;
+      }
+      pack.series.corrnorm = corr; pack.series.pznorm = pz;
+      return pack;
+    });
+  }
+
+  // ---- list ------------------------------------------------------------
+  function entryOf(page, epoch) { return (STATE.byPage.get(page) || {})[epoch] || null; }
+  function current() { return entryOf(STATE.page, STATE.epoch); }
+  function markFor(e) { return e ? STATE.marks[e.key] || null : null; }
+
+  function rmsPercentile(e) {
+    var arr = STATE.rmsSorted[e.epoch], v = e.quality.residual_rms_over_noise;
+    var lo = 0, hi = arr.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (arr[mid] < v) lo = mid + 1; else hi = mid; }
+    return 100 * lo / Math.max(arr.length - 1, 1);
+  }
+
+  function severity(e) {
+    if (!e.quality.all_stages_converged || e.quality.reliable === 0) return "bad";
+    if (e.at_bound.length || rmsPercentile(e) >= 90) return "warn";
+    return "";
+  }
+
+  function visiblePages() {
+    var band = BANDS.find(function (b) { return b.key === STATE.band; });
+    var q = QUALITY.find(function (f) { return f.key === STATE.quality; });
+    return STATE.pages.filter(function (page) {
+      var e = entryOf(page, STATE.epoch);
+      if (!e) return false;
+      var mid = 0.5 * (e.v1 + e.v2);
+      if (band && band.hi && !(mid >= band.lo && mid < band.hi)) return false;
+      return !q || !q.test || q.test(e);
+    });
+  }
+
+  function renderList() {
+    var shown = visiblePages();
+    var total = STATE.pages.filter(function (p) { return entryOf(p, STATE.epoch); }).length;
+    $("list-count").textContent = shown.length + " of " + total + " " + STATE.epoch + " pages";
+    $("list").innerHTML = shown.map(function (page) {
+      var e = entryOf(page, STATE.epoch);
+      var mark = markFor(e);
+      var here = page === STATE.page;
+      return '<button type="button" class="row mono" role="option" data-page="' + esc(page) + '"' +
+        ' aria-current="' + here + '" aria-selected="' + here + '">' +
+        '<span class="dot ' + severity(e) + '"></span>' +
+        '<span class="who">' + esc(page.replace(/_$/, "")) + ' <em>' + e.v1.toFixed(0) + '–' + e.v2.toFixed(0) +
+        ' · ' + (1e4 / e.v2).toFixed(3) + ' µm</em></span>' +
+        '<span class="q">' + fmt(e.quality.residual_rms_over_noise, 1) + 'σ' +
+        (mark && mark.mark ? ' <span class="marked">' + (mark.mark === "good" ? "✓" : mark.mark === "suspect" ? "!" : "✕") + '</span>' : '') +
+        '</span></button>';
+    }).join("");
+  }
+
+  function renderFilters() {
+    function chips(list, group, active) {
+      return list.map(function (f) {
+        return '<button type="button" class="chip" data-group="' + group + '" data-key="' + f.key +
+          '" aria-pressed="' + (active === f.key) + '">' + f.label + '</button>';
+      }).join("");
+    }
+    $("filters").innerHTML = '<div class="filter-label">band</div>' + chips(BANDS, "band", STATE.band) +
+      '<div class="filter-label">quality</div>' + chips(QUALITY, "quality", STATE.quality);
+  }
+
+  // ---- plotting --------------------------------------------------------
+  function niceStep(span) {
+    var raw = span / 6, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+    return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
+  }
+
+  // The flux axis from percentiles of what is drawn, not its extremes.
+  function fluxScale(pack) {
+    var v = [];
+    TRACES.forEach(function (t) {
+      if (t.scale !== "f" || !STATE.traces[t.key]) return;
+      var s = pack.series[t.key];
+      for (var i = 0; i < s.length; i++) if (pack.mask[i] && isFinite(s[i])) v.push(s[i]);
+    });
+    if (v.length < 16) return { distr: STATE.logy ? 3 : 1 };
+    v.sort(function (a, b) { return a - b; });
+    var lo = v[Math.floor(0.002 * (v.length - 1))], hi = v[Math.floor(0.998 * (v.length - 1))];
+    if (STATE.logy) return { distr: 3, range: [Math.max(lo * 0.8, hi * 1e-3), hi * 1.25] };
+    var span = Math.max(hi - lo, 1e-3);
+    return { range: [Math.min(lo - 0.04 * span, STATE.view === "fit" ? 0 : Infinity), hi + 0.08 * span] };
+  }
+
+  // The other epoch on this page's pixels, matched by atlas row, not position.
+  function aligned(pack, other, key) {
+    var out = new Float64Array(pack.x.length).fill(NaN);
+    var shift = pack.entry.pixel_first - other.entry.pixel_first;
+    var src = other.series[key];
+    for (var i = 0; i < out.length; i++) {
+      var j = i + shift;
+      if (j >= 0 && j < src.length) out[i] = src[j];
+    }
+    return out;
+  }
+
+  function buildPlots(pack, other) {
+    var el = $("plot"), rel = $("rplot");
+    var keep = null, plotKey = pack.entry.page;
+    if (STATE.plot && STATE.plotKey === plotKey) {
+      var sx = STATE.plot.scales.x;
+      if (sx.min != null && sx.max != null) keep = [sx.min, sx.max];
+    }
+    if (typeof uPlot === "undefined") {
+      el.innerHTML = '<div style="padding:28px 8px;color:var(--muted);font-size:13px">' +
+        'The chart library did not load from <span class="mono">cdn.jsdelivr.net</span>, so the spectra cannot be drawn. ' +
+        'Everything else on this page is live.</div>';
+      return;
+    }
+    if (STATE.plot) { STATE.plot.destroy(); STATE.plot = null; }
+    if (STATE.rplot) { STATE.rplot.destroy(); STATE.rplot = null; }
+
+    var width = el.clientWidth || 800, height = Math.max(220, el.clientHeight || 320);
+    var data = [pack.x], series = [{}];
+    TRACES.forEach(function (t) {
+      data.push(pack.series[t.key] || new Float64Array(pack.x.length).fill(NaN));
+      var color = css(t.token);
+      var spec = { label: t.label, stroke: t.alpha ? withAlpha(color, t.alpha) : color, width: t.width,
+                   scale: t.scale, spanGaps: false, points: { show: false }, show: STATE.traces[t.key] };
+      if (t.dash) spec.dash = t.dash;
+      series.push(spec);
+    });
+    if (other) {
+      (STATE.view === "fit" ? ["observed", "model"] : ["corrnorm"]).forEach(function (k) {
+        data.push(aligned(pack, other, k));
+        series.push({ label: other.entry.epoch + " " + k,
+          stroke: css(k === "model" ? "--telluric" : "--faint"), width: 0.9, scale: "f",
+          spanGaps: false, points: { show: false }, dash: [2, 3] });
+      });
+    }
+    Array.from(STATE.species).forEach(function (name) {
+      if (!pack.species[name]) return;
+      data.push(pack.species[name]);
+      series.push({ label: name, stroke: speciesColor(name), width: 1.2, scale: "t", points: { show: false } });
+    });
+
+    // nu <-> atlas row, by interpolation over this page's own pixels.
+    var xs = pack.x, n = xs.length, first = pack.entry.pixel_first;
+    function rowOfNu(v) {
+      if (v <= xs[0]) return first;
+      if (v >= xs[n - 1]) return first + n - 1;
+      var lo = 0, hi = n - 1;
+      while (hi - lo > 1) { var mid = (lo + hi) >> 1; if (xs[mid] < v) lo = mid; else hi = mid; }
+      return first + lo + (v - xs[lo]) / (xs[hi] - xs[lo]);
+    }
+    function nuOfRow(r) {
+      var i = Math.min(Math.max(r - first, 0), n - 1), a = Math.floor(i), b = Math.min(a + 1, n - 1);
+      return xs[a] + (i - a) * (xs[b] - xs[a]);
+    }
+
+    var axisFont = "11px 'IBM Plex Mono', monospace";
+    STATE.plot = new uPlot({
+      width: width, height: height,
+      scales: { x: { time: false }, f: fluxScale(pack), t: { range: [0, 1.04] } },
+      series: series, legend: { show: false },
+      cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      axes: [
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") }, font: axisFont,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(u.scales.x.max - u.scales.x.min < 4 ? 2 : 1); }); } },
+        { scale: "f", stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") },
+          font: axisFont, size: 52 },
+        { scale: "t", side: 1, stroke: css("--muted"), grid: { show: false }, font: axisFont, size: 42,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(1); }); } },
+        // Atlas row (pixel) index on top, at round row numbers.
+        { side: 0, scale: "x", stroke: css("--faint"), grid: { show: false }, ticks: { stroke: css("--hair") },
+          font: axisFont, size: 30,
+          splits: function (u, i, mn, mx) {
+            var a = rowOfNu(mn), b = rowOfNu(mx), st = Math.max(1, niceStep(b - a)), out = [];
+            for (var r = Math.ceil(a / st) * st; r <= b; r += st) out.push(nuOfRow(r));
+            return out;
+          },
+          values: function (u, vs) { return vs.map(function (v) { return "px " + Math.round(rowOfNu(v)); }); } }
+      ],
+      hooks: {
+        setCursor: [function (u) {
+          var i = u.cursor.idx, r = $("readout");
+          if (i == null) { r.innerHTML = ""; return; }
+          var b = ['<b>' + pack.x[i].toFixed(3) + '</b> cm⁻¹', '<b>' + (1e4 / pack.x[i]).toFixed(5) + '</b> µm',
+                   'px <b>' + (first + i) + '</b>'];
+          if (pack.mask[i]) {
+            b.push('obs <b>' + pack.series.observed[i].toFixed(4) + '</b>');
+            b.push('model <b>' + pack.series.model[i].toFixed(4) + '</b>');
+            b.push('z <b>' + pack.series.residual[i].toFixed(2) + '</b>');
+          } else b.push('<b>masked</b>');
+          b.push('T<sub>eff</sub> <b>' + pack.series.effective[i].toFixed(4) + '</b>');
+          if (isFinite(pack.series.atlas[i])) b.push('atlas T <b>' + pack.series.atlas[i].toFixed(4) + '</b>');
+          if (!pack.reliable[i]) b.push('<b>unreliable</b>');
+          Array.from(STATE.species).forEach(function (name) {
+            if (pack.species[name]) b.push(name + ' <b>' + pack.species[name][i].toFixed(4) + '</b>');
+          });
+          r.innerHTML = b.join(" · ");
+        }]
+      }
+    }, data, el);
+
+    var band = new Float64Array(n).fill(1), nband = new Float64Array(n).fill(-1);
+    STATE.rplot = new uPlot({
+      width: width, height: 118, scales: { x: { time: false } }, legend: { show: false },
+      cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      series: [{},
+        { stroke: "transparent", width: 0, points: { show: false } },
+        { stroke: "transparent", width: 0, points: { show: false } },
+        { stroke: css("--telluric"), width: 0.9, points: { show: false }, spanGaps: false }],
+      bands: [{ series: [1, 2], fill: css("--hair") }],
+      axes: [
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: axisFont,
+          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(1); }); } },
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: axisFont, size: 52 }
+      ]
+    }, [pack.x, band, nband, pack.series.residual], rel);
+
+    // Restore the zoom after construction; a static x range draws no series.
+    if (keep) {
+      STATE.plot.setScale("x", { min: keep[0], max: keep[1] });
+      STATE.rplot.setScale("x", { min: keep[0], max: keep[1] });
+    }
+    STATE.plotKey = plotKey;
+  }
+
+  // ---- facts rail ------------------------------------------------------
+  function fact(k, v, cls) {
+    return '<div class="fact ' + (cls || "") + '"><span class="k">' + k + '</span><span class="v mono">' + v + '</span></div>';
+  }
+
+  function renderFacts(e) {
+    var q = e.quality, p = e.parameters, s = e.parameter_sigma || {};
+    var bound = new Set(e.at_bound);
+    function par(name, d, unit) {
+      return fact(name.replace(/_kms$/, "") + (unit ? " (" + unit + ")" : ""),
+        fmt(p[name], d) + (s[name] != null ? ' <small>± ' + fmt(s[name], d) + '</small>' : '') +
+        (bound.has(name) ? ' <small>bound</small>' : ''), bound.has(name) ? "warn" : "");
+    }
+    var out = '<div class="group-title">page</div>';
+    out += fact("page · epoch", esc(e.page) + " · " + esc(e.epoch));
+    out += fact("wavenumber", e.v1.toFixed(2) + "–" + e.v2.toFixed(2) + " cm⁻¹");
+    out += fact("wavelength", (1e4 / e.v2).toFixed(4) + "–" + (1e4 / e.v1).toFixed(4) + " µm");
+    out += fact("atlas rows", e.pixel_first + "–" + (e.pixel_first + e.n - 1) +
+      (e.page_rows != null ? ' <small>of ' + e.page_rows + '</small>' : ' <small>(not checked)</small>'));
+    out += fact("pixels fitted", q.fitted + " / " + q.pixels);
+    out += fact("reliable", q.reliable + ' <small>' + fmt(100 * q.reliable / q.pixels, 1) + '%</small>',
+      q.reliable === 0 ? "bad" : "");
+
+    out += '<div class="group-title">instrument &amp; velocities</div>';
+    out += fact("MOPD", fmt(e.mopd_cm, 3) + " cm");
+    out += fact("R (sinc alone)", Math.round(e.sinc_resolving_power).toLocaleString());
+    out += fact("R (sinc ⊕ Gaussian)", "≈ " + Math.round(e.resolving_power).toLocaleString());
+    out += par("lsf_sigma_kms", 3, "km/s");
+    out += par("velocity_kms", 3, "km/s");
+    out += par("stellar_velocity_kms", 3, "km/s");
+    if (p.wavelength_stretch) out += par("wavelength_stretch", 6);
+    out += par("log_jitter", 2);
+
+    out += '<div class="group-title">columns <span style="opacity:.7">(' + e.free_species.length + ' free)</span></div>';
+    out += '<div class="caveat">log scale relative to the profile column. The atlas is fitted at the zenith, so every ' +
+      'scale contains the page&rsquo;s air mass and is <b>not comparable between pages</b>. ± is formal and several times too small.</div>';
+    var names = Object.keys(e.species).sort(function (a, b) {
+      return (e.species[b].free - e.species[a].free) || a.localeCompare(b);
+    });
+    if (e.arrays["species:continuum"]) names.push("continuum");
+    names.forEach(function (name) {
+      var info = e.species[name] || null;
+      var drawable = !!e.arrays["species:" + name];
+      var on = STATE.species.has(name);
+      var detail;
+      if (!info) detail = '<span class="num">MT_CKD H₂O</span>';
+      else if (info.free) detail = '<span class="num">' + fmt(info.log_scale, 3) +
+        (info.sigma != null ? ' <span class="sigma">± ' + fmt(info.sigma, 3) + '</span>' : '') +
+        ' · ' + Math.exp(info.log_scale).toFixed(2) + '×</span>' +
+        (info.at_bound ? ' <span class="flag">bound</span>' : '');
+      else detail = '<span class="num">fixed at profile</span>';
+      out += '<' + (drawable ? 'button type="button"' : 'div') + ' class="sp ' + (drawable ? "active" : "off") +
+        '" data-species="' + name + '">' +
+        '<span class="swatch" style="background:' + (on ? speciesColor(name) : "transparent") + ';border-color:' +
+        speciesColor(name) + '"></span><span class="name mono">' + name + '</span><span>' + detail + '</span>' +
+        '</' + (drawable ? 'button' : 'div') + '>';
+    });
+    if (!STATE.manifest.species_split) out += '<div class="caveat">this bundle carries the total only</div>';
+
+    out += '<div class="group-title">quality</div>';
+    out += fact("rms / noise", fmt(q.residual_rms_over_noise, 2) + "σ" +
+      ' <small>p' + Math.round(rmsPercentile(e)) + ' of ' + esc(e.epoch) + '</small>', rmsPercentile(e) >= 90 ? "warn" : "");
+    out += fact("residual rms", fmt(q.residual_rms, 5));
+    out += fact("pixel σ", fmt(q.pixel_sigma, 5));
+    out += fact("χ²ᵥ", fmt(q.reduced_chi2, 2));
+    out += fact("rms z, reliable px", fmt(q.residual_z_rms_reliable, 2));
+    out += fact("median T", fmt(q.median_transmission, 4));
+    out += fact("continuum level", fmt(q.continuum_level, 4));
+    out += fact("condition number", q.condition_number == null ? "—" : Number(q.condition_number).toExponential(2));
+    out += fact("converged", q.all_stages_converged ? "all stages" : "no", q.all_stages_converged ? "" : "bad");
+    out += fact("at bound", e.at_bound.length ? esc(e.at_bound.join(", ")) : "none", e.at_bound.length ? "warn" : "");
+    if (q.negligible_telluric) out += fact("telluric", "negligible", "");
+    if (e.split_drift != null) {
+      out += fact("species ∏ − total", e.split_drift.toExponential(1));
+      out += fact("rebuilt − cached T", e.record_drift.toExponential(1));
+    }
+    $("facts").innerHTML = out;
+  }
+
+  // ---- header ----------------------------------------------------------
+  function renderHeader(e) {
+    $("window-name").textContent = e.page + " " + e.epoch + " · " + e.v1.toFixed(1) + "–" + e.v2.toFixed(1) + " cm⁻¹ · " +
+      (1e4 / e.v2).toFixed(3) + "–" + (1e4 / e.v1).toFixed(3) + " µm";
+    var q = e.quality;
+    var items = [
+      { k: "rms/noise", v: fmt(q.residual_rms_over_noise, 2) + "σ",
+        cls: rmsPercentile(e) >= 90 ? "is-bad" : rmsPercentile(e) >= 75 ? "is-warn" : "is-good" },
+      { k: "χ²ᵥ", v: fmt(q.reduced_chi2, 1) },
+      { k: "median T", v: fmt(q.median_transmission, 3) },
+      { k: "reliable", v: q.reliable + " / " + q.pixels, cls: q.reliable === 0 ? "is-bad" : "" },
+      { k: "free", v: e.free_species.join(" ") || "none" }
+    ];
+    if (!q.all_stages_converged) items.push({ k: "", v: "a stage did not converge", cls: "is-bad" });
+    if (e.at_bound.length) items.push({ k: "at bound", v: e.at_bound.join(", "), cls: "is-warn" });
+    $("badges").innerHTML = items.map(function (b) {
+      return '<span class="badge ' + (b.cls || "") + '">' + (b.k ? '<i>' + b.k + '</i>' : "") +
+        '<b class="mono">' + esc(b.v) + '</b></span>';
+    }).join("");
+  }
+
+  function renderLegend() {
+    $("view-note").textContent = VIEW_NOTE[STATE.view];
+    $("legend").innerHTML = TRACES.map(function (t) {
+      return '<button type="button" class="trace" data-trace="' + t.key + '" style="color:var(' + t.token + ')"' +
+        ' aria-pressed="' + STATE.traces[t.key] + '">' +
+        '<span class="swatch"></span><span style="color:var(--ink)">' + t.label + '</span></button>';
+    }).join("");
+  }
+
+  // ---- review marks ----------------------------------------------------
+  // One document for the atlas, keyed "page:epoch" -- the record's key fields.
+  var DOC = "reviews/arcturus_atlas";
+
+  function renderReview() {
+    var m = markFor(current());
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(!!m && m.mark === b.dataset.mark));
+    });
+    var note = $("note");
+    if (document.activeElement !== note) note.value = (m && m.note) || "";
+  }
+
+  function saveMark(patch) {
+    var e = current();
+    if (!e) return;
+    if (!STATE.db) { $("review-status").textContent = "not saved — this view cannot store marks"; return; }
+    var next = Object.assign({}, markFor(e) || {}, patch, { at: new Date().toISOString() });
+    if (!next.mark && !next.note) next = null;
+    STATE.marks = Object.assign({}, STATE.marks);
+    if (next) STATE.marks[e.key] = next; else delete STATE.marks[e.key];
+    renderReview(); renderList();
+    STATE.writing = STATE.writing.then(function () {
+      return STATE.db.doc(DOC).set({ marks: STATE.marks });
+    }).then(function () {
+      $("review-status").textContent = "saved " + new Date().toLocaleTimeString();
+    }).catch(function (err) {
+      $("review-status").textContent = "not saved (" + (err && err.code ? err.code : "error") + ")";
+    });
+  }
+
+  function connectStore() {
+    if (!(window.claude && window.claude.use)) { $("review-status").textContent = "marks unavailable here"; return; }
+    window.claude.use("db").then(function (db) {
+      if (!db) { $("review-status").textContent = "marks unavailable here"; return; }
+      STATE.db = db;
+      $("review-status").textContent = "ready";
+      db.doc(DOC).onSnapshot(function (snap) {
+        STATE.marks = (snap.exists && snap.data().marks) || {};
+        renderReview(); renderList();
+      }, function (err) { $("review-status").textContent = "marks offline (" + err.code + ")"; });
+    }).catch(function () { $("review-status").textContent = "marks unavailable here"; });
+  }
+
+  // ---- orchestration ---------------------------------------------------
+  function show(page) {
+    var e = entryOf(page, STATE.epoch);
+    if (!e) {
+      // This epoch lacks the page (22 summer pages have no data): stay on the
+      // epoch and fall back to its nearest page instead.
+      var shown = visiblePages();
+      if (!shown.length) shown = STATE.pages.filter(function (p) { return entryOf(p, STATE.epoch); });
+      if (!shown.length) {
+        // Nothing at all in this epoch: show the page in the other one.
+        var otherEpoch = STATE.epoch === "summer" ? "winter" : "summer";
+        if (!entryOf(page, otherEpoch)) return;
+        STATE.epoch = otherEpoch;
+        document.querySelectorAll("[data-epoch]").forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o.dataset.epoch === STATE.epoch));
+        });
+        return show(page);
+      }
+      var want = (entryOf(page, "winter") || entryOf(page, "summer") || {}).v1 || 0;
+      page = shown.reduce(function (best, p) {
+        return Math.abs(entryOf(p, STATE.epoch).v1 - want) < Math.abs(entryOf(best, STATE.epoch).v1 - want) ? p : best;
+      }, shown[0]);
+      e = entryOf(page, STATE.epoch);
+    }
+    STATE.page = page;
+    var other = entryOf(page, STATE.epoch === "summer" ? "winter" : "summer");
+    renderHeader(e); renderFacts(e); renderReview(); renderList();
+    var jobs = [load(e)];
+    if (other && STATE.compare) jobs.push(load(other));
+    Promise.all(jobs).then(function (packs) {
+      if (STATE.page !== page || current() !== e) return;
+      buildPlots(packs[0], packs[1] || null);
+    }).catch(function (err) { $("readout").textContent = String(err.message || err); });
+    var row = document.querySelector('.row[aria-current="true"]');
+    if (row && row.scrollIntoView) row.scrollIntoView({ block: "nearest" });
+  }
+
+  function step(delta) {
+    var shown = visiblePages(), at = shown.indexOf(STATE.page);
+    var next = shown[Math.min(Math.max(at + delta, 0), shown.length - 1)];
+    if (next != null && next !== STATE.page) show(next);
+  }
+
+  function wire() {
+    $("list").addEventListener("click", function (ev) {
+      var row = ev.target.closest(".row"); if (row) show(row.dataset.page);
+    });
+    $("filters").addEventListener("click", function (ev) {
+      var chip = ev.target.closest(".chip"); if (!chip) return;
+      STATE[chip.dataset.group] = chip.dataset.key;
+      renderFilters(); renderList();
+    });
+    $("legend").addEventListener("click", function (ev) {
+      var b = ev.target.closest(".trace"); if (!b) return;
+      STATE.traces[b.dataset.trace] = !STATE.traces[b.dataset.trace];
+      renderLegend(); show(STATE.page);
+    });
+    $("facts").addEventListener("click", function (ev) {
+      var b = ev.target.closest(".sp.active"); if (!b) return;
+      var name = b.dataset.species;
+      if (STATE.species.has(name)) STATE.species.delete(name); else STATE.species.add(name);
+      show(STATE.page);
+    });
+    document.querySelectorAll("[data-epoch]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        STATE.epoch = b.dataset.epoch;
+        document.querySelectorAll("[data-epoch]").forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o.dataset.epoch === STATE.epoch));
+        });
+        show(STATE.page);
+      });
+    });
+    document.querySelectorAll("[data-view]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        STATE.view = b.dataset.view;
+        STATE.traces = Object.assign({}, VIEWS[STATE.view]);
+        document.querySelectorAll("[data-view]").forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o.dataset.view === STATE.view));
+        });
+        renderLegend(); show(STATE.page);
+      });
+    });
+    $("cmp").addEventListener("click", function () {
+      STATE.compare = !STATE.compare;
+      $("cmp").setAttribute("aria-pressed", String(STATE.compare)); show(STATE.page);
+    });
+    $("logy").addEventListener("click", function () {
+      STATE.logy = !STATE.logy;
+      $("logy").setAttribute("aria-pressed", String(STATE.logy)); show(STATE.page);
+    });
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var m = markFor(current());
+        saveMark({ mark: m && m.mark === b.dataset.mark ? "" : b.dataset.mark });
+      });
+    });
+    var timer = null;
+    $("note").addEventListener("input", function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () { saveMark({ note: $("note").value.trim() }); }, 700);
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.target.tagName === "TEXTAREA" || ev.target.tagName === "INPUT") return;
+      if (ev.key === "ArrowDown" || ev.key === "j") { step(1); ev.preventDefault(); }
+      if (ev.key === "ArrowUp" || ev.key === "k") { step(-1); ev.preventDefault(); }
+    });
+    var resize = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(resize); resize = setTimeout(function () { if (STATE.page != null) show(STATE.page); }, 180);
+    });
+  }
+
+  fetch("manifest.json").then(function (r) {
+    if (!r.ok) throw new Error("manifest.json did not load (" + r.status + ")");
+    return r.json();
+  }).then(function (m) {
+    STATE.manifest = m;
+    var firstNu = new Map();
+    m.entries.forEach(function (e) {
+      var pair = STATE.byPage.get(e.page) || {};
+      pair[e.epoch] = e;
+      STATE.byPage.set(e.page, pair);
+      firstNu.set(e.page, Math.min(firstNu.has(e.page) ? firstNu.get(e.page) : Infinity, e.v1));
+      (STATE.rmsSorted[e.epoch] = STATE.rmsSorted[e.epoch] || []).push(e.quality.residual_rms_over_noise);
+    });
+    Object.keys(STATE.rmsSorted).forEach(function (k) { STATE.rmsSorted[k].sort(function (a, b) { return a - b; }); });
+    STATE.pages = Array.from(STATE.byPage.keys()).sort(function (a, b) { return firstNu.get(a) - firstNu.get(b); });
+    renderFilters(); renderLegend(); wire(); connectStore();
+    // ab5000_ is the page the walkthrough notebook follows end to end.
+    show(STATE.byPage.has("ab5000_") ? "ab5000_" : STATE.pages[0]);
+  }).catch(function (err) {
+    document.getElementById("app").innerHTML =
+      '<div id="boot">The fit bundle did not load.<br><span class="mono">' + esc(err.message || err) + '</span></div>';
+  });
+})();
+</script>
