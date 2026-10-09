@@ -85,3 +85,5 @@ See [Getting started](getting-started.qmd) for a first transmission spectrum in 
 ## Status and citation
 
 tellurix is research software under active development, and a paper describing it is in preparation; its [working draft](manuscript/index.qmd) is on this site. To cite a released version of the code and its fitted products, use the Zenodo record [10.5281/zenodo.23121556](https://doi.org/10.5281/zenodo.23121556), which covers all versions.
+
+tellurix is released under the [MIT License](https://github.com/leejjoon/tellurix/blob/main/LICENSE). The three modules derived from AER's MT_CKD and LBLRTM continuum code stay under AER's terms: free for research use, but not for commercial software without AER's consent.

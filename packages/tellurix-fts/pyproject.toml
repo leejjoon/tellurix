@@ -7,6 +7,8 @@ name = "tellurix-fts"
 version = "0.2.0"
 description = "Readers for Fourier-transform spectrometer atlases (Arcturus, NSO solar) for tellurix"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10,<3.11"
 dependencies = [
   "tellurix>=0.2,<0.3",

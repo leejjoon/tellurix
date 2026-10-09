@@ -250,3 +250,13 @@ acknowledgement: *NSO/Kitt Peak FTS data used here were produced by NSF/NOAO.*
 
 From the RRISA reduced archive; `scripts/download_rrisa_standard.py` fetches
 them and records each file's sha256. See `docs/igrins_a0v.md`.
+
+## License
+
+tellurix is released under the [MIT License](LICENSE), with one exception:
+`mt_ckd.py`, `o2_cia.py` and `_o2_cia_tables.py` in the core package are derived
+from AER's MT_CKD and LBLRTM continuum code and stay under AER's terms. Those
+terms allow use, modification and redistribution for scientific and research
+purposes, but not inclusion in proprietary or commercial software without AER's
+consent; see [LICENSE](LICENSE). The AER line files and MT_CKD coefficients that
+`tellurix-download-data` fetches carry AER's own license, saved beside them.

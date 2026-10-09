@@ -7,6 +7,8 @@ name = "tellurix"
 version = "0.2.0"
 description = "Differentiable terrestrial telluric transmission for high-resolution spectra"
 readme = "README.md"
+license = "MIT AND LicenseRef-AER-MT-CKD"
+license-files = ["LICENSE"]
 requires-python = ">=3.10,<3.11"
 dependencies = [
   "exojax==2.5.0",
