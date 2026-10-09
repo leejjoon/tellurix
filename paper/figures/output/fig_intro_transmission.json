@@ -1,0 +1,159 @@
+{
+  "profile": "data/profiles/gemini_2021_era5.csv",
+  "profile_note": "ERA5 Gemini South 2021-03-17T07Z, 12 weighted layers, 4.33 mm PWV, top at 8 hPa; O3 from AFGL midlatitude summer on the same layers",
+  "airmass": 1.5,
+  "grid": {
+    "resolving_power": 45000.0,
+    "samples_per_resolution": 4.0,
+    "points": 319154,
+    "range_um": [
+      0.9,
+      5.3
+    ],
+    "note": "all panels are full line-by-line on this grid (no coarse shortcut); the top panel is the same spectrum smoothed to R=2000"
+  },
+  "zoom": {
+    "range_nm": [
+      2318.0,
+      2320.0
+    ],
+    "samples_per_resolution": 64.0,
+    "points": 12421,
+    "min_T_monochromatic": 0.1676140812417704,
+    "min_T_R45k": 0.5174686530988634,
+    "per_species_min_T_monochromatic": {
+      "H2O": 0.8567474464939724,
+      "CO2": 0.9999987268714121,
+      "CH4": 0.16988447261750056,
+      "N2O": 0.9993655213309712,
+      "CO": 0.9579847408934342,
+      "O2": 1.0,
+      "O3": 0.9997392427867468
+    }
+  },
+  "kernel": "ExoJAXOpacityBackend direct_sparse, pressure_shift=True, AER 3.9, + MT_CKD 4.3 (H2O) + LBLRTM O2 CIA",
+  "lines_selected_summed_over_chunks": {
+    "H2O": 234610,
+    "CO2": 406371,
+    "CH4": 325632,
+    "N2O": 111276,
+    "CO": 3630,
+    "O2": 1937,
+    "O3": 240768
+  },
+  "lines_note": "each chunk selects lines within 25 cm-1 of its edges, so margins are counted twice",
+  "o3_column_du": 297.9057140879232,
+  "precipitable_water_mm": 4.3317754171600145,
+  "bands": {
+    "IGRINS_H": {
+      "range_um": [
+        1.49,
+        1.8
+      ],
+      "mean_T_R45k": 0.9425777148474506,
+      "fraction_of_R45k_samples_below_0.9": 0.1332961025218976,
+      "fraction_of_R45k_samples_below_0.5": 0.025659867144788667,
+      "per_species_mean_absorption_R45k": {
+        "H2O": 0.04624650306027578,
+        "CO2": 0.006718229870551817,
+        "CH4": 0.004666805324591072,
+        "N2O": 2.6626387879091773e-05,
+        "CO": 8.995803626454801e-07,
+        "O2": 3.529131387125517e-08,
+        "O3": 1.6921545423764783e-06
+      },
+      "per_species_deepest_line_R45k": {
+        "H2O": 0.9999784823482935,
+        "CO2": 0.5027186663488975,
+        "CH4": 0.5622308256515403,
+        "N2O": 0.0010815938524117996,
+        "CO": 0.0003131461954015702,
+        "O2": 1.2552486309047595e-05,
+        "O3": 0.0001355746746181108
+      }
+    },
+    "IGRINS_K": {
+      "range_um": [
+        1.96,
+        2.48
+      ],
+      "mean_T_R45k": 0.8294979249729165,
+      "fraction_of_R45k_samples_below_0.9": 0.4087496458589102,
+      "fraction_of_R45k_samples_below_0.5": 0.10584096704126925,
+      "per_species_mean_absorption_R45k": {
+        "H2O": 0.07879692925395532,
+        "CO2": 0.06934319758364738,
+        "CH4": 0.029447549840280196,
+        "N2O": 0.0008504544765973732,
+        "CO": 0.0001698470555356879,
+        "O2": 0.0,
+        "O3": 3.8035278452253074e-05
+      },
+      "per_species_deepest_line_R45k": {
+        "H2O": 0.9999999999999999,
+        "CO2": 0.9999840804146862,
+        "CH4": 0.81383192960002,
+        "N2O": 0.06966567376209953,
+        "CO": 0.05901148953043367,
+        "O2": 0.0,
+        "O3": 0.0061128607597059625
+      }
+    },
+    "H2O_1.4um (1.34-1.48)": {
+      "deepest_R45k_line_depth": 1.0,
+      "mean_absorption_R45k": 0.7261446918331425,
+      "mean_absorption_R2000": 0.7260640314719594
+    },
+    "H2O_1.9um (1.80-1.96)": {
+      "deepest_R45k_line_depth": 1.0,
+      "mean_absorption_R45k": 0.8605340889783913,
+      "mean_absorption_R2000": 0.860355776869085
+    },
+    "CO2_1.57um (1.565-1.585)": {
+      "deepest_R45k_line_depth": 0.4879891252857358,
+      "mean_absorption_R45k": 0.04191618452129953,
+      "mean_absorption_R2000": 0.04195481268180645
+    },
+    "CO2_1.60um (1.595-1.615)": {
+      "deepest_R45k_line_depth": 0.5027186663488975,
+      "mean_absorption_R45k": 0.04285895952296215,
+      "mean_absorption_R2000": 0.042879093192053186
+    },
+    "CO2_2.0um (1.995-2.025)": {
+      "deepest_R45k_line_depth": 0.9999840804146862,
+      "mean_absorption_R45k": 0.5516260117375573,
+      "mean_absorption_R2000": 0.5505555147569445
+    },
+    "CO2_2.06um (2.045-2.075)": {
+      "deepest_R45k_line_depth": 0.9915256617585607,
+      "mean_absorption_R45k": 0.2694861998242376,
+      "mean_absorption_R2000": 0.26984184336772343
+    },
+    "CH4_2.3um (2.20-2.40)": {
+      "deepest_R45k_line_depth": 0.81383192960002,
+      "mean_absorption_R45k": 0.07224884577624835,
+      "mean_absorption_R2000": 0.07218546673276693
+    },
+    "CH4_1.66um (1.63-1.70)": {
+      "deepest_R45k_line_depth": 0.5622308256515403,
+      "mean_absorption_R45k": 0.011734263803760525,
+      "mean_absorption_R2000": 0.01172355953948645
+    },
+    "CO_2.3um (2.29-2.40)": {
+      "deepest_R45k_line_depth": 0.05901148953043367,
+      "mean_absorption_R45k": 0.0008441569934525273,
+      "mean_absorption_R2000": 0.0008441903904233827
+    },
+    "N2O_2.11um (2.10-2.13)": {
+      "deepest_R45k_line_depth": 0.041893523708379954,
+      "mean_absorption_R45k": 0.004461909451620172,
+      "mean_absorption_R2000": 0.004466666561223964
+    },
+    "O2_1.27um (1.25-1.29)": {
+      "deepest_R45k_line_depth": 0.8214272641397663,
+      "mean_absorption_R45k": 0.059681266913947706,
+      "mean_absorption_R2000": 0.05968387555615329
+    }
+  },
+  "runtime_s_this_invocation": 7.5
+}

@@ -1,0 +1,292 @@
+{
+  "profile": "data/profiles/gemini_2021_era5.csv",
+  "lines": {
+    "main": {
+      "nu_cm1": 5004.584965,
+      "isotope": 1,
+      "S296_cm_per_molecule": 3.839e-23,
+      "A_s-1": 0.09009,
+      "gamma_air_cm1_atm": 0.087,
+      "gamma_self_cm1_atm": 0.371,
+      "n_air": 0.64,
+      "elower_cm1": 648.9787,
+      "delta_air_cm1_atm": -0.0102
+    },
+    "low": {
+      "nu_cm1": 5144.769427,
+      "isotope": 1,
+      "S296_cm_per_molecule": 2.458e-22,
+      "A_s-1": 0.1837,
+      "gamma_air_cm1_atm": 0.089,
+      "gamma_self_cm1_atm": 0.493,
+      "n_air": 0.75,
+      "elower_cm1": 134.9016,
+      "delta_air_cm1_atm": 0.013
+    },
+    "high": {
+      "nu_cm1": 5065.253065,
+      "isotope": 1,
+      "S296_cm_per_molecule": 2.457e-23,
+      "A_s-1": 8.877,
+      "gamma_air_cm1_atm": 0.063,
+      "gamma_self_cm1_atm": 0.32,
+      "n_air": 0.41,
+      "elower_cm1": 1813.2234,
+      "delta_air_cm1_atm": -0.0055
+    },
+    "molar_mass_g_mol": 18.01528
+  },
+  "crossover": {
+    "pressure_hpa": 56.58345431373093,
+    "altitude_km": 20.00743001849363,
+    "width_cm1": 0.006089563426546685,
+    "note": "alpha_L = alpha_D, with T and H2O interpolated in log P between the layer values"
+  },
+  "resolution_hwhm_cm1_R45000": 0.05560649961111111,
+  "layers_all": [
+    {
+      "altitude_km": 27.722,
+      "pressure_hpa": 17.113703272707255,
+      "temperature_k": 227.417776,
+      "alpha_doppler_cm1": 0.006367717789932898,
+      "alpha_lorentz_cm1": 0.0017394513679562119,
+      "alpha_voigt_cm1": 0.007347146967766657,
+      "lorentz_over_doppler": 0.27316715742431513
+    },
+    {
+      "altitude_km": 19.722,
+      "pressure_hpa": 59.14317404152463,
+      "temperature_k": 207.264578,
+      "alpha_doppler_cm1": 0.006079028044305383,
+      "alpha_lorentz_cm1": 0.006379165706198958,
+      "alpha_voigt_cm1": 0.010175703655852384,
+      "lorentz_over_doppler": 1.0493726397881538
+    },
+    {
+      "altitude_km": 14.722,
+      "pressure_hpa": 133.55258960711936,
+      "temperature_k": 210.959681,
+      "alpha_doppler_cm1": 0.006132976967686075,
+      "alpha_lorentz_cm1": 0.014242981929341179,
+      "alpha_voigt_cm1": 0.016647875806858642,
+      "lorentz_over_doppler": 2.322360250883992
+    },
+    {
+      "altitude_km": 11.222,
+      "pressure_hpa": 231.71994607715666,
+      "temperature_k": 224.219163,
+      "alpha_doppler_cm1": 0.006322778490360253,
+      "alpha_lorentz_cm1": 0.023768327111188276,
+      "alpha_voigt_cm1": 0.02545282199444643,
+      "lorentz_over_doppler": 3.7591585957701374
+    },
+    {
+      "altitude_km": 8.722,
+      "pressure_hpa": 335.01080929225634,
+      "temperature_k": 241.280471,
+      "alpha_doppler_cm1": 0.006558925374427034,
+      "alpha_lorentz_cm1": 0.032804250716303204,
+      "alpha_voigt_cm1": 0.03415914301118871,
+      "lorentz_over_doppler": 5.001467289779749
+    },
+    {
+      "altitude_km": 7.022,
+      "pressure_hpa": 423.86448775482944,
+      "temperature_k": 253.963242,
+      "alpha_doppler_cm1": 0.006729100814692565,
+      "alpha_lorentz_cm1": 0.040183077889355746,
+      "alpha_voigt_cm1": 0.04136254664283654,
+      "lorentz_over_doppler": 5.971537504924662
+    },
+    {
+      "altitude_km": 5.822,
+      "pressure_hpa": 497.0653990266208,
+      "temperature_k": 260.899459,
+      "alpha_doppler_cm1": 0.0068203740438057174,
+      "alpha_lorentz_cm1": 0.04646653464594537,
+      "alpha_voigt_cm1": 0.047522085104802096,
+      "lorentz_over_doppler": 6.812901220299846
+    },
+    {
+      "altitude_km": 4.922,
+      "pressure_hpa": 558.4401783660758,
+      "temperature_k": 266.972326,
+      "alpha_doppler_cm1": 0.006899295181339643,
+      "alpha_lorentz_cm1": 0.05137062698812223,
+      "alpha_voigt_cm1": 0.05235159132660288,
+      "lorentz_over_doppler": 7.445778972765671
+    },
+    {
+      "altitude_km": 4.222,
+      "pressure_hpa": 610.2637538829644,
+      "temperature_k": 271.94537,
+      "alpha_doppler_cm1": 0.006963257221571199,
+      "alpha_lorentz_cm1": 0.05556122108634533,
+      "alpha_voigt_cm1": 0.056487610086523594,
+      "lorentz_over_doppler": 7.97919986557791
+    },
+    {
+      "altitude_km": 3.672,
+      "pressure_hpa": 653.5804730375678,
+      "temperature_k": 275.780484,
+      "alpha_doppler_cm1": 0.007012185048194523,
+      "alpha_lorentz_cm1": 0.059253096336123585,
+      "alpha_voigt_cm1": 0.06013578205151752,
+      "lorentz_over_doppler": 8.45001892118918
+    },
+    {
+      "altitude_km": 3.222,
+      "pressure_hpa": 690.8261818305699,
+      "temperature_k": 278.754125,
+      "alpha_doppler_cm1": 0.007049888609618435,
+      "alpha_lorentz_cm1": 0.06258953417977893,
+      "alpha_voigt_cm1": 0.06343549780577941,
+      "lorentz_over_doppler": 8.878088384883927
+    },
+    {
+      "altitude_km": 2.872,
+      "pressure_hpa": 720.9661462417431,
+      "temperature_k": 281.043851,
+      "alpha_doppler_cm1": 0.0070787837871917406,
+      "alpha_lorentz_cm1": 0.06532417865555128,
+      "alpha_voigt_cm1": 0.06614230584035695,
+      "lorentz_over_doppler": 9.228164133752466
+    }
+  ],
+  "layers_shown": [
+    {
+      "altitude_km": 2.872,
+      "pressure_hpa": 720.9661462417431,
+      "temperature_k": 281.043851,
+      "h2o_vmr": 0.00637507476,
+      "alpha_doppler_cm1": 0.0070787837871917406,
+      "sigma_doppler_cm1": 0.0060121653899873305,
+      "alpha_lorentz_cm1": 0.06532417865555128,
+      "alpha_voigt_cm1": 0.06614230584035695,
+      "lorentz_over_doppler": 9.228164133752466,
+      "voigt_over_lorentz_at_0.3cm1": 1.0010862416501016,
+      "gauss_over_voigt_at_0.3cm1": 0.0,
+      "voigt_over_gauss_at_centre": 0.07286676873212695,
+      "voigt_over_lorentz_at_centre": 0.99173641491645
+    },
+    {
+      "altitude_km": 4.922,
+      "pressure_hpa": 558.4401783660758,
+      "temperature_k": 266.972326,
+      "h2o_vmr": 0.000881051313,
+      "alpha_doppler_cm1": 0.006899295181339643,
+      "sigma_doppler_cm1": 0.00585972180413384,
+      "alpha_lorentz_cm1": 0.05137062698812223,
+      "alpha_voigt_cm1": 0.05235159132660288,
+      "lorentz_over_doppler": 7.445778972765671,
+      "voigt_over_lorentz_at_0.3cm1": 1.0010751799962525,
+      "gauss_over_voigt_at_0.3cm1": 0.0,
+      "voigt_over_gauss_at_centre": 0.08992308130732216,
+      "voigt_over_lorentz_at_centre": 0.9874670316985646
+    },
+    {
+      "altitude_km": 19.722,
+      "pressure_hpa": 59.14317404152463,
+      "temperature_k": 207.264578,
+      "h2o_vmr": 4.21498003e-06,
+      "alpha_doppler_cm1": 0.006079028044305383,
+      "sigma_doppler_cm1": 0.005163051042590804,
+      "alpha_lorentz_cm1": 0.006379165706198958,
+      "alpha_voigt_cm1": 0.010175703655852384,
+      "lorentz_over_doppler": 1.0493726397881538,
+      "voigt_over_lorentz_at_0.3cm1": 1.0008921785788367,
+      "gauss_over_voigt_at_0.3cm1": 0.0,
+      "voigt_over_gauss_at_centre": 0.4649425351821309,
+      "voigt_over_lorentz_at_centre": 0.7201409809894845
+    },
+    {
+      "altitude_km": 27.722,
+      "pressure_hpa": 17.113703272707255,
+      "temperature_k": 227.417776,
+      "h2o_vmr": 4.64087348e-06,
+      "alpha_doppler_cm1": 0.006367717789932898,
+      "sigma_doppler_cm1": 0.005408241537071855,
+      "alpha_lorentz_cm1": 0.0017394513679562119,
+      "alpha_voigt_cm1": 0.007347146967766657,
+      "lorentz_over_doppler": 0.27316715742431513,
+      "voigt_over_lorentz_at_0.3cm1": 1.0009800328288359,
+      "gauss_over_voigt_at_0.3cm1": 0.0,
+      "voigt_over_gauss_at_centre": 0.7875455469406027,
+      "voigt_over_lorentz_at_centre": 0.3214390774581063
+    }
+  ],
+  "strength_ratio_S_T_over_S_296": {
+    "low": {
+      "200K": 1.308589497995847,
+      "220K": 1.2408207162914313,
+      "250K": 1.1399321758905547,
+      "280K": 1.046892230929321,
+      "300K": 0.9890203975936437,
+      "layers": [
+        1.2148434364607137,
+        1.2830794307612827,
+        1.2705101034541042,
+        1.225889988616006,
+        1.1690567313280542,
+        1.1272406711418814,
+        1.1055621262886839,
+        1.0860940564839634,
+        1.0707357769171133,
+        1.0592294218864058,
+        1.0505007467322074,
+        1.0436765467806408
+      ]
+    },
+    "main": {
+      "200K": 0.39436814989979063,
+      "220K": 0.5233807370282145,
+      "250K": 0.7197804831379983,
+      "280K": 0.9075903758349978,
+      "300K": 1.0225268892529769,
+      "layers": [
+        0.5718126634951511,
+        0.44019576775023656,
+        0.46399851220617216,
+        0.5508522865152948,
+        0.6633191624073541,
+        0.7453996057912324,
+        0.7899187152253968,
+        0.8277006492844203,
+        0.858402758653666,
+        0.8819117051501102,
+        0.9000296609830697,
+        0.9137235939586879
+      ]
+    },
+    "high": {
+      "200K": 0.026073630323977894,
+      "220K": 0.07409535485548985,
+      "250K": 0.25408650939876115,
+      "280K": 0.6568245342622031,
+      "300K": 1.1026665266300624,
+      "layers": [
+        0.103772942660165,
+        0.03903335966353977,
+        0.04740075814004789,
+        0.0899977617536159,
+        0.18379914746946435,
+        0.29213378516319977,
+        0.3689185121158587,
+        0.44735127965178756,
+        0.5203518990027952,
+        0.582414529466216,
+        0.6341675734577834,
+        0.6761208857882308
+      ]
+    }
+  },
+  "formulas": {
+    "doppler_sigma": "sigma_D = 3.0415595e-7 * sqrt(T/M) * nu0 [cm-1]; alpha_D = sqrt(2 ln2) sigma_D -- exojax/database/core/broadening.py doppler_sigma",
+    "lorentz": "alpha_L = (296/T)^n_air * (gamma_air (P-Pself)/1.01325 + gamma_self Pself/1.01325) + 2.6544188e-12 A [P in bar] -- exojax broadening.py gamma_hitran + gamma_natural",
+    "voigt": "scipy.special.voigt_profile(x, sigma_D, alpha_L), HWHM by brentq; tellurix evaluates the same Voigt with ExoJAX's Faddeeva routines in direct.py SparseCoreDirect",
+    "strength": "S(T) = S296 * Q(296)/Q(T) * exp(-c2 E'' (1/T - 1/296)) * (1-exp(-c2 nu0/T))/(1-exp(-c2 nu0/296)) -- exojax/database/core/line_strength.py line_strength",
+    "partition_function": "TIPS-2017 from HAPI, as AERLineDatabase.qr_interp (tellurix aer.py)",
+    "where_tellurix_calls_them": "packages/tellurix/src/tellurix/direct.py SparseCoreDirect._line_parameters",
+    "layer_pressure": "AtmosphereProfile.pressure_layer_bar (geometric mean of the edges for this CSV, which has no pressure_bar column)"
+  }
+}
