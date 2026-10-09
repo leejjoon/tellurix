@@ -65,3 +65,7 @@ data/scans/
 paper/figures/cache/
 paper/figures/output/*.png
 paper/figures/output/*.pdf
+paper/_site/
+paper/.quarto/
+paper/index_files/
+paper/index.html

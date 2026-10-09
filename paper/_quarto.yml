@@ -1,0 +1,19 @@
+project:
+  type: default
+  output-dir: _site
+  render:
+    - index.qmd
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: false
+    html-math-method: mathjax
+    fig-align: center
+    page-layout: article
+    smooth-scroll: true
