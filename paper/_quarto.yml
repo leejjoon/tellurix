@@ -4,7 +4,6 @@ project:
   render:
     - index.qmd
     - getting-started.qmd
-    - admin_only.qmd
     - manuscript/*.qmd
 
 website:
