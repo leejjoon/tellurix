@@ -177,41 +177,6 @@
     ]
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "tellurix",
-    "section": "",
-    "text": "Every ground-based spectrum is the source multiplied by the transmission of Earth’s atmosphere. tellurix computes that transmission line by line, from the molecules’ laboratory line parameters and the atmosphere’s pressure, temperature and composition at the time of observation. It then fits it to the observed spectrum and divides it out.\nIt is written in JAX on top of ExoJAX. The whole model, from line opacity to detector pixels, is therefore one compiled, differentiable function: it runs on a GPU and returns exact gradients for fitting. LBLRTM, the standard atmospheric line-by-line code, is its accuracy reference."
-  },
-  {
-    "objectID": "index.html#how-it-works",
-    "href": "index.html#how-it-works",
-    "title": "tellurix",
-    "section": "How it works",
-    "text": "How it works\n\nThe atmosphere, line opacity and continuum are interchangeable components. Together they give the transmission, which an observation model turns into detector pixels: stellar spectrum, Doppler shifts, line-spread function, pixel integration and a smooth continuum. A bounded fit then adjusts a handful of parameters: one column scale per gas, the velocity, the line-spread-function width and the continuum. The forward-model chapter explains each step from first principles and compares it with LBLRTM’s implementation."
-  },
-  {
-    "objectID": "index.html#packages",
-    "href": "index.html#packages",
-    "title": "tellurix",
-    "section": "Packages",
-    "text": "Packages\nThe repository is a workspace of three packages. The core knows no instrument; instrument packages build on it.\n\n\n\n\n\n\n\n\nPackage\nImport\nWhat it contains\n\n\n\n\ntellurix\ntellurix\nForward model, line opacity, MT_CKD and O₂ continua, fitter, stellar source, site profiles, run records, LBLRTM reference tooling\n\n\ntellurix-fts\ntellurix_fts\nReaders for the Arcturus and NSO solar FTS atlases, interferogram-based instrument profiles, the solar window fit\n\n\ntellurix-igrins\ntellurix_igrins\nIGRINS reduced-spectrum reader, night calibration, lamp-flat blaze, the per-order standard-star fit"
-  },
-  {
-    "objectID": "index.html#get-started",
-    "href": "index.html#get-started",
-    "title": "tellurix",
-    "section": "Get started",
-    "text": "Get started\ngit clone https://github.com/leejjoon/tellurix.git\ncd tellurix\nuv sync --dev --extra gpu        # Python 3.10; omit --extra gpu for CPU only\nuv run tellurix-download-data all  # AER Line File 3.9 and MT_CKD 4.3, SHA-256 checked\nSee Getting started for a first transmission spectrum in about twenty lines."
-  },
-  {
-    "objectID": "index.html#status-and-citation",
-    "href": "index.html#status-and-citation",
-    "title": "tellurix",
-    "section": "Status and citation",
-    "text": "Status and citation\ntellurix is research software under active development, and a paper describing it is in preparation; its working draft is on this site. To cite a released version of the code and its fitted products, use the Zenodo record 10.5281/zenodo.23121556, which covers all versions.\ntellurix is released under the MIT License. The three modules derived from AER’s MT_CKD and LBLRTM continuum code stay under AER’s terms: free for research use, but not for commercial software without AER’s consent."
-  },
-  {
     "objectID": "getting-started.html",
     "href": "getting-started.html",
     "title": "Getting started",
@@ -259,6 +224,41 @@
     "title": "Getting started",
     "section": "Further reading",
     "text": "Further reading\n\nValidation workflow: the LBLRTM comparison ladder and its acceptance thresholds\nPerformance: what a fit costs and why\nLBLRTM-corrected mode: MT_CKD, line coupling and the correction templates"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "tellurix",
+    "section": "",
+    "text": "Every ground-based spectrum is the source multiplied by the transmission of Earth’s atmosphere. tellurix computes that transmission line by line, from the molecules’ laboratory line parameters and the atmosphere’s pressure, temperature and composition at the time of observation. It then fits it to the observed spectrum and divides it out.\nIt is written in JAX on top of ExoJAX. The whole model, from line opacity to detector pixels, is therefore one compiled, differentiable function: it runs on a GPU and returns exact gradients for fitting. LBLRTM, the standard atmospheric line-by-line code, is its accuracy reference."
+  },
+  {
+    "objectID": "index.html#how-it-works",
+    "href": "index.html#how-it-works",
+    "title": "tellurix",
+    "section": "How it works",
+    "text": "How it works\n\nThe atmosphere, line opacity and continuum are interchangeable components. Together they give the transmission, which an observation model turns into detector pixels: stellar spectrum, Doppler shifts, line-spread function, pixel integration and a smooth continuum. A bounded fit then adjusts a handful of parameters: one column scale per gas, the velocity, the line-spread-function width and the continuum. The forward-model chapter explains each step from first principles and compares it with LBLRTM’s implementation."
+  },
+  {
+    "objectID": "index.html#packages",
+    "href": "index.html#packages",
+    "title": "tellurix",
+    "section": "Packages",
+    "text": "Packages\nThe repository is a workspace of three packages. The core knows no instrument; instrument packages build on it.\n\n\n\n\n\n\n\n\nPackage\nImport\nWhat it contains\n\n\n\n\ntellurix\ntellurix\nForward model, line opacity, MT_CKD and O₂ continua, fitter, stellar source, site profiles, run records, LBLRTM reference tooling\n\n\ntellurix-fts\ntellurix_fts\nReaders for the Arcturus and NSO solar FTS atlases, interferogram-based instrument profiles, the solar window fit\n\n\ntellurix-igrins\ntellurix_igrins\nIGRINS reduced-spectrum reader, night calibration, lamp-flat blaze, the per-order standard-star fit"
+  },
+  {
+    "objectID": "index.html#get-started",
+    "href": "index.html#get-started",
+    "title": "tellurix",
+    "section": "Get started",
+    "text": "Get started\ngit clone https://github.com/leejjoon/tellurix.git\ncd tellurix\nuv sync --dev --extra gpu        # Python 3.10; omit --extra gpu for CPU only\nuv run tellurix-download-data all  # AER Line File 3.9 and MT_CKD 4.3, SHA-256 checked\nSee Getting started for a first transmission spectrum in about twenty lines."
+  },
+  {
+    "objectID": "index.html#status-and-citation",
+    "href": "index.html#status-and-citation",
+    "title": "tellurix",
+    "section": "Status and citation",
+    "text": "Status and citation\ntellurix is research software under active development, and a paper describing it is in preparation; its working draft is on this site. To cite a released version of the code and its fitted products, use the Zenodo record 10.5281/zenodo.23121556, which covers all versions.\ntellurix is released under the MIT License. The three modules derived from AER’s MT_CKD and LBLRTM continuum code stay under AER’s terms: free for research use, but not for commercial software without AER’s consent."
   },
   {
     "objectID": "manuscript/02-the-forward-model.html",
