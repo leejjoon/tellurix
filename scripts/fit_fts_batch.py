@@ -228,7 +228,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         "accuracy_mode": accuracy_mode,
         # A record without the key predates the option and had no O2 continuum.
         "o2_cia": bool(o2_cia),
-        # Likewise: a record without it fitted uncoupled lines.
+        # Likewise: a record without it fitted uncoupled lines. This is what was
+        # asked for; the record's per-row `line_coupling` is what each window used.
         "line_coupling": bool(line_coupling),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
@@ -341,6 +342,11 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         "zenith_angle_deg": report["physics"]["zenith_angle_deg"],
         "airmass": report["physics"]["airmass_used"],
         "stellar_source": Path(report["stellar"]["source"]).name,
+        # Per window: a coupled run refits a window without coupling when its
+        # coupled opacity goes too negative (tellurix_fts.window.fit_window).
+        "line_coupling": bool(report["physics"]["line_coupling"]),
+        "line_coupling_refused": report["physics"].get("line_coupling_refused"),
+        "line_coupling_trial": report["physics"].get("line_coupling_trial"),
         "parameters": parameters,
         "parameter_names": [str(n) for n in arrays["parameter_names"]],
         "at_bound": report["at_bound"],
@@ -401,6 +407,8 @@ def record_row(row, npz_dir: Path, spectrum_sha: str) -> dict:
             "all_stages_converged": row["all_stages_converged"],
             "negligible_telluric": row["negligible_telluric"],
             "airmass": row["airmass"], "zenith_angle_deg": row["zenith_angle_deg"],
+            # A row written before the fallback existed used the run's setting.
+            "line_coupling": int(row.get("line_coupling", False)),
             "free_species": "+".join(species),
             "at_bound": "+".join(row["at_bound"]),
             "parameter_names": row["parameter_names"],
@@ -639,7 +647,7 @@ def main() -> None:
             parameter_names=codec.names, species=species, pages=rows,
             continuum_degree=args.continuum_degree,
             key_fields=("file", "window"),
-            extra_columns=(("airmass", "f8"), ("zenith_angle_deg", "f8")),
+            extra_columns=(("airmass", "f8"), ("zenith_angle_deg", "f8"), ("line_coupling", "i1")),
         )
         print(f"wrote {args.record} ({args.record.stat().st_size/1e6:.2f} MB)")
 

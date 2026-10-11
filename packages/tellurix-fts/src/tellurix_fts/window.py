@@ -31,7 +31,7 @@ zero.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import time
@@ -41,6 +41,7 @@ import jax
 import numpy as np
 
 from tellurix import (
+    NegativeOpacityError,
     AER_MOLECULE_IDS, AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
     ContinuumSum, ExoJAXOpacityBackend, LBLRTMOpticalDepthCorrection, MTCKDWaterContinuum,
     O2CollisionInducedContinuum, OrderObjective, StellarSpectrum, TelluricModel,
@@ -113,7 +114,11 @@ class WindowSettings:
     # LBLRTM's O2 collision-induced bands (tellurix.o2_cia).
     o2_cia: bool = False
     # AER's first-order line coupling (CO2, CH4, O2), as LBLRTM applies it.
+    # fit_window fits a window with coupled lines both ways and keeps the better.
+    # A coupled optical depth more negative than negative_tolerance in any layer
+    # cannot be precomputed and loses; smaller negatives are clipped to zero.
     line_coupling: bool = False
+    negative_tolerance: float = 1.0e-3
     vectorize_layers: bool = True
     mixed_precision: bool = True
     precompute_opacity: bool = True
@@ -303,7 +308,8 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
         zenith = zenith_angle_deg_for_airmass(spectrum.airmass_mean)
     order = fts_spectral_order(window, zenith_angle_deg=zenith, source_flux_model_grid=source)
 
-    fit_model = (model.precompute_opacity(self_broadening=settings.self_broadening)
+    fit_model = (model.precompute_opacity(self_broadening=settings.self_broadening,
+                                          negative_tolerance=settings.negative_tolerance)
                  if settings.precompute_opacity else model)
 
     parameters = TelluricParameters(
@@ -331,6 +337,52 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
 def fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory: Path,
                base: Path = Path("."), spectrum=None):
     """Fit one window and return its report and its diagnostic arrays.
+
+    With ``line_coupling``, a window that carries coupled lines is fitted twice,
+    with coupling and without, and the fit with the lower residual is returned.
+    Coupling is right at the CO2 Q-branches and wrong in the 4.3 um band wing,
+    where tellurix has no CO2 continuum and the result depends on the line
+    margin (``docs/arcturus_line_coupling.md``); no physical test separates the
+    two in advance, so the observations decide, window by window. The report's
+    ``physics`` records what was used (``line_coupling``) and both residuals
+    (``line_coupling_trial``). A coupled opacity too negative to precompute
+    (:class:`tellurix.NegativeOpacityError`) counts as a loss, with the reason in
+    ``line_coupling_refused``.
+    """
+
+    def run(chosen):
+        return _fit_window(chosen, paths, stellar_directory=stellar_directory,
+                           base=base, spectrum=spectrum)
+
+    if not settings.line_coupling:
+        return run(settings)
+    try:
+        coupled = run(settings)
+    except NegativeOpacityError as exc:
+        report, arrays = run(replace(settings, line_coupling=False))
+        report["physics"]["line_coupling_refused"] = {
+            "species": exc.species, "min_layer_optical_depth": exc.minimum,
+            "tolerance": exc.tolerance}
+        report["physics"]["line_coupling_trial"] = {
+            "rms_coupled": None, "rms_uncoupled": report["residuals"]["rms"],
+            "chosen": "uncoupled"}
+        return report, arrays
+    if not coupled[0]["physics"]["coupled_species"]:
+        # No coupled line reaches this window: the two fits would be identical.
+        return coupled
+    uncoupled = run(replace(settings, line_coupling=False))
+    rms = {"coupled": coupled[0]["residuals"]["rms"],
+           "uncoupled": uncoupled[0]["residuals"]["rms"]}
+    chosen = "coupled" if rms["coupled"] < rms["uncoupled"] else "uncoupled"
+    report, arrays = coupled if chosen == "coupled" else uncoupled
+    report["physics"]["line_coupling_trial"] = {
+        "rms_coupled": rms["coupled"], "rms_uncoupled": rms["uncoupled"], "chosen": chosen}
+    return report, arrays
+
+
+def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory: Path,
+                base: Path = Path("."), spectrum=None):
+    """Fit one window as configured; :func:`fit_window` adds the coupling fallback.
 
     The single-window command and the batch driver both run this function
     rather than two descriptions of the same fit, because a batch product
@@ -436,7 +488,8 @@ def fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory:
 
     # Refreezing at the fitted parameters is exact there -- the expansion's
     # offset from its own reference is zero -- and it reuses the compilation.
-    exact_model = model.precompute_opacity(result.parameters)
+    exact_model = model.precompute_opacity(result.parameters,
+                                           negative_tolerance=settings.negative_tolerance)
     exact_flux = np.asarray(exact_model.predict(order, result.parameters))
     exact_transmission = np.asarray(
         exact_model.transmission(result.parameters, order.zenith_angle_deg))
@@ -504,6 +557,10 @@ def fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory:
             "correction": None if settings.correction is None else str(settings.correction),
             "pressure_shift": True,
             "line_coupling": settings.line_coupling,
+            # Which species' lines the coupling actually reached, if any.
+            "coupled_species": (sorted(name for name, db in prepared.databases.items()
+                                       if getattr(db, "has_line_coupling", False))
+                                if settings.line_coupling else []),
             "mixed_precision": settings.mixed_precision,
             "precomputed_opacity": (settings.self_broadening if settings.precompute_opacity
                                     else None),

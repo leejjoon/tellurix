@@ -91,7 +91,10 @@ def settings_for(row, spectrum_path: Path, args, blob) -> WindowSettings:
         # at the *fitted* parameters a moment later. That discarded evaluation
         # was 2.3 s of every 6.6 s window.
         precompute_opacity=False, self_broadening="linear", layer_chunk_size=0,
-        line_coupling=bool(blob.get("physics", {}).get("line_coupling", False)),
+        # Per window: a coupled run refits a window without coupling where its
+        # coupled opacity goes too negative. A row without the key used the run's.
+        line_coupling=bool(row.get("line_coupling",
+                                   blob.get("physics", {}).get("line_coupling", False))),
         # A run without the key predates the O2 continuum and had none.
         o2_cia=bool(blob.get("physics", {}).get("o2_cia", False)),
     )
@@ -245,13 +248,15 @@ def main() -> None:
                 key = str(spectrum_path)
                 if key not in spectra:
                     spectra[key] = read_solar_spectrum(spectrum_path)
-                prepared = prepare_window(settings_for(row, spectrum_path, args, blob),
+                prepared_settings = settings_for(row, spectrum_path, args, blob)
+                prepared = prepare_window(prepared_settings,
                                           DataPaths.bootstrapped(root),
                                           stellar_directory=root / "data/stellar", base=root,
                                           spectrum=spectra[key])
                 model, order = prepared.model, prepared.order
                 parameters = parameters_for(row, model.species)
-                exact = model.precompute_opacity(parameters)
+                exact = model.precompute_opacity(
+                    parameters, negative_tolerance=prepared_settings.negative_tolerance)
                 zenith = order.zenith_angle_deg
                 grid_nm = (1.0e7 / np.asarray(model.wavenumber_cm1))[::-1]
                 wavelength = np.asarray(order.wavelength_vacuum_nm)

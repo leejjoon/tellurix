@@ -148,6 +148,16 @@ def main() -> None:
                                    margin_cm1=float(config["margin_cm1"])),
             v1, v2, float(config["grid_margin_cm1"]))
 
+        # Per row when the record says so: a coupled solar run refits a window
+        # without coupling where its coupled opacity goes too negative.
+        if "line_coupling" in pages.dtype.names:
+            flags = {bool(pages["line_coupling"][i]) for i in windows[key]}
+            if len(flags) != 1:
+                raise SystemExit(f"rows of window {v1}-{v2} disagree on line coupling")
+            coupled = flags.pop()
+        else:
+            # A record without the column used the run's setting everywhere.
+            coupled = bool(physics.get("line_coupling", False))
         databases = {}
         for name in sorted(species_all):
             stem = f"{AER_MOLECULE_IDS[name]:02d}_{name}"
@@ -156,7 +166,7 @@ def main() -> None:
                     verified(f"aer_{name}", line_root / stem / stem), name, (v1, v2),
                     margin_cm1=float(config["margin_cm1"]),
                     line_coupling=(verified("aer_line_coupling", line_root.parent / "lncpl_lines")
-                                   if physics.get("line_coupling") else None))
+                                   if coupled else None))
             except ValueError as exc:
                 if not str(exc).startswith(f"no {name} lines found"):
                     raise
@@ -174,8 +184,7 @@ def main() -> None:
             vectorize_layers=bool(physics["vectorize_layers"]),
             mixed_precision=bool(physics["mixed_precision"]),
             pressure_shift=bool(physics["pressure_shift"]),
-            # A record without the key fitted uncoupled lines.
-            line_coupling=bool(physics.get("line_coupling", False)))
+            line_coupling=coupled)
         # A "fast" record fitted lines only -- the windows past MT_CKD's 20000
         # cm-1 -- and must be rebuilt the same way.
         continuum = None if physics["accuracy_mode"] == "fast" else MTCKDWaterContinuum.from_netcdf(
