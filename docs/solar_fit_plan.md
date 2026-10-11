@@ -1560,6 +1560,55 @@ directories. The superseded records, products and bundles are in
 `solar/o2cia_shards/`. The results archive is `results-2026-10-05`, and the sibling
 project's `docs/solar_telluric_handoff.md` carries the new numbers.
 
+### Done 2026-10-11: files 4 and 5 refitted with line coupling, chosen window by window
+
+The 2076 cm-1 overshoot in the Kitt Peak review page -- the corrected spectrum 22%
+(file 5) and 31% (file 4) above Payne Zero just below a CO2 Q-branch head -- was the
+missing first-order line coupling: the residual scaled with air mass (r 0.99), and a
+refit with `--line-coupling` removed it while a control rerun reproduced the old fit.
+The HITRAN2020 CO2 line-mixing package (full relaxation matrix) showed AER's first
+order already tracks full mixing there (vertical tau change -0.097 against -0.098
+below the head), so full mixing was not built.
+
+Coupling cannot simply be switched on: in the 4.3 um band wing tellurix has no CO2
+continuum and the optical depth depends on the line margin (0.21, 0.51, 1.44, 2.06 at
+2404-2406 cm-1 for margins 25, 30, 40, 60 cm-1, uncoupled), and coupling there took
+2386-2416 from 8.0 to 24.4 sigma without ever going negative
+(`docs/arcturus_line_coupling.md`). So `tellurix_fts.window.fit_window` now fits every
+window with coupled lines both ways and keeps the lower residual; the record carries
+`line_coupling` per row and the summary both residuals (`line_coupling_trial`).
+Negatives within 1e-3 per layer are clipped (`TelluricModel` clips every cross
+section at zero; `precompute_opacity(negative_tolerance=)` refuses worse).
+
+Same command as the 2026-10-05 runs plus `--line-coupling`, four GPUs, two shards a
+file, 1.5 h. Scorecard `docs/solar_line_coupling.json` (`scripts/score_fts_coupling.py`):
+
+| file | coupling kept | uncoupled kept | no coupled lines | >2% better | >10% better | worse |
+|---|---:|---:|---:|---:|---:|---:|
+| 5 (air mass 1.985) | 69 | 45 | 110 | 15 | 3 | 0 |
+| 4 (air mass 4.73) | 69 | 57 | 97 | 13 | 5 | 0 |
+
+Largest gains, residual over noise, file 5 / file 4: 4966 (2.0 um band centre) 8.82 ->
+5.81 / 9.48 -> 5.58; 2056 (the Q-branch) 2.36 -> 1.72 / 1.97 -> 1.32; 5086 -12% /
+-20%; 6976 -9% / -19%; 4846 -4% / -14%; 3106 (CH4) -9% / -7%. Where coupling lost it
+lost by a median 0.007%, so most of those windows are ties; the real losses are 2386
+(x2-3), 2866, 2896 and 3136 (3-6%). Columns: CO2 +0.068 (file 5) and +0.080 (file 4)
+in ln at 2056 against sigma 0.004 -- the uncoupled fit had lowered CO2 to absorb the
+Q-branch error -- and CO -0.06/-0.07 there; OCS at 2086 now sits on its lower bound in
+both files (harmless). No window newly at an upper bound.
+
+Promoted the same day: old records, products and the review bundle are in
+`data/corrected/superseded_pre_coupling/`, shards in `solar/coupling_shards/`; the
+Kitt Peak review page was republished with the new bundle. Products re-exported from
+the promoted records under their usual names: both transmission files round-trip
+exactly (`--check` 0), photatl reproduces the file-5 fit to 0.223 sigma and its four
+patched pages (still the uncoupled photatl refits) to 2.8e-16, as before. The corrected
+spectrum moves only at the coupled bands: new over old is 1.00000 at the median, 1-99%
+0.991-1.005, and just below the 2076 head 0.93 (2075.5-2076.3) and 0.72 (2076.3-2076.8)
+-- the overshoot removed; up to +-10% in single pixels at 4966 and 6976. Results archive
+`results-2026-10-11`. niratl and the June 1983 pair were not refitted: no strong CO2
+Q-branch there, and O2 coupling is untested on these data.
+
 ### Also open
 
 - **The O2 excess: closed 2026-10-05, cause inside the 1983 pair not identified** (§4n):

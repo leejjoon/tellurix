@@ -297,9 +297,15 @@ to 3.10 by `exojax==2.5.0`. It runs in Payne Zero's own venv and writes an npz t
 (`WindowSettings.line_coupling`) applies AER's first-order line mixing (CO2, CH4,
 O2). The batch records it in `physics.line_coupling` and hashes `lncpl_lines` into
 the inputs; `export_transmission_hdf5.py` and `export_solar_review.py` rebuild with
-it from the record, a record without the key meaning off. No solar product has
-been fitted with it yet; on IGRINS it matters at the 2.0 um CO2 band centre and
-nowhere else measured (`docs/igrins_a0v.md`).
+it from the record, a record without the key meaning off. With it, `fit_window`
+fits each window that has coupled lines **both ways and keeps the lower residual**,
+because coupling is right at the CO2 Q-branches and wrong in the 4.3 um band wing
+(where tellurix has no CO2 continuum and the depth depends on the line margin); the
+record's per-row `line_coupling` says what each window used and the exporters read
+it. **Files 4 and 5 were refitted this way and promoted 2026-10-11**
+(`docs/solar_fit_plan.md`, `docs/solar_line_coupling.json`): about 70 windows a file
+kept coupling, none got worse, the 2.0 um band centre improved 34-41% and the 2076
+Q-branch 27-33%. niratl and the 1983 pair are still uncoupled.
 `fit_arcturus_batch.py` takes it too, and `rebuild_arcturus_page.py` and
 `export_arcturus_review.py` rebuild with it. Measured on every Arcturus page with
 CO2 free (`docs/arcturus_line_coupling.md`): ab4975_ (2.0 um band centre) 12%
