@@ -48,6 +48,12 @@ What the exporters check, and the traps that shaped them:
   atlas row index, matched by wavenumber against the page file; the axis is
   float32 offsets because the atlas prints wavenumbers to 0.01 cm-1 (steps vary
   by 3%). The atlas authors' telluric column is NaN above the fit's 1.05 ceiling.
+- **The solar manifest names the continua.** `export_solar_review.py` writes each
+  window's `continua` -- the between-line loss of the MT_CKD water continuum and O2's
+  collision-induced bands, in percent -- because the bundle ships them as one curve and
+  that curve is what lifts the corrected spectrum above the observed. niratl shows it as a
+  badge and a note; O2's 1.06 um band goes as the fitted O2 column squared, 0.01-2.7%
+  across neighbouring windows.
 - **Keys press buttons.** Each trace carries a `hotkey` (o observed, m model, s stellar,
   c continuum, t corrected; the rest per page, shown as a `<kbd>` in the legend) and
   1/2/3 are good/suspect/reject. The handler clicks the button the key names rather

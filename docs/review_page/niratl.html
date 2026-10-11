@@ -329,6 +329,7 @@
         continuum, so their solar column is drawn only where both transmissions clear 0.15, and is scaled by one
         number per page to meet ours (stated in the readout).
         Effective T and the authors&rsquo; atmospheric share the right-hand axis.</div>
+      <div class="hint" id="continua-note" hidden></div>
       <div id="plot" style="flex:1 1 auto; min-height:0;"></div>
       <div class="readout mono" id="readout"></div>
     </div>
@@ -778,6 +779,37 @@
   }
 
   // ---- header ----------------------------------------------------------
+  // The continua absorb between the lines as well as in them, so the modelled
+  // transmission never reaches 1 there, and dividing it out lifts the corrected
+  // spectrum (and the stellar model, which carries the fitted continuum) above
+  // the observed one by the same amount. The bundle ships the continua as one
+  // curve; the exporter names the terms apart.
+  function continuaLoss(entry) {
+    if (!entry.continua) return null;
+    var keep = 1;
+    Object.keys(entry.continua).forEach(function (k) { keep *= 1 - entry.continua[k] / 100; });
+    return 100 * (1 - keep);
+  }
+
+  function renderContinua(entry, lost) {
+    var el = $("continua-note");
+    if (lost == null || lost < 0.3) { el.hidden = true; return; }
+    var parts = Object.keys(entry.continua).sort(function (a, b) {
+      return entry.continua[b] - entry.continua[a];
+    }).map(function (k) {
+      return k.replace("H2O", "H\u2082O").replace("O2", "O\u2082") + " " + entry.continua[k].toFixed(2) + "%";
+    });
+    var text = "Continua absorb " + lost.toFixed(1) + "% between lines (" + parts.join(", ") +
+      "): the corrected spectrum and the stellar model sit that much above the observed.";
+    var o2 = entry.continua["O2 collision-induced"] || 0;
+    if (o2 >= 0.3 && entry.species.O2) {
+      text += " O\u2082 column " + Math.exp(entry.species.O2.log_scale).toFixed(2) + "\u00d7 here; the band goes as" +
+        " its square and trades with the continuum polynomial, so the level jumps between neighbouring windows.";
+    }
+    el.textContent = text;
+    el.hidden = false;
+  }
+
   function renderHeader(entry) {
     $("window-name").textContent = entry.page + " · " + entry.v1.toFixed(1) + "–" + entry.v2.toFixed(1) + " cm⁻¹ · " +
       (1e7 / entry.v2).toFixed(0) + "–" + (1e7 / entry.v1).toFixed(0) + " nm";
@@ -796,6 +828,9 @@
     if (entry.opaque) items.push({ k: "", v: "opaque — do not use", cls: "is-bad" });
     if (!q.all_stages_converged) items.push({ k: "", v: "a stage did not converge", cls: "is-warn" });
     if (entry.at_bound.length) items.push({ k: "at bound", v: entry.at_bound.join(", "), cls: "is-warn" });
+    var lost = continuaLoss(entry);
+    if (lost != null) items.push({ k: "continua", v: "−" + lost.toFixed(2) + "%", cls: lost >= 1 ? "is-warn" : "" });
+    renderContinua(entry, lost);
     $("badges").innerHTML = items.map(function (b) {
       return '<span class="badge ' + (b.cls || "") + '">' + (b.k ? '<i>' + b.k + '</i>' : "") +
         '<b class="mono">' + b.v + '</b></span>';

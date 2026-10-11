@@ -36,6 +36,9 @@ from tellurix_fts import read_niratl_page, read_photatl_page, read_solar_spectru
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_niratl_page, is_photatl_page  # noqa: E402
 
 from tellurix.download import DataPaths  # noqa: E402
+from tellurix.io import load_atmosphere_csv  # noqa: E402
+from tellurix.mt_ckd import MTCKDWaterContinuum  # noqa: E402
+from tellurix.o2_cia import O2CollisionInducedContinuum  # noqa: E402
 from tellurix_fts.window import WindowSettings, prepare_window  # noqa: E402
 
 # Everything the page can offer as a row, whether or not any window fits it.
@@ -165,6 +168,30 @@ def scan_rows(scan_name: str, root: Path, airmass: float, fitted) -> list[dict]:
     return rows
 
 
+def continuum_losses(profile, v1: float, v2: float, log_scales: dict, zenith_angle_deg: float,
+                     paths: DataPaths, o2_cia: bool) -> dict:
+    """The flux each continuum takes between lines, in percent, median over the window.
+
+    The species split ships the continua as one curve, and that curve is what
+    lifts the corrected spectrum above the observed one even where there are
+    no lines. The page names the terms apart. O2's 1.06 um band goes as the
+    square of the O2 column, so a column the fit traded against the continuum
+    polynomial moves it a lot -- the figure is the fitted model's, not the sky's.
+    """
+    grid = np.linspace(v1, v2, 61)
+    vmr = {name: np.asarray(values) * np.exp(log_scales.get(name, 0.0))
+           for name, values in profile.vmr.items()}
+    slant = 1.0 / np.cos(np.radians(zenith_angle_deg))
+    terms = {"H2O continuum": MTCKDWaterContinuum.from_netcdf(paths.mt_ckd, grid)}
+    if o2_cia:
+        o2 = O2CollisionInducedContinuum(grid)
+        if o2.terms:
+            terms["O2 collision-induced"] = o2.bind(profile)
+    return {name: round(100.0 * (1.0 - float(np.exp(-np.median(
+        np.asarray(term.optical_depth(profile, vmr)).sum(axis=0)) * slant))), 4)
+        for name, term in terms.items()}
+
+
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__,
@@ -217,6 +244,7 @@ def main() -> None:
 
     args.output.mkdir(parents=True, exist_ok=True)
     spectra: dict[str, object] = {}
+    profiles: dict[Path, object] = {}
     manifest, failures = [], []
     chunk, chunk_bytes, chunk_index = [], 0, 0
     started = time.time()
@@ -330,6 +358,14 @@ def main() -> None:
                 "species_split_drift": drift,
                 "pixel_product_drift": pixel_drift,
             }
+            profile_path = root / Path(blob.get("profile") or args.profile)
+            if profile_path not in profiles:
+                profiles[profile_path] = load_atmosphere_csv(profile_path)
+            entry["continua"] = continuum_losses(
+                profiles[profile_path], row["v1"], row["v2"],
+                {name: float(row["parameters"][name]) for name in row["species"]},
+                float(row["zenith_angle_deg"]), DataPaths.bootstrapped(root),
+                bool(blob.get("physics", {}).get("o2_cia", False)))
             for name, values in arrays.items():
                 keep = name in NAN_ARRAYS
                 payload, lo, hi = quantize(values, keep_nan=keep)
