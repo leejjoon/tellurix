@@ -95,7 +95,7 @@ def main() -> None:
                              "with that continuum already divided out. The fitted Chebyshev then "
                              "represents the instrument response and any grey telluric absorption "
                              "alone, rather than those times the stellar continuum slope -- which "
-                             "is -5.7% across 2030-2060 cm-1 and -2.5% across 4350-4380. Implies "
+                             "is -5.7%% across 2030-2060 cm-1 and -2.5%% across 4350-4380. Implies "
                              "--normalize-source, because flux_total carries the star's units and "
                              "continuum_0 is bounded to +-2 in the log.")
     parser.add_argument("--normalize-source", action=argparse.BooleanOptionalAction, default=False,
