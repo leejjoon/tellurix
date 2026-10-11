@@ -109,6 +109,12 @@ their own, as Arcturus's sinc does (R 115,700 against 100,000). What over-correc
 water lines is their strength, line by line: observed/model equivalent width scatters
 0.85-1.16 (p16-p84) over 481 lines, with a trend in lower-state energy of +12 +- 3% per
 1000 cm-1 that a 4.5 K warmer profile reverses without narrowing the scatter.
+**That scatter is mostly the line list's.** The same lines measured in niratl's pages
+fitted in the Wallace 2011 and IAG flux atlases (`data/corrected/solar/floor/`, 10822-13447
+cm-1; other dates, another site and instrument) misfit together: per-line log(obs/model) EW,
+window median removed, correlates at r = 0.70 niratl-Wallace (56 lines), 0.66 Wallace-IAG
+(57), 0.40 niratl-IAG (105), with 8-12% rms shared. The shared part does not follow
+intensity, gamma_air, E'' or depth (|r| <= 0.11): per-line errors, not a parameter law.
 **O2's collision-induced continuum is ported from LBLRTM** (`tellurix.o2_cia`,
 `--o2-cia`, validated to 0.13%, §4o). It barely moves columns -- the fitted Chebyshev
 had been absorbing it; at 1.27 um, its strongest band, O2 moves by up to 8% but inside
