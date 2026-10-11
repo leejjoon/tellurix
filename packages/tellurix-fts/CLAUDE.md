@@ -300,3 +300,12 @@ the inputs; `export_transmission_hdf5.py` and `export_solar_review.py` rebuild w
 it from the record, a record without the key meaning off. No solar product has
 been fitted with it yet; on IGRINS it matters at the 2.0 um CO2 band centre and
 nowhere else measured (`docs/igrins_a0v.md`).
+`fit_arcturus_batch.py` takes it too, and `rebuild_arcturus_page.py` and
+`export_arcturus_review.py` rebuild with it. Measured on every Arcturus page with
+CO2 free (`docs/arcturus_line_coupling.md`): ab4975_ (2.0 um band centre) 12%
+better, the 2076 cm-1 Q-branch pages 1.5-3%, nothing worse than +1.6%; +14% wall
+time, all in the precompute and the refreeze. It **fails** on 17 page-epochs:
+the precompute refuses negative cross sections, and at ab2400_ (4.3 um band
+wing) coupled CO2 goes to -0.24 vertical optical depth -- physically wrong --
+while the 3.3 um CH4 pages, ab8300_ and ab1951_ winter go negative only at the
+1e-8 to 7e-4 level. The committed record stays uncoupled.
