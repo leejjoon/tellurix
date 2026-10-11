@@ -109,6 +109,13 @@ their own, as Arcturus's sinc does (R 115,700 against 100,000). What over-correc
 water lines is their strength, line by line: observed/model equivalent width scatters
 0.85-1.16 (p16-p84) over 481 lines, with a trend in lower-state energy of +12 +- 3% per
 1000 cm-1 that a 4.5 K warmer profile reverses without narrowing the scatter.
+Where it matters is the windows whose `lsf_sigma_kms` runs high. That Gaussian follows the
+*window*, not the instrument: across niratl, Wallace 2011 and IAG fits of the same windows it
+correlates at r = 0.75-0.97, so the solar model's mismatch sets it. Model water lines are
+6-10% wider than observed at the median, and 40-56% wider where it exceeds 0.9 km/s. With
+`--stellar-broadening` ph09900 went from 1.11 to 0.49 km/s. Do not pin it low instead: at
+0.26 km/s the water lines come out 6% too narrow and the per-line misfit rises 0.52% -> 0.56%;
+they want ~0.4-0.5 km/s beyond the sinc.
 **That scatter is mostly the line list's.** The same lines measured in niratl's pages
 fitted in the Wallace 2011 and IAG flux atlases (`data/corrected/solar/floor/`, 10822-13447
 cm-1; other dates, another site and instrument) misfit together: per-line log(obs/model) EW,
