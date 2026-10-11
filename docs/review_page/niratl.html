@@ -399,6 +399,22 @@
   var $ = function (id) { return document.getElementById(id); };
   function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
+  // uPlot treats only null as a gap. A NaN reaching it poisons the min and max
+  // of whatever range it falls in: the flux scale then has no extent and every
+  // series vanishes, which is what a zoom over a masked pixel used to do. The
+  // arrays keep NaN for the readouts; only what the chart sees is converted.
+  function gaps(data) {
+    return data.map(function (a, k) {
+      return k === 0 || !a ? a : Array.from(a, function (v) { return v === v ? v : null; });
+    });
+  }
+  // Wavenumber ticks with as many decimals as the step needs, so a zoom past
+  // one cm-1 does not label every tick with the same integer.
+  function axisTicks(u, vs, axisIdx, space, incr) {
+    var d = incr > 0 ? Math.max(0, Math.min(6, Math.ceil(-Math.log10(incr) - 1e-9))) : 0;
+    return vs.map(function (v) { return v.toFixed(d); });
+  }
+
   // ---- data ------------------------------------------------------------
   function chunkBuffer(n) {
     if (STATE.chunks.has(n)) return Promise.resolve(STATE.chunks.get(n));
@@ -640,7 +656,7 @@
       axes: [
         { stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") },
           font: "11px 'IBM Plex Mono', monospace",
-          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(0); }); } },
+          values: axisTicks },
         { scale: "f", stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") },
           font: "11px 'IBM Plex Mono', monospace", size: 52 },
         { scale: "t", side: 1, stroke: css("--muted"), grid: { show: false },
@@ -671,7 +687,7 @@
           r.innerHTML = bits.join("");
         }]
       }
-    }, data, el);
+    }, gaps(data), el);
 
     // Which uPlot series each legend button drives, so a toggle can call
     // setSeries instead of rebuilding the chart and discarding the zoom.
@@ -695,10 +711,10 @@
       bands: [{ series: [1, 2], fill: css("--hair") }],
       axes: [
         { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace",
-          values: function (u, vs) { return vs.map(function (v) { return v.toFixed(0); }); } },
+          values: axisTicks },
         { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", size: 52 }
       ]
-    }, [pack.x, band, nband, pack.series.residual], rel);
+    }, gaps([pack.x, band, nband, pack.series.residual]), rel);
 
     // Restore the zoom AFTER construction. Handing the range to uPlot as
     // `scales.x.range` instead looks equivalent and is not: a static range on
