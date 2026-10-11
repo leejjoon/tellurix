@@ -65,7 +65,7 @@ STAGES = {
     "velocity": ("continuum_*", "log_jitter", "velocity_kms", "lsf_sigma_kms"),
     "columns": ("continuum_*", "log_jitter", "velocity_kms", "lsf_sigma_kms", "species_*"),
     "stellar": ("continuum_*", "log_jitter", "velocity_kms", "lsf_sigma_kms", "species_*",
-                "stellar_velocity_kms"),
+                "stellar_velocity_kms", "stellar_broadening_kms"),
 }
 
 
@@ -118,6 +118,11 @@ class WindowSettings:
     # A coupled optical depth more negative than negative_tolerance in any layer
     # cannot be precomputed and loses; smaller negatives are clipped to zero.
     line_coupling: bool = False
+    # Fit a Gaussian broadening of the solar source alone (stellar_broadening_kms),
+    # freed with stellar_velocity_kms. Without it the only free width is
+    # lsf_sigma_kms, which the solar lines set -- Payne Zero's are narrower than
+    # the Sun's -- and which then widens the telluric lines too.
+    stellar_broadening: bool = False
     negative_tolerance: float = 1.0e-3
     vectorize_layers: bool = True
     mixed_precision: bool = True
@@ -147,7 +152,8 @@ def solar_source_for(v1_cm1: float, v2_cm1: float, directory: Path) -> Path:
     )
 
 
-def build_bounds(species, continuum_degree, free, initial, include_stellar, pinned=()):
+def build_bounds(species, continuum_degree, free, initial, include_stellar, pinned=(),
+                 stellar_broadening=False):
     """Bounds that pin everything except the named free parameters."""
 
     def window(name, lower, upper, pinned_at):
@@ -179,6 +185,11 @@ def build_bounds(species, continuum_degree, free, initial, include_stellar, pinn
         # needs.
         bounds["stellar_velocity_kms"] = window(
             "stellar_velocity_kms", -5.0, 5.0, float(initial.stellar_velocity_kms))
+        if stellar_broadening:
+            # The same ceiling as lsf_sigma_kms: the model's kernel is sized
+            # for max_lsf_sigma_kms, and a sigma past it would be truncated.
+            bounds["stellar_broadening_kms"] = window(
+                "stellar_broadening_kms", 0.05, 4.0, float(initial.stellar_broadening_kms))
     return bounds
 
 
@@ -322,6 +333,8 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
              np.zeros(settings.continuum_degree)]),
         log_jitter=float(np.log(np.median(order.uncertainty))),
         stellar_velocity_kms=0.0,
+        # Away from zero, where a Gaussian's width has no gradient.
+        stellar_broadening_kms=0.5 if settings.stellar_broadening and source is not None else 0.0,
     )
 
     return SimpleNamespace(
@@ -411,6 +424,7 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
     parameters = prepared.parameters
     started = prepared.started
 
+    broadening = settings.stellar_broadening and order.source_flux_model_grid is not None
     pinned = {}
     for entry in settings.pin:
         name, _, value = entry.partition("=")
@@ -420,6 +434,7 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
             raise ValueError(f"pin expects NAME=VALUE, got {entry!r}")
     allowed = set(model.species) | {
         "velocity_kms", "stellar_velocity_kms", "lsf_sigma_kms", "log_jitter",
+        *(("stellar_broadening_kms",) if broadening else ()),
         *(f"continuum_{i}" for i in range(settings.continuum_degree + 1))}
     if set(pinned) - allowed:
         raise ValueError(f"cannot pin: {', '.join(sorted(set(pinned) - allowed))}")
@@ -428,18 +443,20 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
         scales.update({k: v for k, v in pinned.items() if k in model.species})
         parameters = parameters._replace(log_column_scales=scales, **{
             k: v for k, v in pinned.items()
-            if k in ("velocity_kms", "stellar_velocity_kms", "lsf_sigma_kms", "log_jitter")})
+            if k in ("velocity_kms", "stellar_velocity_kms", "lsf_sigma_kms", "log_jitter",
+                     "stellar_broadening_kms")})
         print(f"pinned: {', '.join(f'{k}={v:g}' for k, v in sorted(pinned.items()))}")
 
     stage_reports = []
-    shared = OrderObjective(fit_model, order, settings.continuum_degree + 1)
+    shared = OrderObjective(fit_model, order, settings.continuum_degree + 1,
+                            stellar_broadening=broadening)
     for stage in settings.stages.split(","):
         stage = stage.strip()
         if stage not in STAGES:
             raise ValueError(f"unknown stage {stage}; choose from {', '.join(STAGES)}")
         bounds = build_bounds(model.species, settings.continuum_degree, STAGES[stage], parameters,
                               include_stellar=order.source_flux_model_grid is not None,
-                              pinned=pinned)
+                              pinned=pinned, stellar_broadening=broadening)
         stage_started = time.time()
         result = fit_order(fit_model, order, parameters, bounds, objective=shared)
         parameters = result.parameters
@@ -457,13 +474,16 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
 
     final_bounds = build_bounds(
         model.species, settings.continuum_degree, STAGES[settings.stages.split(",")[-1].strip()],
-        parameters, include_stellar=order.source_flux_model_grid is not None, pinned=pinned)
+        parameters, include_stellar=order.source_flux_model_grid is not None, pinned=pinned,
+        stellar_broadening=broadening)
     packed = {
         **{name: float(v) for name, v in result.parameters.log_column_scales.items()},
         "velocity_kms": float(result.parameters.velocity_kms),
         "stellar_velocity_kms": float(result.parameters.stellar_velocity_kms),
         "lsf_sigma_kms": float(result.parameters.lsf_sigma_kms),
         "log_jitter": float(result.parameters.log_jitter),
+        **({"stellar_broadening_kms": float(result.parameters.stellar_broadening_kms)}
+           if broadening else {}),
         **{f"continuum_{i}": float(v)
            for i, v in enumerate(np.asarray(result.parameters.continuum_coeffs))},
     }
@@ -557,6 +577,7 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
             "correction": None if settings.correction is None else str(settings.correction),
             "pressure_shift": True,
             "line_coupling": settings.line_coupling,
+            "stellar_broadening": broadening,
             # Which species' lines the coupling actually reached, if any.
             "coupled_species": (sorted(name for name, db in prepared.databases.items()
                                        if getattr(db, "has_line_coupling", False))
@@ -593,6 +614,8 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
             "velocity_kms": float(result.parameters.velocity_kms),
             "stellar_velocity_kms": float(result.parameters.stellar_velocity_kms),
             "lsf_sigma_kms": float(result.parameters.lsf_sigma_kms),
+            **({"stellar_broadening_kms": float(result.parameters.stellar_broadening_kms)}
+               if broadening else {}),
             "continuum_coeffs": [float(v) for v in np.asarray(result.parameters.continuum_coeffs)],
             "log_jitter": float(result.parameters.log_jitter),
         },

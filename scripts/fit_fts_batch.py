@@ -204,7 +204,8 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
 
 
 def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
-                   o2_cia: bool = False, line_coupling: bool = False) -> dict:
+                   o2_cia: bool = False, line_coupling: bool = False,
+                   stellar_broadening: bool = False) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -231,6 +232,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         # Likewise: a record without it fitted uncoupled lines. This is what was
         # asked for; the record's per-row `line_coupling` is what each window used.
         "line_coupling": bool(line_coupling),
+        # Likewise: without it the only free width was lsf_sigma_kms.
+        "stellar_broadening": bool(stellar_broadening),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "fitter": f"{fitter.parent.name}/{fitter.name}",
@@ -288,6 +291,7 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         zenith_angle_deg=args.zenith_angle_deg,
         accuracy_mode=args.accuracy_mode, correction=None, gaussian_ils=False,
         o2_cia=args.o2_cia, line_coupling=args.line_coupling,
+        stellar_broadening=args.stellar_broadening,
         vectorize_layers=True, mixed_precision=True,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
         layer_chunk_size=args.layer_chunk_size,
@@ -380,6 +384,7 @@ def record_row(row, npz_dir: Path, spectrum_sha: str) -> dict:
         parameters = row["parameters"]
         species = [n for n in row["parameter_names"]
                    if n not in ("velocity_kms", "stellar_velocity_kms", "lsf_sigma_kms",
+                                "stellar_broadening_kms",
                                 "wavelength_stretch", "log_jitter")
                    and not n.startswith("continuum_")]
         return {
@@ -409,6 +414,7 @@ def record_row(row, npz_dir: Path, spectrum_sha: str) -> dict:
             "airmass": row["airmass"], "zenith_angle_deg": row["zenith_angle_deg"],
             # A row written before the fallback existed used the run's setting.
             "line_coupling": int(row.get("line_coupling", False)),
+            "stellar_broadening_kms": float(parameters.get("stellar_broadening_kms", 0.0)),
             "free_species": "+".join(species),
             "at_bound": "+".join(row["at_bound"]),
             "parameter_names": row["parameter_names"],
@@ -458,11 +464,11 @@ def main() -> None:
                         help="peak optical depth ALONG THIS FILE'S PATH below which a "
                              "species is not worth a free parameter. Raised from 1e-3 "
                              "after measuring what a barely-detectable species does: "
-                             "below tau 3e-3 a species rails at a column bound 38% of the "
+                             "below tau 3e-3 a species rails at a column bound 38%% of the "
                              "time, and a free parameter the data cannot constrain absorbs "
                              "error from elsewhere -- at 5926-5956 CO2 and N2O both went to "
                              "their minimum soaking up a solar-model mismatch. The rate "
-                             "falls to 3% above tau 0.1 and to zero above 1.")
+                             "falls to 3%% above tau 0.1 and to zero above 1.")
     parser.add_argument("--scan-line-budget", type=float, default=1.0e-6,
                         help="optical depth discarded by dropping weak lines; two orders "
                              "below --scan-threshold so it cannot move a species across it")
@@ -474,6 +480,10 @@ def main() -> None:
     parser.add_argument("--line-coupling", action=argparse.BooleanOptionalAction, default=False,
                         help="apply AER's first-order line coupling (CO2, CH4, O2), as LBLRTM "
                              "does. Off by default so a rerun reproduces earlier records.")
+    parser.add_argument("--stellar-broadening", action=argparse.BooleanOptionalAction, default=False,
+                        help="fit a Gaussian broadening of the solar source alone, so the solar "
+                             "lines' extra width stops reaching the telluric lines through "
+                             "lsf_sigma_kms. Off by default so a rerun reproduces earlier records.")
     parser.add_argument("--accuracy-mode", choices=("mt_ckd", "fast"), default="mt_ckd",
                         help="'fast' drops the water continuum: only for windows past the end "
                              "of the MT_CKD table at 20000 cm-1, and as its own run with its "
@@ -588,7 +598,7 @@ def main() -> None:
              "spectrum": str(args.spectrum), "spectrum_sha256": spectrum.sha256,
              "profile": str(args.profile),
              "physics": physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
-                                         args.line_coupling),
+                                         args.line_coupling, args.stellar_broadening),
              "settings": {"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,
@@ -631,7 +641,7 @@ def main() -> None:
             args.record,
             run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
                  **{k: v for k, v in physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
-                                         args.line_coupling).items()
+                                         args.line_coupling, args.stellar_broadening).items()
                     if k in ("driver", "driver_sha256", "fitter", "fitter_sha256", "tellurix")}},
             config={"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                     "samples_per_resolution": args.samples_per_resolution,
@@ -642,12 +652,13 @@ def main() -> None:
                     "species_threshold": args.species_threshold,
                     "scan_line_budget": args.scan_line_budget, "airmass": airmass},
             physics=physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
-                                         args.line_coupling),
+                                         args.line_coupling, args.stellar_broadening),
             inputs=input_hashes(root, args, spectrum, species),
             parameter_names=codec.names, species=species, pages=rows,
             continuum_degree=args.continuum_degree,
             key_fields=("file", "window"),
-            extra_columns=(("airmass", "f8"), ("zenith_angle_deg", "f8"), ("line_coupling", "i1")),
+            extra_columns=(("airmass", "f8"), ("zenith_angle_deg", "f8"), ("line_coupling", "i1"),
+                           ("stellar_broadening_kms", "f8")),
         )
         print(f"wrote {args.record} ({args.record.stat().st_size/1e6:.2f} MB)")
 

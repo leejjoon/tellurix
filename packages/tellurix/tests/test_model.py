@@ -584,6 +584,69 @@ def test_fit_requires_stellar_velocity_bounds_for_a_model_grid_source():
         fit_order(model, order, params(), bounds)
 
 
+def test_stellar_broadening_widens_the_star_and_not_the_atmosphere():
+    star, nu = flat_model()
+    wavelength = np.linspace(1.0e7 / nu[-40], 1.0e7 / nu[40], 200)
+    order = SpectralOrder(
+        wavelength, np.ones(200), np.full(200, 1e-3),
+        source_flux_model_grid=source_with_dip(nu, 4305.0),
+    )
+    sharp = np.asarray(star.predict(order, params(sigma=0.5)))
+    wide = np.asarray(star.predict(order, params(sigma=0.5)._replace(stellar_broadening_kms=3.0)))
+    # Broadening keeps the dip's area and lowers its depth.
+    assert 1.0 - wide.min() < 0.9 * (1.0 - sharp.min())
+    np.testing.assert_allclose(np.sum(1.0 - wide), np.sum(1.0 - sharp), rtol=1e-2)
+
+    # A flat source: the telluric lines see only lsf_sigma_kms.
+    telluric, tnu = make_model()
+    flat_order = SpectralOrder(wavelength, np.ones(200), np.full(200, 1e-3),
+                               source_flux_model_grid=np.ones(tnu.size))
+    still = np.asarray(telluric.predict(flat_order, params(sigma=0.5)))
+    also = np.asarray(telluric.predict(flat_order, params(sigma=0.5)._replace(stellar_broadening_kms=3.0)))
+    np.testing.assert_allclose(still, also, rtol=0.0, atol=1e-12)
+
+
+def test_stellar_broadening_is_opt_in_and_keeps_the_vector_layout():
+    model, nu, wavelength, source = stellar_fit_setup()
+    order = SpectralOrder(wavelength, np.ones(300), np.full(300, 1e-3), source_flux_model_grid=source)
+    plain = OrderObjective(model, order, 3)
+    assert "stellar_broadening_kms" not in plain.codec.names
+    freed = OrderObjective(model, order, 3, stellar_broadening=True)
+    assert freed.codec.names == (*plain.codec.names[:3], "stellar_broadening_kms", *plain.codec.names[3:])
+    no_source = SpectralOrder(wavelength, np.ones(300), np.full(300, 1e-3), source_flux=np.ones(300))
+    with pytest.raises(ValueError, match="model-grid source"):
+        OrderObjective(model, no_source, 3, stellar_broadening=True)
+
+
+def test_fit_recovers_an_injected_stellar_broadening():
+    model, nu, wavelength, source = stellar_fit_setup()
+    truth = params(scale=0.1, sigma=1.0)._replace(stellar_broadening_kms=4.0)
+    blank = SpectralOrder(wavelength, np.ones(300), np.full(300, 1e-3), source_flux_model_grid=source)
+    flux = np.asarray(model.predict(blank, truth))
+    order = SpectralOrder(wavelength, flux, np.full(300, 1e-3), source_flux_model_grid=source)
+    fixed = 1.0e-12
+    bounds = {
+        "H2O": (0.1 - fixed, 0.1 + fixed),
+        "velocity_kms": (-fixed, fixed),
+        "stellar_velocity_kms": (-fixed, fixed),
+        "stellar_broadening_kms": (0.05, 10.0),
+        "wavelength_stretch": (-fixed, fixed),
+        "lsf_sigma_kms": (0.05, 10.0),
+        "continuum_0": (-fixed, fixed),
+        "continuum_1": (-fixed, fixed),
+        "continuum_2": (-fixed, fixed),
+        "log_jitter": (np.log(1.0e-4) - fixed, np.log(1.0e-4) + fixed),
+    }
+    initial = params(scale=0.1, sigma=2.0)._replace(stellar_broadening_kms=2.0)
+
+    result = fit_order(model, order, initial, bounds)
+
+    # The telluric line pins the instrument; the rest of the solar width is the star's.
+    assert result.success, result.message
+    assert abs(float(result.parameters.lsf_sigma_kms) - 1.0) < 0.05
+    assert abs(float(result.parameters.stellar_broadening_kms) - 4.0) < 0.1
+
+
 class SelfBroadenedBackend:
     """Toy opacity whose line width responds to the self-broadening pressure.
 

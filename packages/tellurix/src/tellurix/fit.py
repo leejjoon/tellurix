@@ -63,7 +63,9 @@ class _ParameterCodec:
     ``stellar_velocity_kms`` is present only when the order carries a
     model-grid source. Without one it cannot affect the prediction, so freeing
     it would contribute an identically zero gradient column and a singular
-    Hessian rather than an unconstrained parameter.
+    Hessian rather than an unconstrained parameter. ``stellar_broadening_kms``
+    needs the same source and is present only when asked for, so every vector
+    built before it existed keeps its layout.
     """
 
     def __init__(
@@ -71,13 +73,19 @@ class _ParameterCodec:
         species: Sequence[str],
         continuum_size: int,
         include_stellar_velocity: bool = False,
+        include_stellar_broadening: bool = False,
     ) -> None:
+        if include_stellar_broadening and not include_stellar_velocity:
+            raise ValueError("stellar broadening needs a model-grid source")
         self.species = tuple(species)
         self.continuum_size = continuum_size
         self.include_stellar_velocity = include_stellar_velocity
+        self.include_stellar_broadening = include_stellar_broadening
         names = [*self.species, "velocity_kms"]
         if include_stellar_velocity:
             names.append("stellar_velocity_kms")
+        if include_stellar_broadening:
+            names.append("stellar_broadening_kms")
         names.extend(("wavelength_stretch", "lsf_sigma_kms"))
         names.extend(f"continuum_{index}" for index in range(continuum_size))
         names.append("log_jitter")
@@ -93,6 +101,7 @@ class _ParameterCodec:
             **{name: params.log_column_scales[name] for name in self.species},
             "velocity_kms": params.velocity_kms,
             "stellar_velocity_kms": params.stellar_velocity_kms,
+            "stellar_broadening_kms": params.stellar_broadening_kms,
             "wavelength_stretch": params.wavelength_stretch,
             "lsf_sigma_kms": params.lsf_sigma_kms,
             "log_jitter": params.log_jitter,
@@ -115,6 +124,11 @@ class _ParameterCodec:
             stellar_velocity_kms=(
                 vector[self._offset["stellar_velocity_kms"]]
                 if self.include_stellar_velocity
+                else 0.0
+            ),
+            stellar_broadening_kms=(
+                vector[self._offset["stellar_broadening_kms"]]
+                if self.include_stellar_broadening
                 else 0.0
             ),
         )
@@ -203,6 +217,7 @@ class OrderObjective:
         model: TelluricModel,
         order: SpectralOrder,
         continuum_size: int,
+        stellar_broadening: bool = False,
     ) -> None:
         self.model = model
         self.order = order
@@ -210,6 +225,7 @@ class OrderObjective:
             model.species,
             int(continuum_size),
             include_stellar_velocity=order.source_flux_model_grid is not None,
+            include_stellar_broadening=stellar_broadening,
         )
         self._bind(order)
 
@@ -298,7 +314,9 @@ def fit_order(
     Bound keys are molecule names plus ``velocity_kms``,
     ``wavelength_stretch``, ``lsf_sigma_kms``, ``continuum_0`` ... and
     ``log_jitter``, and additionally ``stellar_velocity_kms`` when the order
-    carries ``source_flux_model_grid``. Setting a bound's lower and upper
+    carries ``source_flux_model_grid``. A ``stellar_broadening_kms`` bound
+    frees the source-only broadening too, when no ``objective`` is given; a
+    given objective decides that itself. Setting a bound's lower and upper
     values equal pins that parameter.
 
     Pass ``objective`` -- an :class:`OrderObjective` built once for this model
@@ -311,7 +329,8 @@ def fit_order(
     """
 
     if objective is None:
-        objective = OrderObjective(model, order, len(np.asarray(initial.continuum_coeffs)))
+        objective = OrderObjective(model, order, len(np.asarray(initial.continuum_coeffs)),
+                                   stellar_broadening="stellar_broadening_kms" in bounds)
     elif objective.model is not model or objective.order is not order:
         raise ValueError("the compiled objective was built for a different model or order")
     codec = objective.codec

@@ -704,6 +704,12 @@ class TelluricModel:
             if model_source.shape != (self.wavenumber_cm1.size,):
                 raise ValueError("model-grid source flux must match the model wavenumber grid")
             source_hi = self._shift_log_uniform(model_source, parameters.stellar_velocity_kms)
+            # A literal zero is the default and skips the convolution, so a fit
+            # that does not free this parameter computes exactly what it did
+            # before the parameter existed.
+            broadening = parameters.stellar_broadening_kms
+            if not (isinstance(broadening, (int, float)) and broadening == 0.0):
+                source_hi = self._convolve_lsf(source_hi, jnp.asarray(broadening))
         raw_hi = self.transmission(parameters, zenith_angle_deg) * source_hi
         if self.instrument is None:
             convolved_hi = self._convolve_lsf(raw_hi, jnp.asarray(parameters.lsf_sigma_kms))

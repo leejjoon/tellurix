@@ -21,6 +21,12 @@ class TelluricParameters(NamedTuple):
     zero point. ``stellar_velocity_kms`` additionally shifts only the source
     spectrum, and therefore has an effect only for an order that carries
     ``source_flux_model_grid``.
+
+    ``stellar_broadening_kms`` is a Gaussian sigma applied to that model-grid
+    source alone, before the atmosphere multiplies it. ``lsf_sigma_kms``
+    broadens everything, telluric lines included; a source whose lines are too
+    narrow would otherwise be widened through it, and the telluric lines with
+    them. Zero (the default) leaves the source untouched.
     """
 
     log_column_scales: Mapping[str, ArrayLike]
@@ -30,6 +36,7 @@ class TelluricParameters(NamedTuple):
     continuum_coeffs: ArrayLike
     log_jitter: ArrayLike
     stellar_velocity_kms: ArrayLike = 0.0
+    stellar_broadening_kms: ArrayLike = 0.0
 
 
 @dataclass(frozen=True)

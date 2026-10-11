@@ -98,6 +98,17 @@ temperature profile, water, zero level or fitted line-spread width; the IAG atla
 Kitt Peak 1989 (`scripts/fit_atlas_o2.py`) both give the lab's weak-line B/A ratio. Do
 not quote that pair's B-band columns. niratl's air mass, from the A-band, is 1.10 to
 the ~2-3% the A-band line physics allow.
+**`--stellar-broadening` (off by default) moves the solar lines' extra width off the
+telluric lines, and buys little.** `stellar_broadening_kms` is a Gaussian on the model-grid
+source alone; without it `lsf_sigma_kms` is the only free width and also broadens the
+telluric lines. Refitting 14 niratl windows (81 isolated H2O lines, 2026-10-11): telluric
+FWHM model/observed 1.056 -> 1.020, per-line correction misfit 0.522% -> 0.509% (better on
+72% of lines), window rms unchanged. `lsf_sigma_kms` still settles at 0.27-0.66 km/s and the
+source term at 0.05-1.7: the telluric lines want ~0.5 km/s beyond the 0.01859 cm-1 sinc on
+their own, as Arcturus's sinc does (R 115,700 against 100,000). What over-corrects niratl's
+water lines is their strength, line by line: observed/model equivalent width scatters
+0.85-1.16 (p16-p84) over 481 lines, with a trend in lower-state energy of +12 +- 3% per
+1000 cm-1 that a 4.5 K warmer profile reverses without narrowing the scatter.
 **O2's collision-induced continuum is ported from LBLRTM** (`tellurix.o2_cia`,
 `--o2-cia`, validated to 0.13%, §4o). It barely moves columns -- the fitted Chebyshev
 had been absorbing it; at 1.27 um, its strongest band, O2 moves by up to 8% but inside
