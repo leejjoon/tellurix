@@ -216,6 +216,9 @@
   /* ---- review -------------------------------------------------------- */
   .review { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--sunk); }
   .marks { display: flex; gap: 6px; }
+  kbd { font: 10px "IBM Plex Mono", ui-monospace, monospace; color: var(--faint);
+        border: 1px solid var(--hair); border-radius: 3px; padding: 0 3px; margin-left: 5px; }
+  .mark[aria-pressed="true"] kbd { color: inherit; border-color: currentColor; opacity: .8; }
   .mark {
     flex: 1; border: 1px solid var(--hair); background: var(--panel); color: var(--muted);
     border-radius: 7px; padding: 5px 4px; font-size: 12px; cursor: pointer;
@@ -325,6 +328,16 @@
       <div class="filters" id="filters"></div>
     </div>
     <div class="list" id="list" role="listbox" aria-label="Pages"></div>
+    <div class="review">
+      <div class="rail-title">your verdict</div>
+      <div class="marks">
+        <button type="button" class="mark" data-mark="good" aria-pressed="false">good<kbd>1</kbd></button>
+        <button type="button" class="mark" data-mark="suspect" aria-pressed="false">suspect<kbd>2</kbd></button>
+        <button type="button" class="mark" data-mark="reject" aria-pressed="false">reject<kbd>3</kbd></button>
+      </div>
+      <textarea id="note" placeholder="What did you see?" maxlength="400"></textarea>
+      <div class="status" id="review-status">connecting…</div>
+    </div>
   </aside>
 
   <main>
@@ -346,16 +359,6 @@
       <div class="hint" id="facts-hint">click a species to overlay its transmission</div>
     </div>
     <div class="facts" id="facts"></div>
-    <div class="review">
-      <div class="rail-title">your verdict</div>
-      <div class="marks">
-        <button type="button" class="mark" data-mark="good" aria-pressed="false">good</button>
-        <button type="button" class="mark" data-mark="suspect" aria-pressed="false">suspect</button>
-        <button type="button" class="mark" data-mark="reject" aria-pressed="false">reject</button>
-      </div>
-      <textarea id="note" placeholder="What did you see?" maxlength="400"></textarea>
-      <div class="status" id="review-status">connecting…</div>
-    </div>
   </aside>
 </div>
 
@@ -365,20 +368,20 @@
 
   // Scale "f" is flux in the atlas's continuum units; "t" is transmission.
   var TRACES = [
-    { key: "observed",  label: "observed",              token: "--observed",  width: 1.1, scale: "f" },
-    { key: "model",     label: "fitted model",          token: "--telluric",  width: 1.2, scale: "f" },
-    { key: "stellar",   label: "stellar-only model",    token: "--solar",     width: 1.1, scale: "f" },
-    { key: "continuum", label: "fitted continuum",      token: "--continuum", width: 1.6, scale: "f", dash: [6, 4] },
+    { key: "observed",  hotkey: "o", label: "observed",              token: "--observed",  width: 1.1, scale: "f" },
+    { key: "model",     hotkey: "m", label: "fitted model",          token: "--telluric",  width: 1.2, scale: "f" },
+    { key: "stellar",   hotkey: "s", label: "stellar-only model",    token: "--solar",     width: 1.1, scale: "f" },
+    { key: "continuum", hotkey: "c", label: "fitted continuum",      token: "--continuum", width: 1.6, scale: "f", dash: [6, 4] },
     // observed / model x stellar_only / continuum: the pipeline's own
     // correction (corrected_normalized), blanked where it is not reliable.
-    { key: "corrnorm",  label: "corrected ÷ continuum", token: "--corrected", width: 1.1, scale: "f" },
+    { key: "corrnorm",  hotkey: "t", label: "corrected ÷ continuum", token: "--corrected", width: 1.1, scale: "f" },
     // stellar_only / continuum: Payne Zero as the fit drew it -- broadened,
     // shifted, normalized by its page median (not its own continuum).
-    { key: "pznorm",    label: "Payne Zero ÷ continuum", token: "--pz",       width: 1.1, scale: "f", dash: [4, 2] },
+    { key: "pznorm",    hotkey: "z", label: "Payne Zero ÷ continuum", token: "--pz",       width: 1.1, scale: "f", dash: [4, 2] },
     // model_flux / stellar_only: the convolved operator the correction divides by.
-    { key: "effective", label: "effective transmission", token: "--effective", width: 0.9, scale: "t", alpha: 0.55 },
-    { key: "transmission", label: "unconvolved T",      token: "--muted",     width: 0.8, scale: "t", dash: [2, 2] },
-    { key: "atlas",     label: "atlas telluric (HWL)",  token: "--atlas",     width: 0.9, scale: "t" }
+    { key: "effective", hotkey: "e", label: "effective transmission", token: "--effective", width: 0.9, scale: "t", alpha: 0.55 },
+    { key: "transmission", hotkey: "u", label: "unconvolved T",      token: "--muted",     width: 0.8, scale: "t", dash: [2, 2] },
+    { key: "atlas",     hotkey: "a", label: "atlas telluric (HWL)",  token: "--atlas",     width: 0.9, scale: "t" }
   ];
   var VIEWS = {
     fit:  { observed: true, model: true, stellar: false, continuum: true, corrnorm: false, pznorm: false,
@@ -842,7 +845,7 @@
     $("legend").innerHTML = TRACES.map(function (t) {
       return '<button type="button" class="trace" data-trace="' + t.key + '" style="color:var(' + t.token + ')"' +
         ' aria-pressed="' + STATE.traces[t.key] + '">' +
-        '<span class="swatch"></span><span style="color:var(--ink)">' + t.label + '</span></button>';
+        '<span class="swatch"></span><span style="color:var(--ink)">' + t.label + '</span><kbd>' + t.hotkey + '</kbd></button>';
     }).join("");
   }
 
@@ -992,7 +995,17 @@
       timer = setTimeout(function () { saveMark({ note: $("note").value.trim() }); }, 700);
     });
     document.addEventListener("keydown", function (ev) {
-      if (ev.target.tagName === "TEXTAREA" || ev.target.tagName === "INPUT") return;
+     // Escape leaves the note, so the verdict keys work again without the mouse.
+     if (ev.key === "Escape" && ev.target.tagName === "TEXTAREA") { ev.target.blur(); return; }
+     if (/^(TEXTAREA|INPUT|SELECT)$/.test(ev.target.tagName)) return;
+     if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+     // A letter per trace and a digit per verdict. Each presses the button it
+     // names, so a key takes exactly the path a click does, toggles included.
+     var hot = TRACES.find(function (t) { return t.hotkey === ev.key; });
+     var press = hot ? '.trace[data-trace="' + hot.key + '"]' :
+       { "1": '.mark[data-mark="good"]', "2": '.mark[data-mark="suspect"]', "3": '.mark[data-mark="reject"]' }[ev.key];
+     var target = press && document.querySelector(press);
+     if (target && !target.disabled) { target.click(); ev.preventDefault(); return; }
       if (ev.key === "ArrowDown" || ev.key === "j") { step(1); ev.preventDefault(); }
       if (ev.key === "ArrowUp" || ev.key === "k") { step(-1); ev.preventDefault(); }
     });

@@ -48,6 +48,11 @@ What the exporters check, and the traps that shaped them:
   atlas row index, matched by wavenumber against the page file; the axis is
   float32 offsets because the atlas prints wavenumbers to 0.01 cm-1 (steps vary
   by 3%). The atlas authors' telluric column is NaN above the fit's 1.05 ceiling.
+- **Keys press buttons.** Each trace carries a `hotkey` (o observed, m model, s stellar,
+  c continuum, t corrected; the rest per page, shown as a `<kbd>` in the legend) and
+  1/2/3 are good/suspect/reject. The handler clicks the button the key names rather
+  than reimplementing it, so a key cannot drift from what a click does. Keep j/k/h/l
+  and the arrows free for stepping. The verdict panel sits at the foot of the left rail.
 - **Hand uPlot `null`, never `NaN`.** The pages blank masked pixels with NaN, which
   uPlot does not treat as a gap: a zoom whose range held one made that series'
   min and max NaN, the auto-ranged flux scale lost its extent, and the chart drew

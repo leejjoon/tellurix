@@ -216,6 +216,9 @@
   /* ---- review -------------------------------------------------------- */
   .review { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--sunk); }
   .marks { display: flex; gap: 6px; }
+  kbd { font: 10px "IBM Plex Mono", ui-monospace, monospace; color: var(--faint);
+        border: 1px solid var(--hair); border-radius: 3px; padding: 0 3px; margin-left: 5px; }
+  .mark[aria-pressed="true"] kbd { color: inherit; border-color: currentColor; opacity: .8; }
   .mark {
     flex: 1; border: 1px solid var(--hair); background: var(--panel); color: var(--muted);
     border-radius: 7px; padding: 5px 4px; font-size: 12px; cursor: pointer;
@@ -301,6 +304,16 @@
       <div class="filters" id="filters"></div>
     </div>
     <div class="list" id="list" role="listbox" aria-label="Windows"></div>
+    <div class="review">
+      <div class="rail-title">your verdict</div>
+      <div class="marks">
+        <button type="button" class="mark" data-mark="good" aria-pressed="false">good<kbd>1</kbd></button>
+        <button type="button" class="mark" data-mark="suspect" aria-pressed="false">suspect<kbd>2</kbd></button>
+        <button type="button" class="mark" data-mark="reject" aria-pressed="false">reject<kbd>3</kbd></button>
+      </div>
+      <textarea id="note" placeholder="What did you see?" maxlength="400"></textarea>
+      <div class="status" id="review-status">connecting…</div>
+    </div>
   </aside>
 
   <main>
@@ -324,16 +337,6 @@
       <div class="hint" id="species-hint">every molecule the scan ranked</div>
     </div>
     <div class="species-groups" id="species"></div>
-    <div class="review">
-      <div class="rail-title">your verdict</div>
-      <div class="marks">
-        <button type="button" class="mark" data-mark="good" aria-pressed="false">good</button>
-        <button type="button" class="mark" data-mark="suspect" aria-pressed="false">suspect</button>
-        <button type="button" class="mark" data-mark="reject" aria-pressed="false">reject</button>
-      </div>
-      <textarea id="note" placeholder="What did you see?" maxlength="400"></textarea>
-      <div class="status" id="review-status">connecting…</div>
-    </div>
   </aside>
 </div>
 
@@ -342,16 +345,16 @@
   "use strict";
 
   var TRACES = [
-    { key: "observed",   label: "observed",         token: "--observed",  width: 1.1 },
-    { key: "model",      label: "fitted model",     token: "--telluric",  width: 1.2 },
-    { key: "stellar",    label: "stellar model",    token: "--solar",     width: 1.1 },
-    { key: "continuum",  label: "fitted continuum", token: "--continuum", width: 1.6, dash: [6, 4] },
+    { key: "observed",   hotkey: "o", label: "observed",         token: "--observed",  width: 1.1 },
+    { key: "model",      hotkey: "m", label: "fitted model",     token: "--telluric",  width: 1.2 },
+    { key: "stellar",    hotkey: "s", label: "stellar model",    token: "--solar",     width: 1.1 },
+    { key: "continuum",  hotkey: "c", label: "fitted continuum", token: "--continuum", width: 1.6, dash: [6, 4] },
     // observed / model x stellar -- the atmosphere divided out. It is the
     // pipeline's own correction operator, not a re-derivation: the fitted
     // continuum cancels, so what is left should be the Sun through the
     // instrument. Off by default; against the stellar model it shows the
     // solar model's error directly.
-    { key: "corrected",  label: "telluric-corrected", token: "--corrected", width: 1.1 }
+    { key: "corrected",  hotkey: "t", label: "telluric-corrected", token: "--corrected", width: 1.1 }
   ];
 
   // Below this modelled transmission the correction divides by a small number
@@ -819,7 +822,7 @@
     $("legend").innerHTML = TRACES.map(function (t) {
       return '<button type="button" class="trace" data-trace="' + t.key + '" style="color:var(' + t.token + ')"' +
         ' aria-pressed="' + STATE.traces[t.key] + '">' +
-        '<span class="swatch"></span><span style="color:var(--ink)">' + t.label + '</span></button>';
+        '<span class="swatch"></span><span style="color:var(--ink)">' + t.label + '</span><kbd>' + t.hotkey + '</kbd></button>';
     }).join("");
   }
 
@@ -891,7 +894,17 @@
       timer = setTimeout(function () { saveMark({ note: $("note").value.trim() }); }, 700);
     });
     document.addEventListener("keydown", function (e) {
+      // Escape leaves the note, so the verdict keys work again without the mouse.
+      if (e.key === "Escape" && e.target.tagName === "TEXTAREA") { e.target.blur(); return; }
       if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // A letter per trace and a digit per verdict. Each presses the button it
+      // names, so a key takes exactly the path a click does, toggles included.
+      var hot = TRACES.find(function (t) { return t.hotkey === e.key; });
+      var press = hot ? '.trace[data-trace="' + hot.key + '"]' :
+        { "1": '.mark[data-mark="good"]', "2": '.mark[data-mark="suspect"]', "3": '.mark[data-mark="reject"]' }[e.key];
+      var target = press && document.querySelector(press);
+      if (target && !target.disabled) { target.click(); e.preventDefault(); return; }
       if (e.key === "ArrowDown" || e.key === "j") { step(1); e.preventDefault(); }
       if (e.key === "ArrowUp" || e.key === "k") { step(-1); e.preventDefault(); }
     });
