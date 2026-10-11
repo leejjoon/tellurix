@@ -48,6 +48,12 @@ What the exporters check, and the traps that shaped them:
   atlas row index, matched by wavenumber against the page file; the axis is
   float32 offsets because the atlas prints wavenumbers to 0.01 cm-1 (steps vary
   by 3%). The atlas authors' telluric column is NaN above the fit's 1.05 ceiling.
+- **Hand uPlot `null`, never `NaN`.** The pages blank masked pixels with NaN, which
+  uPlot does not treat as a gap: a zoom whose range held one made that series'
+  min and max NaN, the auto-ranged flux scale lost its extent, and the chart drew
+  axes and nothing else. Every page passes its data through `gaps()` (NaN to null)
+  at construction; the readouts keep the NaN arrays. With nulls and `spanGaps:
+  false`, lines also break across masked pixels instead of bridging them.
 - **Blank everything outside the fit mask before quantizing.** Outside the mask
   the degree-9 continuum is extrapolated to ~5e9 at an order's ends; left in, it
   set the uint16 scale, and the page's autoscale, and the spectra drew as a flat
