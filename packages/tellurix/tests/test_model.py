@@ -6,6 +6,7 @@ import pytest
 from tellurix.fit import _ParameterCodec
 
 from tellurix import (
+    NegativeOpacityError,
     ArrayOpacityBackend,
     BoxcarFTSInstrumentProfile,
     AtmosphereProfile,
@@ -1057,3 +1058,43 @@ def test_species_transmission_keeps_the_continuum_out_of_the_water_line():
     np.testing.assert_allclose(
         product, np.asarray(with_continuum.transmission(parameters)),
         rtol=1e-12, atol=1e-12)
+
+
+class DippingBackend(SelfBroadenedBackend):
+    """The toy line plus a negative lobe beside it, as line coupling makes."""
+
+    def cross_sections(self, temperature_k, pressure_bar, partial_pressure_bar):
+        line = super().cross_sections(temperature_k, pressure_bar, partial_pressure_bar)["H2O"]
+        offset = jnp.asarray(self.wavenumber_cm1)[None, :] - (self.center + 2.0)
+        return {"H2O": line - 0.01 * self.strength * jnp.exp(-0.5 * (offset / 0.1) ** 2)}
+
+
+def test_model_clips_negative_cross_sections_wherever_they_are_used():
+    model, nu = make_self_broadened_model()
+    model.opacity = DippingBackend(nu)
+    transmission = np.asarray(model.transmission(params()))
+    pieces = model.species_transmission(params())
+    assert transmission.max() <= 1.0
+    np.testing.assert_array_equal(np.asarray(pieces["H2O"]) <= 1.0, True)
+    # Exactly the model of the same cross sections with the negatives removed.
+    clipped, _ = make_self_broadened_model()
+    raw = DippingBackend(nu)
+    clipped.opacity = type("Clipped", (), {
+        "species": ("H2O",),
+        "cross_sections": lambda self, t, p, pp: {
+            "H2O": jnp.maximum(raw.cross_sections(t, p, pp)["H2O"], 0.0)}})()
+    np.testing.assert_array_equal(transmission, np.asarray(clipped.transmission(params())))
+
+
+def test_precompute_refuses_or_clips_negative_optical_depth():
+    model, nu = make_self_broadened_model()
+    model.opacity = DippingBackend(nu)
+    with pytest.raises(NegativeOpacityError) as refused:
+        model.precompute_opacity()
+    assert refused.value.species == "H2O" and refused.value.minimum < 0.0
+    # Within the tolerance it is clipped, and agrees with the live model there.
+    precomputed = model.precompute_opacity(negative_tolerance=-2.0 * refused.value.minimum)
+    np.testing.assert_allclose(np.asarray(precomputed.transmission(params())),
+                               np.asarray(model.transmission(params())), rtol=1e-12, atol=1e-14)
+    with pytest.raises(ValueError):
+        model.precompute_opacity(negative_tolerance=-1.0)

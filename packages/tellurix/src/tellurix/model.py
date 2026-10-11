@@ -254,6 +254,34 @@ class BoxcarFTSInstrumentProfile:
         return _gaussian_convolve(convolved, parameters.lsf_sigma_kms, velocity_step_kms, half_width)
 
 
+def _nonnegative(cross_sections):
+    """Clip each species' cross sections at zero.
+
+    A no-op without line coupling, whose cross sections are never negative. With
+    it, ``Y p Im w`` dips below zero between lines; clipping here, where every
+    path meets, keeps the live kernel, the precomputed arrays and every rebuild
+    the same model. How negative is tolerable is decided once, by
+    :meth:`TelluricModel.precompute_opacity`, which sees the values unclipped.
+    """
+    return {species: jnp.maximum(value, 0.0) for species, value in cross_sections.items()}
+
+
+class NegativeOpacityError(ValueError):
+    """A precomputed optical depth more negative than the caller tolerates.
+
+    First-order line coupling adds ``Y p Im w``, which is negative on one side of
+    every coupled line; far from a band's lines nothing outweighs it, and in the
+    far wing of a very strong band (CO2 at 2400 cm-1) the sum goes clearly
+    negative, which no transmission can represent. ``minimum`` is the most
+    negative single-layer optical depth, at the reference columns.
+    """
+
+    def __init__(self, species: str, minimum: float, tolerance: float):
+        super().__init__(f"{species} layer optical depth reaches {minimum:.3g}, "
+                         f"beyond the {tolerance:.3g} tolerated")
+        self.species, self.minimum, self.tolerance = species, float(minimum), float(tolerance)
+
+
 @dataclass(frozen=True)
 class ArrayOpacityBackend:
     """Fixed cross sections for fixtures and precomputed-opacity workflows."""
@@ -451,6 +479,7 @@ class TelluricModel:
         parameters: TelluricParameters | None = None,
         self_broadening: str = "linear",
         relative_step: float = 0.25,
+        negative_tolerance: float = 0.0,
     ) -> "TelluricModel":
         """Return a copy whose cross sections are precomputed for this profile.
 
@@ -473,12 +502,20 @@ class TelluricModel:
         difference of ``relative_step`` times the reference partial pressure,
         because a JVP through the calculator's out-of-range ``lax.cond`` is
         batched into a select that evaluates the dense fallback branch.
+
+        ``negative_tolerance`` is how negative a single layer's optical depth,
+        at the reference columns, may be before the cross sections are refused
+        with :class:`NegativeOpacityError`; anything within it is clipped to
+        zero. Only line coupling makes them negative. The default refuses every
+        negative value, which is what the fixed-array backends require.
         """
 
         if self_broadening not in ("linear", "frozen"):
             raise ValueError("self_broadening must be 'linear' or 'frozen'")
         if not 0.0 < relative_step < 1.0:
             raise ValueError("relative_step must lie between zero and one")
+        if not negative_tolerance >= 0.0:
+            raise ValueError("negative_tolerance must be nonnegative")
         pressure = jnp.asarray(self.profile.pressure_layer_bar)
         scales = {} if parameters is None else parameters.log_column_scales
         vmr_scaled = {
@@ -503,6 +540,15 @@ class TelluricModel:
         else:
             evaluate = cached[1]
         values = evaluate(reference)
+        air_column = np.asarray(self.profile.air_column_cm2)
+        clipped = {}
+        for species, value in values.items():
+            value = np.asarray(value)
+            tau = value * (np.asarray(vmr_scaled[species]) * air_column)[:, None]
+            if tau.size and tau.min() < -negative_tolerance:
+                raise NegativeOpacityError(species, float(tau.min()), negative_tolerance)
+            clipped[species] = np.maximum(value, 0.0)
+        values = clipped
         if self_broadening == "frozen":
             backend = ArrayOpacityBackend(
                 {species: np.asarray(value) for species, value in values.items()}
@@ -543,7 +589,8 @@ class TelluricModel:
         partial_pressure = {
             species: pressure * vmr_scaled[species] for species in self.opacity.species
         }
-        xs = self.opacity.cross_sections(jnp.asarray(self.profile.temperature_k), pressure, partial_pressure)
+        xs = _nonnegative(self.opacity.cross_sections(
+            jnp.asarray(self.profile.temperature_k), pressure, partial_pressure))
         air_column = jnp.asarray(self.profile.air_column_cm2)
         tau = jnp.zeros((air_column.size, self.wavenumber_cm1.size))
         if self.continuum is not None:
@@ -584,8 +631,8 @@ class TelluricModel:
         partial_pressure = {
             species: pressure * vmr_scaled[species] for species in self.opacity.species
         }
-        xs = self.opacity.cross_sections(
-            jnp.asarray(self.profile.temperature_k), pressure, partial_pressure)
+        xs = _nonnegative(self.opacity.cross_sections(
+            jnp.asarray(self.profile.temperature_k), pressure, partial_pressure))
         air_column = jnp.asarray(self.profile.air_column_cm2)
         mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
 
