@@ -120,7 +120,8 @@ def enable_compilation_cache(directory: Path) -> None:
     jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
 
 
-def physics_record(root: Path, continuum_version: str | None = None) -> dict:
+def physics_record(root: Path, continuum_version: str | None = None,
+                   line_coupling: bool = False) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The driver's own hash is the only thing that pins the parts of the
@@ -137,6 +138,8 @@ def physics_record(root: Path, continuum_version: str | None = None) -> dict:
         "tellurix": version("tellurix") if version else None,
         # Read off the file that was loaded, rather than typed here a second time.
         "continuum_model": continuum_version,
+        # A record without the key predates the option and fitted uncoupled lines.
+        "line_coupling": bool(line_coupling),
     }
 
 
@@ -172,12 +175,14 @@ def run_one(window, epoch, args, root):
                                        margin_cm1=args.margin_cm1)
     grid = trim_wavenumber_grid(full_grid, v1, v2, args.grid_margin_cm1)
     line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
+    coupling = line_root.parent / "lncpl_lines" if args.line_coupling else None
     databases, absent = {}, []
     for species, molecule_id in sorted(MOLECULE_IDS.items()):
         name = f"{molecule_id:02d}_{species}"
         try:
             databases[species] = AERLineDatabase(
-                line_root / name / name, species, (v1, v2), margin_cm1=args.margin_cm1)
+                line_root / name / name, species, (v1, v2), margin_cm1=args.margin_cm1,
+                line_coupling=coupling)
         except ValueError as exc:
             if not str(exc).startswith(f"no {species} lines found"):
                 raise
@@ -214,7 +219,7 @@ def run_one(window, epoch, args, root):
         methods=PHYSICS["opacity_method"],
         vectorize_layers=PHYSICS["vectorize_layers"],
         mixed_precision=PHYSICS["mixed_precision"], pressure_shift=PHYSICS["pressure_shift"],
-        layer_chunk_size=chunk)
+        layer_chunk_size=chunk, line_coupling=args.line_coupling)
     mark("opacity_prepare")
     continuum = MTCKDWaterContinuum.from_netcdf(
         root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc", grid)
@@ -467,7 +472,7 @@ def main() -> None:
                         help="cut this much off each end of every page. 0, the default, keeps "
                              "every pixel the atlas ships and lets adjacent pages overlap by "
                              "about 5 cm-1; 2.5 makes the pages tile and reproduces the record "
-                             "committed before this was configurable, at the cost of 22.7% of "
+                             "committed before this was configurable, at the cost of 22.7%% of "
                              "the pixels.")
     parser.add_argument("--continuum-degree", type=int, default=3)
     parser.add_argument("--min-optical-depth", type=float, default=0.02,
@@ -486,6 +491,8 @@ def main() -> None:
                         help="how a precomputed kernel carries its self-pressure dependence")
     parser.add_argument("--layer-chunk-size", type=int, default=0,
                         help="split the layer vmap into chunks; 0 means do not split")
+    parser.add_argument("--line-coupling", action=argparse.BooleanOptionalAction, default=False,
+                        help="AER first-order line mixing (CO2, CH4, O2), as LBLRTM applies it")
     parser.add_argument("--line-budget", type=float, default=0.0,
                         help="optical depth of the weakest lines to discard; 0 keeps every line")
     # A string, not a Path: Path("") is Path("."), which is truthy and would
@@ -529,6 +536,10 @@ def main() -> None:
             candidate = line_root / name / name
             if candidate.exists():
                 entries[f"aer_{species}_sha256"] = file_sha256(candidate)
+        if args.line_coupling:
+            coupling = line_root.parent / "lncpl_lines"
+            entries["aer_line_coupling"] = str(coupling)
+            entries["aer_line_coupling_sha256"] = file_sha256(coupling)
         return entries
 
     def continuum_version() -> str | None:
@@ -580,7 +591,7 @@ def main() -> None:
             {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
              "atlas_root": str(args.atlas_root), "stellar": str(args.stellar),
              "profile": str(args.profile),
-             "physics": physics_record(root, continuum_version()),
+             "physics": physics_record(root, continuum_version(), args.line_coupling),
              "settings": {"resolving_power": args.resolving_power,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,
@@ -608,7 +619,7 @@ def main() -> None:
         write_record(
             args.record,
             run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                 **{k: v for k, v in physics_record(root, continuum_version()).items()
+                 **{k: v for k, v in physics_record(root, continuum_version(), args.line_coupling).items()
                     if k in ("driver", "driver_sha256", "tellurix")}},
             config={"resolving_power": args.resolving_power,
                     "samples_per_resolution": args.samples_per_resolution,
@@ -617,7 +628,7 @@ def main() -> None:
                     "min_optical_depth": args.min_optical_depth,
                     "min_transmission": args.min_transmission,
                     "line_budget": args.line_budget, **ORDER},
-            physics=physics_record(root, continuum_version()),
+            physics=physics_record(root, continuum_version(), args.line_coupling),
             inputs=input_hashes(),
             parameter_names=codec.names, species=species,
             pages=[record_rows[k] for k in sorted(record_rows)],

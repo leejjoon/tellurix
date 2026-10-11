@@ -92,13 +92,17 @@ def main() -> None:
         raise SystemExit(f"grid rebuilt to {grid.size} samples, record says {row['grid_points']}")
 
     line_root = Path(inputs["aer_line_root"])
+    # A record without the key predates the option and fitted uncoupled lines.
+    line_coupling = bool(physics.get("line_coupling", False))
+    coupling = (verified("aer_line_coupling", Path(inputs["aer_line_coupling"]))
+                if line_coupling else None)
     databases = {}
     for name, molecule_id in sorted(MOLECULE_IDS.items()):
         stem = f"{molecule_id:02d}_{name}"
         try:
             databases[name] = AERLineDatabase(
                 verified(f"aer_{name}", line_root / stem / stem), name, (v1, v2),
-                margin_cm1=float(config["margin_cm1"]))
+                margin_cm1=float(config["margin_cm1"]), line_coupling=coupling)
         except ValueError as exc:
             if not str(exc).startswith(f"no {name} lines found"):
                 raise
@@ -115,7 +119,7 @@ def main() -> None:
         maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
         vectorize_layers=bool(physics["vectorize_layers"]),
         mixed_precision=bool(physics["mixed_precision"]),
-        pressure_shift=bool(physics["pressure_shift"]))
+        pressure_shift=bool(physics["pressure_shift"]), line_coupling=line_coupling)
     continuum = MTCKDWaterContinuum.from_netcdf(verified("mt_ckd", Path(inputs["mt_ckd"])), grid)
     instrument = BoxcarFTSInstrumentProfile(
         mopd_cm=float(row["mopd_cm"]), wavenumber_center_cm1=float(0.5 * (v1 + v2)),

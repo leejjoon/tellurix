@@ -105,7 +105,7 @@ class WindowRebuilder:
         self.jax = jax
         self.record = record
         self.config, self.physics, self.inputs = record.config, record.physics, record.inputs
-        if self.physics.get("line_coupling") or self.physics.get("o2_cia"):
+        if self.physics.get("o2_cia"):
             raise SystemExit("this record uses physics the rebuild below does not add")
         profile_path = Path(self.inputs["profile"])
         if not profile_path.exists():
@@ -114,6 +114,13 @@ class WindowRebuilder:
             raise SystemExit(f"{profile_path} is not the profile the run used")
         self.profile = load_atmosphere_csv(profile_path)
         self.line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
+        # A record without the key predates the option and fitted uncoupled lines.
+        self.line_coupling = bool(self.physics.get("line_coupling", False))
+        self.coupling = None
+        if self.line_coupling:
+            self.coupling = self.line_root.parent / "lncpl_lines"
+            if file_sha256(self.coupling) != self.inputs["aer_line_coupling_sha256"]:
+                raise SystemExit("the line-coupling file is not the one the run used")
         self.mt_ckd = root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc"
         if file_sha256(self.mt_ckd) != self.inputs["mt_ckd_sha256"]:
             raise SystemExit("the MT_CKD file is not the one the run used")
@@ -139,7 +146,8 @@ class WindowRebuilder:
             stem = f"{AER_MOLECULE_IDS[name]:02d}_{name}"
             try:
                 databases[name] = AERLineDatabase(self.line_root / stem / stem, name, (v1, v2),
-                                                  margin_cm1=float(config["margin_cm1"]))
+                                                  margin_cm1=float(config["margin_cm1"]),
+                                                  line_coupling=self.coupling)
             except ValueError as exc:
                 if not str(exc).startswith(f"no {name} lines found"):
                     raise
@@ -150,7 +158,7 @@ class WindowRebuilder:
             maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
             vectorize_layers=bool(physics["vectorize_layers"]),
             mixed_precision=bool(physics["mixed_precision"]),
-            pressure_shift=bool(physics["pressure_shift"]))
+            pressure_shift=bool(physics["pressure_shift"]), line_coupling=self.line_coupling)
         continuum = (None if physics["accuracy_mode"] == "fast"
                      else MTCKDWaterContinuum.from_netcdf(self.mt_ckd, grid))
         model = TelluricModel(profile, grid, opacity, continuum=continuum,
