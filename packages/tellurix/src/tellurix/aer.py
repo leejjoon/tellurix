@@ -10,6 +10,7 @@ from pathlib import Path
 import jax.numpy as jnp
 import numpy as np
 
+from .hitran import PressureShiftTable
 from .types import AtmosphereProfile
 
 
@@ -263,6 +264,9 @@ class AERLineDatabase:
     coupling coefficients LBLRTM applies -- to about half the CO2 lines near
     2 um -- for ``SparseCoreDirect(line_coupling=True)``. The auxiliary speed-dependence data are for
     MonoRTM and are not used by the LBLRTM configuration validated here.
+    ``pressure_shift_table`` names a :class:`tellurix.hitran.PressureShiftTable`
+    (``DataPaths.h2o_pressure_shift``) whose air shifts replace AER's for the
+    lines it shares; everything else stays AER's.
     """
 
     dbtype = "hitran"
@@ -276,6 +280,7 @@ class AERLineDatabase:
         margin_cm1: float = 25.0,
         strength_cutoff: float = 0.0,
         line_coupling: str | Path | None = None,
+        pressure_shift_table: str | Path | None = None,
     ) -> None:
         molecule = molecule.upper()
         if molecule not in AER_MOLECULE_IDS:
@@ -374,6 +379,16 @@ class AERLineDatabase:
                                      f"but {line_coupling} has no record for it")
                 self.coupling_y[index], self.coupling_g[index] = entry
         self.line_coupling = line_coupling
+        self.pressure_shift_table = pressure_shift_table
+        self.pressure_shifts_replaced = 0
+        if pressure_shift_table is not None:
+            table = PressureShiftTable.load(pressure_shift_table)
+            if table.molecule_id != self.molecid:
+                raise ValueError(f"{pressure_shift_table} holds molecule {table.molecule_id}, "
+                                 f"not {molecule}")
+            self.delta_air, replaced = table.replace(self.isoid, self.nu_lines, self.elower,
+                                                     self.delta_air)
+            self.pressure_shifts_replaced = int(replaced.sum())
 
     _LINE_ARRAYS = (
         "isoid", "nu_lines", "line_strength_ref_original", "logsij0", "A",

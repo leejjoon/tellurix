@@ -35,14 +35,21 @@ tellurix-download-data mt-ckd
 # AER line file 3.9 (approximately 406 MB compressed)
 tellurix-download-data aer-lines
 
-# Or both
+# HITRAN's H2O pressure shifts, which the fits use in place of AER's (~75 MB fetched,
+# a 5 MB table kept)
+tellurix-download-data hitran-h2o
+
+# Or all three
 tellurix-download-data all
 ```
 
 The default location is `$TELLURIX_DATA`, when set, or
 `~/.local/share/tellurix`. Use `--output /path/to/data` to choose another
 location. Downloads use version-pinned official AER sources and are verified
-with SHA-256 before use. The line archive is extracted with path and file-type
+with SHA-256 before use. The HITRAN table cannot be pinned that way: HITRANonline
+serves the current edition (HITRAN2024 since January 2026) and corrects it in
+place, so the table records the edition and date it was fetched, and every fit
+records the table's SHA-256. The line archive is extracted with path and file-type
 checks.
 
 The resulting runtime paths are:

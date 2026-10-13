@@ -131,6 +131,9 @@ class StandardFitSettings:
     # CO2 lines in both the 2.0 and the 1.6 um bands. Off reproduces every run
     # made before it existed.
     line_coupling: bool = False
+    # Whose H2O air pressure shifts: "hitran" (DataPaths.h2o_pressure_shift) or
+    # "aer", LBLRTM's. A record without the key used AER's.
+    h2o_pressure_shift: str = "hitran"
     order_rule: Mapping = field(default=ORDER_RULE)
     # {order number: {species: log column scale}} held fixed in that order
     # rather than fitted. A diagnostic: pinned at each order's night median, it
@@ -258,7 +261,8 @@ def build_order_context(observation, number, settings: StandardFitSettings, path
             databases[species] = AERLineDatabase(
                 paths.line_file(species, molecule_id), species, (v1, v2),
                 margin_cm1=settings.margin_cm1,
-                line_coupling=paths.line_coupling if settings.line_coupling else None)
+                line_coupling=paths.line_coupling if settings.line_coupling else None,
+                pressure_shift_table=paths.pressure_shift_table(species, settings.h2o_pressure_shift))
         except ValueError as exc:
             if not str(exc).startswith(f"no {species} lines found"):
                 raise
@@ -673,6 +677,10 @@ def run_provenance(driver: Path, paths: DataPaths, settings: StandardFitSettings
         path = paths.line_file(species, molecule_id)
         if path.exists():
             inputs[f"aer_{species}_sha256"] = file_sha256(path)
+    table = paths.pressure_shift_table("H2O", settings.h2o_pressure_shift)
+    if table is not None:
+        inputs["hitran_h2o_pressure_shift"] = str(table)
+        inputs["hitran_h2o_pressure_shift_sha256"] = file_sha256(table)
     run = {
         "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "driver": driver.name, "driver_sha256": file_sha256(driver),

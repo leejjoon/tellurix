@@ -67,7 +67,20 @@ if [[ ! -s "$lnfl_run/TAPE3" ]]; then
   (cd "$lnfl_run" && ./lnfl)
 fi
 
+# HITRAN's H2O pressure shifts, which the fits use in place of AER's by default
+# (DataPaths.bootstrapped looks for them here). Needs the uv environment.
+hitran_table="$project_root/data/databases/hitran/h2o_pressure_shift.npz"
+if [[ ! -s "$hitran_table" ]]; then
+  if command -v uv >/dev/null; then
+    (cd "$project_root" && UV_CACHE_DIR=.uv-cache uv run tellurix-download-data hitran-h2o \
+      --output data/databases)
+  else
+    printf 'No uv: run `tellurix-download-data hitran-h2o --output data/databases` later.\n'
+  fi
+fi
+
 printf 'LBLRTM: %s\n' "$reference_root/LBLRTM/lblrtm_v12.17_linux_gnu_sgl"
 printf 'LNFL:    %s\n' "$reference_root/LNFL/lnfl_v3.2_linux_gnu_sgl"
 printf 'Lines:   %s\n' "$reference_root/AER_Line_File/aer_v_3.9"
 printf 'TAPE3:   %s\n' "$lnfl_run/TAPE3"
+printf 'HITRAN:  %s\n' "$hitran_table"

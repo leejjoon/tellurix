@@ -49,6 +49,7 @@ from tellurix import (
     load_atmosphere_csv, prepare_stellar_source, resample_stellar_continuum, trim_wavenumber_grid,
 )
 from tellurix.download import DataPaths
+from tellurix.hitran import pressure_shift_provenance
 
 from .nso import (
     MEASURED_FWHM_CM1, fts_spectral_order, read_solar_spectrum, zenith_angle_deg_for_airmass,
@@ -123,6 +124,10 @@ class WindowSettings:
     # lsf_sigma_kms, which the solar lines set -- Payne Zero's are narrower than
     # the Sun's -- and which then widens the telluric lines too.
     stellar_broadening: bool = False
+    # Whose H2O air pressure shifts: "hitran" (DataPaths.h2o_pressure_shift), or
+    # "aer", LBLRTM's own. AER gives some 0.8-1.1 um lines a shift of the wrong
+    # sign, and they sit 100-300 m/s off in niratl; see tellurix.hitran.
+    h2o_pressure_shift: str = "hitran"
     negative_tolerance: float = 1.0e-3
     vectorize_layers: bool = True
     mixed_precision: bool = True
@@ -238,7 +243,8 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
             databases[species] = AERLineDatabase(
                 paths.line_file(species, molecule_id), species, (settings.v1, settings.v2),
                 margin_cm1=settings.margin_cm1,
-                line_coupling=paths.line_coupling if settings.line_coupling else None)
+                line_coupling=paths.line_coupling if settings.line_coupling else None,
+                pressure_shift_table=paths.pressure_shift_table(species, settings.h2o_pressure_shift))
         except ValueError as exc:
             if not str(exc).startswith(f"no {species} lines found"):
                 raise
@@ -576,6 +582,9 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
                           else "native MT_CKD 4.3"),
             "correction": None if settings.correction is None else str(settings.correction),
             "pressure_shift": True,
+            **pressure_shift_provenance(
+                settings.h2o_pressure_shift,
+                getattr(prepared.databases.get("H2O"), "pressure_shift_table", None)),
             "line_coupling": settings.line_coupling,
             "stellar_broadening": broadening,
             # Which species' lines the coupling actually reached, if any.

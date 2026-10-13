@@ -121,6 +121,12 @@ class WindowRebuilder:
             self.coupling = self.line_root.parent / "lncpl_lines"
             if file_sha256(self.coupling) != self.inputs["aer_line_coupling_sha256"]:
                 raise SystemExit("the line-coupling file is not the one the run used")
+        # Likewise a record without this key used AER's H2O pressure shifts.
+        self.shifts = None
+        if self.physics.get("h2o_pressure_shift", "aer") == "hitran":
+            self.shifts = root / "data/databases/hitran/h2o_pressure_shift.npz"
+            if file_sha256(self.shifts) != self.inputs["hitran_h2o_pressure_shift_sha256"]:
+                raise SystemExit("the HITRAN H2O pressure-shift table is not the one the run used")
         self.mt_ckd = root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc"
         if file_sha256(self.mt_ckd) != self.inputs["mt_ckd_sha256"]:
             raise SystemExit("the MT_CKD file is not the one the run used")
@@ -147,7 +153,9 @@ class WindowRebuilder:
             try:
                 databases[name] = AERLineDatabase(self.line_root / stem / stem, name, (v1, v2),
                                                   margin_cm1=float(config["margin_cm1"]),
-                                                  line_coupling=self.coupling)
+                                                  line_coupling=self.coupling,
+                                                  pressure_shift_table=(self.shifts if name == "H2O"
+                                                                        else None))
             except ValueError as exc:
                 if not str(exc).startswith(f"no {name} lines found"):
                     raise

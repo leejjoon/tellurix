@@ -135,6 +135,11 @@ IAG flux atlases (`scripts/fit_solar_floor.py`, readers in `tellurix_fts.flux_at
 leaves 3.2% in solar lines against niratl's 3.8%, so the mismatch is 28% of the variance;
 the rest is shared at r = 0.996 by the two flux atlases. Wallace's interferograms give
 R 577,000 and 441,000 (regions 1, 2), not the paper's 676,000 and 698,000.
+**H2O pressure shifts are HITRAN's (HITRAN2024) by default** (§4q,
+`docs/h2o_pressure_shift_check.json`): fitted to niratl's own atmospheric column in 148
+windows, AER v3.9's shifts want a scale of ~0.63 and leave lines it gives a positive
+shift 4.6 mK off; HITRAN's want ~0.91 and leave 1.0 mK. Solar runs and records made
+before 2026-10-13 used AER's; their records lack `h2o_pressure_shift`.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

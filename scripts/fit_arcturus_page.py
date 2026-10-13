@@ -20,11 +20,12 @@ import jax
 import numpy as np
 
 from tellurix import (
-    AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile, ExoJAXOpacityBackend,
+    DataPaths, AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile, ExoJAXOpacityBackend,
     MTCKDWaterContinuum, StellarSpectrum, TelluricModel, TelluricParameters, OrderObjective,
     chebyshev_continuum, trim_wavenumber_grid, fit_order, constant_velocity_grid,
     load_atmosphere_csv, prepare_stellar_source, resample_stellar_continuum,
 )
+from tellurix.hitran import pressure_shift_provenance
 from tellurix_fts import arcturus_spectral_order, epoch_velocity_kms, read_arcturus_page
 
 MOLECULE_IDS = {"H2O": 1, "CO2": 2, "N2O": 4, "CO": 5, "CH4": 6, "O2": 7}
@@ -98,6 +99,8 @@ def main() -> None:
     parser.add_argument("--v2", type=float, default=5025.0)
     parser.add_argument("--margin-cm1", type=float, default=25.0,
                         help="how far outside the window a line may still contribute")
+    parser.add_argument("--h2o-pressure-shift", choices=("hitran", "aer"), default="hitran",
+                        help="whose H2O air pressure shifts: HITRAN's (default) or AER's")
     parser.add_argument("--grid-margin-cm1", type=float, default=5.0,
                         help="how far outside the window the model grid extends")
     parser.add_argument("--resolving-power", type=float, default=100_000.0)
@@ -186,8 +189,9 @@ def main() -> None:
         name = f"{molecule_id:02d}_{species}"
         try:
             databases[species] = AERLineDatabase(
-                line_root / name / name, species, (args.v1, args.v2), margin_cm1=args.margin_cm1
-            )
+                line_root / name / name, species, (args.v1, args.v2), margin_cm1=args.margin_cm1,
+                pressure_shift_table=DataPaths.bootstrapped(root).pressure_shift_table(
+                    species, args.h2o_pressure_shift))
         except ValueError as exc:
             if not str(exc).startswith(f"no {species} lines found"):
                 raise
@@ -412,6 +416,9 @@ def main() -> None:
             "accuracy_mode": model.accuracy_mode,
             "continuum": "native MT_CKD 4.3",
             "pressure_shift": True,
+            **pressure_shift_provenance(
+                args.h2o_pressure_shift,
+                getattr(databases.get("H2O"), "pressure_shift_table", None)),
             "mixed_precision": args.mixed_precision,
             "precomputed_opacity": (args.self_broadening if args.precompute_opacity else None),
             "pixel_integration": model.pixel_integration,

@@ -95,6 +95,12 @@ def main() -> None:
     profile = load_atmosphere_csv(verified("profile", Path(inputs["profile"])))
     line_root = Path(inputs.get("aer_line_root")
                      or root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
+    # A record without the key predates HITRAN's H2O shifts and used AER's.
+    shift_table = None
+    if physics.get("h2o_pressure_shift", "aer") == "hitran":
+        shift_table = verified("hitran_h2o_pressure_shift", Path(
+            inputs.get("hitran_h2o_pressure_shift")
+            or root / "data/databases/hitran/h2o_pressure_shift.npz"))
 
     # The atlas fits everything at the zenith and carries one angle in the
     # config; an IGRINS night carries the frame's own angle per row, 18.7 to
@@ -166,7 +172,8 @@ def main() -> None:
                     verified(f"aer_{name}", line_root / stem / stem), name, (v1, v2),
                     margin_cm1=float(config["margin_cm1"]),
                     line_coupling=(verified("aer_line_coupling", line_root.parent / "lncpl_lines")
-                                   if coupled else None))
+                                   if coupled else None),
+                    pressure_shift_table=shift_table if name == "H2O" else None)
             except ValueError as exc:
                 if not str(exc).startswith(f"no {name} lines found"):
                     raise

@@ -1504,6 +1504,55 @@ region 2, not the 676,000 and 698,000 of the paper's Table 1 (`flux_atlas.py`). 
 Wallace O2 fit used the table's 0.0193 and 0.0207 cm-1; its weak-line B/A ratio was not
 refitted at the measured widths.
 
+### 4q. H2O pressure shifts: AER's have the wrong sign on some lines; HITRAN's are the default
+
+niratl's page ph09250 kept S-shaped residuals on single water lines (9251.24, 9260.92,
+9272.26 cm-1) that no column, velocity or width removed. Fitting niratl's own atmospheric
+column -- separated empirically by Wallace et al., so independent of any line list or solar
+model, and equal to observed/solar to 0.6% at power exactly 1.0 -- with continuum x
+transmission alone left the same shapes, so they belong to the line list. Each sits on a
+line AER v3.9 gives a *positive* air pressure shift; HITRAN gives every one of them a
+negative shift. The atmosphere is not at fault: the H2O-weighted path pressure is 0.62 bar
+at 275 K, the shift applied is delta_air x ~0.66, and no plausible pressure error moves a
+line's sign.
+
+`scripts/check_h2o_pressure_shift.py` repeats this on every niratl window with water
+(148; 141 with telluric pixels), fitting the authors' column twice, AER's shifts against
+HITRAN's, everything else identical (`docs/h2o_pressure_shift_check.json`):
+
+| | AER v3.9 | HITRAN |
+|---|---|---|
+| isolated lines | 1365 | 1360 |
+| position error on delta_air, slope (one velocity per window) | -0.243 | -0.058 |
+| implied scale on the applied shift (1 + slope/0.66) | ~0.63 | ~0.91 |
+| position scatter | 3.67 mK | 3.50 mK |
+| 96 lines AER gives delta > +0.002: median position error | -4.60 mK | +1.00 mK |
+| the same lines, median absolute error | 4.65 mK | 1.53 mK |
+| median rms at telluric pixels (T < 0.98) | 0.570% | 0.498% |
+
+HITRAN is better by more than 2% in 50 windows and worse in 19; the worse ones are
+windows with almost no water (rms 0.04-0.27%; ph09375 judged on 13 pixels and one line).
+The largest gains: ph11950 0.58 -> 0.43%, ph09325 0.24 -> 0.18%, ph11900 0.61 -> 0.48%.
+ph09250's window rms goes 1.149 -> 1.095% and its S-shapes go.
+
+**What changed.** `tellurix.hitran.PressureShiftTable` replaces only `delta_air`, line by
+line, where HITRAN has the same line (isotopologue, position within 0.003 cm-1, E'' within
+0.5 cm-1, closest in both -- doublets share a position); positions, strengths, widths and
+coupling stay AER's. `tellurix-download-data hitran-h2o` builds the table. HITRANonline
+serves **HITRAN2024** (since 2026-01, corrected in place since), not HITRAN2020, so the
+download cannot be SHA-pinned: the table carries the edition and fetch date
+(2026-10-11; sha256 459d4179...923b68) and every record states `h2o_pressure_shift` and the
+table's SHA-256. `h2o_pressure_shift="hitran"` is the default in every fit setting and
+driver; `--h2o-pressure-shift aer` restores the old behaviour, and a reader takes
+`.get("h2o_pressure_shift", "aer")` so records made before the choice rebuild as they were.
+The LBLRTM comparisons and the synthetic fit checks stay on AER's (CLAUDE.md).
+
+**Not fixed by it: line widths.** HITRAN's full parameters for ph09250 (strengths, widths,
+temperature exponents as well) take its rms only 1.093 -> 1.085%. There the weak lines
+want a Gaussian of ~0.6 km/s while the 62%-deep 9257.08 doublet wants ~0.4 and still
+misfits by 1.4%, and the doublet's excess is in observed/solar too. Open: whether the
+instrument profile has a narrower core and broader wings than sinc x one Gaussian.
+
 ## Open work (as of 2026-10-02)
 
 ### Done 2026-10-05: every solar product regenerated with the O2 collision-induced continuum

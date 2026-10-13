@@ -96,13 +96,17 @@ def main() -> None:
     line_coupling = bool(physics.get("line_coupling", False))
     coupling = (verified("aer_line_coupling", Path(inputs["aer_line_coupling"]))
                 if line_coupling else None)
+    # Likewise a record without this key used AER's H2O pressure shifts.
+    shifts = (verified("hitran_h2o_pressure_shift", Path(inputs["hitran_h2o_pressure_shift"]))
+              if physics.get("h2o_pressure_shift", "aer") == "hitran" else None)
     databases = {}
     for name, molecule_id in sorted(MOLECULE_IDS.items()):
         stem = f"{molecule_id:02d}_{name}"
         try:
             databases[name] = AERLineDatabase(
                 verified(f"aer_{name}", line_root / stem / stem), name, (v1, v2),
-                margin_cm1=float(config["margin_cm1"]), line_coupling=coupling)
+                margin_cm1=float(config["margin_cm1"]), line_coupling=coupling,
+                pressure_shift_table=shifts if name == "H2O" else None)
         except ValueError as exc:
             if not str(exc).startswith(f"no {name} lines found"):
                 raise

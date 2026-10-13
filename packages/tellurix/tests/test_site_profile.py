@@ -124,3 +124,19 @@ def test_the_two_data_layouts():
     assert downloaded.line_file("CO2", 2) == Path(
         "/data/aer_v_3.9/line_files_By_Molecule/02_CO2/02_CO2")
     assert downloaded.mt_ckd == Path("/data/mt_ckd/absco-ref_wv-mt-ckd.nc")
+    assert checkout.h2o_pressure_shift == Path("/repo/data/databases/hitran/h2o_pressure_shift.npz")
+    assert downloaded.h2o_pressure_shift == Path("/data/hitran/h2o_pressure_shift.npz")
+
+
+def test_only_h2o_has_a_pressure_shift_table_and_aer_needs_none(tmp_path):
+    table = tmp_path / "hitran/h2o_pressure_shift.npz"
+    paths = DataPaths.downloaded(tmp_path)
+    assert paths.pressure_shift_table("H2O", "aer") is None
+    assert paths.pressure_shift_table("CO2", "hitran") is None
+    with pytest.raises(FileNotFoundError, match="hitran-h2o"):
+        paths.pressure_shift_table("H2O", "hitran")
+    table.parent.mkdir()
+    table.write_bytes(b"")
+    assert paths.pressure_shift_table("h2o", "hitran") == table
+    with pytest.raises(ValueError, match="pressure-shift source"):
+        paths.pressure_shift_table("H2O", "hitran2020")

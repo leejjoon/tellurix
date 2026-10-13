@@ -68,3 +68,32 @@ def test_aer_archive_rejects_path_traversal(tmp_path):
         download_module._extract_aer_archive(archive, tmp_path / "aer_v_3.9")
 
     assert not (tmp_path / "outside").exists()
+
+
+def test_download_hitran_h2o_builds_the_table_once_per_line(tmp_path, monkeypatch):
+    import numpy as np
+    from tellurix import PressureShiftTable
+
+    def record(nu, delta):
+        text = f" 11{nu:12.6f}{1e-24:10.3E}{1e-5:10.3E}.0700.3500{100.0:10.4f}0.70{delta:8.5f}"
+        return (text + " " * 160)[:160].encode()
+
+    served = {(0.0, 100.0): [record(50.0, -0.01), record(100.0, -0.02)],
+              (100.0, 150.0): [record(100.0, -0.02), record(120.0, -0.03)]}
+    calls = []
+
+    def fetch(ids, lower, upper):
+        calls.append((lower, upper))
+        return b"\n".join(served[(lower, upper)]) + b"\n"
+
+    monkeypatch.setattr(download_module, "_fetch_hitran_par", fetch)
+    first = download_module.download_hitran_h2o(tmp_path, upper_cm1=150.0, step_cm1=100.0)
+    download_module.download_hitran_h2o(tmp_path, upper_cm1=150.0, step_cm1=100.0)
+
+    assert first == tmp_path / "hitran/h2o_pressure_shift.npz"
+    assert calls == [(0.0, 100.0), (100.0, 150.0)]  # the raw ranges are kept and reused
+    table = PressureShiftTable.load(first)
+    assert table.wavenumber_cm1.tolist() == [50.0, 100.0, 120.0]  # the shared boundary line once
+    np.testing.assert_allclose(table.delta_air, [-0.01, -0.02, -0.03])
+    assert table.provenance["edition"] == download_module.HITRAN_EDITION
+    assert set(table.provenance["par_sha256"]) == {"H2O_00000_00100.par", "H2O_00100_00150.par"}

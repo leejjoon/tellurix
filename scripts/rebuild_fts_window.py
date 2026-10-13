@@ -73,11 +73,21 @@ def main() -> None:
         raise SystemExit(f"grid rebuilt to {grid.size} points, report says {grid_spec['points']}")
 
     line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
+    # A report without the key predates HITRAN's H2O shifts and used AER's.
+    shift_table = None
+    if physics.get("h2o_pressure_shift", "aer") == "hitran" and "H2O" in physics["species"]:
+        shift_table = root / "data/databases/hitran/h2o_pressure_shift.npz"
+        recorded = physics.get("h2o_pressure_shift_sha256")
+        digest = hashlib.sha256(shift_table.read_bytes()).hexdigest()
+        if recorded is not None and digest != recorded:
+            raise SystemExit(f"{shift_table} is not the table the fit used: "
+                             f"{digest[:12]} against {recorded[:12]}")
     databases = {}
     for species in physics["species"]:
         name = f"{MOLECULE_IDS[species]:02d}_{species}"
         databases[species] = AERLineDatabase(
-            line_root / name / name, species, (v1, v2), margin_cm1=grid_spec["margin_cm1"])
+            line_root / name / name, species, (v1, v2), margin_cm1=grid_spec["margin_cm1"],
+            pressure_shift_table=shift_table if species == "H2O" else None)
         counted = int(databases[species].nu_lines.size)
         if counted != physics["lines_per_species"][species]:
             raise SystemExit(f"{species}: {counted} lines against the report's "

@@ -196,6 +196,10 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
         candidate = line_root / stem / stem
         if candidate.exists():
             entries[f"aer_{name}_sha256"] = file_sha256(candidate)
+    if getattr(args, "h2o_pressure_shift", "aer") == "hitran" and "H2O" in species:
+        table = DataPaths.bootstrapped(root).h2o_pressure_shift
+        entries["hitran_h2o_pressure_shift"] = str(table)
+        entries["hitran_h2o_pressure_shift_sha256"] = file_sha256(table)
     if getattr(args, "line_coupling", False):
         coupling = line_root.parent / "lncpl_lines"
         entries["aer_line_coupling"] = str(coupling)
@@ -205,7 +209,7 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
 
 def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    o2_cia: bool = False, line_coupling: bool = False,
-                   stellar_broadening: bool = False) -> dict:
+                   stellar_broadening: bool = False, h2o_pressure_shift: str = "aer") -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -234,6 +238,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         "line_coupling": bool(line_coupling),
         # Likewise: without it the only free width was lsf_sigma_kms.
         "stellar_broadening": bool(stellar_broadening),
+        # Likewise: without it the H2O pressure shifts were AER's.
+        "h2o_pressure_shift": h2o_pressure_shift,
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "fitter": f"{fitter.parent.name}/{fitter.name}",
@@ -291,7 +297,7 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         zenith_angle_deg=args.zenith_angle_deg,
         accuracy_mode=args.accuracy_mode, correction=None, gaussian_ils=False,
         o2_cia=args.o2_cia, line_coupling=args.line_coupling,
-        stellar_broadening=args.stellar_broadening,
+        stellar_broadening=args.stellar_broadening, h2o_pressure_shift=args.h2o_pressure_shift,
         vectorize_layers=True, mixed_precision=True,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
         layer_chunk_size=args.layer_chunk_size,
@@ -484,6 +490,10 @@ def main() -> None:
                         help="fit a Gaussian broadening of the solar source alone, so the solar "
                              "lines' extra width stops reaching the telluric lines through "
                              "lsf_sigma_kms. Off by default so a rerun reproduces earlier records.")
+    parser.add_argument("--h2o-pressure-shift", choices=("hitran", "aer"), default="hitran",
+                        help="whose H2O air pressure shifts: HITRAN's (default; built by "
+                             "`tellurix-download-data hitran-h2o`) or AER's, as LBLRTM uses. AER "
+                             "gives some 0.8-1.1 um lines a shift of the wrong sign.")
     parser.add_argument("--accuracy-mode", choices=("mt_ckd", "fast"), default="mt_ckd",
                         help="'fast' drops the water continuum: only for windows past the end "
                              "of the MT_CKD table at 20000 cm-1, and as its own run with its "
@@ -598,7 +608,8 @@ def main() -> None:
              "spectrum": str(args.spectrum), "spectrum_sha256": spectrum.sha256,
              "profile": str(args.profile),
              "physics": physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
-                                         args.line_coupling, args.stellar_broadening),
+                                         args.line_coupling, args.stellar_broadening,
+                                         args.h2o_pressure_shift),
              "settings": {"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,
@@ -641,7 +652,8 @@ def main() -> None:
             args.record,
             run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
                  **{k: v for k, v in physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
-                                         args.line_coupling, args.stellar_broadening).items()
+                                         args.line_coupling, args.stellar_broadening,
+                                         args.h2o_pressure_shift).items()
                     if k in ("driver", "driver_sha256", "fitter", "fitter_sha256", "tellurix")}},
             config={"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                     "samples_per_resolution": args.samples_per_resolution,
@@ -652,7 +664,8 @@ def main() -> None:
                     "species_threshold": args.species_threshold,
                     "scan_line_budget": args.scan_line_budget, "airmass": airmass},
             physics=physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
-                                         args.line_coupling, args.stellar_broadening),
+                                         args.line_coupling, args.stellar_broadening,
+                                         args.h2o_pressure_shift),
             inputs=input_hashes(root, args, spectrum, species),
             parameter_names=codec.names, species=species, pages=rows,
             continuum_degree=args.continuum_degree,

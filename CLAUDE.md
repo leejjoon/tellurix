@@ -151,9 +151,23 @@ written before the rename carry `physics["jax_telluric"]` rather than
 `physics["tellurix"]` -- that is the honest provenance of those runs and nothing
 reads the key back, so it is left alone.
 
-For installed users, `tellurix-download-data {mt-ckd,aer-lines,all}`
+For installed users, `tellurix-download-data {mt-ckd,aer-lines,hitran-h2o,all}`
 (`download.py`) fetches SHA-256-pinned copies into `$TELLURIX_DATA` or
-`~/.local/share/tellurix`.
+`~/.local/share/tellurix` -- all but `hitran-h2o`, which builds
+`hitran/h2o_pressure_shift.npz` from whatever HITRANonline serves and records the
+edition and date (a checkout keeps it in `data/databases/hitran/`).
+
+**H2O pressure shifts are HITRAN's by default, not AER's** (`tellurix.hitran`;
+`AERLineDatabase(pressure_shift_table=...)`, `DataPaths.pressure_shift_table`).
+AER v3.9 gives some 0.8-1.1 um water lines a shift of the wrong sign
+(docs/solar_fit_plan.md §4q). Every fit setting and driver takes
+`h2o_pressure_shift` / `--h2o-pressure-shift {hitran,aer}`, and every record states
+it with the table's SHA-256. A reader that rebuilds a record takes
+`.get("h2o_pressure_shift", "aer")`: a record without the key predates the choice.
+The LBLRTM comparisons (`compare_lblrtm_*`, `validate_aer_co`,
+`build_lblrtm_correction`, `attribute_lblrtm_gap`) stay on AER's, because LBLRTM
+reads AER's; so do the synthetic checks (`validate_fts_fit`, `validate_arcturus_fit`),
+which fit their own model back.
 
 ## Architecture
 

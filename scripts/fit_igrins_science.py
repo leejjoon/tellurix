@@ -150,7 +150,9 @@ def main() -> None:
             vsini_kms=args.vsini_kms, precompute_opacity=True, self_broadening="linear",
             min_optical_depth=config["min_optical_depth"], stellar=args.stellar,
             # A calibration made before line coupling existed had none.
-            line_coupling=bool(config.get("line_coupling", False)))
+            line_coupling=bool(config.get("line_coupling", False)),
+            # Likewise one made before HITRAN's H2O shifts used AER's.
+            h2o_pressure_shift=config.get("h2o_pressure_shift", "aer"))
         degree = int(config["continuum_degree"])
         numbers = (sorted(set(calibration.orders) & set().union(*(o.orders for o in frames)))
                    if args.orders is None else [int(v) for v in args.orders.split(",")])
@@ -486,10 +488,15 @@ def main() -> None:
                     "clip_pixels": args.clip_pixels, "stellar": args.stellar,
                     "vsini_kms": args.vsini_kms,
                     "stellar_velocity_kms": args.stellar_velocity_kms},
-            physics=dict(PHYSICS),
+            # The calibration's H2O shifts are the ones this fit used; a rebuild
+            # (export_transmission_hdf5) reads them from here.
+            physics={**PHYSICS, "h2o_pressure_shift": calibration.source["config"].get(
+                "h2o_pressure_shift", "aer")},
             inputs={"calibration": str(calibration_path),
                     "calibration_record": calibration.source["record"],
-                    "frames": [r["frame"] for r in rows]},
+                    "frames": [r["frame"] for r in rows],
+                    **{k: v for k, v in calibration.source["inputs"].items()
+                       if k.startswith("hitran_h2o_pressure_shift")}},
             parameter_names=names, species=species,
             pages=sorted(rows, key=lambda r: (r["frame"], r["order_number"])),
             continuum_degree=degree, key_fields=("frame", "order"),

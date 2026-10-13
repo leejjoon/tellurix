@@ -15,6 +15,8 @@ def test_settings_are_frozen_and_default_like_the_command_line():
     assert settings.stages == "continuum,velocity,columns"
     assert settings.accuracy_mode == "mt_ckd"
     assert settings.pin == ()
+    # HITRAN's H2O pressure shifts unless AER's are asked for.
+    assert settings.h2o_pressure_shift == "hitran"
     with pytest.raises(dataclasses.FrozenInstanceError):
         settings.v1 = 1.0
 

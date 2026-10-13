@@ -311,7 +311,8 @@ def main() -> None:
         margin_cm1=config["margin_cm1"], grid_margin_cm1=config["grid_margin_cm1"],
         vsini_kms=config["vsini_kms"], precompute_opacity=True, self_broadening="linear",
         min_optical_depth=config["min_optical_depth"], stellar=stellar_path,
-        line_coupling=bool(config.get("line_coupling", False)))
+        line_coupling=bool(config.get("line_coupling", False)),
+        h2o_pressure_shift=config.get("h2o_pressure_shift", "aer"))
     degree = int(config["continuum_degree"])
 
     observations = {}

@@ -12,6 +12,8 @@ import tarfile
 import tempfile
 from urllib.request import Request, urlopen
 
+import numpy as np
+
 
 MT_CKD_URL = (
     "https://raw.githubusercontent.com/AER-RC/MT_CKD_H2O/4.3/"
@@ -25,6 +27,13 @@ AER_LICENSE_URL = (
     "4de5983ac4d909f674d2ee502ac667c27f79942f/LICENSE.md"
 )
 AER_LICENSE_SHA256 = "eed60bbf029b81fd0abd15ef48f0fb65176906a784a34f9eb7652bbc11646ddd"
+HITRAN_LBL_URL = "https://hitran.org/lbl/api"
+# HITRANonline's isotopologue ids for H2O 161, 181, 171, 162, 182, 172; AER v3.9
+# carries these six and not 262.
+HITRAN_H2O_ISOTOPOLOGUE_IDS = (1, 2, 3, 4, 5, 6)
+# What HITRANonline served when the table was introduced (2026-10). The site
+# says which edition it serves; a later fetch must update this by hand.
+HITRAN_EDITION = "HITRAN2024"
 
 
 def default_data_directory() -> Path:
@@ -63,18 +72,39 @@ class DataPaths:
 
     line_root: Path
     mt_ckd: Path
+    # HITRAN's H2O air pressure shifts (tellurix.hitran), which the fits use in
+    # place of AER's unless told otherwise. None when the layout has none.
+    h2o_pressure_shift: Path | None = None
 
     @classmethod
     def downloaded(cls, directory: str | Path | None = None) -> "DataPaths":
         root = Path(directory).expanduser() if directory else default_data_directory()
         return cls(root / "aer_v_3.9/line_files_By_Molecule",
-                   root / "mt_ckd/absco-ref_wv-mt-ckd.nc")
+                   root / "mt_ckd/absco-ref_wv-mt-ckd.nc",
+                   root / "hitran/h2o_pressure_shift.npz")
 
     @classmethod
     def bootstrapped(cls, checkout: str | Path) -> "DataPaths":
         root = Path(checkout)
         return cls(root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule",
-                   root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc")
+                   root / "data/lblrtm/LBLRTM/data/absco-ref_wv-mt-ckd.nc",
+                   root / "data/databases/hitran/h2o_pressure_shift.npz")
+
+    def pressure_shift_table(self, species: str, source: str) -> Path | None:
+        """The table a fit hands ``AERLineDatabase`` for this species, or None for AER's own.
+
+        ``source`` is ``"hitran"`` or ``"aer"``; only H2O has a table.
+        """
+
+        if source not in ("hitran", "aer"):
+            raise ValueError(f"unknown pressure-shift source {source!r}; use 'hitran' or 'aer'")
+        if source == "aer" or species.upper() != "H2O":
+            return None
+        if self.h2o_pressure_shift is None or not Path(self.h2o_pressure_shift).is_file():
+            raise FileNotFoundError(
+                f"no HITRAN H2O pressure-shift table at {self.h2o_pressure_shift}; run "
+                "`tellurix-download-data hitran-h2o` (or pass the AER shifts explicitly)")
+        return Path(self.h2o_pressure_shift)
 
     @property
     def line_coupling(self) -> Path:
@@ -216,11 +246,82 @@ def download_aer_lines(directory: str | Path | None = None) -> Path:
     return destination
 
 
+def _fetch_hitran_par(isotopologue_ids, lower_cm1: float, upper_cm1: float) -> bytes:
+    """One range of HITRANonline .par records.
+
+    The service's Content-Length counts each record one byte longer than it
+    sends (CRLF against LF), so a complete reply looks short by exactly one byte
+    per record. That shortfall is accepted and any other is not.
+    """
+
+    from http.client import IncompleteRead
+
+    ids = ",".join(str(i) for i in isotopologue_ids)
+    url = f"{HITRAN_LBL_URL}?iso_ids_list={ids}&numin={lower_cm1:g}&numax={upper_cm1:g}"
+    request = Request(url, headers={"User-Agent": "tellurix-data-downloader/0.1"})
+    with urlopen(request, timeout=600) as response:
+        expected = response.headers.get("Content-Length")
+        try:
+            body = response.read()
+        except IncompleteRead as exc:
+            body = exc.partial
+    if expected is not None:
+        records = body.count(b"\n")
+        if len(body) not in (int(expected), int(expected) - records):
+            raise RuntimeError(f"incomplete reply from {url}: {len(body)} of {expected} bytes")
+    if any(len(line) != 160 for line in body.splitlines()):
+        raise RuntimeError(f"{url} returned something other than 160-character .par records")
+    return body
+
+
+def download_hitran_h2o(directory: str | Path | None = None, *, upper_cm1: float = 42000.0,
+                        step_cm1: float = 2000.0) -> Path:
+    """Fetch HITRAN's H2O lines and build the pressure-shift table the fits use.
+
+    The raw records are kept beside the table, by range, so a later field can be
+    read from them without fetching again.
+    """
+
+    import datetime
+    from .hitran import PressureShiftTable, parse_par
+
+    root = default_data_directory() if directory is None else Path(directory).expanduser()
+    destination = root / "hitran" / "h2o_pressure_shift.npz"
+    raw_directory = root / "hitran" / "h2o_par"
+    raw_directory.mkdir(parents=True, exist_ok=True)
+    edges = list(np.arange(0.0, upper_cm1, step_cm1)) + [upper_cm1]
+    parts = []
+    for lower, upper in zip(edges[:-1], edges[1:]):
+        path = raw_directory / f"H2O_{lower:05.0f}_{upper:05.0f}.par"
+        if not path.is_file():
+            print(f"Fetching HITRAN H2O {lower:.0f}-{upper:.0f} cm-1")
+            partial = path.with_name(path.name + ".part")
+            partial.write_bytes(_fetch_hitran_par(HITRAN_H2O_ISOTOPOLOGUE_IDS, lower, upper))
+            partial.replace(path)
+        parts.append(path)
+    lines = [line for path in parts for line in path.read_bytes().splitlines()]
+    arrays = parse_par(lines, molecule_id=1)
+    # Adjacent ranges share their boundary; keep one copy of a line on it.
+    key = np.rec.fromarrays([arrays["isotope"], arrays["wavenumber_cm1"], arrays["elower_cm1"]])
+    _, unique = np.unique(key, return_index=True)
+    unique = np.sort(unique)
+    table = PressureShiftTable(
+        molecule_id=1, **{name: values[unique] for name, values in arrays.items()},
+        provenance={"source": HITRAN_LBL_URL, "edition": HITRAN_EDITION,
+                    "isotopologue_ids": list(HITRAN_H2O_ISOTOPOLOGUE_IDS),
+                    "fetched": datetime.datetime.now(datetime.timezone.utc).date().isoformat(),
+                    "range_cm1": [0.0, upper_cm1], "lines": int(unique.size),
+                    "par_sha256": {path.name: _sha256(path) for path in parts}})
+    table.save(destination)
+    print(f"HITRAN H2O pressure shifts: {unique.size} lines, sha256 {_sha256(destination)}")
+    return destination
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Download external spectroscopy data used by tellurix"
     )
-    parser.add_argument("dataset", choices=("mt-ckd", "aer-lines", "all"))
+    parser.add_argument("dataset", choices=("mt-ckd", "aer-lines", "hitran-h2o", "all"))
     parser.add_argument(
         "--output",
         type=Path,
@@ -232,6 +333,8 @@ def main() -> None:
         print(f"MT_CKD: {download_mt_ckd(args.output)}")
     if args.dataset in ("aer-lines", "all"):
         print(f"AER lines: {download_aer_lines(args.output)}")
+    if args.dataset in ("hitran-h2o", "all"):
+        print(f"HITRAN H2O pressure shifts: {download_hitran_h2o(args.output)}")
 
 
 if __name__ == "__main__":

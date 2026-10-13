@@ -18,6 +18,10 @@ def test_a_partial_order_rule_keeps_the_defaults_for_the_rest():
     assert ORDER_RULE["throughput_floor"] == 0.25
 
 
+def test_hitran_h2o_pressure_shifts_are_the_default():
+    assert StandardFitSettings().h2o_pressure_shift == "hitran"
+
+
 def test_the_rule_cannot_be_changed_after_the_fact():
     settings = StandardFitSettings()
     with pytest.raises(TypeError):

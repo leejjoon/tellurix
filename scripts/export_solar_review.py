@@ -100,6 +100,8 @@ def settings_for(row, spectrum_path: Path, args, blob) -> WindowSettings:
                                    blob.get("physics", {}).get("line_coupling", False))),
         # A run without the key predates the O2 continuum and had none.
         o2_cia=bool(blob.get("physics", {}).get("o2_cia", False)),
+        # Likewise, one without this predates HITRAN's shifts and used AER's.
+        h2o_pressure_shift=blob.get("physics", {}).get("h2o_pressure_shift", "aer"),
     )
 
 

@@ -176,7 +176,8 @@ def export(args, root: Path) -> None:
                         "resolving_power", "samples_per_resolution", "margin_cm1",
                         "grid_margin_cm1", "vsini_kms", "self_broadening",
                         "min_optical_depth")}, precompute_opacity=True,
-                        line_coupling=bool(settings.get("line_coupling", False)))
+                        line_coupling=bool(settings.get("line_coupling", False)),
+                        h2o_pressure_shift=settings.get("h2o_pressure_shift", "aer"))
                     context = build_order_context(observation, number, fit_settings,
                                                   DataPaths.bootstrapped(root),
                                                   profiles[settings["profile"]],

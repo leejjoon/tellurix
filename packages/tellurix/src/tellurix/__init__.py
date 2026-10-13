@@ -23,7 +23,10 @@ from .aer import (
 )
 from .o2_cia import ContinuumSum, O2CollisionInducedContinuum
 from .exojax_backend import ExoJAXOpacityBackend
-from .download import DataPaths, default_data_directory, download_aer_lines, download_mt_ckd
+from .download import (
+    DataPaths, default_data_directory, download_aer_lines, download_hitran_h2o, download_mt_ckd,
+)
+from .hitran import PressureShiftTable
 from .io import load_atmosphere_csv, load_mipas_profile
 from .lblrtm import (
     LBLRTMRunConfig, lblrtm_line_shape_optical_depth, run_lblrtm, run_lnfl, write_tape5,
@@ -84,6 +87,7 @@ __all__ = [
     "NegativeOpacityError",
     "MTCKDWaterContinuum",
     "OrderObjective",
+    "PressureShiftTable",
     "Record",
     "ReferenceWaterContinuum",
     "SpectralOrder",
@@ -99,6 +103,7 @@ __all__ = [
     "default_data_directory",
     "degrade_to_resolving_power",
     "download_aer_lines",
+    "download_hitran_h2o",
     "download_mt_ckd",
     "file_sha256",
     "fit_order",

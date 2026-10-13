@@ -121,7 +121,7 @@ def enable_compilation_cache(directory: Path) -> None:
 
 
 def physics_record(root: Path, continuum_version: str | None = None,
-                   line_coupling: bool = False) -> dict:
+                   line_coupling: bool = False, h2o_pressure_shift: str = "aer") -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The driver's own hash is the only thing that pins the parts of the
@@ -140,6 +140,8 @@ def physics_record(root: Path, continuum_version: str | None = None,
         "continuum_model": continuum_version,
         # A record without the key predates the option and fitted uncoupled lines.
         "line_coupling": bool(line_coupling),
+        # Likewise: without it the H2O pressure shifts were AER's.
+        "h2o_pressure_shift": h2o_pressure_shift,
     }
 
 
@@ -147,6 +149,7 @@ def run_one(window, epoch, args, root):
     """Fit one page-epoch and export its corrected spectrum."""
     import jax.numpy as jnp
     from tellurix import (
+        DataPaths,
         AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile, chebyshev_continuum,
         file_sha256, ils_fingerprint, select_significant_lines, trim_wavenumber_grid,
         ExoJAXOpacityBackend, MTCKDWaterContinuum, StellarSpectrum, TelluricModel,
@@ -176,13 +179,14 @@ def run_one(window, epoch, args, root):
     grid = trim_wavenumber_grid(full_grid, v1, v2, args.grid_margin_cm1)
     line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
     coupling = line_root.parent / "lncpl_lines" if args.line_coupling else None
+    shifts = DataPaths.bootstrapped(root).pressure_shift_table("H2O", args.h2o_pressure_shift)
     databases, absent = {}, []
     for species, molecule_id in sorted(MOLECULE_IDS.items()):
         name = f"{molecule_id:02d}_{species}"
         try:
             databases[species] = AERLineDatabase(
                 line_root / name / name, species, (v1, v2), margin_cm1=args.margin_cm1,
-                line_coupling=coupling)
+                line_coupling=coupling, pressure_shift_table=shifts if species == "H2O" else None)
         except ValueError as exc:
             if not str(exc).startswith(f"no {species} lines found"):
                 raise
@@ -493,6 +497,9 @@ def main() -> None:
                         help="split the layer vmap into chunks; 0 means do not split")
     parser.add_argument("--line-coupling", action=argparse.BooleanOptionalAction, default=False,
                         help="AER first-order line mixing (CO2, CH4, O2), as LBLRTM applies it")
+    parser.add_argument("--h2o-pressure-shift", choices=("hitran", "aer"), default="hitran",
+                        help="whose H2O air pressure shifts: HITRAN's (default) or AER's, as "
+                             "LBLRTM uses; aer reproduces the records made before the choice")
     parser.add_argument("--line-budget", type=float, default=0.0,
                         help="optical depth of the weakest lines to discard; 0 keeps every line")
     # A string, not a Path: Path("") is Path("."), which is truthy and would
@@ -517,7 +524,7 @@ def main() -> None:
         # Imported here, not at module scope: importing tellurix enables
         # float64 and pulls in JAX, which must happen after JAX_PLATFORMS and
         # the compilation cache are settled.
-        from tellurix import file_sha256
+        from tellurix import DataPaths, file_sha256
 
         line_root = root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
         entries = {
@@ -536,6 +543,10 @@ def main() -> None:
             candidate = line_root / name / name
             if candidate.exists():
                 entries[f"aer_{species}_sha256"] = file_sha256(candidate)
+        table = DataPaths.bootstrapped(root).pressure_shift_table("H2O", args.h2o_pressure_shift)
+        if table is not None:
+            entries["hitran_h2o_pressure_shift"] = str(table)
+            entries["hitran_h2o_pressure_shift_sha256"] = file_sha256(table)
         if args.line_coupling:
             coupling = line_root.parent / "lncpl_lines"
             entries["aer_line_coupling"] = str(coupling)
@@ -591,7 +602,8 @@ def main() -> None:
             {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
              "atlas_root": str(args.atlas_root), "stellar": str(args.stellar),
              "profile": str(args.profile),
-             "physics": physics_record(root, continuum_version(), args.line_coupling),
+             "physics": physics_record(root, continuum_version(), args.line_coupling,
+                                    args.h2o_pressure_shift),
              "settings": {"resolving_power": args.resolving_power,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,
@@ -619,7 +631,8 @@ def main() -> None:
         write_record(
             args.record,
             run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                 **{k: v for k, v in physics_record(root, continuum_version(), args.line_coupling).items()
+                 **{k: v for k, v in physics_record(root, continuum_version(), args.line_coupling,
+                                    args.h2o_pressure_shift).items()
                     if k in ("driver", "driver_sha256", "tellurix")}},
             config={"resolving_power": args.resolving_power,
                     "samples_per_resolution": args.samples_per_resolution,
@@ -628,7 +641,8 @@ def main() -> None:
                     "min_optical_depth": args.min_optical_depth,
                     "min_transmission": args.min_transmission,
                     "line_budget": args.line_budget, **ORDER},
-            physics=physics_record(root, continuum_version(), args.line_coupling),
+            physics=physics_record(root, continuum_version(), args.line_coupling,
+                                    args.h2o_pressure_shift),
             inputs=input_hashes(),
             parameter_names=codec.names, species=species,
             pages=[record_rows[k] for k in sorted(record_rows)],

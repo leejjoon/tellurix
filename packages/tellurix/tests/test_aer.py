@@ -249,3 +249,70 @@ def test_a_coupled_line_without_its_record_or_with_another_form_is_refused(tmp_p
     reduced.write_text(_flagged(5000.0, "-3") + "\n")
     with pytest.raises(ValueError, match="flag -1|flag -3"):
         AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0, line_coupling=reduced)
+
+
+def _shifted(nu, delta, elower=200.0, isotope=1):
+    gamma_air = f"{0.07:.4f}"[1:]
+    gamma_self = f"{0.35:.4f}"[1:]
+    return (
+        f"{5:2d}{isotope:1d}{nu:12.6f}{1.0e-22:10.3E}{2.0e-5:10.3E}"
+        f"{gamma_air}{gamma_self}{elower:10.4f}{0.7:4.2f}{delta:8.5f}"
+    )
+
+
+def _shift_table(path, rows, molecule_id=5):
+    from tellurix import PressureShiftTable
+
+    isotope, nu, elower, delta = (np.asarray(column) for column in zip(*rows))
+    order = np.argsort(nu)
+    return PressureShiftTable(
+        molecule_id=molecule_id, isotope=isotope[order], wavenumber_cm1=nu[order],
+        elower_cm1=elower[order], delta_air=delta[order], provenance={"edition": "test"}).save(path)
+
+
+def test_a_pressure_shift_table_replaces_only_the_lines_it_shares(tmp_path):
+    lines = tmp_path / "05_CO"
+    lines.write_text("\n".join([
+        _shifted(5000.0000, +0.0142),             # HITRAN has it, 0.4 mK away: replaced
+        _shifted(5001.0000, -0.0100),             # HITRAN does not: kept
+        _shifted(5002.0000, -0.0100, isotope=2),  # HITRAN has it only as isotope 1: kept
+        _shifted(5003.0000, -0.0200, elower=900.0),
+    ]) + "\n")
+    table = _shift_table(tmp_path / "shifts.npz", [
+        (1, 5000.0004, 200.0, -0.0046),
+        (1, 5002.0000, 200.0, -0.0300),
+        # A doublet at one position, told apart only by the lower-state energy.
+        (1, 5003.0000, 900.3, -0.0500),
+        (1, 5003.0000, 900.0, -0.0050),
+    ])
+    database = AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0,
+                               pressure_shift_table=table)
+    np.testing.assert_allclose(database.delta_air, [-0.0046, -0.0100, -0.0100, -0.0050])
+    assert database.pressure_shifts_replaced == 2
+    np.testing.assert_allclose(database.restrict(np.array([True, False, False, True])).delta_air,
+                               [-0.0046, -0.0050])
+    # Without the table the file's own values stand.
+    np.testing.assert_allclose(AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0).delta_air,
+                               [0.0142, -0.0100, -0.0100, -0.0200])
+
+
+def test_a_pressure_shift_table_for_another_molecule_is_refused(tmp_path):
+    lines = tmp_path / "05_CO"
+    lines.write_text(_shifted(5000.0, -0.01) + "\n")
+    table = _shift_table(tmp_path / "h2o.npz", [(1, 5000.0, 200.0, -0.02)], molecule_id=1)
+    with pytest.raises(ValueError, match="molecule 1"):
+        AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0, pressure_shift_table=table)
+
+
+def test_hitran_par_records_parse_with_their_isotope_codes():
+    from tellurix.hitran import parse_par
+
+    def par(isotope, nu, elower, delta):
+        record = f" 1{isotope}{nu:12.6f}{1e-24:10.3E}{1e-5:10.3E}.0700.3500{elower:10.4f}0.70{delta:8.5f}"
+        return (record + " " * 160)[:160]
+
+    parsed = parse_par([par("A", 9001.0, 10.0, -0.002), par("1", 9000.0, 20.0, -0.004),
+                        par("0", 9002.0, 5.0, 0.001), " 2" + par("1", 9003.0, 1.0, 0.0)[2:]], 1)
+    assert parsed["isotope"].tolist() == [1, 11, 10]
+    assert parsed["wavenumber_cm1"].tolist() == [9000.0, 9001.0, 9002.0]
+    np.testing.assert_allclose(parsed["delta_air"], [-0.004, -0.002, 0.001])
