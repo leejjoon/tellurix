@@ -102,6 +102,9 @@ def settings_for(row, spectrum_path: Path, args, blob) -> WindowSettings:
         o2_cia=bool(blob.get("physics", {}).get("o2_cia", False)),
         # Likewise, one without this predates HITRAN's shifts and used AER's.
         h2o_pressure_shift=blob.get("physics", {}).get("h2o_pressure_shift", "aer"),
+        # And one without these used AER's widths.
+        pressure_width_scale=float(blob.get("physics", {}).get("pressure_width_scale", 1.0)),
+        pressure_width_species=blob.get("physics", {}).get("pressure_width_species", "H2O,O2"),
     )
 
 

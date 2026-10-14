@@ -6,7 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from tellurix_fts.window import STAGES, WindowSettings, build_bounds, solar_source_for
+import numpy as np
+
+from tellurix_fts.window import STAGES, WindowSettings, build_bounds, solar_line_mask, solar_source_for
 
 
 def test_settings_are_frozen_and_default_like_the_command_line():
@@ -17,6 +19,10 @@ def test_settings_are_frozen_and_default_like_the_command_line():
     assert settings.pin == ()
     # HITRAN's H2O pressure shifts unless AER's are asked for.
     assert settings.h2o_pressure_shift == "hitran"
+    # AER's widths and every pixel fitting the telluric parameters, as before
+    # either option existed.
+    assert settings.pressure_width_scale == 1.0
+    assert settings.telluric_from_clean_pixels is False
     with pytest.raises(dataclasses.FrozenInstanceError):
         settings.v1 = 1.0
 
@@ -41,3 +47,17 @@ def test_a_pinned_parameter_stays_pinned_in_every_stage():
                               pinned=("H2O",))
         assert bounds["H2O"] == (0.3, 0.3)
         assert bounds["wavelength_stretch"] == (0.0, 0.0)
+
+
+def test_the_solar_line_mask_measures_depth_below_the_models_own_top():
+    # Descending in wavenumber, as fit_window's arrays are.
+    nu = np.linspace(9300.0, 9290.0, 2001)
+    solar = 1.0 - 0.3 * np.exp(-0.5 * ((nu - 9295.0) / 0.05) ** 2)
+    # A continuum 3% above the solar model's top, as deep in a water band: by
+    # the continuum every pixel would look like a solar line.
+    arrays = {"wavenumber_cm1": nu, "stellar_only_pixels": 0.97 * solar,
+              "continuum": np.ones_like(nu)}
+    mask = solar_line_mask(arrays, depth=0.01)
+    assert mask[np.argmin(np.abs(nu - 9295.0))]
+    assert not mask[np.abs(nu - 9295.0) > 0.5].any()
+    assert 0.0 < mask.mean() < 0.05

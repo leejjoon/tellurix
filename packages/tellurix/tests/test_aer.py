@@ -296,6 +296,21 @@ def test_a_pressure_shift_table_replaces_only_the_lines_it_shares(tmp_path):
                                [0.0142, -0.0100, -0.0100, -0.0200])
 
 
+def test_a_pressure_width_scale_multiplies_both_widths_and_nothing_else(tmp_path):
+    lines = tmp_path / "05_CO"
+    lines.write_text("\n".join([_shifted(5000.0, -0.01), _shifted(5001.0, -0.02)]) + "\n")
+    plain = AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0)
+    wide = AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0, pressure_width_scale=1.11)
+    np.testing.assert_allclose(wide.gamma_air, 1.11 * plain.gamma_air)
+    np.testing.assert_allclose(wide.gamma_self, 1.11 * plain.gamma_self)
+    for name in ("nu_lines", "line_strength_ref_original", "n_air", "delta_air", "elower"):
+        np.testing.assert_array_equal(getattr(wide, name), getattr(plain, name))
+    # A subset keeps the scaled widths rather than re-reading the file's.
+    np.testing.assert_allclose(wide.restrict(np.array([False, True])).gamma_air, [1.11 * 0.07])
+    with pytest.raises(ValueError, match="positive"):
+        AERLineDatabase(lines, "CO", (4990.0, 5010.0), margin_cm1=0.0, pressure_width_scale=0.0)
+
+
 def test_a_pressure_shift_table_for_another_molecule_is_refused(tmp_path):
     lines = tmp_path / "05_CO"
     lines.write_text(_shifted(5000.0, -0.01) + "\n")

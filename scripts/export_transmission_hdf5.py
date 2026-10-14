@@ -101,6 +101,9 @@ def main() -> None:
         shift_table = verified("hitran_h2o_pressure_shift", Path(
             inputs.get("hitran_h2o_pressure_shift")
             or root / "data/databases/hitran/h2o_pressure_shift.npz"))
+    # Likewise, one without this used AER's widths.
+    width_scale = float(physics.get("pressure_width_scale", 1.0))
+    widened = {s.strip().upper() for s in physics.get("pressure_width_species", "").split(",")}
 
     # The atlas fits everything at the zenith and carries one angle in the
     # config; an IGRINS night carries the frame's own angle per row, 18.7 to
@@ -173,7 +176,8 @@ def main() -> None:
                     margin_cm1=float(config["margin_cm1"]),
                     line_coupling=(verified("aer_line_coupling", line_root.parent / "lncpl_lines")
                                    if coupled else None),
-                    pressure_shift_table=shift_table if name == "H2O" else None)
+                    pressure_shift_table=shift_table if name == "H2O" else None,
+                    pressure_width_scale=width_scale if name in widened else 1.0)
             except ValueError as exc:
                 if not str(exc).startswith(f"no {name} lines found"):
                     raise

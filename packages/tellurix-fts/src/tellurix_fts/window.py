@@ -128,6 +128,20 @@ class WindowSettings:
     # "aer", LBLRTM's own. AER gives some 0.8-1.1 um lines a shift of the wrong
     # sign, and they sit 100-300 m/s off in niratl; see tellurix.hitran.
     h2o_pressure_shift: str = "hitran"
+    # Multiplies gamma_air and gamma_self of these species' lines. Kitt Peak's
+    # water and O2 lines are broader than AER's widths -- ~5% in every spectrum,
+    # ~11% in niratl -- with a Lorentzian shape the free Gaussian cannot take
+    # (docs/solar_fit_plan.md §4r).
+    pressure_width_scale: float = 1.0
+    pressure_width_species: str = "H2O,O2"
+    # Fit the telluric parameters (columns, velocity, lsf_sigma_kms) on pixels the
+    # solar model calls clean, then everything else with them pinned; see
+    # fit_window. A solar line deeper than clean_solar_depth below the model's
+    # local maximum is masked; past clean_max_masked of the window masked, the
+    # all-pixel fit is kept.
+    telluric_from_clean_pixels: bool = False
+    clean_solar_depth: float = 0.01
+    clean_max_masked: float = 0.6
     negative_tolerance: float = 1.0e-3
     vectorize_layers: bool = True
     mixed_precision: bool = True
@@ -235,6 +249,7 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
     unknown = wanted - set(MOLECULE_IDS)
     if unknown:
         raise ValueError(f"unknown species: {', '.join(sorted(unknown))}")
+    widened = {name.strip().upper() for name in settings.pressure_width_species.split(",")}
     databases, skipped = {}, []
     for species, molecule_id in sorted(MOLECULE_IDS.items()):
         if species not in wanted:
@@ -244,7 +259,8 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
                 paths.line_file(species, molecule_id), species, (settings.v1, settings.v2),
                 margin_cm1=settings.margin_cm1,
                 line_coupling=paths.line_coupling if settings.line_coupling else None,
-                pressure_shift_table=paths.pressure_shift_table(species, settings.h2o_pressure_shift))
+                pressure_shift_table=paths.pressure_shift_table(species, settings.h2o_pressure_shift),
+                pressure_width_scale=(settings.pressure_width_scale if species in widened else 1.0))
         except ValueError as exc:
             if not str(exc).startswith(f"no {species} lines found"):
                 raise
@@ -353,9 +369,43 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
     )
 
 
+def solar_line_mask(arrays, depth: float = 0.01, width_cm1: float = 3.0) -> np.ndarray:
+    """Pixels where a fitted window's solar model dips more than ``depth``.
+
+    The depth is taken below the model's own running maximum over ``width_cm1``,
+    not below the fitted continuum: deep in a water band that continuum does
+    not sit on the solar model's top, and measured against it 90% of a page
+    looked like solar line (ph11675). Returned in the arrays' pixel order.
+    """
+
+    from scipy.ndimage import maximum_filter
+
+    nu = np.asarray(arrays["wavenumber_cm1"])
+    solar = np.asarray(arrays["stellar_only_pixels"]) / np.asarray(arrays["continuum"])
+    order = np.argsort(nu)
+    size = max(int(round(width_cm1 / float(np.median(np.diff(nu[order]))))), 1)
+    top = np.empty_like(solar)
+    top[order] = maximum_filter(solar[order], size, mode="nearest")
+    return solar < (1.0 - depth) * top
+
+
 def fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory: Path,
                base: Path = Path("."), spectrum=None):
     """Fit one window and return its report and its diagnostic arrays.
+
+    With ``telluric_from_clean_pixels`` the window is fitted three times. The
+    first fit, on every pixel, supplies a solar model; the second sees only the
+    pixels that model calls free of solar lines (:func:`solar_line_mask`) and
+    sets the columns, ``velocity_kms`` and ``lsf_sigma_kms``; the third fits
+    every pixel again with those pinned, freeing the continuum and the solar
+    parameters. A wrong solar line otherwise sets the water column: on niratl
+    ph09250 one blend at the page edge took it from 0.13 to 0.21 and
+    over-corrected every water line on the page by up to 7%. Across niratl it
+    put the corrected spectra level with or ahead of the authors' on 48 of 71
+    scorable pages, against 24 (docs/solar_fit_plan.md §4r). The report's
+    ``physics.telluric_from_clean_pixels`` says what was masked and pinned, or
+    why the all-pixel fit was kept; the pinned parameters' ``sigma`` is the
+    second fit's.
 
     With ``line_coupling``, a window that carries coupled lines is fitted twice,
     with coupling and without, and the fit with the lower residual is returned.
@@ -368,6 +418,71 @@ def fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory:
     (:class:`tellurix.NegativeOpacityError`) counts as a loss, with the reason in
     ``line_coupling_refused``.
     """
+
+    if settings.telluric_from_clean_pixels:
+        return _fit_from_clean_pixels(settings, paths, stellar_directory=stellar_directory,
+                                      base=base, spectrum=spectrum)
+    return _fit_with_coupling(settings, paths, stellar_directory=stellar_directory,
+                              base=base, spectrum=spectrum)
+
+
+def _fit_from_clean_pixels(settings: WindowSettings, paths: DataPaths, *, stellar_directory: Path,
+                           base: Path, spectrum):
+    """:func:`fit_window`'s three fits; see its docstring."""
+
+    def run(chosen, data):
+        return _fit_with_coupling(chosen, paths, stellar_directory=stellar_directory,
+                                  base=base, spectrum=data)
+
+    spectrum = read_solar_spectrum(settings.spectrum) if spectrum is None else spectrum
+    plain = replace(settings, telluric_from_clean_pixels=False)
+    report, arrays = run(plain, spectrum)
+    solar_lines = solar_line_mask(arrays, settings.clean_solar_depth)
+    note = {"clean_solar_depth": settings.clean_solar_depth,
+            "masked_fraction": float(solar_lines.mean()), "used": False}
+    if note["masked_fraction"] > settings.clean_max_masked:
+        note["reason"] = f"more than {settings.clean_max_masked:g} of the window is solar line"
+        report["physics"]["telluric_from_clean_pixels"] = note
+        return report, arrays
+
+    nu = np.asarray(arrays["wavenumber_cm1"])
+    order = np.argsort(nu)
+    hidden = np.interp(spectrum.wavenumber_vacuum_cm1, nu[order],
+                       solar_lines[order].astype(float), left=0.0, right=0.0) > 0.0
+    try:
+        clean, clean_arrays = run(plain, replace(spectrum, flux=np.where(hidden, np.nan, spectrum.flux)))
+    except ValueError as exc:
+        # Too little left to set a continuum level, typically.
+        note["reason"] = f"the clean-pixel fit failed: {exc}"
+        report["physics"]["telluric_from_clean_pixels"] = note
+        return report, arrays
+
+    already = {entry.partition("=")[0].strip() for entry in settings.pin}
+    telluric = {name: clean["parameters"][name]
+                for name in (*clean["physics"]["species"], "velocity_kms", "lsf_sigma_kms")
+                if name not in already}
+    # The final fit uses the coupling the clean fit chose, so the pinned
+    # columns describe the same opacity they are applied to.
+    coupled = clean["physics"].get("line_coupling_trial", {}).get("chosen", "coupled") == "coupled"
+    final = replace(plain, pin=(*settings.pin, *(f"{k}={v!r}" for k, v in telluric.items())),
+                    line_coupling=plain.line_coupling and coupled)
+    report, arrays = run(final, spectrum)
+    names = list(np.asarray(arrays["parameter_names"]))
+    sigma = np.array(arrays["sigma"], copy=True)
+    for name in telluric:
+        if name in names:
+            sigma[names.index(name)] = clean_arrays["sigma"][list(clean_arrays["parameter_names"]).index(name)]
+    arrays["sigma"] = sigma
+    note.update(used=True, pinned=telluric,
+                clean_fit_rms=clean["residuals"]["rms"],
+                clean_fit_at_bound=clean["at_bound"])
+    report["physics"]["telluric_from_clean_pixels"] = note
+    return report, arrays
+
+
+def _fit_with_coupling(settings: WindowSettings, paths: DataPaths, *, stellar_directory: Path,
+                       base: Path, spectrum):
+    """One fit, or with ``line_coupling`` the better of two; see :func:`fit_window`."""
 
     def run(chosen):
         return _fit_window(chosen, paths, stellar_directory=stellar_directory,
@@ -586,6 +701,9 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
                 settings.h2o_pressure_shift,
                 getattr(prepared.databases.get("H2O"), "pressure_shift_table", None)),
             "line_coupling": settings.line_coupling,
+            "pressure_width_scale": settings.pressure_width_scale,
+            "pressure_width_species": sorted(name for name, db in prepared.databases.items()
+                                             if db.pressure_width_scale != 1.0),
             "stellar_broadening": broadening,
             # Which species' lines the coupling actually reached, if any.
             "coupled_species": (sorted(name for name, db in prepared.databases.items()

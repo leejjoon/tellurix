@@ -63,7 +63,11 @@ def settings_from(args) -> WindowSettings:
         gaussian_ils=args.gaussian_ils, vectorize_layers=args.vectorize_layers,
         mixed_precision=args.mixed_precision, precompute_opacity=args.precompute_opacity,
         self_broadening=args.self_broadening, layer_chunk_size=args.layer_chunk_size,
-        line_coupling=args.line_coupling, h2o_pressure_shift=args.h2o_pressure_shift)
+        line_coupling=args.line_coupling, h2o_pressure_shift=args.h2o_pressure_shift,
+        pressure_width_scale=args.pressure_width_scale,
+        pressure_width_species=args.pressure_width_species,
+        telluric_from_clean_pixels=args.telluric_from_clean_pixels,
+        clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked)
 
 
 def main() -> None:
@@ -129,6 +133,15 @@ def main() -> None:
                         help="apply AER's first-order line coupling, as LBLRTM does")
     parser.add_argument("--h2o-pressure-shift", choices=("hitran", "aer"), default="hitran",
                         help="whose H2O air pressure shifts: HITRAN's (default) or AER's")
+    parser.add_argument("--pressure-width-scale", type=float, default=1.0,
+                        help="multiply gamma_air and gamma_self of --pressure-width-species")
+    parser.add_argument("--pressure-width-species", default="H2O,O2")
+    parser.add_argument("--telluric-from-clean-pixels", action=argparse.BooleanOptionalAction,
+                        default=False,
+                        help="telluric parameters from pixels clear of solar lines; see "
+                             "tellurix_fts.window.fit_window")
+    parser.add_argument("--clean-solar-depth", type=float, default=0.01)
+    parser.add_argument("--clean-max-masked", type=float, default=0.6)
     parser.add_argument("--layer-chunk-size", type=int, default=0)
     parser.add_argument("--report", type=Path, default=Path("docs/solar_fts_window_fit.json"))
     parser.add_argument("--diagnostic-npz", type=Path,

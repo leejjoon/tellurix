@@ -87,7 +87,10 @@ def main() -> None:
         name = f"{MOLECULE_IDS[species]:02d}_{species}"
         databases[species] = AERLineDatabase(
             line_root / name / name, species, (v1, v2), margin_cm1=grid_spec["margin_cm1"],
-            pressure_shift_table=shift_table if species == "H2O" else None)
+            pressure_shift_table=shift_table if species == "H2O" else None,
+            # A report without the key used AER's widths.
+            pressure_width_scale=(float(physics.get("pressure_width_scale", 1.0))
+                                  if species in physics.get("pressure_width_species", []) else 1.0))
         counted = int(databases[species].nu_lines.size)
         if counted != physics["lines_per_species"][species]:
             raise SystemExit(f"{species}: {counted} lines against the report's "

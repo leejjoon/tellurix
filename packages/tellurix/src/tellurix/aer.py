@@ -266,7 +266,10 @@ class AERLineDatabase:
     MonoRTM and are not used by the LBLRTM configuration validated here.
     ``pressure_shift_table`` names a :class:`tellurix.hitran.PressureShiftTable`
     (``DataPaths.h2o_pressure_shift``) whose air shifts replace AER's for the
-    lines it shares; everything else stays AER's.
+    lines it shares; everything else stays AER's. ``pressure_width_scale``
+    multiplies both pressure-broadening widths (``gamma_air``, ``gamma_self``):
+    Kitt Peak's water and O2 lines are 5-11% broader than AER's widths, with a
+    Lorentzian shape (docs/solar_fit_plan.md §4r).
     """
 
     dbtype = "hitran"
@@ -281,6 +284,7 @@ class AERLineDatabase:
         strength_cutoff: float = 0.0,
         line_coupling: str | Path | None = None,
         pressure_shift_table: str | Path | None = None,
+        pressure_width_scale: float = 1.0,
     ) -> None:
         molecule = molecule.upper()
         if molecule not in AER_MOLECULE_IDS:
@@ -288,6 +292,8 @@ class AERLineDatabase:
         lower, upper = wavenumber_range_cm1
         if not 0.0 < lower < upper or margin_cm1 < 0.0 or strength_cutoff < 0.0:
             raise ValueError("invalid line-selection range, margin, or cutoff")
+        if not pressure_width_scale > 0.0:
+            raise ValueError("pressure_width_scale must be positive")
 
         path = Path(path)
         index = _file_index(path)
@@ -354,8 +360,9 @@ class AERLineDatabase:
         self.line_strength_ref_original = values[:, 2]
         self.logsij0 = jnp.log(self.line_strength_ref_original)
         self.A = values[:, 3]
-        self.gamma_air = values[:, 4]
-        self.gamma_self = values[:, 5]
+        self.pressure_width_scale = float(pressure_width_scale)
+        self.gamma_air = values[:, 4] * self.pressure_width_scale
+        self.gamma_self = values[:, 5] * self.pressure_width_scale
         self.elower = values[:, 6]
         self.n_air = values[:, 7]
         self.delta_air = values[:, 8]

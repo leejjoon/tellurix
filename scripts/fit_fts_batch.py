@@ -209,7 +209,10 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
 
 def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    o2_cia: bool = False, line_coupling: bool = False,
-                   stellar_broadening: bool = False, h2o_pressure_shift: str = "aer") -> dict:
+                   stellar_broadening: bool = False, h2o_pressure_shift: str = "aer",
+                   pressure_width_scale: float = 1.0, pressure_width_species: str = "H2O,O2",
+                   telluric_from_clean_pixels: bool = False,
+                   clean_solar_depth: float = 0.01, clean_max_masked: float = 0.6) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -240,12 +243,29 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         "stellar_broadening": bool(stellar_broadening),
         # Likewise: without it the H2O pressure shifts were AER's.
         "h2o_pressure_shift": h2o_pressure_shift,
+        # Likewise: without these the widths were AER's and every pixel set the
+        # telluric parameters. Each row says whether the clean-pixel fit was used.
+        "pressure_width_scale": float(pressure_width_scale),
+        "pressure_width_species": pressure_width_species,
+        "telluric_from_clean_pixels": bool(telluric_from_clean_pixels),
+        **({"clean_solar_depth": float(clean_solar_depth), "clean_max_masked": float(clean_max_masked)}
+           if telluric_from_clean_pixels else {}),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "fitter": f"{fitter.parent.name}/{fitter.name}",
         "fitter_sha256": hashlib.sha256(fitter.read_bytes()).hexdigest(),
         "tellurix": version("tellurix") if version else None,
     }
+
+
+def physics_of(root: Path, args) -> dict:
+    return physics_record(
+        root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia, args.line_coupling,
+        args.stellar_broadening, args.h2o_pressure_shift,
+        pressure_width_scale=args.pressure_width_scale,
+        pressure_width_species=args.pressure_width_species,
+        telluric_from_clean_pixels=args.telluric_from_clean_pixels,
+        clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked)
 
 
 def scan_species(entry, args, root, profile, airmass: float) -> dict:
@@ -298,6 +318,10 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         accuracy_mode=args.accuracy_mode, correction=None, gaussian_ils=False,
         o2_cia=args.o2_cia, line_coupling=args.line_coupling,
         stellar_broadening=args.stellar_broadening, h2o_pressure_shift=args.h2o_pressure_shift,
+        pressure_width_scale=args.pressure_width_scale,
+        pressure_width_species=args.pressure_width_species,
+        telluric_from_clean_pixels=args.telluric_from_clean_pixels,
+        clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
         vectorize_layers=True, mixed_precision=True,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
         layer_chunk_size=args.layer_chunk_size,
@@ -357,6 +381,7 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         "line_coupling": bool(report["physics"]["line_coupling"]),
         "line_coupling_refused": report["physics"].get("line_coupling_refused"),
         "line_coupling_trial": report["physics"].get("line_coupling_trial"),
+        "telluric_from_clean_pixels": report["physics"].get("telluric_from_clean_pixels"),
         "parameters": parameters,
         "parameter_names": [str(n) for n in arrays["parameter_names"]],
         "at_bound": report["at_bound"],
@@ -420,6 +445,9 @@ def record_row(row, npz_dir: Path, spectrum_sha: str) -> dict:
             "airmass": row["airmass"], "zenith_angle_deg": row["zenith_angle_deg"],
             # A row written before the fallback existed used the run's setting.
             "line_coupling": int(row.get("line_coupling", False)),
+            # Whether the telluric parameters came from the clean pixels; a row
+            # without the key, or one that fell back, fitted them on every pixel.
+            "clean_pixels": int(bool((row.get("telluric_from_clean_pixels") or {}).get("used"))),
             "stellar_broadening_kms": float(parameters.get("stellar_broadening_kms", 0.0)),
             "free_species": "+".join(species),
             "at_bound": "+".join(row["at_bound"]),
@@ -494,6 +522,19 @@ def main() -> None:
                         help="whose H2O air pressure shifts: HITRAN's (default; built by "
                              "`tellurix-download-data hitran-h2o`) or AER's, as LBLRTM uses. AER "
                              "gives some 0.8-1.1 um lines a shift of the wrong sign.")
+    parser.add_argument("--pressure-width-scale", type=float, default=1.0,
+                        help="multiply gamma_air and gamma_self of --pressure-width-species: "
+                             "Kitt Peak's lines are 5-11%% broader than AER's (1.11 for niratl; "
+                             "docs/solar_fit_plan.md §4r). 1.0 reproduces earlier records.")
+    parser.add_argument("--pressure-width-species", default="H2O,O2")
+    parser.add_argument("--telluric-from-clean-pixels", action=argparse.BooleanOptionalAction,
+                        default=False,
+                        help="fit columns, velocity and lsf_sigma_kms on pixels clear of solar "
+                             "lines, then the rest with them pinned (tellurix_fts.window.fit_window)."
+                             " Three fits a window. Off by default so a rerun reproduces earlier "
+                             "records.")
+    parser.add_argument("--clean-solar-depth", type=float, default=0.01)
+    parser.add_argument("--clean-max-masked", type=float, default=0.6)
     parser.add_argument("--accuracy-mode", choices=("mt_ckd", "fast"), default="mt_ckd",
                         help="'fast' drops the water continuum: only for windows past the end "
                              "of the MT_CKD table at 20000 cm-1, and as its own run with its "
@@ -607,9 +648,7 @@ def main() -> None:
             {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
              "spectrum": str(args.spectrum), "spectrum_sha256": spectrum.sha256,
              "profile": str(args.profile),
-             "physics": physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
-                                         args.line_coupling, args.stellar_broadening,
-                                         args.h2o_pressure_shift),
+             "physics": physics_of(root, args),
              "settings": {"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                           "samples_per_resolution": args.samples_per_resolution,
                           "margin_cm1": args.margin_cm1,
@@ -651,9 +690,7 @@ def main() -> None:
         write_record(
             args.record,
             run={"created": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                 **{k: v for k, v in physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
-                                         args.line_coupling, args.stellar_broadening,
-                                         args.h2o_pressure_shift).items()
+                 **{k: v for k, v in physics_of(root, args).items()
                     if k in ("driver", "driver_sha256", "fitter", "fitter_sha256", "tellurix")}},
             config={"window_cm1": args.window_cm1, "minimum_snr": args.minimum_snr,
                     "samples_per_resolution": args.samples_per_resolution,
@@ -663,15 +700,13 @@ def main() -> None:
                     "scan_threshold": args.scan_threshold, "scan_fwhm_cm1": args.scan_fwhm_cm1,
                     "species_threshold": args.species_threshold,
                     "scan_line_budget": args.scan_line_budget, "airmass": airmass},
-            physics=physics_record(root, args.fwhm_cm1, args.accuracy_mode, args.o2_cia,
-                                         args.line_coupling, args.stellar_broadening,
-                                         args.h2o_pressure_shift),
+            physics=physics_of(root, args),
             inputs=input_hashes(root, args, spectrum, species),
             parameter_names=codec.names, species=species, pages=rows,
             continuum_degree=args.continuum_degree,
             key_fields=("file", "window"),
             extra_columns=(("airmass", "f8"), ("zenith_angle_deg", "f8"), ("line_coupling", "i1"),
-                           ("stellar_broadening_kms", "f8")),
+                           ("stellar_broadening_kms", "f8"), ("clean_pixels", "i1")),
         )
         print(f"wrote {args.record} ({args.record.stat().st_size/1e6:.2f} MB)")
 
