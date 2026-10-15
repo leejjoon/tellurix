@@ -669,8 +669,11 @@ def main() -> None:
         from tellurix.fit import _ParameterCodec
 
         species = sorted({s for r in usable for s in r["species"]})
+        # The fit's own layout: with --stellar-broadening every window carries
+        # stellar_broadening_kms, and a codec without it cannot place the row.
         codec = _ParameterCodec(species, args.continuum_degree + 1,
-                                include_stellar_velocity=True)
+                                include_stellar_velocity=True,
+                                include_stellar_broadening=args.stellar_broadening)
         position = {name: index for index, name in enumerate(codec.names)}
         rows = []
         for row in sorted(usable, key=lambda r: r["v1"]):

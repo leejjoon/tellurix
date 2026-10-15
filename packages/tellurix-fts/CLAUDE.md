@@ -140,6 +140,14 @@ R 577,000 and 441,000 (regions 1, 2), not the paper's 676,000 and 698,000.
 windows, AER v3.9's shifts want a scale of ~0.63 and leave lines it gives a positive
 shift 4.6 mK off; HITRAN's want ~0.91 and leave 1.0 mK. Solar runs and records made
 before 2026-10-13 used AER's; their records lack `h2o_pressure_shift`.
+**niratl's lines are 11% broader than AER's, and a solar line can set the water column**
+(§4r, `docs/niratl_correction_score.json`). `--pressure-width-scale 1.11` (H2O, O2; ~1.05
+for the other Kitt Peak files) and `--telluric-from-clean-pixels` (columns, velocity and
+`lsf_sigma_kms` from pixels clear of solar lines, then pinned; three fits a window) took
+niratl from 24 to 47 of 71 pages at or below the authors' own correction
+(`scripts/score_telluric_correction.py`, the yardstick). The refit is in
+`data/corrected/solar/niratl_clean/`, not yet promoted. What stays behind is per-line
+line-list error, mostly in the 0.89 um band.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

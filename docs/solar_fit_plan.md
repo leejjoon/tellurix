@@ -1553,6 +1553,67 @@ want a Gaussian of ~0.6 km/s while the 62%-deep 9257.08 doublet wants ~0.4 and s
 misfits by 1.4%, and the doublet's excess is in observed/solar too. Open: whether the
 instrument profile has a narrower core and broader wings than sinc x one Gaussian.
 
+### 4r. Wider lines, and telluric parameters from the pixels without solar lines
+
+The yardstick here is the authors' own correction: niratl ships a corrected solar
+spectrum, and ours should be as good or better on every page. Ours minus theirs mixes the
+two corrections' errors, so each is scored alone, the same way
+(`scripts/score_telluric_correction.py`): the rms of the corrected spectrum about a local
+mean of unabsorbed pixels, at pixels where the model transmission is below 0.97 and the
+solar model is flat, page interiors only. Production (HITRAN shifts not yet in it) matched
+or beat the authors on 24 of the 71 pages with enough such pixels.
+
+**The lines are broader than AER says, by a Lorentzian.** Sinc-only fits with the H2O and
+O2 widths scaled want 1.11 in niratl (1.12-1.14 in its authors' column), 1.05-1.06 in the
+raw 1983 files `ftsspec_830626_{2,3}` and 1.04-1.05 in Wallace 2011: ~5% in every Kitt Peak
+spectrum, ~6% more in niratl, which combines five. In interferogram space the ratio of
+observed to model -ln T decays linearly to 16 cm (a Lorentzian, ~5.4 mK HWHM), not as a
+Gaussian, and O2's excess is about half water's in absolute terms -- it scales with each
+species' own width, so it is not an instrument kernel. A Lorentzian kernel applied to the
+whole spectrum lost to the width scale in every test (it widens the solar lines too, and
+the authors' column is a ratio of convolved spectra, not a convolved transmission). The
+free Gaussian `lsf_sigma_kms` had been standing in for this, in the wrong shape.
+
+**A solar line set the water column.** On ph09250 a telluric line in the wing of a strong
+solar line at the page's blue edge (9247.5-9247.8 cm-1, 38 pixels) took the column from
+0.13 to 0.21, because the solar model's wing is too shallow there and water was the only
+freedom left to fill it; every water line on the page was then over-corrected, the 9257.08
+doublet by 7%. Pinning velocity, LSF or solar broadening, or raising the continuum degree,
+left it at 0.20-0.22; masking the edge or the solar lines gave 0.13.
+
+**What changed** (both off by default, so earlier records rebuild as they were):
+
+- `pressure_width_scale` (`AERLineDatabase`, `WindowSettings`, `--pressure-width-scale`)
+  multiplies `gamma_air` and `gamma_self` of `pressure_width_species` (H2O, O2). 1.11 for
+  niratl; the scale is per atlas.
+- `telluric_from_clean_pixels` (`--telluric-from-clean-pixels`): `fit_window` fits every
+  pixel for a solar model, refits with pixels more than 1% below that model's own running
+  maximum masked (`solar_line_mask`) to set the columns, velocity and `lsf_sigma_kms`, and
+  fits every pixel again with those pinned. Measuring depth against the fitted continuum
+  instead masked 90% of the Ca II triplet pages and gave nonsense. Past 60% masked the
+  all-pixel fit is kept (ph11700 only). The record's rows say which (`clean_pixels`).
+
+niratl refitted with both, plus `--stellar-broadening` and HITRAN's shifts, into
+`data/corrected/solar/niratl_clean/` (`docs/niratl_correction_score.json`):
+
+| | production | refit | authors |
+|---|---|---|---|
+| telluric pixels (T < 0.97), median of 71 pages | 0.900% | 0.603% | 0.627% |
+| pages at or below the authors | 24 | 47 | |
+| deep pixels (T < 0.7), median of 30 pages | 3.348% | 1.917% | 2.209% |
+| pages at or below the authors | 14 | 24 | |
+
+Better than production on 63 of the 71 pages; ph09250 goes 1.79% -> 0.30% (authors 0.50%).
+Worse by more than 0.1 point on two, ph11950 (0.48 -> 0.64%) and ph11200 (0.80 -> 1.35%),
+where production's column was 0.011 and the refit's 0.143 agrees with its neighbours.
+
+**Still behind the authors by more than 0.2 point: six pages,** and the 0.89 um band holds
+three (ph11175, ph11200, ph11925). There the authors' own column misfits in blends --
++-4% at 11174.0 and 11182.4 -- whose members AER and HITRAN2024 give widths differing by up
+to 40%. HITRAN2024's full parameters halve those two and take 11190.05, identical in both
+lists, from +0.9% to +6.5% by moving the column: per-line errors, the kind the flux atlases
+share (packages/tellurix-fts/CLAUDE.md), not a list to swap. ph10075's weak lines sit in solar-line wings.
+
 ## Open work (as of 2026-10-02)
 
 ### Done 2026-10-05: every solar product regenerated with the O2 collision-induced continuum
