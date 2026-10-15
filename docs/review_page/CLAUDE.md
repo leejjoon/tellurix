@@ -10,7 +10,7 @@ capability. The URLs are in the user's memory, not here.
 
 | page | exporter | bundle |
 |---|---|---|
-| `index.html` (Kitt Peak), `niratl.html`, `fts1983.html` | `export_solar_review.py` (`--shard`), `merge_review_bundle.py` | `data/review*/` |
+| `index.html` (Kitt Peak), `niratl.html`, `niratl_clean.html` (the width-scale, clean-pixel refit, with per-page flatness badges from `docs/niratl_correction_score.json`), `fts1983.html` | `export_solar_review.py` (`--shard`), `merge_review_bundle.py` | `data/review*/` |
 | `igrins.html` -- A0V standards, DCT 2018-12-20 | `export_igrins_review.py --shard I/N`, then `--merge` | `data/review_igrins/` |
 | `igrins_targets.html` -- science corrections, same night | `export_igrins_target_review.py` (numpy only, 30 s) | `data/review_igrins_targets/` |
 | `arcturus.html` -- Arcturus atlas, full-coverage record, 598 page-epochs | `export_arcturus_review.py --shard I/N`, then `--merge` (`--no-species`: total only, numpy) | `data/review_arcturus/` |
@@ -25,8 +25,8 @@ publish is refused; check the chunk count matches, since files left out are kept
 The marks survive a republish -- they live in the page's `db`, keyed by window.
 The solar bundles: `export_solar_review.py --summary ... --npz-dir <the run's output
 directory>` into a raw directory, then `merge_review_bundle.py <raw> --output <pub>`;
-Kitt Peak is `data/review` (raw `data/review_0`), niratl and June 1983 are
-`data/review_{niratl,1983}_pub`. A bundle stays under the 64 MB a publish may
+Kitt Peak is `data/review` (raw `data/review_0`), niratl, its refit and June 1983 are
+`data/review_{niratl,niratl_clean,1983}_pub`. A bundle stays under the 64 MB a publish may
 carry: 36 MB for the A0V page, 33 MB for the targets page, 26.6 MB (20
 chunks) for Arcturus, whose export takes ~22 min as four CPU shards.
 
