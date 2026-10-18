@@ -1783,8 +1783,11 @@ Full runs, one GPU a file, 4.4 h. Against the superseded runs (`full_1983` in
 One real regression: `_2` 11470 (0.89 um band), water x3 and residual +44%, like niratl's
 ph11200.
 
-No authors' correction of the pair exists. The nearest is niratl's (same instrument and
-campaign, other scans, air mass 1.10), shifted onto the pair's solar lines by one velocity per
+No authors' correction of the pair exists. The pair is NSO TR 2014-01's source for the
+telluric atlas over 8600-17300 cm-1: the authors divided #2 by #3 to cancel the Sun, and
+published that atmosphere only as plots. niratl "combines five spectra" of the same June 1983
+campaign, but its observed column is at air mass 1.10, so it is a third observation, neither
+#2 nor #3. The nearest authors' product is therefore niratl's solar column, shifted onto the pair's solar lines by one velocity per
 file (+0.31 and +0.29 km/s, from 115 and 120 windows) and scored at the pair's pixels over
 8905-13565 cm-1: 0.44% (`_2`) and 0.61% (`_3`) against our 0.95% and 1.20% (65 and 66
 windows), with pixel noise only 0.15-0.19% of ours. That mostly measures air mass: the same
@@ -1793,7 +1796,14 @@ Flatness follows optical depth as tau^0.68 in ours; at matched optical depth the
 niratl sits at 0.98x that trend (p16-p84 0.70-1.59, 131 windows), or 15-20% below ours in
 bins of tau (0.56 against 0.68% at 0.05-0.1, 0.81 against 0.94% at 0.1-0.2). So at most a
 small edge for the authors, inside the window-to-window spread, and on niratl's own pixels
-our refit is the flatter (above). Promoted: the old records, window files, transmission files and review bundle are
+our refit is the flatter (above).
+
+**The yardstick the pair does have is itself** (`scripts/check_fts_pair_consistency.py`,
+`docs/june1983_pair_consistency.json`): the same Sun corrected from 5.37 and 3.09 air masses
+should agree. Corrected #2 over corrected #3, aligned on their solar lines (0.03 km/s, from 188
+windows), scored like the flatness score at #2's telluric pixels: median disagreement 0.65% before
+the refit, 0.55% after (0.59 -> 0.48% net of the 0.22% pixel noise), better in 88 of 112 windows.
+An error identical in both cancels, so this is a lower bound on the correction error. Promoted: the old records, window files, transmission files and review bundle are
 in `data/corrected/superseded_pre_widthscale/`.
 
 ### Also open
