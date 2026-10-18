@@ -1594,7 +1594,8 @@ left it at 0.20-0.22; masking the edge or the solar lines gave 0.13.
   all-pixel fit is kept (ph11700 only). The record's rows say which (`clean_pixels`).
 
 niratl refitted with both, plus `--stellar-broadening` and HITRAN's shifts, into
-`data/corrected/solar/niratl_clean/` (`docs/niratl_correction_score.json`):
+`data/corrected/solar/niratl_clean/`, promoted 2026-10-18 to `data/corrected/solar/niratl/`
+(`docs/niratl_correction_score.json`, which names the run paths as they were when scored):
 
 | | production | refit | authors |
 |---|---|---|---|
@@ -1718,6 +1719,20 @@ spectrum moves only at the coupled bands: new over old is 1.00000 at the median,
 -- the overshoot removed; up to +-10% in single pixels at 4966 and 6976. Results archive
 `results-2026-10-11`. niratl and the June 1983 pair were not refitted: no strong CO2
 Q-branch there, and O2 coupling is untested on these data.
+
+### Done 2026-10-18: niratl refitted with wider lines and telluric parameters from clean pixels
+
+The §4r refit, promoted: the old record, products and review bundles are in
+`data/corrected/superseded_pre_widthscale/`. `compare_fts_runs.py --sigma` against the
+old run: the same 164 windows, residual rms median -0.5% (-31% to +14%), no column newly
+at an upper bound (the new bounds are the solar broadening at its 0.05 km/s floor).
+Products re-exported under their usual names: `niratl_corrected.h5` reproduces each fit's
+own corrected spectrum to 3.4e-16, with 85.1% of pixels reliable (85.07% before), and
+`niratl_transmission.h5` round-trips exactly. Results archive `results-2026-10-18`, which
+also carries the never-released `results-2026-10-11` change. The review page is the
+separate `niratl_clean.html`; `niratl.html` still shows the old run. The June 1983 pair
+and files 4 and 5 are not refitted (their width excess is ~1.05, and untested with the
+clean-pixel fit).
 
 ### Also open
 

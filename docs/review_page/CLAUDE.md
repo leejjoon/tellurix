@@ -26,7 +26,9 @@ The marks survive a republish -- they live in the page's `db`, keyed by window.
 The solar bundles: `export_solar_review.py --summary ... --npz-dir <the run's output
 directory>` into a raw directory, then `merge_review_bundle.py <raw> --output <pub>`;
 Kitt Peak is `data/review` (raw `data/review_0`), niratl, its refit and June 1983 are
-`data/review_{niratl,niratl_clean,1983}_pub`. A bundle stays under the 64 MB a publish may
+`data/review_{niratl_clean,1983}_pub`. `niratl.html` shows the run superseded on
+2026-10-18 (its bundle is in `data/corrected/superseded_pre_widthscale/review/`);
+`niratl_clean.html` shows the promoted one. A bundle stays under the 64 MB a publish may
 carry: 36 MB for the A0V page, 33 MB for the targets page, 26.6 MB (20
 chunks) for Arcturus, whose export takes ~22 min as four CPU shards.
 

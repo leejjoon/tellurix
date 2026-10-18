@@ -13,7 +13,7 @@ out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and
 the deep ones (T < 0.7).
 
     uv run python scripts/score_telluric_correction.py \\
-        production=data/corrected/solar/niratl clean=data/corrected/solar/niratl_clean \\
+        production=data/corrected/superseded_pre_widthscale/solar/niratl clean=data/corrected/solar/niratl \\
         --output docs/niratl_correction_score.json
 
 Each RUN is NAME=DIRECTORY holding a fit_fts_batch.py run's window npz files;

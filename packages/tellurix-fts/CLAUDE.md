@@ -146,7 +146,8 @@ for the other Kitt Peak files) and `--telluric-from-clean-pixels` (columns, velo
 `lsf_sigma_kms` from pixels clear of solar lines, then pinned; three fits a window) took
 niratl from 24 to 47 of 71 pages at or below the authors' own correction
 (`scripts/score_telluric_correction.py`, the yardstick). The refit is in
-`data/corrected/solar/niratl_clean/`, not yet promoted. What stays behind is per-line
+`data/corrected/solar/niratl/`, promoted 2026-10-18 (the old run is in
+`data/corrected/superseded_pre_widthscale/`). The 1983 pair and files 4 and 5 are not refitted. What stays behind is per-line
 line-list error, mostly in the 0.89 um band.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
