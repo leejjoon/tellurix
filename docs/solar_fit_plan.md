@@ -1837,6 +1837,33 @@ in `data/corrected/superseded_pre_widthscale/`.
   two flux atlases from different instruments. It caps the species cut, causes the column
   railing, and limits every product. The options and what each would gain are in §4p's
   table -- a decision for the user, not taken. Measured at 0.74-0.93 um only.
+- **Fit the solar spectra jointly: one Sun, one atmosphere per observation** (suggested by
+  the user, 2026-10-18). Every spectrum here is fitted alone against Payne Zero, so each
+  inherits the solar model's per-line error and the telluric parameters absorb what they
+  can of it. Fitted together -- one empirical solar spectrum on a shared grid, and per
+  observation its own columns, velocities, instrument profile and continuum -- the Sun is
+  constrained by every scan and the atmosphere is separated by its air-mass leverage, not
+  by trust in a synthesis. That is the authors' ratio method (NSO TR 2014-01, §2) done as
+  one forward model, and §4p's third option; it addresses both parts of the floor, and the
+  pair consistency test above shows the leverage is there.
+  - **Which data share a Sun.** Only one quantity at a time: June 1983 disc centre (#2 at
+    X 5.37, #3 at 3.09, niratl's observed column at 1.10, over 8900-13600 cm-1 all three)
+    and December 1990 disc centre (#4 at 4.73, #5 at 1.985; photatl is #5 and must not
+    enter twice). The flux atlases (Wallace 2011, IAG) are another Sun. Whether 1983 and
+    1990 can share one is a question about solar-cycle and defocused-patch differences, to
+    test, not assume.
+  - **What it must carry per observation**: the Sun's line-of-sight velocity (it changes
+    between scans), the wavenumber scale, the measured sinc (0.04167 and 0.04102 cm-1 for
+    the 1983 pair, 0.01859 for niratl), the slant and its change over a scan.
+  - **What it cannot separate**: anything the same in every observation. An absorber
+    identical at every air mass, a common continuum error, or a line that is opaque in
+    every scan lands in the solar spectrum or stays unconstrained; with two or three air
+    masses the leverage is real but not large, so the solar spectrum needs a prior --
+    Payne Zero as a starting point and regularizer, not as the answer -- and pixels opaque
+    in all scans stay blank, as in the authors' atlases.
+  - **What to measure first**: on the 1983 trio over one band, whether a joint fit lowers
+    the pair disagreement (`check_fts_pair_consistency.py`) and niratl's flatness against
+    the authors', and how far the recovered solar lines move from Payne Zero's.
 - **Atlases not started**: `fluxatl` (disc-integrated, so the one atlas where Payne Zero's
   quantity is right -- a measure of how much of the floor is the flux/intensity mismatch;
   needs an air-wavelength, uneven-grid reader), `spot1atl` (waits on the solar model),
@@ -1844,8 +1871,8 @@ in `data/corrected/superseded_pre_widthscale/`.
   `data/databases/iag/`, from CDS J/A+A/587/A65; `fit_atlas_o2.py` reads it). `telluric_mid_ir` is not a target (§"What the atlases' own
   documentation says" in `solar_atlases.md`).
 - **The sibling project's handoff note**, `differentiable_stellar_spectroscopy/
-  docs/solar_telluric_handoff.md`, carries the regenerated numbers (2026-10-05) and is
-  still deliberately uncommitted there.
+  docs/solar_telluric_handoff.md`, carries the 2026-10-18 numbers and was committed there
+  that day (`ae48ad2`, not pushed).
 - **Untracked experiment directories** under `data/corrected/solar/` (`*_pilot`,
   `photatl_x1985`, `photatl_nooffset`, `niratl_cut2e-3`, `cia_test_*`): their numbers are
   in §4j-§4o; delete when no longer wanted. Likewise `data/corrected/superseded_pre_o2cia/`
