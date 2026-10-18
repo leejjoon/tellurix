@@ -141,8 +141,9 @@ windows, AER v3.9's shifts want a scale of ~0.63 and leave lines it gives a posi
 shift 4.6 mK off; HITRAN's want ~0.91 and leave 1.0 mK. Solar runs and records made
 before 2026-10-13 used AER's; their records lack `h2o_pressure_shift`.
 **niratl's lines are 11% broader than AER's, and a solar line can set the water column**
-(§4r, `docs/niratl_correction_score.json`). `--pressure-width-scale 1.11` (H2O, O2; ~1.05
-for the other Kitt Peak files) and `--telluric-from-clean-pixels` (columns, velocity and
+(§4r, `docs/niratl_correction_score.json`). `--pressure-width-scale 1.11` (H2O, O2; 1.06
+for the 1983 pair, **1.00 for the 1990 files**, where any widening is worse --
+`docs/kitt_peak_clean_trial.json`) and `--telluric-from-clean-pixels` (columns, velocity and
 `lsf_sigma_kms` from pixels clear of solar lines, then pinned; three fits a window) took
 niratl from 24 to 47 of 71 pages at or below the authors' own correction
 (`scripts/score_telluric_correction.py`, the yardstick). The refit is in

@@ -1734,6 +1734,35 @@ separate `niratl_clean.html`; `niratl.html` still shows the old run. The June 19
 and files 4 and 5 are not refitted (their width excess is ~1.05, and untested with the
 clean-pixel fit).
 
+### The other Kitt Peak files: a sampled trial, 2026-10-18
+
+The niratl recipe (clean-pixel telluric fit, HITRAN shifts, `--stellar-broadening`; line
+coupling kept on files 4 and 5) on every 15th window of the 1983 pair and every 10th of
+the 1990 files, at several width scales, scored by `score_telluric_correction.py
+--relative-transmission` against the canonical runs (`docs/kitt_peak_clean_trial.json`).
+The flag is needed because at air mass 2-5 the continua keep T below 0.995 even between
+lines, which left most windows without reference pixels. File 5 is also scored against
+photatl, which is the authors' correction of the same spectrum. Median flatness at
+telluric pixels clear of solar lines:
+
+| file | windows | old | x1.00 | x1.05/1.06 | x1.10 | authors |
+|---|---:|---:|---:|---:|---:|---:|
+| `830626_2` | 6 | 0.99% | 0.73% | 0.71% (1.06) | | |
+| `830626_3` | 8 | 1.06% | 0.93% | 0.95% (1.06) | | |
+| file 4 | 12 | 3.04% | 2.74% | 3.27% | 3.94% | |
+| file 5 | 14 | 0.815% | 0.804% | 0.888% | 0.982% | 1.006% |
+
+- **The 1983 pair gains**, mostly from the clean-pixel fit and the shifts; x1.06 wins the
+  deep lines in both (6.6 -> 4.8%, 11.4 -> 8.8%) and agrees with the sinc-only scans, so
+  the pair is refitted at x1.06.
+- **The 1990 files want no widening**: every step up is worse in both. The excess is
+  the 1983 observations', not Kitt Peak's. At x1.00 the clean-pixel fit mostly ties, with
+  local gains (file 4 5686: 5.9 -> 2.6%; file 5 7756: 0.45 -> 0.25%) and losses (file 4
+  3226, 8986); solar lines are sparser in the infrared and pull the columns less. File
+  5's canonical fit is already flatter than photatl's at the median (8 of 14 windows).
+  CO columns move 100-260% in the 2.3 um windows, where solar CO overlaps the telluric
+  lines and none was scored; check those before any 1990 refit. The 1990 files are left.
+
 ### Also open
 
 - **The O2 excess: closed 2026-10-05, cause inside the 1983 pair not identified** (§4n):

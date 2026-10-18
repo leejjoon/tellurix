@@ -1,0 +1,764 @@
+{
+ "about": "Trial of the niratl recipe (telluric parameters from solar-clean pixels, HITRAN H2O shifts, solar broadening; line coupling kept on files 4 and 5) on sampled windows of the other Kitt Peak files, at several pressure-width scales, 2026-10-18. Windows: every 15th (1983 pair), every 10th (1990 files). 'old' is the canonical run. Written by scripts/score_telluric_correction.py --relative-transmission; file 5 is also scored against photatl, the authors' correction of the same spectrum.",
+ "files": {
+  "ftsspec_830626_2": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "ftsspec_830626_2",
+    "authors": "none",
+    "relative_transmission": true
+   },
+   "runs": {
+    "old": "data/corrected/solar",
+    "w1.00": "data/corrected/solar/trial_clean/ftsspec_830626_2_w1.00",
+    "w1.06": "data/corrected/solar/trial_clean/ftsspec_830626_2_w1.06"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 6,
+     "median_percent": {
+      "old": 0.987408923441143,
+      "w1.00": 0.7340557781599109,
+      "w1.06": 0.7094470781332773
+     },
+     "pages_flatter_than_old": {
+      "w1.00": 5,
+      "w1.06": 5
+     }
+    },
+    "deep": {
+     "pages": 1,
+     "median_percent": {
+      "old": 6.592584448929499,
+      "w1.00": 5.189090965969913,
+      "w1.06": 4.848911615154507
+     },
+     "pages_flatter_than_old": {
+      "w1.00": 1,
+      "w1.06": 1
+     }
+    }
+   },
+   "pages": {
+    "ftsspec_830626_2_11230": {
+     "telluric": {
+      "pixels": 67,
+      "old": 0.7742330811898883,
+      "w1.00": 0.37620830074165473,
+      "w1.06": 0.3596754835086629
+     }
+    },
+    "ftsspec_830626_2_12580": {
+     "telluric": {
+      "pixels": 45,
+      "old": 1.1018193083505663,
+      "w1.00": 0.9925536412372229,
+      "w1.06": 1.108826557750217
+     }
+    },
+    "ftsspec_830626_2_13480": {
+     "telluric": {
+      "pixels": 51,
+      "old": 0.8729985385317197,
+      "w1.00": 0.42703879513203596,
+      "w1.06": 0.4203736540994588
+     }
+    },
+    "ftsspec_830626_2_14380": {
+     "telluric": {
+      "pixels": 282,
+      "old": 3.5806861218345065,
+      "w1.00": 2.81849935478749,
+      "w1.06": 2.640204647746146
+     },
+     "deep": {
+      "pixels": 79,
+      "old": 6.592584448929499,
+      "w1.00": 5.189090965969913,
+      "w1.06": 4.848911615154507
+     }
+    },
+    "ftsspec_830626_2_17530": {
+     "telluric": {
+      "pixels": 70,
+      "old": 2.127982715587218,
+      "w1.00": 0.9488327301759586,
+      "w1.06": 0.9728334676218151
+     }
+    },
+    "ftsspec_830626_2_9880": {
+     "telluric": {
+      "pixels": 87,
+      "old": 0.4914587979393991,
+      "w1.00": 0.519278826143863,
+      "w1.06": 0.44606068864473947
+     }
+    }
+   }
+  },
+  "ftsspec_830626_3": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "ftsspec_830626_3",
+    "authors": "none",
+    "relative_transmission": true
+   },
+   "runs": {
+    "old": "data/corrected/solar",
+    "w1.00": "data/corrected/solar/trial_clean/ftsspec_830626_3_w1.00",
+    "w1.06": "data/corrected/solar/trial_clean/ftsspec_830626_3_w1.06"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 8,
+     "median_percent": {
+      "old": 1.0629722170718907,
+      "w1.00": 0.9322114409392579,
+      "w1.06": 0.9456794826408063
+     },
+     "pages_flatter_than_old": {
+      "w1.00": 7,
+      "w1.06": 5
+     }
+    },
+    "deep": {
+     "pages": 3,
+     "median_percent": {
+      "old": 11.44363105160468,
+      "w1.00": 9.542724737646113,
+      "w1.06": 8.82624419840305
+     },
+     "pages_flatter_than_old": {
+      "w1.00": 3,
+      "w1.06": 2
+     }
+    }
+   },
+   "pages": {
+    "ftsspec_830626_3_12610": {
+     "telluric": {
+      "pixels": 54,
+      "old": 1.155017780470894,
+      "w1.00": 0.8791303289324055,
+      "w1.06": 0.8899190544862643
+     },
+     "deep": {
+      "pixels": 7,
+      "old": 2.869959944011875,
+      "w1.00": 1.9406460874908091,
+      "w1.06": 2.060529801762987
+     }
+    },
+    "ftsspec_830626_3_13510": {
+     "telluric": {
+      "pixels": 71,
+      "old": 0.7000599564183663,
+      "w1.00": 0.6899810618039496,
+      "w1.06": 0.7125230899680585
+     }
+    },
+    "ftsspec_830626_3_13960": {
+     "telluric": {
+      "pixels": 110,
+      "old": 0.9709266536728874,
+      "w1.00": 0.9852925529461104,
+      "w1.06": 1.0014399107953482
+     }
+    },
+    "ftsspec_830626_3_14410": {
+     "telluric": {
+      "pixels": 269,
+      "old": 10.405430609488942,
+      "w1.00": 10.313675872690462,
+      "w1.06": 11.359304307981951
+     },
+     "deep": {
+      "pixels": 35,
+      "old": 28.68224350626951,
+      "w1.00": 28.441502482587588,
+      "w1.06": 31.316462207519024
+     }
+    },
+    "ftsspec_830626_3_15310": {
+     "telluric": {
+      "pixels": 36,
+      "old": 0.5872705055804599,
+      "w1.00": 0.4455571489560303,
+      "w1.06": 0.41831792170073223
+     }
+    },
+    "ftsspec_830626_3_16660": {
+     "telluric": {
+      "pixels": 42,
+      "old": 1.931677535010349,
+      "w1.00": 1.3830329013118867,
+      "w1.06": 1.3896711846533478
+     }
+    },
+    "ftsspec_830626_3_17560": {
+     "telluric": {
+      "pixels": 54,
+      "old": 0.7593094060212573,
+      "w1.00": 0.5236023318178893,
+      "w1.06": 0.5205727171928196
+     }
+    },
+    "ftsspec_830626_3_9010": {
+     "telluric": {
+      "pixels": 637,
+      "old": 5.532654913780957,
+      "w1.00": 4.627794051856684,
+      "w1.06": 4.299770848624683
+     },
+     "deep": {
+      "pixels": 143,
+      "old": 11.44363105160468,
+      "w1.00": 9.542724737646113,
+      "w1.06": 8.82624419840305
+     }
+    }
+   }
+  },
+  "ftsspec_901218_4": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "ftsspec_901218_4",
+    "authors": "none",
+    "relative_transmission": true
+   },
+   "runs": {
+    "old": "data/corrected/solar",
+    "w1.00": "data/corrected/solar/trial_clean/ftsspec_901218_4_w1.00",
+    "w1.05": "data/corrected/solar/trial_clean/ftsspec_901218_4_w1.05",
+    "w1.10": "data/corrected/solar/trial_clean/ftsspec_901218_4_w1.10"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 12,
+     "median_percent": {
+      "old": 3.0391833110503716,
+      "w1.00": 2.7363661967425537,
+      "w1.05": 3.270996054314793,
+      "w1.10": 3.9407635178503915
+     },
+     "pages_flatter_than_old": {
+      "w1.00": 10,
+      "w1.05": 3,
+      "w1.10": 4
+     }
+    },
+    "deep": {
+     "pages": 11,
+     "median_percent": {
+      "old": 6.315484376327787,
+      "w1.00": 5.585332775744825,
+      "w1.05": 7.086568198604843,
+      "w1.10": 8.673847066306728
+     },
+     "pages_flatter_than_old": {
+      "w1.00": 7,
+      "w1.05": 3,
+      "w1.10": 4
+     }
+    }
+   },
+   "pages": {
+    "ftsspec_901218_4_2626": {
+     "telluric": {
+      "pixels": 1342,
+      "old": 1.0685458035188606,
+      "w1.00": 1.0676442498221121,
+      "w1.05": 1.3080769456970474,
+      "w1.10": 1.5732098632084932
+     },
+     "deep": {
+      "pixels": 129,
+      "old": 2.510987350698529,
+      "w1.00": 2.511908408605877,
+      "w1.05": 3.1780758026533915,
+      "w1.10": 3.883339475480802
+     }
+    },
+    "ftsspec_901218_4_3226": {
+     "telluric": {
+      "pixels": 2139,
+      "old": 5.963499206288368,
+      "w1.00": 6.2152335348365275,
+      "w1.05": 7.283961772599964,
+      "w1.10": 8.521738442470577
+     },
+     "deep": {
+      "pixels": 1481,
+      "old": 7.154088856258413,
+      "w1.00": 7.456943021731766,
+      "w1.05": 8.741352475967105,
+      "w1.10": 10.22759207608462
+     }
+    },
+    "ftsspec_901218_4_4156": {
+     "telluric": {
+      "pixels": 1600,
+      "old": 2.8713734450144552,
+      "w1.00": 2.8664888622465328,
+      "w1.05": 3.5359734269989467,
+      "w1.10": 4.1706242284438995
+     },
+     "deep": {
+      "pixels": 365,
+      "old": 5.585802351812811,
+      "w1.00": 5.585332775744825,
+      "w1.05": 7.086568198604843,
+      "w1.10": 8.457576730391642
+     }
+    },
+    "ftsspec_901218_4_4456": {
+     "telluric": {
+      "pixels": 1577,
+      "old": 1.508543704848153,
+      "w1.00": 1.4749650249753525,
+      "w1.05": 1.487203350528178,
+      "w1.10": 1.4997409982358483
+     },
+     "deep": {
+      "pixels": 184,
+      "old": 3.0892493565222803,
+      "w1.00": 3.0052438281581577,
+      "w1.05": 3.0053165286263015,
+      "w1.10": 3.005933199014368
+     }
+    },
+    "ftsspec_901218_4_4756": {
+     "telluric": {
+      "pixels": 1418,
+      "old": 0.6370979883487906,
+      "w1.00": 0.63218965172524,
+      "w1.05": 0.8829003290424126,
+      "w1.10": 1.1391311879997057
+     },
+     "deep": {
+      "pixels": 152,
+      "old": 1.522946407777637,
+      "w1.00": 1.4984265037612818,
+      "w1.05": 2.152579815786424,
+      "w1.10": 2.7968533148779993
+     }
+    },
+    "ftsspec_901218_4_5686": {
+     "telluric": {
+      "pixels": 487,
+      "old": 5.845520296724621,
+      "w1.00": 2.5649668909441843,
+      "w1.05": 3.089911990107058,
+      "w1.10": 3.809797109103214
+     },
+     "deep": {
+      "pixels": 82,
+      "old": 13.819571375616126,
+      "w1.00": 5.293930387768474,
+      "w1.05": 6.7637251987465365,
+      "w1.10": 8.673847066306728
+     }
+    },
+    "ftsspec_901218_4_5986": {
+     "telluric": {
+      "pixels": 308,
+      "old": 3.2069931770862876,
+      "w1.00": 3.169560746486052,
+      "w1.05": 3.1774749263664614,
+      "w1.10": 3.184221750666387
+     },
+     "deep": {
+      "pixels": 74,
+      "old": 6.315484376327787,
+      "w1.00": 6.271075202372758,
+      "w1.05": 6.287345903652754,
+      "w1.10": 6.300616368488603
+     }
+    },
+    "ftsspec_901218_4_7486": {
+     "telluric": {
+      "pixels": 2017,
+      "old": 3.561344172690638,
+      "w1.00": 3.5435169861502733,
+      "w1.05": 5.295141768816209,
+      "w1.10": 6.915089884400205
+     },
+     "deep": {
+      "pixels": 814,
+      "old": 5.542843256105083,
+      "w1.00": 5.513047662728773,
+      "w1.05": 8.257992258138703,
+      "w1.10": 10.785451667364407
+     }
+    },
+    "ftsspec_901218_4_8086": {
+     "telluric": {
+      "pixels": 99,
+      "old": 1.5097151706294956,
+      "w1.00": 1.4212977764912436,
+      "w1.05": 1.6212372924924061,
+      "w1.10": 1.8164671532913492
+     }
+    },
+    "ftsspec_901218_4_8386": {
+     "telluric": {
+      "pixels": 722,
+      "old": 2.6168232376187635,
+      "w1.00": 2.6062435312385746,
+      "w1.05": 3.364517182263125,
+      "w1.10": 4.071729926597569
+     },
+     "deep": {
+      "pixels": 91,
+      "old": 6.871419213264994,
+      "w1.00": 6.890187492170926,
+      "w1.05": 8.902880742850002,
+      "w1.10": 10.751089244958962
+     }
+    },
+    "ftsspec_901218_4_8686": {
+     "telluric": {
+      "pixels": 1639,
+      "old": 6.172487682775217,
+      "w1.00": 6.171284281968746,
+      "w1.05": 6.9726956309022885,
+      "w1.10": 7.801375754899496
+     },
+     "deep": {
+      "pixels": 491,
+      "old": 11.047919129228609,
+      "w1.00": 11.046237048199716,
+      "w1.05": 12.50410307299696,
+      "w1.10": 13.99930059354271
+     }
+    },
+    "ftsspec_901218_4_8986": {
+     "telluric": {
+      "pixels": 1310,
+      "old": 18.423927993799005,
+      "w1.00": 19.822949480998105,
+      "w1.05": 18.468155520876508,
+      "w1.10": 17.424819207550208
+     },
+     "deep": {
+      "pixels": 270,
+      "old": 40.24614054060089,
+      "w1.00": 43.38218109083278,
+      "w1.05": 40.35829014768376,
+      "w1.10": 38.01187243354496
+     }
+    }
+   }
+  },
+  "ftsspec_901218_5": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "ftsspec_901218_5",
+    "authors": "photatl",
+    "relative_transmission": true
+   },
+   "runs": {
+    "old": "data/corrected/solar",
+    "w1.00": "data/corrected/solar/trial_clean/ftsspec_901218_5_w1.00",
+    "w1.05": "data/corrected/solar/trial_clean/ftsspec_901218_5_w1.05",
+    "w1.10": "data/corrected/solar/trial_clean/ftsspec_901218_5_w1.10"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 14,
+     "median_percent": {
+      "old": 0.8151115253341721,
+      "w1.00": 0.8037543135930167,
+      "w1.05": 0.8883117960357361,
+      "w1.10": 0.9815348486796166,
+      "authors": 1.0058568752262094
+     },
+     "pages_flatter_than_old": {
+      "w1.00": 11,
+      "w1.05": 5,
+      "w1.10": 1,
+      "authors": 6
+     },
+     "pages_at_or_below_authors": {
+      "old": 8,
+      "w1.00": 9,
+      "w1.05": 7,
+      "w1.10": 6
+     },
+     "pages_worse_than_authors_by_0p2": {
+      "old": 3,
+      "w1.00": 2,
+      "w1.05": 3,
+      "w1.10": 5
+     }
+    },
+    "deep": {
+     "pages": 12,
+     "median_percent": {
+      "old": 1.291683612629348,
+      "w1.00": 1.307590816488728,
+      "w1.05": 1.4482356982371765,
+      "w1.10": 2.039650012932556,
+      "authors": 1.4879964045355432
+     },
+     "pages_flatter_than_old": {
+      "w1.00": 7,
+      "w1.05": 2,
+      "w1.10": 1,
+      "authors": 5
+     },
+     "pages_at_or_below_authors": {
+      "old": 7,
+      "w1.00": 7,
+      "w1.05": 5,
+      "w1.10": 5
+     },
+     "pages_worse_than_authors_by_0p2": {
+      "old": 4,
+      "w1.00": 4,
+      "w1.05": 3,
+      "w1.10": 6
+     }
+    }
+   },
+   "pages": {
+    "ftsspec_901218_5_2626": {
+     "telluric": {
+      "pixels": 811,
+      "old": 0.45647954172546057,
+      "w1.00": 0.45676816441055257,
+      "w1.05": 0.5619639519150806,
+      "w1.10": 0.7111210277516339,
+      "authors": 0.6947953014661344
+     },
+     "deep": {
+      "pixels": 12,
+      "old": 0.8128633541501216,
+      "w1.00": 0.8120396311355469,
+      "w1.05": 1.419532629202552,
+      "w1.10": 2.086225489894464,
+      "authors": 1.3820872175445575
+     }
+    },
+    "ftsspec_901218_5_2926": {
+     "telluric": {
+      "pixels": 1233,
+      "old": 0.9144365818183448,
+      "w1.00": 0.9133484569256823,
+      "w1.05": 0.9576579965870118,
+      "w1.10": 1.0429215418977047,
+      "authors": 2.1616420519739274
+     },
+     "deep": {
+      "pixels": 30,
+      "old": 2.2081129810541276,
+      "w1.00": 2.268710790316085,
+      "w1.05": 2.7133311551000023,
+      "w1.10": 3.2354019335482236,
+      "authors": 1.5939055915265288
+     }
+    },
+    "ftsspec_901218_5_3226": {
+     "telluric": {
+      "pixels": 1435,
+      "old": 0.7533209590162188,
+      "w1.00": 0.7562493265046378,
+      "w1.05": 0.9636472012501855,
+      "w1.10": 1.2592116556939923,
+      "authors": 1.8346831165732953
+     },
+     "deep": {
+      "pixels": 449,
+      "old": 1.0962498182234837,
+      "w1.00": 1.0992259085450065,
+      "w1.05": 1.476938767271801,
+      "w1.10": 1.9930745359706479,
+      "authors": 2.2973816855215166
+     }
+    },
+    "ftsspec_901218_5_4156": {
+     "telluric": {
+      "pixels": 1093,
+      "old": 0.8769020916521254,
+      "w1.00": 0.8512593006813958,
+      "w1.05": 0.8189655954844605,
+      "w1.10": 0.883886918388544,
+      "authors": 0.5945043385521358
+     },
+     "deep": {
+      "pixels": 55,
+      "old": 1.4871174070352127,
+      "w1.00": 1.3124686803337127,
+      "w1.05": 1.2513668105050824,
+      "w1.10": 1.6397578734646427,
+      "authors": 1.0814733127802412
+     }
+    },
+    "ftsspec_901218_5_4456": {
+     "telluric": {
+      "pixels": 901,
+      "old": 0.7242512020963978,
+      "w1.00": 0.7068624688057271,
+      "w1.05": 0.7192243173512876,
+      "w1.10": 0.7317261518472504,
+      "authors": 0.4706937766899736
+     }
+    },
+    "ftsspec_901218_5_4756": {
+     "telluric": {
+      "pixels": 817,
+      "old": 0.2730178460587794,
+      "w1.00": 0.2695895364456099,
+      "w1.05": 0.3567950245014587,
+      "w1.10": 0.4822965950925682,
+      "authors": 0.3094125312366056
+     },
+     "deep": {
+      "pixels": 7,
+      "old": 0.6795974798913788,
+      "w1.00": 0.6473334776459543,
+      "w1.05": 1.2811263546631413,
+      "w1.10": 1.8978346758038869,
+      "authors": 1.2244437828598556
+     }
+    },
+    "ftsspec_901218_5_5056": {
+     "telluric": {
+      "pixels": 1415,
+      "old": 0.6343544809377446,
+      "w1.00": 0.627674209002158,
+      "w1.05": 0.7218032356429988,
+      "w1.10": 0.9201481554615285,
+      "authors": 0.5674627759196501
+     },
+     "deep": {
+      "pixels": 233,
+      "old": 0.8364057333581272,
+      "w1.00": 0.7993668876729495,
+      "w1.05": 1.1829202533148233,
+      "w1.10": 1.702659405859027,
+      "authors": 0.6972748264317228
+     }
+    },
+    "ftsspec_901218_5_5656": {
+     "telluric": {
+      "pixels": 396,
+      "old": 1.8978323015884417,
+      "w1.00": 1.7521282710477353,
+      "w1.05": 1.813111128474619,
+      "w1.10": 1.9013148853922974,
+      "authors": 1.7785896835830792
+     },
+     "deep": {
+      "pixels": 12,
+      "old": 1.0895374851782946,
+      "w1.00": 1.3027129526437433,
+      "w1.05": 0.8018704953263796,
+      "w1.10": 0.5384630488841728,
+      "authors": 0.7226737750134324
+     }
+    },
+    "ftsspec_901218_5_6856": {
+     "telluric": {
+      "pixels": 949,
+      "old": 1.1009216574305853,
+      "w1.00": 1.0370529767605927,
+      "w1.05": 1.2031319596708618,
+      "w1.10": 1.4793872355687898,
+      "authors": 13.468204192017657
+     },
+     "deep": {
+      "pixels": 122,
+      "old": 1.583438145420528,
+      "w1.00": 1.4535349052155544,
+      "w1.05": 2.114072057858446,
+      "w1.10": 2.9388714801904907,
+      "authors": 15.427474257879911
+     }
+    },
+    "ftsspec_901218_5_7456": {
+     "telluric": {
+      "pixels": 1060,
+      "old": 0.42960286605719444,
+      "w1.00": 0.43128896644958425,
+      "w1.05": 0.5174522357852495,
+      "w1.10": 0.73030434407258,
+      "authors": 1.1212429027088058
+     },
+     "deep": {
+      "pixels": 29,
+      "old": 0.554043218817311,
+      "w1.00": 0.6706969248392428,
+      "w1.05": 0.857858754388933,
+      "w1.10": 1.421370357107704,
+      "authors": 1.640469895556294
+     }
+    },
+    "ftsspec_901218_5_7756": {
+     "telluric": {
+      "pixels": 58,
+      "old": 0.44866241043344846,
+      "w1.00": 0.2517999754152896,
+      "w1.05": 0.3159244871695374,
+      "w1.10": 0.43648659976258136,
+      "authors": 0.23483488673626862
+     }
+    },
+    "ftsspec_901218_5_8356": {
+     "telluric": {
+      "pixels": 556,
+      "old": 1.0612206941483173,
+      "w1.00": 1.0074353367124804,
+      "w1.05": 1.242472890570065,
+      "w1.10": 1.519134852661664,
+      "authors": 0.8904708477436132
+     },
+     "deep": {
+      "pixels": 10,
+      "old": 1.8995077251440058,
+      "w1.00": 1.9476911183344876,
+      "w1.05": 2.9760572554585796,
+      "w1.10": 3.96738898864173,
+      "authors": 1.071662961424278
+     }
+    },
+    "ftsspec_901218_5_8656": {
+     "telluric": {
+      "pixels": 1339,
+      "old": 1.4260431973790102,
+      "w1.00": 1.330976665882857,
+      "w1.05": 1.4112875805758343,
+      "w1.10": 1.5550027080591766,
+      "authors": 2.696325876298371
+     },
+     "deep": {
+      "pixels": 45,
+      "old": 1.8061055767940395,
+      "w1.00": 1.5921481806164022,
+      "w1.05": 2.452389832260554,
+      "w1.10": 3.361840560214406,
+      "authors": 3.252792930767845
+     }
+    },
+    "ftsspec_901218_5_8956": {
+     "telluric": {
+      "pixels": 1107,
+      "old": 1.6461681951727167,
+      "w1.00": 1.5750794875803906,
+      "w1.05": 1.66120064296003,
+      "w1.10": 1.809276479875686,
+      "authors": 5.556525280114824
+     },
+     "deep": {
+      "pixels": 42,
+      "old": 2.228782196166057,
+      "w1.00": 2.191633683266416,
+      "w1.05": 2.5582854235742247,
+      "w1.10": 2.9928383631910753,
+      "authors": 7.9081323609569525
+     }
+    }
+   }
+  }
+ }
+}
