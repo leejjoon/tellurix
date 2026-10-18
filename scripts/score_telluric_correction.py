@@ -9,7 +9,9 @@ rms of the corrected spectrum about a running mean of nearby pixels with
 neither solar nor telluric absorption. A perfect correction leaves noise there.
 The first and last 50 pixels are not scored: an edge pixel is inside the
 neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges
-out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and
+out should not be judged on them. Nor are pixels below a transmission of 0.15, which
+the corrected products blank: dividing by a saturated core turns a percent of model
+error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and
 the deep ones (T < 0.7).
 
     uv run python scripts/score_telluric_correction.py \\
@@ -41,6 +43,7 @@ import numpy as np
 ATLASES = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso")
 BINS = {"telluric": 0.97, "deep": 0.7}
 EDGE_PIXELS = 50
+MIN_TRANSMISSION = 0.15
 MEAN_PIXELS = 51
 
 
@@ -111,7 +114,7 @@ def main() -> None:
             continue
         nu, flat, solar, transmission, mask = corrected(path)
         series = {name: np.interp(nu, *corrected(found[0])[:2]) for name, found in others.items()}
-        clean = mask & (solar > 0.995)
+        clean = mask & (solar > 0.995) & (transmission >= MIN_TRANSMISSION)
         authors = None
         if args.authors == "niratl":
             niratl = read_niratl_page(args.niratl / page)

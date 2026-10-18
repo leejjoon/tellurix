@@ -1595,13 +1595,13 @@ left it at 0.20-0.22; masking the edge or the solar lines gave 0.13.
 
 niratl refitted with both, plus `--stellar-broadening` and HITRAN's shifts, into
 `data/corrected/solar/niratl_clean/`, promoted 2026-10-18 to `data/corrected/solar/niratl/`
-(`docs/niratl_correction_score.json`, which names the run paths as they were when scored):
+(`docs/niratl_correction_score.json`; pixels below T 0.15, which the products blank, are not scored):
 
 | | production | refit | authors |
 |---|---|---|---|
-| telluric pixels (T < 0.97), median of 71 pages | 0.900% | 0.603% | 0.627% |
-| pages at or below the authors | 24 | 47 | |
-| deep pixels (T < 0.7), median of 30 pages | 3.348% | 1.917% | 2.209% |
+| telluric pixels (T < 0.97), median of 71 pages | 0.896% | 0.583% | 0.627% |
+| pages at or below the authors | 24 | 46 | |
+| deep pixels (T < 0.7), median of 30 pages | 2.583% | 1.512% | 1.914% |
 | pages at or below the authors | 14 | 24 | |
 
 Better than production on 63 of the 71 pages; ph09250 goes 1.79% -> 0.30% (authors 0.50%).
@@ -1741,7 +1741,9 @@ coupling kept on files 4 and 5) on every 15th window of the 1983 pair and every 
 the 1990 files, at several width scales, scored by `score_telluric_correction.py
 --relative-transmission` against the canonical runs (`docs/kitt_peak_clean_trial.json`).
 The flag is needed because at air mass 2-5 the continua keep T below 0.995 even between
-lines, which left most windows without reference pixels. File 5 is also scored against
+lines, which left most windows without reference pixels. Pixels below T 0.15 are not
+scored: the products blank them, and at air mass 5.4 a saturated core's spike once made
+one window (`_2` 14410) look 45 points worse when the fits were alike. File 5 is also scored against
 photatl, which is the authors' correction of the same spectrum. Median flatness at
 telluric pixels clear of solar lines:
 
@@ -1749,19 +1751,38 @@ telluric pixels clear of solar lines:
 |---|---:|---:|---:|---:|---:|---:|
 | `830626_2` | 6 | 0.99% | 0.73% | 0.71% (1.06) | | |
 | `830626_3` | 8 | 1.06% | 0.93% | 0.95% (1.06) | | |
-| file 4 | 12 | 3.04% | 2.74% | 3.27% | 3.94% | |
+| file 4 | 12 | 1.96% | 1.60% | 1.64% | 1.82% | |
 | file 5 | 14 | 0.815% | 0.804% | 0.888% | 0.982% | 1.006% |
 
-- **The 1983 pair gains**, mostly from the clean-pixel fit and the shifts; x1.06 wins the
-  deep lines in both (6.6 -> 4.8%, 11.4 -> 8.8%) and agrees with the sinc-only scans, so
-  the pair is refitted at x1.06.
-- **The 1990 files want no widening**: every step up is worse in both. The excess is
-  the 1983 observations', not Kitt Peak's. At x1.00 the clean-pixel fit mostly ties, with
-  local gains (file 4 5686: 5.9 -> 2.6%; file 5 7756: 0.45 -> 0.25%) and losses (file 4
-  3226, 8986); solar lines are sparser in the infrared and pull the columns less. File
-  5's canonical fit is already flatter than photatl's at the median (8 of 14 windows).
-  CO columns move 100-260% in the 2.3 um windows, where solar CO overlaps the telluric
-  lines and none was scored; check those before any 1990 refit. The 1990 files are left.
+- **The 1983 pair gains**, mostly from the clean-pixel fit and the shifts. x1.06 against
+  x1.00 is a tie on 6-8 windows (deep lines: 4.4 against 5.2% in `_2`, 3.35 against
+  3.38% in `_3`); the sinc-only scans put the pair at 1.05-1.06, so it is refitted at x1.06.
+- **The 1990 files want no widening**: every step up is worse in both (file 4 1.60, 1.64,
+  1.82%; file 5 0.80, 0.89, 0.98%). The excess is the 1983 observations', not Kitt Peak's.
+  At x1.00 the clean-pixel fit is flatter on 10 of 12 file-4 windows and 11 of 14 file-5
+  ones, by little at the median except file 4 (5686: 2.2 -> 1.6%; 5986: 1.8 -> 1.5%) and
+  file 5 7756 (0.45 -> 0.25%). Solar lines are sparser in the infrared and pull the
+  columns less. File 5's canonical fit is already flatter than photatl's at the median (8
+  of 14 windows). CO columns move 100-260% in the 2.3 um windows, where solar CO overlaps
+  the telluric lines and none was scored; check those before any 1990 refit. The 1990
+  files are left.
+
+### Done 2026-10-18: the June 1983 pair refitted the same way, at x1.06
+
+Full runs, one GPU a file, 4.4 h. Against the superseded runs (`full_1983` in
+`docs/kitt_peak_clean_trial.json`): the same 307 and 287 windows fitted, the same seven
+`_2` windows past 19960 cm-1 failing (MT_CKD's table ends), residual rms median -0.5% and
+-0.2%, no column newly at an upper bound (water at its lower one in `_2` 11530 and `_3`
+19720). Flatness at telluric pixels:
+
+| file | windows | old | new | flatter | deep, old -> new (windows) |
+|---|---:|---:|---:|---:|---|
+| `830626_2` | 117 | 1.44% | 1.06% | 92 | 3.34 -> 2.84% (75) |
+| `830626_3` | 121 | 1.40% | 1.00% | 96 | 3.35 -> 2.58% (67) |
+
+One real regression: `_2` 11470 (0.89 um band), water x3 and residual +44%, like niratl's
+ph11200. Promoted: the old records, window files, transmission files and review bundle are
+in `data/corrected/superseded_pre_widthscale/`.
 
 ### Also open
 

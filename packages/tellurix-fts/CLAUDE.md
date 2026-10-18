@@ -145,10 +145,11 @@ before 2026-10-13 used AER's; their records lack `h2o_pressure_shift`.
 for the 1983 pair, **1.00 for the 1990 files**, where any widening is worse --
 `docs/kitt_peak_clean_trial.json`) and `--telluric-from-clean-pixels` (columns, velocity and
 `lsf_sigma_kms` from pixels clear of solar lines, then pinned; three fits a window) took
-niratl from 24 to 47 of 71 pages at or below the authors' own correction
+niratl from 24 to 46 of 71 pages at or below the authors' own correction
 (`scripts/score_telluric_correction.py`, the yardstick). The refit is in
 `data/corrected/solar/niratl/`, promoted 2026-10-18 (the old run is in
-`data/corrected/superseded_pre_widthscale/`). The 1983 pair and files 4 and 5 are not refitted. What stays behind is per-line
+`data/corrected/superseded_pre_widthscale/`). The 1983 pair was refitted the same way at x1.06 and promoted the same day
+(median flatness 1.44 -> 1.06% and 1.40 -> 1.00%); files 4 and 5 are not refitted. What stays behind is per-line
 line-list error, mostly in the 0.89 um band.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its

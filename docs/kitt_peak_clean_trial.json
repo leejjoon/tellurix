@@ -1,15 +1,15 @@
 {
- "about": "Trial of the niratl recipe (telluric parameters from solar-clean pixels, HITRAN H2O shifts, solar broadening; line coupling kept on files 4 and 5) on sampled windows of the other Kitt Peak files, at several pressure-width scales, 2026-10-18. Windows: every 15th (1983 pair), every 10th (1990 files). 'old' is the canonical run. Written by scripts/score_telluric_correction.py --relative-transmission; file 5 is also scored against photatl, the authors' correction of the same spectrum.",
- "files": {
+ "about": "The niratl recipe (telluric parameters from solar-clean pixels, HITRAN H2O shifts, solar broadening; line coupling kept on files 4 and 5) on the other Kitt Peak files, 2026-10-18. 'trial': sampled windows (every 15th of the 1983 pair, every 10th of the 1990 files) at several pressure-width scales against the then-canonical runs. 'full_1983': the full refits of the 1983 pair at x1.06, promoted the same day, against the superseded runs. Written by scripts/score_telluric_correction.py --relative-transmission (pixels below T 0.15 excluded); file 5 is also scored against photatl, the authors' correction of the same spectrum.",
+ "trial": {
   "ftsspec_830626_2": {
-   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
    "settings": {
     "stem": "ftsspec_830626_2",
     "authors": "none",
     "relative_transmission": true
    },
    "runs": {
-    "old": "data/corrected/solar",
+    "old": "data/corrected/superseded_pre_widthscale/solar/ftsspec_830626_2",
     "w1.00": "data/corrected/solar/trial_clean/ftsspec_830626_2_w1.00",
     "w1.06": "data/corrected/solar/trial_clean/ftsspec_830626_2_w1.06"
    },
@@ -29,9 +29,9 @@
     "deep": {
      "pages": 1,
      "median_percent": {
-      "old": 6.592584448929499,
-      "w1.00": 5.189090965969913,
-      "w1.06": 4.848911615154507
+      "old": 6.579840183668274,
+      "w1.00": 5.1968679724749345,
+      "w1.06": 4.36876823198465
      },
      "pages_flatter_than_old": {
       "w1.00": 1,
@@ -66,16 +66,16 @@
     },
     "ftsspec_830626_2_14380": {
      "telluric": {
-      "pixels": 282,
-      "old": 3.5806861218345065,
-      "w1.00": 2.81849935478749,
-      "w1.06": 2.640204647746146
+      "pixels": 275,
+      "old": 3.4637280284566425,
+      "w1.00": 2.73530426676004,
+      "w1.06": 2.3218254120482578
      },
      "deep": {
-      "pixels": 79,
-      "old": 6.592584448929499,
-      "w1.00": 5.189090965969913,
-      "w1.06": 4.848911615154507
+      "pixels": 72,
+      "old": 6.579840183668274,
+      "w1.00": 5.1968679724749345,
+      "w1.06": 4.36876823198465
      }
     },
     "ftsspec_830626_2_17530": {
@@ -97,14 +97,14 @@
    }
   },
   "ftsspec_830626_3": {
-   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
    "settings": {
     "stem": "ftsspec_830626_3",
     "authors": "none",
     "relative_transmission": true
    },
    "runs": {
-    "old": "data/corrected/solar",
+    "old": "data/corrected/superseded_pre_widthscale/solar/ftsspec_830626_3",
     "w1.00": "data/corrected/solar/trial_clean/ftsspec_830626_3_w1.00",
     "w1.06": "data/corrected/solar/trial_clean/ftsspec_830626_3_w1.06"
    },
@@ -124,12 +124,12 @@
     "deep": {
      "pages": 3,
      "median_percent": {
-      "old": 11.44363105160468,
-      "w1.00": 9.542724737646113,
-      "w1.06": 8.82624419840305
+      "old": 3.3511013752705696,
+      "w1.00": 3.3765435315902184,
+      "w1.06": 3.354378476377477
      },
      "pages_flatter_than_old": {
-      "w1.00": 3,
+      "w1.00": 2,
       "w1.06": 2
      }
     }
@@ -167,16 +167,16 @@
     },
     "ftsspec_830626_3_14410": {
      "telluric": {
-      "pixels": 269,
-      "old": 10.405430609488942,
-      "w1.00": 10.313675872690462,
-      "w1.06": 11.359304307981951
+      "pixels": 260,
+      "old": 1.549096425450377,
+      "w1.00": 1.516960235082144,
+      "w1.06": 1.6141331686653628
      },
      "deep": {
-      "pixels": 35,
-      "old": 28.68224350626951,
-      "w1.00": 28.441502482587588,
-      "w1.06": 31.316462207519024
+      "pixels": 26,
+      "old": 3.3511013752705696,
+      "w1.00": 3.3765435315902184,
+      "w1.06": 3.354378476377477
      }
     },
     "ftsspec_830626_3_15310": {
@@ -205,22 +205,22 @@
     },
     "ftsspec_830626_3_9010": {
      "telluric": {
-      "pixels": 637,
-      "old": 5.532654913780957,
-      "w1.00": 4.627794051856684,
-      "w1.06": 4.299770848624683
+      "pixels": 622,
+      "old": 3.6004285027433447,
+      "w1.00": 3.094538634059585,
+      "w1.06": 3.2214069781942976
      },
      "deep": {
-      "pixels": 143,
-      "old": 11.44363105160468,
-      "w1.00": 9.542724737646113,
-      "w1.06": 8.82624419840305
+      "pixels": 128,
+      "old": 7.547300730517718,
+      "w1.00": 6.456691741535818,
+      "w1.06": 6.741880029350371
      }
     }
    }
   },
   "ftsspec_901218_4": {
-   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
    "settings": {
     "stem": "ftsspec_901218_4",
     "authors": "none",
@@ -236,29 +236,29 @@
     "telluric": {
      "pages": 12,
      "median_percent": {
-      "old": 3.0391833110503716,
-      "w1.00": 2.7363661967425537,
-      "w1.05": 3.270996054314793,
-      "w1.10": 3.9407635178503915
+      "old": 1.9595074136437258,
+      "w1.00": 1.5953425038528897,
+      "w1.05": 1.638660385463636,
+      "w1.10": 1.8212503074359068
      },
      "pages_flatter_than_old": {
       "w1.00": 10,
-      "w1.05": 3,
-      "w1.10": 4
+      "w1.05": 4,
+      "w1.10": 2
      }
     },
     "deep": {
      "pages": 11,
      "median_percent": {
-      "old": 6.315484376327787,
-      "w1.00": 5.585332775744825,
-      "w1.05": 7.086568198604843,
-      "w1.10": 8.673847066306728
+      "old": 3.7874124291413844,
+      "w1.00": 2.62743683287987,
+      "w1.05": 3.1780758026533915,
+      "w1.10": 3.883339475480802
      },
      "pages_flatter_than_old": {
-      "w1.00": 7,
-      "w1.05": 3,
-      "w1.10": 4
+      "w1.00": 8,
+      "w1.05": 4,
+      "w1.10": 3
      }
     }
    },
@@ -281,50 +281,50 @@
     },
     "ftsspec_901218_4_3226": {
      "telluric": {
-      "pixels": 2139,
-      "old": 5.963499206288368,
-      "w1.00": 6.2152335348365275,
-      "w1.05": 7.283961772599964,
-      "w1.10": 8.521738442470577
+      "pixels": 1808,
+      "old": 2.0954134392198602,
+      "w1.00": 2.1067785468694424,
+      "w1.05": 2.9952528840675554,
+      "w1.10": 3.9059666495403835
      },
      "deep": {
-      "pixels": 1481,
-      "old": 7.154088856258413,
-      "w1.00": 7.456943021731766,
-      "w1.05": 8.741352475967105,
-      "w1.10": 10.22759207608462
+      "pixels": 1150,
+      "old": 2.582143426688063,
+      "w1.00": 2.595919363865909,
+      "w1.05": 3.7181808419506823,
+      "w1.10": 4.860456501564168
      }
     },
     "ftsspec_901218_4_4156": {
      "telluric": {
-      "pixels": 1600,
-      "old": 2.8713734450144552,
-      "w1.00": 2.8664888622465328,
-      "w1.05": 3.5359734269989467,
-      "w1.10": 4.1706242284438995
+      "pixels": 1538,
+      "old": 1.6427892441501841,
+      "w1.00": 1.5825840363957153,
+      "w1.05": 1.6560834784348655,
+      "w1.10": 1.8260334615804643
      },
      "deep": {
-      "pixels": 365,
-      "old": 5.585802351812811,
-      "w1.00": 5.585332775744825,
-      "w1.05": 7.086568198604843,
-      "w1.10": 8.457576730391642
+      "pixels": 303,
+      "old": 2.7834164427003834,
+      "w1.00": 2.62743683287987,
+      "w1.05": 2.8971728040656295,
+      "w1.10": 3.352947879395963
      }
     },
     "ftsspec_901218_4_4456": {
      "telluric": {
-      "pixels": 1577,
-      "old": 1.508543704848153,
-      "w1.00": 1.4749650249753525,
-      "w1.05": 1.487203350528178,
-      "w1.10": 1.4997409982358483
+      "pixels": 1568,
+      "old": 1.3747182433926188,
+      "w1.00": 1.3501702786452967,
+      "w1.05": 1.363630141046028,
+      "w1.10": 1.3773134106279772
      },
      "deep": {
-      "pixels": 184,
-      "old": 3.0892493565222803,
-      "w1.00": 3.0052438281581577,
-      "w1.05": 3.0053165286263015,
-      "w1.10": 3.005933199014368
+      "pixels": 175,
+      "old": 2.541649342310291,
+      "w1.00": 2.495020486761653,
+      "w1.05": 2.4952334285421514,
+      "w1.10": 2.495728669950661
      }
     },
     "ftsspec_901218_4_4756": {
@@ -345,50 +345,50 @@
     },
     "ftsspec_901218_4_5686": {
      "telluric": {
-      "pixels": 487,
-      "old": 5.845520296724621,
-      "w1.00": 2.5649668909441843,
-      "w1.05": 3.089911990107058,
-      "w1.10": 3.809797109103214
+      "pixels": 465,
+      "old": 2.2063079998683497,
+      "w1.00": 1.6081009713100638,
+      "w1.05": 1.6192480641490807,
+      "w1.10": 1.6738751985256126
      },
      "deep": {
-      "pixels": 82,
-      "old": 13.819571375616126,
-      "w1.00": 5.293930387768474,
-      "w1.05": 6.7637251987465365,
-      "w1.10": 8.673847066306728
+      "pixels": 60,
+      "old": 4.624369588127169,
+      "w1.00": 2.223331645572428,
+      "w1.05": 2.3126024831516405,
+      "w1.10": 2.5935732427871683
      }
     },
     "ftsspec_901218_4_5986": {
      "telluric": {
-      "pixels": 308,
-      "old": 3.2069931770862876,
-      "w1.00": 3.169560746486052,
-      "w1.05": 3.1774749263664614,
-      "w1.10": 3.184221750666387
+      "pixels": 285,
+      "old": 1.8236013880675912,
+      "w1.00": 1.467494309566649,
+      "w1.05": 1.4695435763882525,
+      "w1.10": 1.472140937414863
      },
      "deep": {
-      "pixels": 74,
-      "old": 6.315484376327787,
-      "w1.00": 6.271075202372758,
-      "w1.05": 6.287345903652754,
-      "w1.10": 6.300616368488603
+      "pixels": 51,
+      "old": 3.7874124291413844,
+      "w1.00": 2.9026954390007367,
+      "w1.05": 2.907301303584798,
+      "w1.10": 2.911747118535663
      }
     },
     "ftsspec_901218_4_7486": {
      "telluric": {
-      "pixels": 2017,
-      "old": 3.561344172690638,
-      "w1.00": 3.5435169861502733,
-      "w1.05": 5.295141768816209,
-      "w1.10": 6.915089884400205
+      "pixels": 1896,
+      "old": 2.634359864915299,
+      "w1.00": 2.645995050462896,
+      "w1.05": 3.734710238991589,
+      "w1.10": 4.827559121746287
      },
      "deep": {
-      "pixels": 814,
-      "old": 5.542843256105083,
-      "w1.00": 5.513047662728773,
-      "w1.05": 8.257992258138703,
-      "w1.10": 10.785451667364407
+      "pixels": 693,
+      "old": 4.261409993124581,
+      "w1.00": 4.278950601258096,
+      "w1.05": 6.054357690497789,
+      "w1.10": 7.824406596248049
      }
     },
     "ftsspec_901218_4_8086": {
@@ -402,56 +402,56 @@
     },
     "ftsspec_901218_4_8386": {
      "telluric": {
-      "pixels": 722,
-      "old": 2.6168232376187635,
-      "w1.00": 2.6062435312385746,
-      "w1.05": 3.364517182263125,
-      "w1.10": 4.071729926597569
+      "pixels": 720,
+      "old": 2.575341969011425,
+      "w1.00": 2.5201589370137514,
+      "w1.05": 3.2215813178077526,
+      "w1.10": 3.8789747331881697
      },
      "deep": {
-      "pixels": 91,
-      "old": 6.871419213264994,
-      "w1.00": 6.890187492170926,
-      "w1.05": 8.902880742850002,
-      "w1.10": 10.751089244958962
+      "pixels": 89,
+      "old": 6.810373105145118,
+      "w1.00": 6.694683556474276,
+      "w1.05": 8.554082052888416,
+      "w1.10": 10.267069767932547
      }
     },
     "ftsspec_901218_4_8686": {
      "telluric": {
-      "pixels": 1639,
-      "old": 6.172487682775217,
-      "w1.00": 6.171284281968746,
-      "w1.05": 6.9726956309022885,
-      "w1.10": 7.801375754899496
+      "pixels": 1601,
+      "old": 4.341331026438124,
+      "w1.00": 4.107715602660323,
+      "w1.05": 4.914957172329514,
+      "w1.10": 5.715626624533281
      },
      "deep": {
-      "pixels": 491,
-      "old": 11.047919129228609,
-      "w1.00": 11.046237048199716,
-      "w1.05": 12.50410307299696,
-      "w1.10": 13.99930059354271
+      "pixels": 453,
+      "old": 7.813894046940033,
+      "w1.00": 7.354894276733695,
+      "w1.05": 8.884650905082852,
+      "w1.10": 10.376630920183116
      }
     },
     "ftsspec_901218_4_8986": {
      "telluric": {
-      "pixels": 1310,
-      "old": 18.423927993799005,
-      "w1.00": 19.822949480998105,
-      "w1.05": 18.468155520876508,
-      "w1.10": 17.424819207550208
+      "pixels": 1257,
+      "old": 4.746253006672384,
+      "w1.00": 4.286661844679288,
+      "w1.05": 4.665981061407922,
+      "w1.10": 5.138853970714445
      },
      "deep": {
-      "pixels": 270,
-      "old": 40.24614054060089,
-      "w1.00": 43.38218109083278,
-      "w1.05": 40.35829014768376,
-      "w1.10": 38.01187243354496
+      "pixels": 217,
+      "old": 9.833043683808459,
+      "w1.00": 8.714104793330213,
+      "w1.05": 9.680381793271664,
+      "w1.10": 10.855231981068366
      }
     }
    }
   },
   "ftsspec_901218_5": {
-   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
    "settings": {
     "stem": "ftsspec_901218_5",
     "authors": "photatl",
@@ -756,6 +756,2460 @@
       "w1.05": 2.5582854235742247,
       "w1.10": 2.9928383631910753,
       "authors": 7.9081323609569525
+     }
+    }
+   }
+  }
+ },
+ "full_1983": {
+  "ftsspec_830626_2": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "ftsspec_830626_2",
+    "authors": "none",
+    "relative_transmission": true
+   },
+   "runs": {
+    "old": "data/corrected/superseded_pre_widthscale/solar/ftsspec_830626_2",
+    "new": "data/corrected/solar"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 117,
+     "median_percent": {
+      "old": 1.4394347195918697,
+      "new": 1.0590100537956513
+     },
+     "pages_flatter_than_old": {
+      "new": 92
+     }
+    },
+    "deep": {
+     "pages": 75,
+     "median_percent": {
+      "old": 3.3377336372227293,
+      "new": 2.8440051532525428
+     },
+     "pages_flatter_than_old": {
+      "new": 50
+     }
+    }
+   },
+   "pages": {
+    "ftsspec_830626_2_10000": {
+     "telluric": {
+      "pixels": 35,
+      "old": 0.8272892699129489,
+      "new": 0.7874645874767692
+     }
+    },
+    "ftsspec_830626_2_10060": {
+     "telluric": {
+      "pixels": 129,
+      "old": 0.9869610731180691,
+      "new": 1.0590100537956513
+     },
+     "deep": {
+      "pixels": 5,
+      "old": 1.3914192691038343,
+      "new": 3.024375256457542
+     }
+    },
+    "ftsspec_830626_2_10090": {
+     "telluric": {
+      "pixels": 119,
+      "old": 1.0918015508356909,
+      "new": 0.9214670204525521
+     }
+    },
+    "ftsspec_830626_2_10120": {
+     "telluric": {
+      "pixels": 206,
+      "old": 1.2755479961021248,
+      "new": 1.1059011875714837
+     },
+     "deep": {
+      "pixels": 8,
+      "old": 2.126015772693236,
+      "new": 2.458049054752487
+     }
+    },
+    "ftsspec_830626_2_10150": {
+     "telluric": {
+      "pixels": 384,
+      "old": 1.9424201801942955,
+      "new": 1.8333811630471362
+     },
+     "deep": {
+      "pixels": 58,
+      "old": 3.6371586643653484,
+      "new": 3.8531940809413032
+     }
+    },
+    "ftsspec_830626_2_10180": {
+     "telluric": {
+      "pixels": 471,
+      "old": 1.8757173029141188,
+      "new": 1.3671750189197724
+     },
+     "deep": {
+      "pixels": 92,
+      "old": 3.4817888507724617,
+      "new": 2.2166618965146965
+     }
+    },
+    "ftsspec_830626_2_10240": {
+     "telluric": {
+      "pixels": 510,
+      "old": 2.591700042029663,
+      "new": 1.565476583027831
+     },
+     "deep": {
+      "pixels": 105,
+      "old": 5.3750376086312235,
+      "new": 2.9089364769268657
+     }
+    },
+    "ftsspec_830626_2_10270": {
+     "telluric": {
+      "pixels": 522,
+      "old": 2.0227107364742243,
+      "new": 1.7109255336438727
+     },
+     "deep": {
+      "pixels": 72,
+      "old": 4.850151147279557,
+      "new": 3.986641479506718
+     }
+    },
+    "ftsspec_830626_2_10930": {
+     "telluric": {
+      "pixels": 702,
+      "old": 2.6369207200305724,
+      "new": 2.086927226698449
+     },
+     "deep": {
+      "pixels": 227,
+      "old": 4.370262653558432,
+      "new": 3.4303106129559016
+     }
+    },
+    "ftsspec_830626_2_10990": {
+     "telluric": {
+      "pixels": 446,
+      "old": 1.5401787034837247,
+      "new": 1.2655870967725313
+     },
+     "deep": {
+      "pixels": 133,
+      "old": 2.490830841007683,
+      "new": 2.017725385726471
+     }
+    },
+    "ftsspec_830626_2_11020": {
+     "telluric": {
+      "pixels": 462,
+      "old": 1.2858486142760355,
+      "new": 1.128311696309461
+     },
+     "deep": {
+      "pixels": 64,
+      "old": 2.582878370242949,
+      "new": 2.220133864229573
+     }
+    },
+    "ftsspec_830626_2_11050": {
+     "telluric": {
+      "pixels": 209,
+      "old": 2.1956829527059765,
+      "new": 1.7192222098708612
+     },
+     "deep": {
+      "pixels": 49,
+      "old": 4.456704443728616,
+      "new": 3.489680659068385
+     }
+    },
+    "ftsspec_830626_2_11110": {
+     "telluric": {
+      "pixels": 376,
+      "old": 2.199774241100288,
+      "new": 1.6059549420192172
+     },
+     "deep": {
+      "pixels": 136,
+      "old": 3.443826605335623,
+      "new": 2.459473030114443
+     }
+    },
+    "ftsspec_830626_2_11140": {
+     "telluric": {
+      "pixels": 572,
+      "old": 2.161100419862516,
+      "new": 1.7070426645335257
+     },
+     "deep": {
+      "pixels": 126,
+      "old": 4.2831497910169585,
+      "new": 3.3830231300356166
+     }
+    },
+    "ftsspec_830626_2_11170": {
+     "telluric": {
+      "pixels": 318,
+      "old": 3.217102792409046,
+      "new": 2.719246039018276
+     },
+     "deep": {
+      "pixels": 55,
+      "old": 7.4983245724498175,
+      "new": 6.341902910799363
+     }
+    },
+    "ftsspec_830626_2_11200": {
+     "telluric": {
+      "pixels": 97,
+      "old": 0.7362623313441556,
+      "new": 0.6177790307622569
+     },
+     "deep": {
+      "pixels": 6,
+      "old": 0.8355777827222072,
+      "new": 1.210820519083432
+     }
+    },
+    "ftsspec_830626_2_11230": {
+     "telluric": {
+      "pixels": 67,
+      "old": 0.7742330811898883,
+      "new": 0.3710176112291654
+     }
+    },
+    "ftsspec_830626_2_11830": {
+     "telluric": {
+      "pixels": 59,
+      "old": 2.411524636892101,
+      "new": 0.4399692709946507
+     },
+     "deep": {
+      "pixels": 5,
+      "old": 4.1573776723930305,
+      "new": 0.4523232906619795
+     }
+    },
+    "ftsspec_830626_2_11860": {
+     "telluric": {
+      "pixels": 56,
+      "old": 0.6126420028926435,
+      "new": 0.5033692970418335
+     }
+    },
+    "ftsspec_830626_2_11890": {
+     "telluric": {
+      "pixels": 80,
+      "old": 0.8437311546161224,
+      "new": 0.6984916241170159
+     }
+    },
+    "ftsspec_830626_2_11920": {
+     "telluric": {
+      "pixels": 159,
+      "old": 1.1680126487914892,
+      "new": 1.0780963598206794
+     },
+     "deep": {
+      "pixels": 7,
+      "old": 3.0649553920358072,
+      "new": 3.6022601303829407
+     }
+    },
+    "ftsspec_830626_2_11950": {
+     "telluric": {
+      "pixels": 136,
+      "old": 1.4394347195918697,
+      "new": 1.6928810094898863
+     },
+     "deep": {
+      "pixels": 23,
+      "old": 2.994943611513849,
+      "new": 3.6669246694738464
+     }
+    },
+    "ftsspec_830626_2_11980": {
+     "telluric": {
+      "pixels": 54,
+      "old": 1.8962205342428595,
+      "new": 1.8363245973976465
+     },
+     "deep": {
+      "pixels": 6,
+      "old": 2.149331491394888,
+      "new": 1.932962803547552
+     }
+    },
+    "ftsspec_830626_2_12070": {
+     "telluric": {
+      "pixels": 260,
+      "old": 1.4857516824831603,
+      "new": 1.0805226769280891
+     },
+     "deep": {
+      "pixels": 39,
+      "old": 3.469750818568351,
+      "new": 2.5220277452778164
+     }
+    },
+    "ftsspec_830626_2_12100": {
+     "telluric": {
+      "pixels": 192,
+      "old": 0.9482738052681348,
+      "new": 1.03902010043436
+     },
+     "deep": {
+      "pixels": 35,
+      "old": 1.494852473085606,
+      "new": 1.958343459949103
+     }
+    },
+    "ftsspec_830626_2_12250": {
+     "telluric": {
+      "pixels": 457,
+      "old": 1.833581931015405,
+      "new": 1.937863451519839
+     },
+     "deep": {
+      "pixels": 86,
+      "old": 3.289539417941768,
+      "new": 3.586137154285711
+     }
+    },
+    "ftsspec_830626_2_12280": {
+     "telluric": {
+      "pixels": 356,
+      "old": 3.029793288373548,
+      "new": 2.518380451712646
+     },
+     "deep": {
+      "pixels": 78,
+      "old": 6.022832279565214,
+      "new": 5.1349249129078105
+     }
+    },
+    "ftsspec_830626_2_12310": {
+     "telluric": {
+      "pixels": 230,
+      "old": 1.5281194837545862,
+      "new": 1.2582493340877758
+     },
+     "deep": {
+      "pixels": 27,
+      "old": 3.074519287478628,
+      "new": 2.454931180554664
+     }
+    },
+    "ftsspec_830626_2_12340": {
+     "telluric": {
+      "pixels": 138,
+      "old": 1.5228286872021302,
+      "new": 0.8791465981483627
+     },
+     "deep": {
+      "pixels": 5,
+      "old": 4.7039530921298045,
+      "new": 3.3680585545798114
+     }
+    },
+    "ftsspec_830626_2_12370": {
+     "telluric": {
+      "pixels": 100,
+      "old": 1.827444749529078,
+      "new": 1.818993061331838
+     },
+     "deep": {
+      "pixels": 5,
+      "old": 2.648995147341151,
+      "new": 2.9454815739114246
+     }
+    },
+    "ftsspec_830626_2_12400": {
+     "telluric": {
+      "pixels": 72,
+      "old": 1.1223887606463059,
+      "new": 1.126595626760967
+     }
+    },
+    "ftsspec_830626_2_12430": {
+     "telluric": {
+      "pixels": 214,
+      "old": 0.9271853622074069,
+      "new": 0.8011974567362832
+     },
+     "deep": {
+      "pixels": 14,
+      "old": 1.4790949725365512,
+      "new": 1.0117061467657102
+     }
+    },
+    "ftsspec_830626_2_12460": {
+     "telluric": {
+      "pixels": 198,
+      "old": 1.3236557574839107,
+      "new": 1.3176433515131432
+     },
+     "deep": {
+      "pixels": 6,
+      "old": 2.7400188382392234,
+      "new": 2.8214705811378122
+     }
+    },
+    "ftsspec_830626_2_12490": {
+     "telluric": {
+      "pixels": 134,
+      "old": 3.400162923815427,
+      "new": 3.3168166393429876
+     }
+    },
+    "ftsspec_830626_2_12520": {
+     "telluric": {
+      "pixels": 183,
+      "old": 1.0923812569995932,
+      "new": 0.9552866543223256
+     },
+     "deep": {
+      "pixels": 11,
+      "old": 3.008968929667545,
+      "new": 2.499507285540035
+     }
+    },
+    "ftsspec_830626_2_12550": {
+     "telluric": {
+      "pixels": 189,
+      "old": 1.0518636008226405,
+      "new": 0.8727364992164768
+     },
+     "deep": {
+      "pixels": 29,
+      "old": 2.2448068767253044,
+      "new": 1.8782513832166454
+     }
+    },
+    "ftsspec_830626_2_12580": {
+     "telluric": {
+      "pixels": 45,
+      "old": 1.1018193083505663,
+      "new": 1.1088264339467568
+     }
+    },
+    "ftsspec_830626_2_12610": {
+     "telluric": {
+      "pixels": 80,
+      "old": 1.8303478416199122,
+      "new": 1.5420081182102594
+     },
+     "deep": {
+      "pixels": 12,
+      "old": 4.443610334261539,
+      "new": 3.737078283466016
+     }
+    },
+    "ftsspec_830626_2_12640": {
+     "telluric": {
+      "pixels": 141,
+      "old": 1.1041449647871744,
+      "new": 0.9369926504790849
+     },
+     "deep": {
+      "pixels": 18,
+      "old": 2.3551499161842937,
+      "new": 2.0366511771531415
+     }
+    },
+    "ftsspec_830626_2_12670": {
+     "telluric": {
+      "pixels": 55,
+      "old": 0.9126357550495944,
+      "new": 0.9606784453293107
+     },
+     "deep": {
+      "pixels": 5,
+      "old": 1.3734794697699253,
+      "new": 0.7629712280261303
+     }
+    },
+    "ftsspec_830626_2_12700": {
+     "telluric": {
+      "pixels": 110,
+      "old": 1.005314569280581,
+      "new": 1.038750496103428
+     }
+    },
+    "ftsspec_830626_2_12910": {
+     "telluric": {
+      "pixels": 33,
+      "old": 0.4043115912996889,
+      "new": 0.48151258240838835
+     }
+    },
+    "ftsspec_830626_2_12940": {
+     "telluric": {
+      "pixels": 71,
+      "old": 0.7587383365705733,
+      "new": 0.8514602535586979
+     }
+    },
+    "ftsspec_830626_2_12970": {
+     "telluric": {
+      "pixels": 78,
+      "old": 1.218652233334745,
+      "new": 1.7044656657788537
+     },
+     "deep": {
+      "pixels": 8,
+      "old": 3.0582156342721483,
+      "new": 4.097299465065844
+     }
+    },
+    "ftsspec_830626_2_13000": {
+     "telluric": {
+      "pixels": 203,
+      "old": 0.6478837012506778,
+      "new": 0.6149718148336896
+     },
+     "deep": {
+      "pixels": 31,
+      "old": 1.3571869372367114,
+      "new": 1.1016647268140243
+     }
+    },
+    "ftsspec_830626_2_13480": {
+     "telluric": {
+      "pixels": 51,
+      "old": 0.8729985385317197,
+      "new": 0.42037359113111067
+     }
+    },
+    "ftsspec_830626_2_13510": {
+     "telluric": {
+      "pixels": 128,
+      "old": 0.7686674567262993,
+      "new": 0.8107340230383835
+     },
+     "deep": {
+      "pixels": 10,
+      "old": 1.7005993473807026,
+      "new": 1.8871653901340328
+     }
+    },
+    "ftsspec_830626_2_13540": {
+     "telluric": {
+      "pixels": 220,
+      "old": 1.0940021596370664,
+      "new": 0.9477331136519953
+     },
+     "deep": {
+      "pixels": 15,
+      "old": 3.1761221988663464,
+      "new": 2.543597374874954
+     }
+    },
+    "ftsspec_830626_2_13570": {
+     "telluric": {
+      "pixels": 203,
+      "old": 1.2883395344875337,
+      "new": 1.1197386133292595
+     },
+     "deep": {
+      "pixels": 29,
+      "old": 2.0599544659801574,
+      "new": 1.6549764218081062
+     }
+    },
+    "ftsspec_830626_2_13600": {
+     "telluric": {
+      "pixels": 203,
+      "old": 1.863186506244091,
+      "new": 1.4572597752557739
+     },
+     "deep": {
+      "pixels": 23,
+      "old": 4.698934061567975,
+      "new": 3.3432230599178743
+     }
+    },
+    "ftsspec_830626_2_13630": {
+     "telluric": {
+      "pixels": 167,
+      "old": 1.0961965065334236,
+      "new": 0.8162745893599354
+     },
+     "deep": {
+      "pixels": 17,
+      "old": 2.758829104010646,
+      "new": 1.5410660362519242
+     }
+    },
+    "ftsspec_830626_2_13750": {
+     "telluric": {
+      "pixels": 482,
+      "old": 3.252762686270985,
+      "new": 2.9657891860400474
+     },
+     "deep": {
+      "pixels": 116,
+      "old": 5.474547758919156,
+      "new": 4.753015445726416
+     }
+    },
+    "ftsspec_830626_2_13810": {
+     "telluric": {
+      "pixels": 443,
+      "old": 1.6695099579726664,
+      "new": 1.649167834441731
+     },
+     "deep": {
+      "pixels": 90,
+      "old": 3.141727951558864,
+      "new": 3.149202923346406
+     }
+    },
+    "ftsspec_830626_2_13840": {
+     "telluric": {
+      "pixels": 241,
+      "old": 2.298092880640838,
+      "new": 2.3129694315380815
+     },
+     "deep": {
+      "pixels": 22,
+      "old": 5.927231662583715,
+      "new": 5.920925791020389
+     }
+    },
+    "ftsspec_830626_2_13960": {
+     "telluric": {
+      "pixels": 172,
+      "old": 1.4282330451621075,
+      "new": 1.4933268284322594
+     },
+     "deep": {
+      "pixels": 18,
+      "old": 3.0906221607061317,
+      "new": 3.3189457457127105
+     }
+    },
+    "ftsspec_830626_2_13990": {
+     "telluric": {
+      "pixels": 96,
+      "old": 1.1024444570110812,
+      "new": 0.792439300015833
+     }
+    },
+    "ftsspec_830626_2_14020": {
+     "telluric": {
+      "pixels": 77,
+      "old": 1.5668708342487712,
+      "new": 0.672580115427829
+     }
+    },
+    "ftsspec_830626_2_14050": {
+     "telluric": {
+      "pixels": 112,
+      "old": 1.63325854291954,
+      "new": 0.5954922535613898
+     }
+    },
+    "ftsspec_830626_2_14080": {
+     "telluric": {
+      "pixels": 155,
+      "old": 0.9702726387455223,
+      "new": 0.7555720138040408
+     }
+    },
+    "ftsspec_830626_2_14110": {
+     "telluric": {
+      "pixels": 224,
+      "old": 2.116250741367928,
+      "new": 0.5725577653981915
+     }
+    },
+    "ftsspec_830626_2_14140": {
+     "telluric": {
+      "pixels": 119,
+      "old": 1.8265971887283634,
+      "new": 1.529321794629186
+     },
+     "deep": {
+      "pixels": 8,
+      "old": 3.4798440295100477,
+      "new": 1.9166729597259042
+     }
+    },
+    "ftsspec_830626_2_14170": {
+     "telluric": {
+      "pixels": 169,
+      "old": 1.486736291412774,
+      "new": 0.8485504979218303
+     },
+     "deep": {
+      "pixels": 8,
+      "old": 3.9464574592910266,
+      "new": 0.862212787672762
+     }
+    },
+    "ftsspec_830626_2_14200": {
+     "telluric": {
+      "pixels": 162,
+      "old": 3.014866796236516,
+      "new": 1.321297949589855
+     },
+     "deep": {
+      "pixels": 28,
+      "old": 6.969424365843882,
+      "new": 2.881521268232214
+     }
+    },
+    "ftsspec_830626_2_14230": {
+     "telluric": {
+      "pixels": 146,
+      "old": 1.523843518041791,
+      "new": 0.9939516419666748
+     }
+    },
+    "ftsspec_830626_2_14260": {
+     "telluric": {
+      "pixels": 230,
+      "old": 1.6449761801473797,
+      "new": 0.8488103344752844
+     },
+     "deep": {
+      "pixels": 17,
+      "old": 4.756698920518274,
+      "new": 1.492433944731932
+     }
+    },
+    "ftsspec_830626_2_14290": {
+     "telluric": {
+      "pixels": 268,
+      "old": 1.4893087816374662,
+      "new": 1.4198618912050485
+     },
+     "deep": {
+      "pixels": 30,
+      "old": 4.102571702370057,
+      "new": 3.9230315579240047
+     }
+    },
+    "ftsspec_830626_2_14320": {
+     "telluric": {
+      "pixels": 49,
+      "old": 0.9504668099547248,
+      "new": 0.6588814745294819
+     }
+    },
+    "ftsspec_830626_2_14350": {
+     "telluric": {
+      "pixels": 294,
+      "old": 2.5971440308996754,
+      "new": 1.8097361403594452
+     },
+     "deep": {
+      "pixels": 48,
+      "old": 5.735275314369383,
+      "new": 3.8398369955233576
+     }
+    },
+    "ftsspec_830626_2_14380": {
+     "telluric": {
+      "pixels": 275,
+      "old": 3.4637280284566425,
+      "new": 2.321827384800511
+     },
+     "deep": {
+      "pixels": 72,
+      "old": 6.579840183668274,
+      "new": 4.3687719976243695
+     }
+    },
+    "ftsspec_830626_2_14410": {
+     "telluric": {
+      "pixels": 334,
+      "old": 2.1086072667451967,
+      "new": 2.1876534385013873
+     },
+     "deep": {
+      "pixels": 57,
+      "old": 4.748355057882369,
+      "new": 4.989931371725189
+     }
+    },
+    "ftsspec_830626_2_14440": {
+     "telluric": {
+      "pixels": 368,
+      "old": 0.9871124135812083,
+      "new": 1.1041838567690907
+     },
+     "deep": {
+      "pixels": 44,
+      "old": 1.0549039577259005,
+      "new": 1.4589304252117712
+     }
+    },
+    "ftsspec_830626_2_14500": {
+     "telluric": {
+      "pixels": 685,
+      "old": 0.8769223640149263,
+      "new": 0.956878870062373
+     },
+     "deep": {
+      "pixels": 132,
+      "old": 1.482263936069736,
+      "new": 1.6089932366177229
+     }
+    },
+    "ftsspec_830626_2_15310": {
+     "telluric": {
+      "pixels": 61,
+      "old": 0.811110293646127,
+      "new": 0.7125854790234395
+     }
+    },
+    "ftsspec_830626_2_15340": {
+     "telluric": {
+      "pixels": 119,
+      "old": 1.0124323237904398,
+      "new": 1.03016459287161
+     },
+     "deep": {
+      "pixels": 17,
+      "old": 1.863429561997467,
+      "new": 2.166125680862465
+     }
+    },
+    "ftsspec_830626_2_15370": {
+     "telluric": {
+      "pixels": 57,
+      "old": 2.054309782936836,
+      "new": 2.158497937290111
+     },
+     "deep": {
+      "pixels": 5,
+      "old": 4.730451102245774,
+      "new": 5.492418701783224
+     }
+    },
+    "ftsspec_830626_2_15400": {
+     "telluric": {
+      "pixels": 238,
+      "old": 1.3002526557274285,
+      "new": 1.1665007657431479
+     },
+     "deep": {
+      "pixels": 24,
+      "old": 3.487281973722847,
+      "new": 3.1029165459835544
+     }
+    },
+    "ftsspec_830626_2_15430": {
+     "telluric": {
+      "pixels": 232,
+      "old": 3.7849015547778233,
+      "new": 3.5354610044176784
+     },
+     "deep": {
+      "pixels": 25,
+      "old": 11.008197308744846,
+      "new": 10.147397408567569
+     }
+    },
+    "ftsspec_830626_2_15460": {
+     "telluric": {
+      "pixels": 93,
+      "old": 1.5176918626498583,
+      "new": 0.9959181665846414
+     }
+    },
+    "ftsspec_830626_2_15490": {
+     "telluric": {
+      "pixels": 30,
+      "old": 1.461632733411822,
+      "new": 0.4214626203406165
+     }
+    },
+    "ftsspec_830626_2_15790": {
+     "telluric": {
+      "pixels": 54,
+      "old": 0.7795759355759116,
+      "new": 0.8668962882821334
+     }
+    },
+    "ftsspec_830626_2_15820": {
+     "deep": {
+      "pixels": 7,
+      "old": 10.236417608541313,
+      "new": 12.02116592704734
+     }
+    },
+    "ftsspec_830626_2_15850": {
+     "telluric": {
+      "pixels": 76,
+      "old": 2.650916002783432,
+      "new": 4.0256367066632714
+     },
+     "deep": {
+      "pixels": 12,
+      "old": 6.494178742041587,
+      "new": 10.007059298391612
+     }
+    },
+    "ftsspec_830626_2_15880": {
+     "telluric": {
+      "pixels": 158,
+      "old": 1.9063455856495244,
+      "new": 2.331018432238512
+     },
+     "deep": {
+      "pixels": 22,
+      "old": 4.782856591902942,
+      "new": 5.892847323429576
+     }
+    },
+    "ftsspec_830626_2_15910": {
+     "telluric": {
+      "pixels": 301,
+      "old": 5.754662073274526,
+      "new": 6.0524503911854355
+     },
+     "deep": {
+      "pixels": 56,
+      "old": 12.992532987618466,
+      "new": 13.686346155660441
+     }
+    },
+    "ftsspec_830626_2_16660": {
+     "telluric": {
+      "pixels": 75,
+      "old": 1.8948727600515298,
+      "new": 1.2783595682415452
+     }
+    },
+    "ftsspec_830626_2_16690": {
+     "telluric": {
+      "pixels": 53,
+      "old": 1.833250965254608,
+      "new": 1.221434380721583
+     }
+    },
+    "ftsspec_830626_2_16720": {
+     "telluric": {
+      "pixels": 154,
+      "old": 1.8432398637033582,
+      "new": 1.0093547864336851
+     },
+     "deep": {
+      "pixels": 8,
+      "old": 1.6887875656756848,
+      "new": 1.4936081746712082
+     }
+    },
+    "ftsspec_830626_2_16750": {
+     "telluric": {
+      "pixels": 162,
+      "old": 1.4013840035255412,
+      "new": 1.42155589170908
+     },
+     "deep": {
+      "pixels": 6,
+      "old": 2.9979875957799105,
+      "new": 2.5301439673718855
+     }
+    },
+    "ftsspec_830626_2_16780": {
+     "telluric": {
+      "pixels": 150,
+      "old": 0.9883566549797752,
+      "new": 0.7751469238224057
+     },
+     "deep": {
+      "pixels": 7,
+      "old": 2.4436091358556933,
+      "new": 1.6841925498331758
+     }
+    },
+    "ftsspec_830626_2_16810": {
+     "telluric": {
+      "pixels": 267,
+      "old": 1.117248262518006,
+      "new": 1.0369728541799785
+     },
+     "deep": {
+      "pixels": 23,
+      "old": 2.515597854144192,
+      "new": 2.2782238283636094
+     }
+    },
+    "ftsspec_830626_2_16840": {
+     "telluric": {
+      "pixels": 108,
+      "old": 0.6744488430582972,
+      "new": 0.6904789653169416
+     }
+    },
+    "ftsspec_830626_2_16870": {
+     "telluric": {
+      "pixels": 204,
+      "old": 2.259335942724266,
+      "new": 0.9913548263734597
+     },
+     "deep": {
+      "pixels": 25,
+      "old": 5.386135920110228,
+      "new": 1.8643475013132806
+     }
+    },
+    "ftsspec_830626_2_16900": {
+     "telluric": {
+      "pixels": 212,
+      "old": 1.3747448125087762,
+      "new": 1.354081497103458
+     },
+     "deep": {
+      "pixels": 9,
+      "old": 2.1312752154272023,
+      "new": 2.573729501835224
+     }
+    },
+    "ftsspec_830626_2_16930": {
+     "telluric": {
+      "pixels": 154,
+      "old": 3.617507857048109,
+      "new": 3.4334913536590164
+     },
+     "deep": {
+      "pixels": 14,
+      "old": 3.466516811471769,
+      "new": 2.916446327470967
+     }
+    },
+    "ftsspec_830626_2_16960": {
+     "telluric": {
+      "pixels": 48,
+      "old": 2.0138067707400555,
+      "new": 1.9841341835658821
+     },
+     "deep": {
+      "pixels": 7,
+      "old": 3.0328986818320076,
+      "new": 2.8440051532525428
+     }
+    },
+    "ftsspec_830626_2_16990": {
+     "telluric": {
+      "pixels": 175,
+      "old": 1.2216835659350045,
+      "new": 1.1397516635656217
+     }
+    },
+    "ftsspec_830626_2_17020": {
+     "telluric": {
+      "pixels": 31,
+      "old": 1.5185990928108628,
+      "new": 0.6763325930449369
+     }
+    },
+    "ftsspec_830626_2_17440": {
+     "telluric": {
+      "pixels": 59,
+      "old": 0.8126641114632819,
+      "new": 0.5011848901241625
+     }
+    },
+    "ftsspec_830626_2_17470": {
+     "telluric": {
+      "pixels": 42,
+      "old": 1.8858246419654057,
+      "new": 0.4413526447747714
+     }
+    },
+    "ftsspec_830626_2_17530": {
+     "telluric": {
+      "pixels": 70,
+      "old": 2.127982715587218,
+      "new": 0.972828603988243
+     }
+    },
+    "ftsspec_830626_2_17560": {
+     "telluric": {
+      "pixels": 84,
+      "old": 0.9352341204047024,
+      "new": 0.6426521380823901
+     }
+    },
+    "ftsspec_830626_2_9070": {
+     "telluric": {
+      "pixels": 397,
+      "old": 2.7446385692218698,
+      "new": 2.423441425116539
+     },
+     "deep": {
+      "pixels": 109,
+      "old": 4.909194145003963,
+      "new": 4.381441900807902
+     }
+    },
+    "ftsspec_830626_2_9160": {
+     "telluric": {
+      "pixels": 204,
+      "old": 2.4621000991222313,
+      "new": 1.922275363384988
+     },
+     "deep": {
+      "pixels": 44,
+      "old": 5.06430167463223,
+      "new": 3.895475145886763
+     }
+    },
+    "ftsspec_830626_2_9190": {
+     "telluric": {
+      "pixels": 194,
+      "old": 1.5296538164925295,
+      "new": 1.3910812403432233
+     },
+     "deep": {
+      "pixels": 31,
+      "old": 3.3377336372227293,
+      "new": 3.0766508702077013
+     }
+    },
+    "ftsspec_830626_2_9220": {
+     "telluric": {
+      "pixels": 86,
+      "old": 1.2888636677454735,
+      "new": 1.1905956322369151
+     },
+     "deep": {
+      "pixels": 5,
+      "old": 2.642662101426322,
+      "new": 2.5309651562955557
+     }
+    },
+    "ftsspec_830626_2_9250": {
+     "telluric": {
+      "pixels": 119,
+      "old": 1.858236442431103,
+      "new": 1.119955188214018
+     },
+     "deep": {
+      "pixels": 13,
+      "old": 4.177054987835019,
+      "new": 2.171222611086936
+     }
+    },
+    "ftsspec_830626_2_9280": {
+     "telluric": {
+      "pixels": 63,
+      "old": 0.8732744748232164,
+      "new": 0.8547856121781074
+     },
+     "deep": {
+      "pixels": 6,
+      "old": 1.3868992113797833,
+      "new": 1.7320322161692547
+     }
+    },
+    "ftsspec_830626_2_9310": {
+     "telluric": {
+      "pixels": 67,
+      "old": 1.6699871075313972,
+      "new": 0.7365373130756748
+     }
+    },
+    "ftsspec_830626_2_9340": {
+     "telluric": {
+      "pixels": 78,
+      "old": 1.8466939170411951,
+      "new": 1.5131538406306548
+     }
+    },
+    "ftsspec_830626_2_9370": {
+     "telluric": {
+      "pixels": 33,
+      "old": 0.6691046116128154,
+      "new": 0.47373560516628327
+     }
+    },
+    "ftsspec_830626_2_9400": {
+     "telluric": {
+      "pixels": 65,
+      "old": 1.2727424918529164,
+      "new": 0.7048572203831273
+     }
+    },
+    "ftsspec_830626_2_9730": {
+     "telluric": {
+      "pixels": 45,
+      "old": 0.7208690132015348,
+      "new": 0.7071540491870283
+     }
+    },
+    "ftsspec_830626_2_9760": {
+     "telluric": {
+      "pixels": 69,
+      "old": 0.9527702740836747,
+      "new": 0.7602129129417793
+     }
+    },
+    "ftsspec_830626_2_9790": {
+     "telluric": {
+      "pixels": 63,
+      "old": 0.3697429208378365,
+      "new": 0.24619269552736225
+     }
+    },
+    "ftsspec_830626_2_9820": {
+     "telluric": {
+      "pixels": 34,
+      "old": 1.1848709361794227,
+      "new": 0.49056068047917056
+     }
+    },
+    "ftsspec_830626_2_9880": {
+     "telluric": {
+      "pixels": 87,
+      "old": 0.4914587979393991,
+      "new": 0.44606067886445955
+     }
+    },
+    "ftsspec_830626_2_9910": {
+     "telluric": {
+      "pixels": 31,
+      "old": 0.4924386767988925,
+      "new": 0.395510508121135
+     }
+    },
+    "ftsspec_830626_2_9970": {
+     "telluric": {
+      "pixels": 93,
+      "old": 0.6671864476682446,
+      "new": 0.6469285301421571
+     }
+    }
+   }
+  },
+  "ftsspec_830626_3": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "ftsspec_830626_3",
+    "authors": "none",
+    "relative_transmission": true
+   },
+   "runs": {
+    "old": "data/corrected/superseded_pre_widthscale/solar/ftsspec_830626_3",
+    "new": "data/corrected/solar"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 121,
+     "median_percent": {
+      "old": 1.4005944875068002,
+      "new": 1.0024538886807375
+     },
+     "pages_flatter_than_old": {
+      "new": 96
+     }
+    },
+    "deep": {
+     "pages": 67,
+     "median_percent": {
+      "old": 3.3511013752705696,
+      "new": 2.584233339228659
+     },
+     "pages_flatter_than_old": {
+      "new": 50
+     }
+    }
+   },
+   "pages": {
+    "ftsspec_830626_3_10060": {
+     "telluric": {
+      "pixels": 64,
+      "old": 0.7007255369616547,
+      "new": 0.8018152101342533
+     }
+    },
+    "ftsspec_830626_3_10090": {
+     "telluric": {
+      "pixels": 60,
+      "old": 0.8040100931002181,
+      "new": 0.6834951735913861
+     }
+    },
+    "ftsspec_830626_3_10120": {
+     "telluric": {
+      "pixels": 126,
+      "old": 1.2879409287422423,
+      "new": 1.2173704472010736
+     }
+    },
+    "ftsspec_830626_3_10150": {
+     "telluric": {
+      "pixels": 293,
+      "old": 1.6055082357416812,
+      "new": 1.2310456214682146
+     },
+     "deep": {
+      "pixels": 38,
+      "old": 3.1332094309442162,
+      "new": 2.30568659145159
+     }
+    },
+    "ftsspec_830626_3_10180": {
+     "telluric": {
+      "pixels": 352,
+      "old": 1.5243406197495706,
+      "new": 1.066248134305139
+     },
+     "deep": {
+      "pixels": 50,
+      "old": 3.1183517964816145,
+      "new": 1.7316906517248098
+     }
+    },
+    "ftsspec_830626_3_10210": {
+     "telluric": {
+      "pixels": 401,
+      "old": 1.3394792734062306,
+      "new": 1.2526624438599805
+     },
+     "deep": {
+      "pixels": 69,
+      "old": 2.5819794415856276,
+      "new": 2.268962220190234
+     }
+    },
+    "ftsspec_830626_3_10240": {
+     "telluric": {
+      "pixels": 460,
+      "old": 1.2949883814088368,
+      "new": 1.0024538886807375
+     },
+     "deep": {
+      "pixels": 75,
+      "old": 2.8040503350035744,
+      "new": 1.9528716063408633
+     }
+    },
+    "ftsspec_830626_3_10270": {
+     "telluric": {
+      "pixels": 410,
+      "old": 1.5166482001607968,
+      "new": 1.224780287210665
+     },
+     "deep": {
+      "pixels": 47,
+      "old": 3.705978161833635,
+      "new": 2.584233339228659
+     }
+    },
+    "ftsspec_830626_3_10300": {
+     "telluric": {
+      "pixels": 367,
+      "old": 2.85569786782832,
+      "new": 1.9338384300949605
+     },
+     "deep": {
+      "pixels": 81,
+      "old": 5.696600978198651,
+      "new": 3.7516932744327747
+     }
+    },
+    "ftsspec_830626_3_10330": {
+     "telluric": {
+      "pixels": 547,
+      "old": 2.1849174715261683,
+      "new": 2.010156522741231
+     },
+     "deep": {
+      "pixels": 130,
+      "old": 3.7741469881212644,
+      "new": 3.509694665326842
+     }
+    },
+    "ftsspec_830626_3_10900": {
+     "telluric": {
+      "pixels": 453,
+      "old": 2.576112563470094,
+      "new": 2.428981658305848
+     },
+     "deep": {
+      "pixels": 150,
+      "old": 4.105899627600182,
+      "new": 3.866985307166332
+     }
+    },
+    "ftsspec_830626_3_10930": {
+     "telluric": {
+      "pixels": 600,
+      "old": 1.8152979267125522,
+      "new": 1.4822010381613206
+     },
+     "deep": {
+      "pixels": 153,
+      "old": 3.1706482505520954,
+      "new": 2.5344788319710965
+     }
+    },
+    "ftsspec_830626_3_10960": {
+     "telluric": {
+      "pixels": 464,
+      "old": 2.072274476370408,
+      "new": 1.8405580196034166
+     },
+     "deep": {
+      "pixels": 113,
+      "old": 3.7128533765233294,
+      "new": 3.25152150035358
+     }
+    },
+    "ftsspec_830626_3_10990": {
+     "telluric": {
+      "pixels": 414,
+      "old": 1.5411893644616348,
+      "new": 1.1572628639631342
+     },
+     "deep": {
+      "pixels": 97,
+      "old": 2.696257131823749,
+      "new": 1.8395098999006265
+     }
+    },
+    "ftsspec_830626_3_11020": {
+     "telluric": {
+      "pixels": 354,
+      "old": 1.1280926606234656,
+      "new": 1.0042390153218146
+     },
+     "deep": {
+      "pixels": 41,
+      "old": 2.5249310682209742,
+      "new": 1.97586060637401
+     }
+    },
+    "ftsspec_830626_3_11050": {
+     "telluric": {
+      "pixels": 159,
+      "old": 1.5203523917035153,
+      "new": 1.3382964403049777
+     },
+     "deep": {
+      "pixels": 33,
+      "old": 3.1655148839672616,
+      "new": 2.7731648131647555
+     }
+    },
+    "ftsspec_830626_3_11110": {
+     "telluric": {
+      "pixels": 333,
+      "old": 2.04000588181801,
+      "new": 1.2287144940371264
+     },
+     "deep": {
+      "pixels": 105,
+      "old": 3.4568394775698965,
+      "new": 1.9650174633091926
+     }
+    },
+    "ftsspec_830626_3_11140": {
+     "telluric": {
+      "pixels": 487,
+      "old": 1.980439655900124,
+      "new": 1.7312798994669865
+     },
+     "deep": {
+      "pixels": 113,
+      "old": 3.84821950756984,
+      "new": 3.410189686077325
+     }
+    },
+    "ftsspec_830626_3_11170": {
+     "telluric": {
+      "pixels": 230,
+      "old": 1.7505583999768066,
+      "new": 1.5731742599061522
+     },
+     "deep": {
+      "pixels": 34,
+      "old": 4.131001130568516,
+      "new": 3.6569558987269692
+     }
+    },
+    "ftsspec_830626_3_11200": {
+     "telluric": {
+      "pixels": 60,
+      "old": 0.6609399599096952,
+      "new": 0.6610431119849799
+     }
+    },
+    "ftsspec_830626_3_11230": {
+     "telluric": {
+      "pixels": 40,
+      "old": 0.8774321376270516,
+      "new": 0.2916232623001327
+     }
+    },
+    "ftsspec_830626_3_11830": {
+     "telluric": {
+      "pixels": 40,
+      "old": 2.0245220431625097,
+      "new": 0.3833921116621128
+     }
+    },
+    "ftsspec_830626_3_11890": {
+     "telluric": {
+      "pixels": 52,
+      "old": 0.7078707786349818,
+      "new": 0.5156700061466517
+     }
+    },
+    "ftsspec_830626_3_11920": {
+     "telluric": {
+      "pixels": 107,
+      "old": 0.8212001726596643,
+      "new": 0.8143698382098817
+     }
+    },
+    "ftsspec_830626_3_11950": {
+     "telluric": {
+      "pixels": 99,
+      "old": 0.9603583873131247,
+      "new": 1.1708547885673322
+     },
+     "deep": {
+      "pixels": 12,
+      "old": 2.13428592986748,
+      "new": 2.7852887692041297
+     }
+    },
+    "ftsspec_830626_3_11980": {
+     "telluric": {
+      "pixels": 38,
+      "old": 1.6434229039314598,
+      "new": 1.775098697709148
+     },
+     "deep": {
+      "pixels": 6,
+      "old": 2.6387110578085347,
+      "new": 2.769626089362377
+     }
+    },
+    "ftsspec_830626_3_12040": {
+     "telluric": {
+      "pixels": 121,
+      "old": 2.8343255320620075,
+      "new": 2.5884329364734597
+     },
+     "deep": {
+      "pixels": 41,
+      "old": 3.747710572472306,
+      "new": 3.211310089227347
+     }
+    },
+    "ftsspec_830626_3_12070": {
+     "telluric": {
+      "pixels": 186,
+      "old": 1.608603917181179,
+      "new": 1.611370925379825
+     },
+     "deep": {
+      "pixels": 30,
+      "old": 3.7403393509611154,
+      "new": 3.827525683627178
+     }
+    },
+    "ftsspec_830626_3_12100": {
+     "telluric": {
+      "pixels": 121,
+      "old": 0.7802217372389368,
+      "new": 1.2227763163176346
+     },
+     "deep": {
+      "pixels": 23,
+      "old": 1.3640995454119162,
+      "new": 2.6586351310621583
+     }
+    },
+    "ftsspec_830626_3_12130": {
+     "telluric": {
+      "pixels": 252,
+      "old": 1.8293442994217552,
+      "new": 1.2466431511512939
+     },
+     "deep": {
+      "pixels": 68,
+      "old": 3.279621625858833,
+      "new": 2.279770670643199
+     }
+    },
+    "ftsspec_830626_3_12190": {
+     "telluric": {
+      "pixels": 269,
+      "old": 1.8865633740932992,
+      "new": 1.1169673756359026
+     },
+     "deep": {
+      "pixels": 55,
+      "old": 3.689501709892326,
+      "new": 2.032628655883802
+     }
+    },
+    "ftsspec_830626_3_12220": {
+     "telluric": {
+      "pixels": 391,
+      "old": 1.1682234623487067,
+      "new": 1.0794522678068184
+     },
+     "deep": {
+      "pixels": 70,
+      "old": 2.3949410361714785,
+      "new": 2.244958469447548
+     }
+    },
+    "ftsspec_830626_3_12250": {
+     "telluric": {
+      "pixels": 345,
+      "old": 1.6594597967106681,
+      "new": 1.7132459962018096
+     },
+     "deep": {
+      "pixels": 62,
+      "old": 2.683320669058437,
+      "new": 2.6490314610841397
+     }
+    },
+    "ftsspec_830626_3_12280": {
+     "telluric": {
+      "pixels": 274,
+      "old": 2.025057977067131,
+      "new": 1.8590010490713313
+     },
+     "deep": {
+      "pixels": 50,
+      "old": 3.998891150605314,
+      "new": 3.892151537450181
+     }
+    },
+    "ftsspec_830626_3_12310": {
+     "telluric": {
+      "pixels": 171,
+      "old": 0.9714718205161031,
+      "new": 0.8075157676552798
+     },
+     "deep": {
+      "pixels": 12,
+      "old": 1.7106978963412571,
+      "new": 1.1746008574084257
+     }
+    },
+    "ftsspec_830626_3_12340": {
+     "telluric": {
+      "pixels": 79,
+      "old": 1.432192714925939,
+      "new": 0.5969214545628236
+     }
+    },
+    "ftsspec_830626_3_12370": {
+     "telluric": {
+      "pixels": 70,
+      "old": 1.4005944875068002,
+      "new": 1.24460733489426
+     }
+    },
+    "ftsspec_830626_3_12400": {
+     "telluric": {
+      "pixels": 41,
+      "old": 0.8716708307646464,
+      "new": 0.7938572027951433
+     }
+    },
+    "ftsspec_830626_3_12430": {
+     "telluric": {
+      "pixels": 139,
+      "old": 0.7245407253218455,
+      "new": 0.6211850770834498
+     }
+    },
+    "ftsspec_830626_3_12460": {
+     "telluric": {
+      "pixels": 121,
+      "old": 1.3160091705809636,
+      "new": 1.3190599958545344
+     }
+    },
+    "ftsspec_830626_3_12490": {
+     "telluric": {
+      "pixels": 71,
+      "old": 3.4120937051436986,
+      "new": 3.3265712249139905
+     }
+    },
+    "ftsspec_830626_3_12520": {
+     "telluric": {
+      "pixels": 106,
+      "old": 0.7422906916190943,
+      "new": 0.6813899115952757
+     }
+    },
+    "ftsspec_830626_3_12550": {
+     "telluric": {
+      "pixels": 138,
+      "old": 0.665309011255831,
+      "new": 0.6585502958191887
+     },
+     "deep": {
+      "pixels": 10,
+      "old": 1.501835756522626,
+      "new": 1.366523339418794
+     }
+    },
+    "ftsspec_830626_3_12610": {
+     "telluric": {
+      "pixels": 54,
+      "old": 1.155017780470894,
+      "new": 0.8899199027041218
+     },
+     "deep": {
+      "pixels": 7,
+      "old": 2.869959944011875,
+      "new": 2.060532534696692
+     }
+    },
+    "ftsspec_830626_3_12640": {
+     "telluric": {
+      "pixels": 95,
+      "old": 0.7577401157802792,
+      "new": 0.7324741662430551
+     },
+     "deep": {
+      "pixels": 8,
+      "old": 1.5647284448230163,
+      "new": 1.7029678350582338
+     }
+    },
+    "ftsspec_830626_3_12670": {
+     "telluric": {
+      "pixels": 38,
+      "old": 0.8057388639117683,
+      "new": 0.6699081985633705
+     }
+    },
+    "ftsspec_830626_3_12700": {
+     "telluric": {
+      "pixels": 65,
+      "old": 0.8264298945106459,
+      "new": 0.8365161364494604
+     }
+    },
+    "ftsspec_830626_3_12940": {
+     "telluric": {
+      "pixels": 52,
+      "old": 0.9549443783807695,
+      "new": 0.6683865257816471
+     }
+    },
+    "ftsspec_830626_3_12970": {
+     "telluric": {
+      "pixels": 61,
+      "old": 1.9159145727360174,
+      "new": 2.0105934930476526
+     },
+     "deep": {
+      "pixels": 6,
+      "old": 3.6511892278400784,
+      "new": 3.355748226742471
+     }
+    },
+    "ftsspec_830626_3_13000": {
+     "telluric": {
+      "pixels": 145,
+      "old": 0.8155518687254327,
+      "new": 0.9523674174495997
+     },
+     "deep": {
+      "pixels": 21,
+      "old": 1.7214003339540165,
+      "new": 2.1041946441452977
+     }
+    },
+    "ftsspec_830626_3_13120": {
+     "telluric": {
+      "pixels": 213,
+      "old": 2.9577258576364502,
+      "new": 3.161501279127011
+     },
+     "deep": {
+      "pixels": 213,
+      "old": 2.9577258576364502,
+      "new": 3.161501279127011
+     }
+    },
+    "ftsspec_830626_3_13150": {
+     "telluric": {
+      "pixels": 290,
+      "old": 4.052063750076614,
+      "new": 4.073900551118084
+     },
+     "deep": {
+      "pixels": 208,
+      "old": 4.546585220784854,
+      "new": 4.575636816795914
+     }
+    },
+    "ftsspec_830626_3_13510": {
+     "telluric": {
+      "pixels": 71,
+      "old": 0.7000599564183663,
+      "new": 0.7125223204734048
+     }
+    },
+    "ftsspec_830626_3_13540": {
+     "telluric": {
+      "pixels": 155,
+      "old": 0.8392757353481547,
+      "new": 0.6505144361069976
+     }
+    },
+    "ftsspec_830626_3_13570": {
+     "telluric": {
+      "pixels": 143,
+      "old": 0.9804780873791991,
+      "new": 0.8052427028499194
+     },
+     "deep": {
+      "pixels": 14,
+      "old": 1.2980034038573574,
+      "new": 0.7767959881091939
+     }
+    },
+    "ftsspec_830626_3_13600": {
+     "telluric": {
+      "pixels": 136,
+      "old": 1.049989108297506,
+      "new": 0.7681531548832923
+     },
+     "deep": {
+      "pixels": 7,
+      "old": 3.572119601880789,
+      "new": 2.0886005122206726
+     }
+    },
+    "ftsspec_830626_3_13630": {
+     "telluric": {
+      "pixels": 113,
+      "old": 0.7624699442467384,
+      "new": 0.6694623596883678
+     },
+     "deep": {
+      "pixels": 8,
+      "old": 1.6916703950004905,
+      "new": 1.0634764931805145
+     }
+    },
+    "ftsspec_830626_3_13660": {
+     "telluric": {
+      "pixels": 364,
+      "old": 0.8234656258537171,
+      "new": 0.8119746224720649
+     },
+     "deep": {
+      "pixels": 31,
+      "old": 1.9807248456962367,
+      "new": 1.9340634939043981
+     }
+    },
+    "ftsspec_830626_3_13690": {
+     "telluric": {
+      "pixels": 288,
+      "old": 1.6759433264820705,
+      "new": 1.7182987394544578
+     },
+     "deep": {
+      "pixels": 37,
+      "old": 3.6981923572362483,
+      "new": 3.8638025550799275
+     }
+    },
+    "ftsspec_830626_3_13720": {
+     "telluric": {
+      "pixels": 281,
+      "old": 1.3369068815081142,
+      "new": 1.332646098457987
+     },
+     "deep": {
+      "pixels": 58,
+      "old": 2.4464460054234265,
+      "new": 2.5069170212927423
+     }
+    },
+    "ftsspec_830626_3_13750": {
+     "telluric": {
+      "pixels": 397,
+      "old": 2.126594738549603,
+      "new": 1.993790219303292
+     },
+     "deep": {
+      "pixels": 78,
+      "old": 3.733957662755168,
+      "new": 3.3614006703407826
+     }
+    },
+    "ftsspec_830626_3_13780": {
+     "telluric": {
+      "pixels": 380,
+      "old": 1.1981636229841064,
+      "new": 1.625161187039132
+     },
+     "deep": {
+      "pixels": 84,
+      "old": 1.6783114599514573,
+      "new": 2.6214645263790612
+     }
+    },
+    "ftsspec_830626_3_13810": {
+     "telluric": {
+      "pixels": 350,
+      "old": 1.405068263415955,
+      "new": 1.4156543474490901
+     },
+     "deep": {
+      "pixels": 69,
+      "old": 2.5692482996416026,
+      "new": 2.760295504837574
+     }
+    },
+    "ftsspec_830626_3_13840": {
+     "telluric": {
+      "pixels": 143,
+      "old": 2.172596472320402,
+      "new": 1.9327452758739014
+     },
+     "deep": {
+      "pixels": 19,
+      "old": 4.979625513602719,
+      "new": 4.222064958955702
+     }
+    },
+    "ftsspec_830626_3_13960": {
+     "telluric": {
+      "pixels": 110,
+      "old": 0.9709266536728874,
+      "new": 1.0014398892523713
+     }
+    },
+    "ftsspec_830626_3_13990": {
+     "telluric": {
+      "pixels": 55,
+      "old": 0.893342793007427,
+      "new": 0.520671920579988
+     }
+    },
+    "ftsspec_830626_3_14020": {
+     "telluric": {
+      "pixels": 37,
+      "old": 1.4569108322053457,
+      "new": 0.4101530849776022
+     }
+    },
+    "ftsspec_830626_3_14050": {
+     "telluric": {
+      "pixels": 63,
+      "old": 1.3286538143449138,
+      "new": 0.5931722298038483
+     }
+    },
+    "ftsspec_830626_3_14080": {
+     "telluric": {
+      "pixels": 68,
+      "old": 0.8815594489178109,
+      "new": 0.5943343489229086
+     }
+    },
+    "ftsspec_830626_3_14110": {
+     "telluric": {
+      "pixels": 131,
+      "old": 2.38043715329671,
+      "new": 0.4924935830503659
+     }
+    },
+    "ftsspec_830626_3_14140": {
+     "telluric": {
+      "pixels": 75,
+      "old": 1.803460236753233,
+      "new": 1.0819437270765826
+     }
+    },
+    "ftsspec_830626_3_14170": {
+     "telluric": {
+      "pixels": 72,
+      "old": 2.1201560843147798,
+      "new": 0.9339084218420153
+     }
+    },
+    "ftsspec_830626_3_14200": {
+     "telluric": {
+      "pixels": 99,
+      "old": 3.058976696827035,
+      "new": 0.8896598798313705
+     },
+     "deep": {
+      "pixels": 14,
+      "old": 7.049532167753511,
+      "new": 1.8120949391181578
+     }
+    },
+    "ftsspec_830626_3_14230": {
+     "telluric": {
+      "pixels": 92,
+      "old": 1.3689211918034854,
+      "new": 0.7208563116975805
+     }
+    },
+    "ftsspec_830626_3_14260": {
+     "telluric": {
+      "pixels": 168,
+      "old": 1.7118369949215686,
+      "new": 0.5871070769218929
+     }
+    },
+    "ftsspec_830626_3_14290": {
+     "telluric": {
+      "pixels": 174,
+      "old": 1.5584733872703231,
+      "new": 1.0477640853315782
+     },
+     "deep": {
+      "pixels": 18,
+      "old": 4.244178354293908,
+      "new": 2.688395389661873
+     }
+    },
+    "ftsspec_830626_3_14350": {
+     "telluric": {
+      "pixels": 201,
+      "old": 3.1144367370331136,
+      "new": 1.7243368758937232
+     },
+     "deep": {
+      "pixels": 31,
+      "old": 7.145988218742414,
+      "new": 3.9960017251445823
+     }
+    },
+    "ftsspec_830626_3_14380": {
+     "telluric": {
+      "pixels": 207,
+      "old": 1.7612844921240927,
+      "new": 1.7189440007262187
+     },
+     "deep": {
+      "pixels": 52,
+      "old": 2.997829579036365,
+      "new": 2.8614417965249097
+     }
+    },
+    "ftsspec_830626_3_14410": {
+     "telluric": {
+      "pixels": 260,
+      "old": 1.549096425450377,
+      "new": 1.614132404370465
+     },
+     "deep": {
+      "pixels": 26,
+      "old": 3.3511013752705696,
+      "new": 3.3543714657998622
+     }
+    },
+    "ftsspec_830626_3_14440": {
+     "telluric": {
+      "pixels": 287,
+      "old": 1.1669543573463317,
+      "new": 1.2051307809976695
+     },
+     "deep": {
+      "pixels": 29,
+      "old": 1.6087178137288292,
+      "new": 1.6863075076601155
+     }
+    },
+    "ftsspec_830626_3_14470": {
+     "telluric": {
+      "pixels": 453,
+      "old": 1.3941793979597186,
+      "new": 0.9762547404013762
+     },
+     "deep": {
+      "pixels": 95,
+      "old": 2.413453704474891,
+      "new": 1.020160126819341
+     }
+    },
+    "ftsspec_830626_3_14500": {
+     "telluric": {
+      "pixels": 588,
+      "old": 0.9093364680163202,
+      "new": 0.8927757928644938
+     },
+     "deep": {
+      "pixels": 96,
+      "old": 1.5580104235518588,
+      "new": 1.4852492008665505
+     }
+    },
+    "ftsspec_830626_3_15310": {
+     "telluric": {
+      "pixels": 36,
+      "old": 0.5872705055804599,
+      "new": 0.41831776895276196
+     }
+    },
+    "ftsspec_830626_3_15340": {
+     "telluric": {
+      "pixels": 84,
+      "old": 0.8614901398241102,
+      "new": 0.7181310808511423
+     }
+    },
+    "ftsspec_830626_3_15370": {
+     "telluric": {
+      "pixels": 40,
+      "old": 1.116420151061538,
+      "new": 1.217249593967395
+     }
+    },
+    "ftsspec_830626_3_15400": {
+     "telluric": {
+      "pixels": 161,
+      "old": 1.1441006509349352,
+      "new": 0.9021838893119366
+     },
+     "deep": {
+      "pixels": 11,
+      "old": 3.4141780275746214,
+      "new": 2.2733811684935956
+     }
+    },
+    "ftsspec_830626_3_15430": {
+     "telluric": {
+      "pixels": 166,
+      "old": 2.1361741144500663,
+      "new": 2.057461184439165
+     },
+     "deep": {
+      "pixels": 7,
+      "old": 8.4505847227677,
+      "new": 7.475454163357067
+     }
+    },
+    "ftsspec_830626_3_15460": {
+     "telluric": {
+      "pixels": 59,
+      "old": 1.5465643325771483,
+      "new": 0.6672700762164065
+     }
+    },
+    "ftsspec_830626_3_15790": {
+     "telluric": {
+      "pixels": 43,
+      "old": 0.623692210524354,
+      "new": 0.6055647406471825
+     }
+    },
+    "ftsspec_830626_3_15820": {
+     "deep": {
+      "pixels": 7,
+      "old": 3.8870970152195374,
+      "new": 1.934427622730795
+     }
+    },
+    "ftsspec_830626_3_15850": {
+     "telluric": {
+      "pixels": 58,
+      "old": 2.7431454947122265,
+      "new": 2.8769970498817363
+     },
+     "deep": {
+      "pixels": 11,
+      "old": 4.600797875099543,
+      "new": 4.938407098138099
+     }
+    },
+    "ftsspec_830626_3_15880": {
+     "telluric": {
+      "pixels": 115,
+      "old": 1.8836666399969726,
+      "new": 1.9873567431311228
+     },
+     "deep": {
+      "pixels": 19,
+      "old": 2.4554936361021604,
+      "new": 2.5357279713759193
+     }
+    },
+    "ftsspec_830626_3_15910": {
+     "telluric": {
+      "pixels": 233,
+      "old": 3.143159679992607,
+      "new": 3.189608607670021
+     },
+     "deep": {
+      "pixels": 41,
+      "old": 5.85795515472074,
+      "new": 5.814940653828437
+     }
+    },
+    "ftsspec_830626_3_16660": {
+     "telluric": {
+      "pixels": 42,
+      "old": 1.931677535010349,
+      "new": 1.389676199025168
+     }
+    },
+    "ftsspec_830626_3_16720": {
+     "telluric": {
+      "pixels": 113,
+      "old": 1.7518144819175296,
+      "new": 0.704537350714488
+     }
+    },
+    "ftsspec_830626_3_16750": {
+     "telluric": {
+      "pixels": 85,
+      "old": 1.4260792357244227,
+      "new": 1.1605152609244396
+     }
+    },
+    "ftsspec_830626_3_16780": {
+     "telluric": {
+      "pixels": 98,
+      "old": 0.8216176170126271,
+      "new": 0.5903106967159759
+     }
+    },
+    "ftsspec_830626_3_16810": {
+     "telluric": {
+      "pixels": 185,
+      "old": 1.009308078372032,
+      "new": 0.9041533589326164
+     },
+     "deep": {
+      "pixels": 6,
+      "old": 2.1339126036429255,
+      "new": 1.3259569227612553
+     }
+    },
+    "ftsspec_830626_3_16840": {
+     "telluric": {
+      "pixels": 64,
+      "old": 0.580754736818095,
+      "new": 0.5607988314760016
+     }
+    },
+    "ftsspec_830626_3_16870": {
+     "telluric": {
+      "pixels": 136,
+      "old": 3.451175522471936,
+      "new": 0.6807623215084732
+     },
+     "deep": {
+      "pixels": 8,
+      "old": 9.15159355408546,
+      "new": 1.2217882361934034
+     }
+    },
+    "ftsspec_830626_3_16900": {
+     "telluric": {
+      "pixels": 122,
+      "old": 1.1323178024089382,
+      "new": 0.9689897988094134
+     }
+    },
+    "ftsspec_830626_3_16930": {
+     "telluric": {
+      "pixels": 97,
+      "old": 3.2121000728987994,
+      "new": 2.7771725561898055
+     }
+    },
+    "ftsspec_830626_3_16990": {
+     "telluric": {
+      "pixels": 115,
+      "old": 0.9174980670307054,
+      "new": 0.7579289393747876
+     }
+    },
+    "ftsspec_830626_3_17440": {
+     "telluric": {
+      "pixels": 31,
+      "old": 0.5655221512794261,
+      "new": 0.36995435743903954
+     }
+    },
+    "ftsspec_830626_3_17530": {
+     "telluric": {
+      "pixels": 36,
+      "old": 2.0805348469421436,
+      "new": 0.7408737147148827
+     }
+    },
+    "ftsspec_830626_3_17560": {
+     "telluric": {
+      "pixels": 54,
+      "old": 0.7593094060212573,
+      "new": 0.5187665641290559
+     }
+    },
+    "ftsspec_830626_3_8980": {
+     "telluric": {
+      "pixels": 585,
+      "old": 3.1679124845478843,
+      "new": 2.332451650684909
+     },
+     "deep": {
+      "pixels": 143,
+      "old": 5.987192276539029,
+      "new": 4.262644336268229
+     }
+    },
+    "ftsspec_830626_3_9010": {
+     "telluric": {
+      "pixels": 622,
+      "old": 3.6004285027433447,
+      "new": 3.2214073117030546
+     },
+     "deep": {
+      "pixels": 128,
+      "old": 7.547300730517718,
+      "new": 6.741880778865002
+     }
+    },
+    "ftsspec_830626_3_9040": {
+     "telluric": {
+      "pixels": 527,
+      "old": 2.3594834446719273,
+      "new": 1.8743130427240664
+     },
+     "deep": {
+      "pixels": 81,
+      "old": 5.242514481566989,
+      "new": 3.7393681239714995
+     }
+    },
+    "ftsspec_830626_3_9070": {
+     "telluric": {
+      "pixels": 326,
+      "old": 1.7083152310870116,
+      "new": 1.6891095437491703
+     },
+     "deep": {
+      "pixels": 57,
+      "old": 3.36432635090938,
+      "new": 3.5399382649965214
+     }
+    },
+    "ftsspec_830626_3_9160": {
+     "telluric": {
+      "pixels": 145,
+      "old": 1.7961723181623601,
+      "new": 1.301528524533784
+     },
+     "deep": {
+      "pixels": 29,
+      "old": 3.701512651396473,
+      "new": 2.4715380772151354
+     }
+    },
+    "ftsspec_830626_3_9190": {
+     "telluric": {
+      "pixels": 133,
+      "old": 1.4258826552154262,
+      "new": 1.2425349763896951
+     },
+     "deep": {
+      "pixels": 26,
+      "old": 2.7889767328820465,
+      "new": 2.2763069377458884
+     }
+    },
+    "ftsspec_830626_3_9220": {
+     "telluric": {
+      "pixels": 55,
+      "old": 0.7726423293729724,
+      "new": 0.8086664376448399
+     }
+    },
+    "ftsspec_830626_3_9250": {
+     "telluric": {
+      "pixels": 83,
+      "old": 1.6677101924553497,
+      "new": 0.8731666398430402
+     },
+     "deep": {
+      "pixels": 7,
+      "old": 4.288340897322486,
+      "new": 1.615863502006984
+     }
+    },
+    "ftsspec_830626_3_9280": {
+     "telluric": {
+      "pixels": 36,
+      "old": 1.244968914842343,
+      "new": 1.1264141208185607
+     }
+    },
+    "ftsspec_830626_3_9310": {
+     "telluric": {
+      "pixels": 38,
+      "old": 1.7262114559798887,
+      "new": 0.4752814411860022
+     }
+    },
+    "ftsspec_830626_3_9340": {
+     "telluric": {
+      "pixels": 35,
+      "old": 1.7691458251687668,
+      "new": 1.398316227562776
+     }
+    },
+    "ftsspec_830626_3_9400": {
+     "telluric": {
+      "pixels": 34,
+      "old": 1.3106138984932014,
+      "new": 0.8991498818148064
+     }
+    },
+    "ftsspec_830626_3_9760": {
+     "telluric": {
+      "pixels": 48,
+      "old": 0.8491138003159935,
+      "new": 0.6806141562185963
+     }
+    },
+    "ftsspec_830626_3_9790": {
+     "telluric": {
+      "pixels": 36,
+      "old": 0.25146590824630666,
+      "new": 0.22526430507488773
+     }
+    },
+    "ftsspec_830626_3_9880": {
+     "telluric": {
+      "pixels": 53,
+      "old": 0.34884178351333384,
+      "new": 0.3103214579423544
+     }
+    },
+    "ftsspec_830626_3_9970": {
+     "telluric": {
+      "pixels": 60,
+      "old": 0.47655834446166423,
+      "new": 0.442507803371421
      }
     }
    }
