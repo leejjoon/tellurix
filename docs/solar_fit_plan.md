@@ -1781,7 +1781,19 @@ Full runs, one GPU a file, 4.4 h. Against the superseded runs (`full_1983` in
 | `830626_3` | 121 | 1.40% | 1.00% | 96 | 3.35 -> 2.58% (67) |
 
 One real regression: `_2` 11470 (0.89 um band), water x3 and residual +44%, like niratl's
-ph11200. Promoted: the old records, window files, transmission files and review bundle are
+ph11200.
+
+No authors' correction of the pair exists. The nearest is niratl's (same instrument and
+campaign, other scans, air mass 1.10), shifted onto the pair's solar lines by one velocity per
+file (+0.31 and +0.29 km/s, from 115 and 120 windows) and scored at the pair's pixels over
+8905-13565 cm-1: 0.44% (`_2`) and 0.61% (`_3`) against our 0.95% and 1.20% (65 and 66
+windows), with pixel noise only 0.15-0.19% of ours. That mostly measures air mass: the same
+pixels hold 3-5x less optical depth in niratl (median 0.03 and 0.08 against 0.12 and 0.17).
+Flatness follows optical depth as tau^0.68 in ours; at matched optical depth the authors'
+niratl sits at 0.98x that trend (p16-p84 0.70-1.59, 131 windows), or 15-20% below ours in
+bins of tau (0.56 against 0.68% at 0.05-0.1, 0.81 against 0.94% at 0.1-0.2). So at most a
+small edge for the authors, inside the window-to-window spread, and on niratl's own pixels
+our refit is the flatter (above). Promoted: the old records, window files, transmission files and review bundle are
 in `data/corrected/superseded_pre_widthscale/`.
 
 ### Also open
