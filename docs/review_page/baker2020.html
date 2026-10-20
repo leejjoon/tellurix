@@ -1,0 +1,950 @@
+<title>Baker 2020 Telluric Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.iife.min.js"></script>
+
+<style>
+  :root {
+    --ground: #eef2f3;
+    --panel: #ffffff;
+    --sunk: #e3e9eb;
+    --ink: #10181c;
+    --muted: #5b6b72;
+    --faint: #8a9aa1;
+    --line: #cfd9dd;
+    --hair: #dde5e8;
+
+    --observed: #10181c;
+    --telluric: #0e7c8c;
+    --solar: #c07b12;
+    --continuum: #6f5bb5;
+    --corrected: #a83f6b;
+    --efftrans: #1f5fa8;
+    --authors: #6b7a10;
+
+    --good: #2c7f56;
+    --warn: #a86a12;
+    --bad: #b4402c;
+
+    --focus: #0e7c8c;
+    --shadow: 0 1px 2px rgba(16, 40, 48, .07), 0 8px 24px rgba(16, 40, 48, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0c1216;
+      --panel: #141c21;
+      --sunk: #101a1f;
+      --ink: #e6edf0;
+      --muted: #93a6ad;
+      --faint: #6b7f87;
+      --line: #27343a;
+      --hair: #1d282d;
+
+      --observed: #e6edf0;
+      --telluric: #4bc3d4;
+      --solar: #e8a33c;
+      --continuum: #a48ff0;
+      --corrected: #f18cb4;
+      --efftrans: #8cb8f5;
+      --authors: #c3d155;
+
+      --good: #4cb583;
+      --warn: #d69a3a;
+      --bad: #e4705a;
+
+      --focus: #4bc3d4;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0c1216;
+    --panel: #141c21;
+    --sunk: #101a1f;
+    --ink: #e6edf0;
+    --muted: #93a6ad;
+    --faint: #6b7f87;
+    --line: #27343a;
+    --hair: #1d282d;
+
+    --observed: #e6edf0;
+    --telluric: #4bc3d4;
+    --solar: #e8a33c;
+    --continuum: #a48ff0;
+    --corrected: #f18cb4;
+    --efftrans: #8cb8f5;
+    --authors: #c3d155;
+
+    --good: #4cb583;
+    --warn: #d69a3a;
+    --bad: #e4705a;
+
+    --focus: #4bc3d4;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .3);
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+  #app {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 252px minmax(0, 1fr) 312px;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0;
+  }
+
+  /* ---- top bar ------------------------------------------------------- */
+  header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 8px 18px;
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: 4px; }
+  .brand b { font-weight: 600; letter-spacing: -0.01em; }
+  .brand span { color: var(--faint); font-size: 12px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--sunk); border: 1px solid var(--hair);
+    font-size: 12px; white-space: nowrap;
+  }
+  .badge i { font-style: normal; color: var(--faint); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .badge b { font-weight: 600; }
+  .badge.is-good { border-color: color-mix(in srgb, var(--good) 45%, var(--hair)); }
+  .badge.is-warn { border-color: color-mix(in srgb, var(--warn) 55%, var(--hair)); }
+  .badge.is-bad  { border-color: color-mix(in srgb, var(--bad) 55%, var(--hair)); background: color-mix(in srgb, var(--bad) 10%, var(--sunk)); }
+  .spacer { flex: 1 1 24px; }
+
+  .ctl {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: var(--sunk); border: 1px solid var(--hair); border-radius: 8px; padding: 2px;
+  }
+  .ctl button {
+    border: 0; background: transparent; cursor: pointer;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--muted);
+  }
+  .ctl button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+  .ctl button:hover { color: var(--ink); }
+
+  /* ---- rails --------------------------------------------------------- */
+  aside {
+    background: var(--panel);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  aside.left { border-right: 1px solid var(--line); }
+  aside.right { border-left: 1px solid var(--line); }
+  .rail-head {
+    padding: 10px 12px 8px; border-bottom: 1px solid var(--hair);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .rail-title { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+  .filters { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip {
+    border: 1px solid var(--hair); background: var(--sunk); color: var(--muted);
+    border-radius: 999px; padding: 2px 9px; font-size: 11.5px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+  .list { overflow-y: auto; min-height: 0; flex: 1; }
+  .row {
+    width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer;
+    display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 9px;
+    padding: 7px 12px; border-bottom: 1px solid var(--hair);
+  }
+  .row:hover { background: var(--sunk); }
+  .row[aria-current="true"] { background: color-mix(in srgb, var(--telluric) 12%, var(--panel)); box-shadow: inset 3px 0 0 var(--telluric); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  .dot.warn { background: var(--warn); }
+  .dot.bad { background: var(--bad); }
+  .row .who { font-size: 12.5px; }
+  .row .who em { font-style: normal; color: var(--faint); }
+  .row .q { font-size: 12px; color: var(--muted); }
+  .row .marked { font-size: 11px; color: var(--faint); }
+
+  /* ---- centre -------------------------------------------------------- */
+  main { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 12px 14px 14px; gap: 10px; overflow: hidden; }
+  .plotwrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 4px; box-shadow: var(--shadow); }
+  .plotwrap.main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .plotwrap.resid { flex: 0 0 auto; }
+  /* Reserved, not left to the chart: both charts are destroyed before the main
+     one measures its space, so an empty strip here handed the main chart this
+     strip's 118 px and put its x axis on top of the residuals. */
+  #rplot { min-height: 118px; }
+  .plot-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 2px 2px 8px; }
+  .trace { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; background: none; border: 0; padding: 0; color: var(--muted); }
+  .trace[aria-pressed="true"] { color: var(--ink); }
+  .trace .swatch { width: 15px; height: 3px; border-radius: 2px; background: currentColor; flex: none; }
+  .trace[aria-pressed="false"] .swatch { opacity: .3; }
+
+  .hint { color: var(--faint); font-size: 11.5px; padding: 0 2px; }
+
+  /* ---- species ------------------------------------------------------- */
+  .species-groups { overflow-y: auto; min-height: 0; flex: 1; }
+  .group-title {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--panel); padding: 9px 12px 5px;
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint);
+    border-bottom: 1px solid var(--hair);
+  }
+  .sp {
+    display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 9px;
+    padding: 6px 12px; width: 100%; text-align: left; border: 0; background: transparent;
+    border-bottom: 1px solid var(--hair); font-size: 12.5px;
+  }
+  .sp.active { cursor: pointer; }
+  .sp.active:hover { background: var(--sunk); }
+  .sp.off { color: var(--faint); }
+  .sp .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--hair); }
+  .sp .name { font-weight: 500; }
+  .sp .why { font-size: 11.5px; color: var(--faint); }
+  .sp .num { font-size: 11.5px; color: var(--muted); }
+  .sp .flag { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--bad); }
+
+  /* ---- review -------------------------------------------------------- */
+  .review { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--sunk); }
+  .marks { display: flex; gap: 6px; }
+  kbd { font: 10px "IBM Plex Mono", ui-monospace, monospace; color: var(--faint);
+        border: 1px solid var(--hair); border-radius: 3px; padding: 0 3px; margin-left: 5px; }
+  .mark[aria-pressed="true"] kbd { color: inherit; border-color: currentColor; opacity: .8; }
+  .mark {
+    flex: 1; border: 1px solid var(--hair); background: var(--panel); color: var(--muted);
+    border-radius: 7px; padding: 5px 4px; font-size: 12px; cursor: pointer;
+  }
+  .mark[aria-pressed="true"][data-mark="good"]    { background: var(--good); border-color: var(--good); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="suspect"] { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .mark[aria-pressed="true"][data-mark="reject"]  { background: var(--bad);  border-color: var(--bad);  color: #fff; }
+  .review textarea {
+    width: 100%; min-height: 54px; resize: vertical;
+    background: var(--panel); border: 1px solid var(--hair); border-radius: 7px;
+    padding: 6px 8px; font-size: 12.5px; font-family: inherit;
+  }
+  .review .status { font-size: 11.5px; color: var(--faint); min-height: 1.2em; }
+
+  /* ---- uPlot --------------------------------------------------------- */
+  .uplot, .uplot *, .uplot *::before, .uplot *::after { box-sizing: border-box; }
+  .uplot { width: min-content; font-family: "IBM Plex Mono", ui-monospace, monospace; line-height: 1.5; }
+  .u-wrap { position: relative; user-select: none; }
+  .u-over, .u-under, .u-axis { position: absolute; }
+  .u-under { overflow: hidden; }
+  .uplot canvas { display: block; position: relative; width: 100%; height: 100%; }
+  .u-select { background: rgba(14, 124, 140, .12); position: absolute; pointer-events: none; }
+  .u-cursor-x, .u-cursor-y { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; z-index: 100; }
+  .u-hz .u-cursor-x, .u-vt .u-cursor-y { height: 100%; border-right: 1px dashed var(--faint); }
+  .u-hz .u-cursor-y, .u-vt .u-cursor-x { width: 100%; border-bottom: 1px dashed var(--faint); }
+  .u-cursor-pt { position: absolute; top: 0; left: 0; border-radius: 50%; border: 0 solid;
+    pointer-events: none; will-change: transform; z-index: 100;
+    /* uPlot sets `background` inline as a shorthand, so this must win. */
+    background-clip: padding-box !important; }
+  .u-axis.u-off, .u-select.u-off, .u-cursor-x.u-off, .u-cursor-y.u-off,
+  .u-cursor-pt.u-off { display: none; }
+  .u-legend { display: none; }
+  .fixed-tag { font-size: 12px; color: var(--muted); padding: 4px 10px; border: 1px solid var(--hair); border-radius: 8px; background: var(--sunk); }
+
+  .readout {
+    display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 2px 0;
+    font-size: 11.5px; color: var(--muted); min-height: 1.4em;
+  }
+  .readout b { color: var(--ink); font-weight: 500; }
+
+  #boot { padding: 40px 20px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
+
+  @media (max-width: 1080px) {
+    #app { grid-template-columns: 216px minmax(0, 1fr) 268px; }
+  }
+  @media (max-width: 900px) {
+    html, body { height: auto; }
+    #app { display: flex; flex-direction: column; }
+    main { order: 1; }
+    aside.right { order: 2; }
+    aside.left { order: 3; }
+    header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+    main { padding: 12px 16px; overflow: visible; }
+    .plotwrap.main { min-height: 340px; }
+    aside { border: 0 !important; border-top: 1px solid var(--line) !important; }
+    .list, .species-groups { max-height: 340px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<style>
+  :root { --stel: #c07b12; --clean: rgba(192, 123, 18, .09); --hot: #c0392b; --cold: #1f5fa8; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --stel: #e8a33c; --clean: rgba(232, 163, 60, .10); --hot: #f08a6c; --cold: #8cb8f5; }
+  }
+  :root[data-theme="dark"] { --stel: #e8a33c; --clean: rgba(232, 163, 60, .10); --hot: #f08a6c; --cold: #8cb8f5; }
+  .plotwrap.stack { flex: 0 0 auto; }
+  #stack { display: block; width: 100%; height: 190px; cursor: pointer; image-rendering: pixelated; }
+  .spec-ctl select { border: 0; background: transparent; font-size: 12px; padding: 3px 4px; max-width: 290px; }
+  .facts { padding: 8px 12px 10px; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 12.5px; border-bottom: 1px solid var(--hair); }
+  .facts dt { color: var(--faint); }
+  .facts dd { margin: 0; text-align: right; }
+  .feat {
+    display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; width: 100%; text-align: left;
+    border: 0; border-bottom: 1px solid var(--hair); background: transparent; padding: 6px 12px; cursor: pointer; font-size: 12px;
+  }
+  .feat:hover { background: var(--sunk); }
+  .feat .r { font-weight: 600; }
+  .feat .sub { grid-column: 1 / -1; color: var(--faint); font-size: 11px; }
+  .feat.off-hi .r { color: var(--hot); }
+  .feat.off-lo .r { color: var(--cold); }
+  .scale-key { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--faint); }
+  .scale-key span.bar { width: 120px; height: 8px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--cold), var(--panel), var(--hot)); border: 1px solid var(--hair); }
+</style>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <b>Baker 2020 Telluric Fit Review</b>
+      <span class="mono" id="window-name">loading…</span>
+    </div>
+    <div class="badges" id="badges"></div>
+    <div class="spacer"></div>
+    <span class="fixed-tag mono">IAG Göttingen FTS · Sun and iodine divided out by Baker et al. · flat Sun · H₂O + O₂, AER widths ×1.00 · ERA5 per hour</span>
+    <div class="ctl spec-ctl" role="group" aria-label="Which spectrum">
+      <button type="button" id="prev-spec" title="previous spectrum (h)">‹<kbd>h</kbd></button>
+      <select id="spec" class="mono" aria-label="Spectrum, by air mass"></select>
+      <button type="button" id="next-spec" title="next spectrum (l)">›<kbd>l</kbd></button>
+    </div>
+  </header>
+
+  <aside class="left">
+    <div class="rail-head">
+      <div class="rail-title" id="list-count">windows</div>
+      <div class="filters" id="filters"></div>
+    </div>
+    <div class="list" id="list" role="listbox" aria-label="Windows"></div>
+    <div class="review">
+      <div class="rail-title">your verdict on this window</div>
+      <div class="marks">
+        <button type="button" class="mark" data-mark="good" aria-pressed="false">good<kbd>1</kbd></button>
+        <button type="button" class="mark" data-mark="suspect" aria-pressed="false">suspect<kbd>2</kbd></button>
+        <button type="button" class="mark" data-mark="reject" aria-pressed="false">reject<kbd>3</kbd></button>
+      </div>
+      <textarea id="note" placeholder="What did you see? (name a spectrum if it is one)" maxlength="400"></textarea>
+      <div class="status" id="review-status">connecting…</div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="plotwrap main">
+      <div class="plot-legend" id="legend"></div>
+      <div class="hint">Observed and model are over the fitted continuum. Ticks at the top are the analysed features, labelled
+        with Baker&rsquo;s observed/model optical-depth ratio (mean over spectra): red, the model is too weak; blue, too strong.
+        Shaded: within 0.1&nbsp;cm⁻¹ of a line of their solar model (<span class="mono">stel_mod</span> &lt; 0.97), which the analysis drops.
+        Drag to zoom, double-click to reset; click a feature on the right to go to it.</div>
+      <div id="plot" style="flex:1 1 auto; min-height:0;"></div>
+      <div class="readout mono" id="readout"></div>
+    </div>
+    <div class="plotwrap resid">
+      <div class="hint" id="resid-hint">residual, observed &minus; model, % of continuum &mdash; the band is &plusmn;1&sigma; of pixel noise</div>
+      <div id="rplot"></div>
+    </div>
+    <div class="plotwrap stack">
+      <div class="plot-legend" style="justify-content:space-between">
+        <span class="hint" style="padding:0">every spectrum&rsquo;s residual, one row each, air mass increasing downward &mdash; a
+          column that repeats in every row is the line list&rsquo;s; click a row to show that spectrum</span>
+        <button type="button" class="scale-key mono" id="stack-scale" title="change the colour scale"
+          style="border:0;background:none;cursor:pointer">−2%<span class="bar"></span>+2%</button>
+      </div>
+      <canvas id="stack"></canvas>
+    </div>
+  </main>
+
+  <aside class="right">
+    <div class="rail-head"><div class="rail-title">this spectrum</div></div>
+    <dl class="facts mono" id="facts"></dl>
+    <div class="rail-head"><div class="rail-title" id="feat-title">features</div>
+      <div class="hint">Baker ratio ± scatter (spectra) · solar fits&rsquo; ratios · position offset, observed − model</div></div>
+    <div class="species-groups" id="features"></div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TRACES = [
+    { key: "observed", hotkey: "o", label: "observed", token: "--observed", width: 1.1 },
+    { key: "model", hotkey: "m", label: "fitted model", token: "--telluric", width: 1.2 },
+    // Their solar model is in the solar frame, which moves against the atmosphere
+    // by up to ~1 km/s over a year: it marks where a solar residue can be, not where
+    // it is to the pixel.
+    { key: "stel", hotkey: "s", label: "their solar model (solar frame)", token: "--stel", width: 1.0, dash: [4, 3] },
+    { key: "features", hotkey: "f", label: "feature ticks", token: "--muted", width: 1, overlay: true },
+    { key: "clean", hotkey: "c", label: "solar-line shading", token: "--stel", width: 6, overlay: true }
+  ];
+  var SOLAR_NAMES = { wallace: "W", j83_2: "83/2", j83_3: "83/3", niratl: "nir" };
+  var STACK_LIMITS = [0.01, 0.02, 0.05];
+
+  var STATE = {
+    windows: [], byV1: new Map(), chunks: new Map(), pending: new Map(), summary: null,
+    v1: null, spec: null, traces: { observed: true, model: true, stel: false, features: true, clean: true },
+    filter: "all", marks: {}, stackLimit: 0.02, plot: null, rplot: null, plotWindow: null, pack: null,
+    db: null, writing: Promise.resolve()
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function gaps(data) {
+    return data.map(function (a, k) {
+      return k === 0 || !a ? a : Array.from(a, function (v) { return v === v ? v : null; });
+    });
+  }
+  function axisTicks(u, vs, axisIdx, space, incr) {
+    var d = incr > 0 ? Math.max(0, Math.min(6, Math.ceil(-Math.log10(incr) - 1e-9))) : 0;
+    return vs.map(function (v) { return v.toFixed(d); });
+  }
+  function specKey(s) { return String(s.group).padStart(2, "0") + "_" + s.number; }
+  function fmt(v, d) { return v == null || !isFinite(v) ? "—" : v.toFixed(d); }
+
+  // ---- data ------------------------------------------------------------
+  function chunkBuffer(name) {
+    if (STATE.chunks.has(name)) return Promise.resolve(STATE.chunks.get(name));
+    if (STATE.pending.has(name)) return STATE.pending.get(name);
+    var p = fetch(name.replace(".bin", ".wasm")).then(function (r) {
+      if (!r.ok) throw new Error(name + " did not load (" + r.status + ")");
+      return r.arrayBuffer();
+    }).then(function (buf) {
+      // Keep a few windows, not all 70 MB.
+      if (STATE.chunks.size > 12) STATE.chunks.delete(STATE.chunks.keys().next().value);
+      STATE.chunks.set(name, buf); STATE.pending.delete(name); return buf;
+    });
+    STATE.pending.set(name, p);
+    return p;
+  }
+  function decode(buf, meta, n) {
+    var codes = new Uint16Array(buf, meta.offset, n);
+    var out = new Float64Array(n), span = (meta.hi - meta.lo) / 65534;
+    for (var i = 0; i < n; i++) out[i] = codes[i] === 65535 ? NaN : meta.lo + codes[i] * span;
+    return out;
+  }
+  function bits(buf, offset, n) {
+    var bytes = new Uint8Array(buf, offset, Math.ceil(n / 8)), out = new Uint8Array(n);
+    for (var i = 0; i < n; i++) out[i] = (bytes[i >> 3] >> (7 - (i & 7))) & 1;
+    return out;
+  }
+  function load(entry) {
+    return chunkBuffer(entry.chunk).then(function (buf) {
+      var n = entry.n, x = new Float64Array(n);
+      for (var i = 0; i < n; i++) x[i] = entry.nu0 + i * entry.dnu;
+      var pack = { entry: entry, x: x, spectra: [], groups: {} };
+      entry.spectra.forEach(function (s) {
+        var obs = decode(buf, s.observed, n), mod = decode(buf, s.model, n), mask = bits(buf, s.mask, n);
+        var res = new Float64Array(n);
+        for (var j = 0; j < n; j++) { if (!mask[j]) obs[j] = NaN; res[j] = mask[j] ? obs[j] - mod[j] : NaN; }
+        pack.spectra.push({ meta: s, observed: obs, model: mod, residual: res });
+      });
+      Object.keys(entry.groups).forEach(function (g) {
+        pack.groups[g] = { stel: decode(buf, entry.groups[g].stel_mod, n), clean: bits(buf, entry.groups[g].clean, n) };
+      });
+      return pack;
+    });
+  }
+
+  // ---- window list -----------------------------------------------------
+  function maxOff(e) {
+    return e.features.reduce(function (m, f) { return Math.max(m, Math.abs(f.ratio - 1)); }, 0);
+  }
+  var FILTERS = [
+    { key: "all", label: "all" },
+    { key: "worst", label: "worst 30" },
+    { key: "off", label: "a feature >8% off", test: function (e) { return maxOff(e) > 0.08; } },
+    { key: "unconverged", label: "not converged", test: function (e) { return e.spectra.some(function (s) { return !s.converged; }); } },
+    { key: "marked", label: "marked", test: function (e) { return !!STATE.marks[String(e.v1)]; } }
+  ];
+  function severity(e) {
+    if (e.median_rms == null) return "bad";
+    if (e.median_rms > 0.01) return "bad";
+    if (e.median_rms > 0.004) return "warn";
+    return "";
+  }
+  function visibleWindows() {
+    var all = STATE.windows;
+    if (STATE.filter === "worst") {
+      return all.slice().sort(function (a, b) { return (b.median_rms || 0) - (a.median_rms || 0); })
+        .slice(0, 30).sort(function (a, b) { return a.v1 - b.v1; });
+    }
+    var f = FILTERS.find(function (x) { return x.key === STATE.filter; });
+    return f && f.test ? all.filter(f.test) : all;
+  }
+  function renderList() {
+    var shown = visibleWindows();
+    $("list-count").textContent = shown.length + " of " + STATE.windows.length + " windows";
+    $("list").innerHTML = shown.map(function (e) {
+      var mark = STATE.marks[String(e.v1)];
+      return '<button type="button" class="row mono" role="option" data-v1="' + e.v1 + '" aria-current="' + (e.v1 === STATE.v1) + '">' +
+        '<span class="dot ' + severity(e) + '"></span>' +
+        '<span class="who">' + e.v1.toFixed(0) + ' <em>' + (1e7 / (e.v1 + 15)).toFixed(0) + ' nm</em></span>' +
+        '<span class="q">' + fmt(100 * e.median_rms, 2) + '%' +
+        (mark && mark.mark ? ' <span class="marked">' + (mark.mark === "good" ? "✓" : mark.mark === "suspect" ? "!" : "✕") + '</span>' : '') +
+        '</span></button>';
+    }).join("");
+  }
+
+  // ---- spectrum selector -----------------------------------------------
+  function currentSpectrum(pack) {
+    var list = pack.spectra;
+    var found = list.find(function (s) { return specKey(s.meta) === STATE.spec; });
+    return found || list[0];
+  }
+  function renderSpecSelect(entry) {
+    var keys = entry.spectra.map(specKey);
+    if (keys.indexOf(STATE.spec) < 0) STATE.spec = keys[0];
+    $("spec").innerHTML = entry.spectra.map(function (s) {
+      var k = specKey(s);
+      return '<option value="' + k + '"' + (k === STATE.spec ? " selected" : "") + '>X ' + s.airmass.toFixed(2) +
+        ' · ' + s.utc.replace("T", " ") + ' · g' + k.replace("_", "/") + ' · ' + fmt(100 * s.rms, 2) + '%</option>';
+    }).join("");
+  }
+  function stepSpec(delta) {
+    var e = STATE.byV1.get(STATE.v1); if (!e) return;
+    var keys = e.spectra.map(specKey), at = keys.indexOf(STATE.spec);
+    var next = keys[Math.min(Math.max(at + delta, 0), keys.length - 1)];
+    if (next !== STATE.spec) { STATE.spec = next; show(STATE.v1); }
+  }
+
+  // ---- plotting --------------------------------------------------------
+  function nearestIndex(x, v) {
+    var lo = 0, hi = x.length - 1;
+    while (hi - lo > 1) { var mid = (lo + hi) >> 1; if (x[mid] < v) lo = mid; else hi = mid; }
+    return Math.abs(x[lo] - v) <= Math.abs(x[hi] - v) ? lo : hi;
+  }
+  function ratioColor(r) { return r > 1.05 ? css("--hot") : r < 0.95 ? css("--cold") : css("--muted"); }
+
+  function drawOverlays(u, pack, spec) {
+    var ctx = u.ctx, b = u.bbox, entry = pack.entry;
+    var group = pack.groups[String(spec.meta.group)];
+    ctx.save();
+    ctx.beginPath(); ctx.rect(b.left, b.top, b.width, b.height); ctx.clip();
+    if (STATE.traces.clean && group) {
+      ctx.fillStyle = css("--clean");
+      var x = pack.x, start = -1;
+      for (var i = 0; i <= x.length; i++) {
+        var dirty = i < x.length && !group.clean[i];
+        if (dirty && start < 0) start = i;
+        if (!dirty && start >= 0) {
+          var l = u.valToPos(x[start] - entry.dnu / 2, "x", true), r = u.valToPos(x[i - 1] + entry.dnu / 2, "x", true);
+          ctx.fillRect(l, b.top, Math.max(1, r - l), b.height);
+          start = -1;
+        }
+      }
+    }
+    if (STATE.traces.features) {
+      var px = window.devicePixelRatio || 1;
+      ctx.font = (10 * px) + "px 'IBM Plex Mono', monospace";
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      var lastLabel = -1e9;
+      entry.features.forEach(function (f) {
+        var xp = u.valToPos(f.nu, "x", true);
+        if (xp < b.left || xp > b.left + b.width) return;
+        ctx.strokeStyle = ratioColor(f.ratio); ctx.lineWidth = px;
+        ctx.beginPath(); ctx.moveTo(xp, b.top); ctx.lineTo(xp, b.top + 10 * px); ctx.stroke();
+        if (xp - lastLabel > 34 * px) {
+          ctx.fillStyle = ratioColor(f.ratio);
+          ctx.fillText(f.ratio.toFixed(2), xp, b.top + 12 * px);
+          lastLabel = xp;
+        }
+      });
+    }
+    ctx.restore();
+  }
+
+  function buildPlots(pack) {
+    var el = $("plot"), rel = $("rplot");
+    var keep = null;
+    if (STATE.plot && STATE.plotWindow === STATE.v1) {
+      var sx = STATE.plot.scales.x;
+      if (sx.min != null && sx.max != null) keep = [sx.min, sx.max];
+    }
+    if (typeof uPlot === "undefined") {
+      el.innerHTML = '<div style="padding:28px 8px;color:var(--muted);font-size:13px">The chart library did not load ' +
+        '(it is fetched from <span class="mono">cdn.jsdelivr.net</span>), so the spectra cannot be drawn.</div>';
+      return;
+    }
+    if (STATE.plot) { STATE.plot.destroy(); STATE.plot = null; }
+    if (STATE.rplot) { STATE.rplot.destroy(); STATE.rplot = null; }
+    var spec = currentSpectrum(pack), entry = pack.entry;
+    var group = pack.groups[String(spec.meta.group)];
+    var width = el.clientWidth || 800, height = Math.max(220, el.clientHeight || 320);
+
+    // Ranged from the observed and model over what is in view, so a zoom onto a
+    // weak line fills the panel; not from the solar model, whose lines reach far
+    // deeper and would flatten the spectra.
+    function fRange(u) {
+      var a = 0, z = pack.x.length - 1, sx = u.scales.x;
+      if (sx.min != null && sx.max != null) {
+        a = Math.max(0, nearestIndex(pack.x, sx.min) - 1); z = Math.min(pack.x.length - 1, nearestIndex(pack.x, sx.max) + 1);
+      }
+      var lo = Infinity, hi = -Infinity;
+      [spec.observed, spec.model].forEach(function (v) {
+        for (var i = a; i <= z; i++) if (isFinite(v[i])) { if (v[i] < lo) lo = v[i]; if (v[i] > hi) hi = v[i]; }
+      });
+      if (!isFinite(lo)) { lo = 0; hi = 1.05; }
+      var pad = 0.06 * (hi - lo || 0.01);
+      return [lo - pad, hi + 2.2 * pad];
+    }
+
+    var data = [pack.x, spec.observed, spec.model, group ? group.stel : null];
+    var series = [{}];
+    TRACES.slice(0, 3).forEach(function (t) {
+      var s = { label: t.label, stroke: css(t.token), width: t.width, scale: "f", spanGaps: false,
+                points: { show: false }, show: STATE.traces[t.key] };
+      if (t.dash) s.dash = t.dash;
+      series.push(s);
+    });
+    if (!data[3]) { data[3] = new Float64Array(pack.x.length).fill(NaN); }
+
+    STATE.plot = new uPlot({
+      width: width, height: height, series: series, legend: { show: false },
+      // Set explicitly on every x change (hooks below): a range function runs only
+      // while a scale is auto-ranged, so a zoom left the flux axis where it was.
+      scales: { x: { time: false }, f: { auto: false, range: function (u, min, max) { return [min, max]; } } },
+      cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      axes: [
+        { stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") },
+          font: "11px 'IBM Plex Mono', monospace", values: axisTicks },
+        { scale: "f", stroke: css("--muted"), grid: { stroke: css("--hair") }, ticks: { stroke: css("--hair") },
+          font: "11px 'IBM Plex Mono', monospace", size: 52 },
+        // The row of Baker's table, so a pixel can be found in the file itself.
+        { scale: "x", side: 0, stroke: css("--faint"), grid: { show: false }, ticks: { stroke: css("--hair") },
+          font: "10px 'IBM Plex Mono', monospace", size: 30, space: 80, label: "row in telluric_spectra_N.fits",
+          labelSize: 14, labelFont: "10px 'IBM Plex Sans', sans-serif",
+          values: function (u, vs) { return vs.map(function (v) { return String(entry.row0 + nearestIndex(pack.x, v)); }); } }
+      ],
+      hooks: {
+        draw: [function (u) { drawOverlays(u, pack, spec); }],
+        setScale: [function (u, key) {
+          if (key !== "x") return;
+          // Deferred: a setScale made inside uPlot's own setScale hook is lost.
+          setTimeout(function () {
+            if (STATE.plot !== u) return;
+            var r = fRange(u);
+            if (u.scales.f.min !== r[0] || u.scales.f.max !== r[1]) u.setScale("f", { min: r[0], max: r[1] });
+          }, 0);
+          drawStack(pack);
+        }],
+        setCursor: [function (u) {
+          var i = u.cursor.idx, r = $("readout");
+          if (i == null) { r.innerHTML = ""; return; }
+          var bits = ['<b>' + pack.x[i].toFixed(4) + '</b> cm⁻¹', '<b>' + (1e7 / pack.x[i]).toFixed(3) + '</b> nm',
+                      'row <b>' + (entry.row0 + i) + '</b>'];
+          if (isFinite(spec.observed[i])) {
+            bits.push('obs <b>' + spec.observed[i].toFixed(4) + '</b>');
+            bits.push('model <b>' + spec.model[i].toFixed(4) + '</b>');
+            bits.push('resid <b>' + (100 * spec.residual[i]).toFixed(2) + '%</b>');
+          } else bits.push('<b>masked</b>');
+          if (group) bits.push('stel_mod <b>' + group.stel[i].toFixed(3) + '</b>' + (group.clean[i] ? '' : ' (solar line)'));
+          var near = entry.features.find(function (f) { return Math.abs(f.nu - pack.x[i]) < 0.05; });
+          if (near) bits.push('feature <b>' + near.nu.toFixed(3) + '</b> ratio <b>' + near.ratio.toFixed(3) + '</b>');
+          r.innerHTML = bits.join("");
+        }]
+      }
+    }, gaps(data), el);
+
+    var sigma = 100 * spec.meta.sigma;
+    var up = new Float64Array(pack.x.length).fill(sigma), dn = new Float64Array(pack.x.length).fill(-sigma);
+    var pct = Float64Array.from(spec.residual, function (v) { return 100 * v; });
+    STATE.rplot = new uPlot({
+      width: width, height: 118, legend: { show: false },
+      scales: { x: { time: false } },
+      cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
+      series: [{}, { stroke: "transparent", points: { show: false } }, { stroke: "transparent", points: { show: false } },
+               { stroke: css("--telluric"), width: 0.9, points: { show: false }, spanGaps: false }],
+      bands: [{ series: [1, 2], fill: css("--hair") }],
+      axes: [{ stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", values: axisTicks },
+             { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", size: 52 }]
+    }, gaps([pack.x, up, dn, pct]), rel);
+    $("resid-hint").textContent = "residual, observed − model, % of continuum — the band is ±1σ of pixel noise (" +
+      sigma.toFixed(2) + "%); rms " + fmt(100 * spec.meta.rms, 2) + "%";
+
+    if (keep) {
+      STATE.plot.setScale("x", { min: keep[0], max: keep[1] });
+      STATE.rplot.setScale("x", { min: keep[0], max: keep[1] });
+    }
+    var r0 = fRange(STATE.plot);
+    STATE.plot.setScale("f", { min: r0[0], max: r0[1] });
+    STATE.plotWindow = STATE.v1;
+    // After layout: drawn inside construction, the plotting area can still measure
+    // zero and the stack came out blank.
+    requestAnimationFrame(function () { drawStack(pack); });
+  }
+
+  // One row per spectrum, coloured by its residual, over the main plot's x range.
+  function drawStack(pack) {
+    var canvas = $("stack"), u = STATE.plot;
+    if (!u || !pack) return;
+    var px = window.devicePixelRatio || 1;
+    var w = Math.round(canvas.clientWidth * px), h = Math.round(canvas.clientHeight * px);
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, w, h);
+    // Aligned on the plotting area as drawn, so a column sits under its pixel.
+    var over = u.over.getBoundingClientRect(), box = canvas.getBoundingClientRect();
+    var plotLeft = (over.left - box.left) * px, plotWidth = over.width * px;
+    var xmin = u.scales.x.min, xmax = u.scales.x.max;
+    var rows = pack.spectra.length, rowH = h / rows;
+    var hot = hexOrRgb(css("--hot")), cold = hexOrRgb(css("--cold")), base = hexOrRgb(css("--panel"));
+    var img = ctx.createImageData(Math.max(1, Math.round(plotWidth)), h);
+    var cols = img.width;
+    for (var c = 0; c < cols; c++) {
+      var nu = xmin + (c + 0.5) / cols * (xmax - xmin);
+      var i = Math.round((nu - pack.x[0]) / pack.entry.dnu);
+      if (i < 0 || i >= pack.x.length) continue;
+      for (var r = 0; r < rows; r++) {
+        var v = pack.spectra[r].residual[i];
+        if (!isFinite(v)) continue;
+        var t = Math.max(-1, Math.min(1, v / STATE.stackLimit)), to = t > 0 ? hot : cold, a = Math.abs(t);
+        var rgb = [0, 1, 2].map(function (k) { return Math.round(base[k] + (to[k] - base[k]) * a); });
+        var y0 = Math.floor(r * rowH), y1 = Math.max(y0 + 1, Math.floor((r + 1) * rowH));
+        for (var y = y0; y < y1 && y < h; y++) {
+          var o = (y * cols + c) * 4;
+          img.data[o] = rgb[0]; img.data[o + 1] = rgb[1]; img.data[o + 2] = rgb[2]; img.data[o + 3] = 255;
+        }
+      }
+    }
+    ctx.putImageData(img, Math.round(plotLeft), 0);
+    var at = pack.spectra.indexOf(currentSpectrum(pack));
+    ctx.strokeStyle = css("--ink"); ctx.lineWidth = Math.max(1, px);
+    ctx.strokeRect(Math.round(plotLeft) + 0.5, Math.floor(at * rowH) + 0.5, cols - 1, Math.max(2, rowH) - 1);
+    ctx.fillStyle = css("--faint");
+    ctx.font = (10 * px) + "px 'IBM Plex Mono', monospace"; ctx.textBaseline = "top"; ctx.textAlign = "right";
+    ctx.fillText("X " + pack.spectra[0].meta.airmass.toFixed(2), Math.round(plotLeft) - 4 * px, 1);
+    ctx.textBaseline = "bottom";
+    ctx.fillText("X " + pack.spectra[rows - 1].meta.airmass.toFixed(2), Math.round(plotLeft) - 4 * px, h - 1);
+  }
+  function hexOrRgb(c) {
+    c = c.trim();
+    if (c[0] === "#") {
+      if (c.length === 4) c = "#" + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+      return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+    }
+    var m = c.match(/\d+(\.\d+)?/g) || [0, 0, 0];
+    return [Number(m[0]), Number(m[1]), Number(m[2])];
+  }
+
+  // ---- rails -----------------------------------------------------------
+  function renderFacts(entry) {
+    var s = entry.spectra.find(function (x) { return specKey(x) === STATE.spec; }) || entry.spectra[0];
+    var rows = [
+      ["spectrum", "group " + s.group + " · telluric_" + s.number],
+      ["air mass", s.airmass.toFixed(3)],
+      ["UTC", s.utc.replace("T", " ")],
+      ["ERA5 profile", s.profile],
+      ["H₂O column", s.columns.H2O != null ? "×" + Math.exp(s.columns.H2O).toFixed(3) : "—"],
+      ["O₂ column", s.columns.O2 != null ? "×" + Math.exp(s.columns.O2).toFixed(3) : "not fitted"],
+      ["velocity", fmt(1000 * s.velocity_kms, 0) + " m/s"],
+      ["LSF σ", fmt(s.lsf_sigma_kms, 3) + " km/s"],
+      ["rms", fmt(100 * s.rms, 3) + "%"],
+      ["pixel noise", fmt(100 * s.sigma, 3) + "%"],
+      ["masked px", String(s.masked)],
+      ["converged", s.converged ? "yes" : "no"]
+    ];
+    $("facts").innerHTML = rows.map(function (r) { return "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>"; }).join("");
+  }
+  function renderFeatures(entry) {
+    var off = entry.features.filter(function (f) { return Math.abs(f.ratio - 1) > 0.05; }).length;
+    $("feat-title").textContent = entry.features.length + " features · " + off + " more than 5% off";
+    $("features").innerHTML = entry.features.slice().sort(function (a, b) {
+      return Math.abs(b.ratio - 1) - Math.abs(a.ratio - 1);
+    }).map(function (f) {
+      var solar = Object.keys(f.solar || {}).map(function (k) {
+        return (SOLAR_NAMES[k] || k) + " " + f.solar[k].toFixed(3);
+      }).join(" · ");
+      var cls = f.ratio > 1.05 ? "off-hi" : f.ratio < 0.95 ? "off-lo" : "";
+      return '<button type="button" class="feat mono ' + cls + '" data-nu="' + f.nu + '">' +
+        '<span>' + f.nu.toFixed(3) + '</span>' +
+        '<span><span class="r">' + f.ratio.toFixed(3) + '</span> ± ' + fmt(f.ratio_std, 3) + ' (' + f.spectra + ')</span>' +
+        '<span class="sub">' + (solar ? "solar " + solar : "no solar fit measures it") +
+        (f.offset_ms != null ? " · " + (f.offset_ms > 0 ? "+" : "") + f.offset_ms.toFixed(0) + " ± " + fmt(f.offset_std_ms, 0) + " m/s" : "") +
+        '</span></button>';
+    }).join("") || '<div class="hint" style="padding:10px 12px">no analysed feature in this window</div>';
+  }
+  function renderHeader(entry) {
+    $("window-name").textContent = entry.v1.toFixed(0) + "–" + entry.v2.toFixed(0) + " cm⁻¹ · " +
+      (1e7 / entry.v2).toFixed(1) + "–" + (1e7 / entry.v1).toFixed(1) + " nm";
+    var s = entry.spectra.find(function (x) { return specKey(x) === STATE.spec; }) || entry.spectra[0];
+    var items = [
+      { k: "median rms", v: fmt(100 * entry.median_rms, 2) + "%", cls: entry.median_rms < 0.004 ? "is-good" : entry.median_rms < 0.01 ? "is-warn" : "is-bad" },
+      { k: "worst", v: fmt(100 * entry.worst_rms, 2) + "%" },
+      { k: "this", v: fmt(100 * s.rms, 2) + "% · " + fmt(s.rms / s.sigma, 1) + "σ" },
+      { k: "spectra", v: String(entry.spectra.length) },
+      { k: "features", v: String(entry.features.length) }
+    ];
+    var worst = maxOff(entry);
+    if (worst > 0.08) items.push({ k: "worst feature", v: (100 * worst).toFixed(0) + "% off", cls: "is-warn" });
+    $("badges").innerHTML = items.map(function (b) {
+      return '<span class="badge ' + (b.cls || "") + '"><i>' + b.k + '</i><b class="mono">' + b.v + '</b></span>';
+    }).join("");
+  }
+
+  // ---- review marks ----------------------------------------------------
+  function renderReview() {
+    var m = STATE.marks[String(STATE.v1)] || null;
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(!!m && m.mark === b.dataset.mark));
+    });
+    var note = $("note");
+    if (document.activeElement !== note) note.value = (m && m.note) || "";
+  }
+  function saveMark(patch) {
+    if (!STATE.db) { $("review-status").textContent = "not saved — this view cannot store marks"; return; }
+    var key = String(STATE.v1), current = STATE.marks[key] || {};
+    var next = Object.assign({}, current, patch, { at: new Date().toISOString() });
+    if (!next.mark && !next.note) next = null;
+    STATE.marks = Object.assign({}, STATE.marks);
+    if (next) STATE.marks[key] = next; else delete STATE.marks[key];
+    renderReview(); renderList();
+    STATE.writing = STATE.writing.then(function () {
+      return STATE.db.doc("reviews/baker2020").set({ marks: STATE.marks });
+    }).then(function () { $("review-status").textContent = "saved " + new Date().toLocaleTimeString(); })
+      .catch(function (e) { $("review-status").textContent = "not saved (" + (e && e.code ? e.code : "error") + ")"; });
+  }
+  function connectStore() {
+    if (!(window.claude && window.claude.use)) { $("review-status").textContent = "marks unavailable here"; return; }
+    window.claude.use("db").then(function (db) {
+      if (!db) { $("review-status").textContent = "marks unavailable here"; return; }
+      STATE.db = db;
+      $("review-status").textContent = "ready";
+      db.doc("reviews/baker2020").onSnapshot(function (snap) {
+        STATE.marks = (snap.exists && snap.data().marks) || {};
+        renderReview(); renderList();
+      }, function (e) { $("review-status").textContent = "marks offline (" + e.code + ")"; });
+    }).catch(function () { $("review-status").textContent = "marks unavailable here"; });
+  }
+
+  // ---- orchestration ---------------------------------------------------
+  function show(v1) {
+    var entry = STATE.byV1.get(v1); if (!entry) return;
+    if (STATE.v1 !== v1) STATE.pack = null;
+    STATE.v1 = v1;
+    renderSpecSelect(entry); renderHeader(entry); renderFacts(entry); renderFeatures(entry); renderReview(); renderList();
+    load(entry).then(function (pack) {
+      if (STATE.v1 !== v1) return;
+      STATE.pack = pack;
+      buildPlots(pack);
+    }).catch(function (e) { $("readout").textContent = String(e.message || e); });
+  }
+  function step(delta) {
+    var shown = visibleWindows().map(function (e) { return e.v1; });
+    var at = shown.indexOf(STATE.v1);
+    var next = shown[Math.min(Math.max(at + delta, 0), shown.length - 1)];
+    if (next != null && next !== STATE.v1) show(next);
+  }
+  function renderLegend() {
+    $("legend").innerHTML = TRACES.map(function (t) {
+      return '<button type="button" class="trace" data-trace="' + t.key + '" style="color:var(' + t.token + ')" aria-pressed="' +
+        STATE.traces[t.key] + '"><span class="swatch"></span><span style="color:var(--ink)">' + t.label +
+        '</span><kbd>' + t.hotkey + '</kbd></button>';
+    }).join("");
+  }
+  function renderFilters() {
+    $("filters").innerHTML = FILTERS.map(function (f) {
+      return '<button type="button" class="chip" data-filter="' + f.key + '" aria-pressed="' + (STATE.filter === f.key) + '">' + f.label + '</button>';
+    }).join("");
+  }
+  function wire() {
+    $("list").addEventListener("click", function (e) { var row = e.target.closest(".row"); if (row) show(Number(row.dataset.v1)); });
+    $("filters").addEventListener("click", function (e) {
+      var chip = e.target.closest(".chip"); if (!chip) return;
+      STATE.filter = chip.dataset.filter; renderFilters(); renderList();
+    });
+    $("legend").addEventListener("click", function (e) {
+      var b = e.target.closest(".trace"); if (!b) return;
+      STATE.traces[b.dataset.trace] = !STATE.traces[b.dataset.trace];
+      renderLegend();
+      // Rebuilt rather than toggled: see wallace2011.html -- setSeries does not
+      // repaint when no scale moves; buildPlots carries the zoom across.
+      if (STATE.pack) buildPlots(STATE.pack);
+    });
+    $("spec").addEventListener("change", function () { STATE.spec = $("spec").value; show(STATE.v1); });
+    $("prev-spec").addEventListener("click", function () { stepSpec(-1); });
+    $("next-spec").addEventListener("click", function () { stepSpec(1); });
+    $("features").addEventListener("click", function (e) {
+      var b = e.target.closest(".feat"); if (!b || !STATE.plot) return;
+      var nu = Number(b.dataset.nu);
+      STATE.plot.setScale("x", { min: nu - 0.3, max: nu + 0.3 });
+      STATE.rplot.setScale("x", { min: nu - 0.3, max: nu + 0.3 });
+    });
+    $("stack-scale").addEventListener("click", function () {
+      var at = STACK_LIMITS.indexOf(STATE.stackLimit);
+      STATE.stackLimit = STACK_LIMITS[(at + 1) % STACK_LIMITS.length];
+      var pct = (100 * STATE.stackLimit).toFixed(0);
+      $("stack-scale").innerHTML = "−" + pct + '%<span class="bar"></span>+' + pct + "%";
+      drawStack(STATE.pack);
+    });
+    $("stack").addEventListener("click", function (e) {
+      if (!STATE.pack) return;
+      var rect = $("stack").getBoundingClientRect();
+      var row = Math.floor((e.clientY - rect.top) / rect.height * STATE.pack.spectra.length);
+      var s = STATE.pack.spectra[Math.min(Math.max(row, 0), STATE.pack.spectra.length - 1)];
+      STATE.spec = specKey(s.meta); show(STATE.v1);
+    });
+    document.querySelectorAll(".mark").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var m = STATE.marks[String(STATE.v1)];
+        saveMark({ mark: m && m.mark === b.dataset.mark ? "" : b.dataset.mark });
+      });
+    });
+    var timer = null;
+    $("note").addEventListener("input", function () {
+      clearTimeout(timer); timer = setTimeout(function () { saveMark({ note: $("note").value.trim() }); }, 700);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && e.target.tagName === "TEXTAREA") { e.target.blur(); return; }
+      if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      var hot = TRACES.find(function (t) { return t.hotkey === e.key; });
+      var press = hot ? '.trace[data-trace="' + hot.key + '"]' :
+        { "1": '.mark[data-mark="good"]', "2": '.mark[data-mark="suspect"]', "3": '.mark[data-mark="reject"]',
+          "h": "#prev-spec", "l": "#next-spec", "ArrowLeft": "#prev-spec", "ArrowRight": "#next-spec" }[e.key];
+      var target = press && document.querySelector(press);
+      if (target) { target.click(); e.preventDefault(); return; }
+      if (e.key === "ArrowDown" || e.key === "j") { step(1); e.preventDefault(); }
+      if (e.key === "ArrowUp" || e.key === "k") { step(-1); e.preventDefault(); }
+    });
+    // The charts read their colours when built, so a theme change rebuilds them.
+    if (window.matchMedia) {
+      var scheme = window.matchMedia("(prefers-color-scheme: dark)");
+      var rebuild = function () { if (STATE.pack) buildPlots(STATE.pack); };
+      if (scheme.addEventListener) scheme.addEventListener("change", rebuild); else if (scheme.addListener) scheme.addListener(rebuild);
+    }
+    var resize = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(resize); resize = setTimeout(function () { if (STATE.pack) buildPlots(STATE.pack); }, 180);
+    });
+  }
+
+  fetch("manifest.json").then(function (r) { return r.json(); }).then(function (m) {
+    STATE.summary = m.summary;
+    STATE.windows = m.windows.slice().sort(function (a, b) { return a.v1 - b.v1; });
+    STATE.windows.forEach(function (w) { STATE.byV1.set(w.v1, w); });
+    renderFilters(); renderLegend(); wire(); connectStore();
+    // Open on 13700, the window with the lines that started the per-line study.
+    var start = STATE.byV1.has(13700) ? 13700 : STATE.windows[0].v1;
+    show(start);
+  }).catch(function (e) {
+    document.getElementById("app").innerHTML = '<div id="boot">The fit bundle did not load.<br><span class="mono">' +
+      String(e.message || e) + '</span></div>';
+  });
+})();
+</script>

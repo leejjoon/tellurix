@@ -51,6 +51,17 @@ def solar_clean(atlas: Path, group: int, cache: dict) -> tuple[np.ndarray, np.nd
     return cache[group]
 
 
+def json_safe(value):
+    """JSON has no NaN: a value that is not measured is null."""
+    if isinstance(value, dict):
+        return {k: json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_safe(v) for v in value]
+    if isinstance(value, float) and not np.isfinite(value):
+        return None
+    return value
+
+
 def rms(values) -> float:
     values = np.asarray(values, dtype=float)
     return float(np.sqrt(np.mean(values ** 2))) if values.size else float("nan")
@@ -183,7 +194,7 @@ def main() -> None:
     print(f"  offsets: median |offset| {np.median(np.abs(offsets)):.1f} m/s, median between spectra "
           f"{np.median(scatter):.1f} m/s")
 
-    args.output.write_text(json.dumps(dict(
+    args.output.write_text(json.dumps(json_safe(dict(
         method=__doc__.split("\n\n    uv run")[0],
         settings=dict(fits=str(args.fits.relative_to(ROOT)) if args.fits.is_relative_to(ROOT) else str(args.fits),
                       features_from=str(args.features_from.relative_to(ROOT)), solar_clean=SOLAR_CLEAN,
@@ -198,7 +209,7 @@ def main() -> None:
         positions=dict(median_abs_offset_ms=float(np.median(np.abs(offsets))),
                        median_between_spectra_ms=float(np.median(scatter))),
         features=[{k: v for k, v in r.items() if k not in ("halves", "offset_halves")} for r in table],
-    ), separators=(",", ":")) + "\n")
+    )), separators=(",", ":"), allow_nan=False) + "\n")
     print("wrote", args.output)
 
 
