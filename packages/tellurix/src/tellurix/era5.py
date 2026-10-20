@@ -27,6 +27,8 @@ from .site_profile import _gravity, weighted_layers
 ARCO_ERA5 = ("https://storage.googleapis.com/gcp-public-data-arco-era5/ar/"
              "full_37-1h-0p25deg-chunk-1.zarr-v3")
 EPOCH = datetime(1900, 1, 1, tzinfo=timezone.utc)
+# How far below ERA5's lowest level a site may be (station_pressure_from_era5).
+BELOW_LOWEST_M = 300.0
 _G0 = 9.80665
 _BOLTZMANN_ERG_K = 1.380649e-16
 _AVOGADRO = 6.02214076e23
@@ -82,11 +84,19 @@ def station_pressure_from_era5(column, site_altitude_km):
 
     order = np.argsort(column["height_m"])
     height = column["height_m"][order]
-    pressure = column["level_hpa"][order]
+    log_pressure = np.log(column["level_hpa"][order])
     site_m = site_altitude_km * 1000.0
+    # ERA5's lowest level is 1000 hPa, which under a high stands above a low site:
+    # 3 of 10 Goettingen (0.2 km) hours. Continuing the lowest layer's scale height
+    # down is what the hypsometric equation gives for an isothermal layer, and
+    # BELOW_LOWEST_M bounds how far that is trusted. build_era5_profile then holds
+    # the lowest level's temperature and water down to the site.
+    if height[0] - BELOW_LOWEST_M <= site_m < height[0]:
+        slope = (log_pressure[1] - log_pressure[0]) / (height[1] - height[0])
+        return float(np.exp(log_pressure[0] + slope * (site_m - height[0])))
     if not height[0] <= site_m <= height[-1]:
         raise ValueError(f"the site at {site_m:.0f} m is outside ERA5's height range")
-    return float(np.exp(np.interp(site_m, height, np.log(pressure))))
+    return float(np.exp(np.interp(site_m, height, log_pressure)))
 
 
 def build_era5_profile(column, surface_pressure_hpa, site_altitude_km, dry_vmr, edges_km,

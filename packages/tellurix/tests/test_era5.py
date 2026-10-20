@@ -43,6 +43,17 @@ def test_the_station_pressure_is_read_off_the_height_pressure_relation():
     assert station_pressure_from_era5(column, 2.360) == pytest.approx(expected, rel=1e-3)
 
 
+def test_a_site_just_below_the_lowest_level_continues_its_scale_height():
+    # Goettingen at 0.2 km is below the 1000 hPa level whenever the surface
+    # pressure is high; _column puts that level at 97 m, so lift it.
+    column = _column()
+    column["height_m"] = column["height_m"] + 250.0
+    expected = 1013.25 * np.exp(-(200.0 - 250.0) / 7400.0)
+    assert station_pressure_from_era5(column, 0.200) == pytest.approx(expected, rel=1e-4)
+    with pytest.raises(ValueError, match="outside ERA5's height range"):
+        station_pressure_from_era5(column, 0.0)
+
+
 def test_weighted_layers_carry_the_water_the_column_holds():
     """The diagnostic and the profile agree, because both integrate the column."""
 

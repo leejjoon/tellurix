@@ -59,14 +59,16 @@ def _named_sites():
 
     Kitt Peak is here because the NSO solar spectra date and time themselves
     but carry no weather card at all, so every number but the position has to
-    come from ERA5.
+    come from ERA5. Goettingen likewise, for Baker et al. 2020's telluric spectra.
     """
 
+    from tellurix_fts.baker import IAG_ALTITUDE_KM, IAG_LATITUDE_DEG, IAG_LONGITUDE_DEG
     from tellurix_fts.nso import (
         KITT_PEAK_ALTITUDE_KM, KITT_PEAK_LATITUDE_DEG, KITT_PEAK_LONGITUDE_DEG,
     )
 
-    return {"Kitt Peak": (KITT_PEAK_LATITUDE_DEG, KITT_PEAK_LONGITUDE_DEG, KITT_PEAK_ALTITUDE_KM)}
+    return {"Kitt Peak": (KITT_PEAK_LATITUDE_DEG, KITT_PEAK_LONGITUDE_DEG, KITT_PEAK_ALTITUDE_KM),
+            "Goettingen": (IAG_LATITUDE_DEG, IAG_LONGITUDE_DEG, IAG_ALTITUDE_KM)}
 
 
 def main() -> None:

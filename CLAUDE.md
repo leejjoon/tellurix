@@ -85,7 +85,8 @@ top-level `scripts/`: read the relevant one before changing or running anything
 it covers.
 
 - `packages/tellurix-fts/CLAUDE.md` -- the Arcturus atlas and the NSO solar
-  atlases: `fit_arcturus_*`, `fit_fts_*`, `measure_*_ils`, `measure_line_depth_ratios`, `rebuild_*`,
+  atlases: `fit_arcturus_*`, `fit_fts_*`, `measure_*_ils`, `measure_line_depth_ratios`, `fit_baker_telluric`,
+  `analyse_baker_telluric`, `rebuild_*`,
   `export_atlas_*`, `export_photatl_*`, `export_spectra_hdf5`,
   `export_transmission_hdf5`, `scan_*`, `generate_payne_zero_{arcturus,solar}`,
   `build_arcturus_notebook` and `docs/arcturus_walkthrough.ipynb`, the sibling

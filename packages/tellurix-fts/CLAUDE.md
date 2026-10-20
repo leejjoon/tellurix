@@ -175,6 +175,18 @@ line-list error, mostly in the 0.89 um band. It repeats from fit to fit (r 0.82-
 Wallace 2011, the 1983 pair and niratl; `scripts/measure_line_depth_ratios.py` ->
 `docs/line_depth_ratios.json`), so a per-line strength table could remove half of it --
 proposed, not built: `docs/line_intensity_corrections.md`.
+**Baker, Blake & Reiners 2020's telluric spectra test that without our solar model**
+(`tellurix_fts.baker`, `scripts/fit_baker_telluric.py`, `scripts/analyse_baker_telluric.py`
+-> `docs/baker_telluric_ratios.json`). They are Goettingen 2015-16 spectra with the Sun and
+the iodine cell divided out by the authors; fitted with `stellar="flat"`, H2O and O2 only.
+Three traps: the table's `v` is float32, off its exact linear grid by up to 1e-3 cm-1
+(`baker_wavenumber_grid` restores it); 35 of the 106 distinct spectra appear in more than
+one group, each copy divided by that group's solar model; and the site is below ERA5's
+1000 hPa level on high-pressure days, which `station_pressure_from_era5` now extrapolates
+up to 300 m. Profiles are `data/profiles/baker2020/goettingen_<hour>.csv`; the fits
+(`data/corrected/baker2020/`) are measurements, not products, and are not in the results
+archive. The per-feature ratio and offset are one definition for both
+(`tellurix_fts.line_depth`).
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

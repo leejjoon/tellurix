@@ -151,6 +151,10 @@ class WindowSettings:
     mixed_precision: bool = True
     precompute_opacity: bool = True
     self_broadening: str = "linear"
+    # False skips the formal covariance, and with it the Hessian's compilation:
+    # 6 of the 15 s a Baker et al. telluric window costs. The report then has no
+    # sigma, correlation or at_bound; only a fit read for its residuals wants that.
+    covariance: bool = True
     layer_chunk_size: int = 0
 
 
@@ -595,7 +599,8 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
                               include_stellar=order.source_flux_model_grid is not None,
                               pinned=pinned, stellar_broadening=broadening)
         stage_started = time.time()
-        result = fit_order(fit_model, order, parameters, bounds, objective=shared)
+        result = fit_order(fit_model, order, parameters, bounds, objective=shared,
+                           covariance=settings.covariance)
         parameters = result.parameters
         stage_reports.append({
             "stage": stage,

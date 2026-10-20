@@ -16,7 +16,7 @@ optical depth does not grow with air mass. And a held-out test: each fit's ratio
 predicted by the mean of the others'. See docs/line_intensity_corrections.md.
 
     uv run python scripts/measure_line_depth_ratios.py \\
-        wallace='data/corrected/solar/wallace2011/*.npz' \\
+        wallace='data/corrected/solar/wallace2011/wallace2011_reg[12]_*.npz' \\
         j83_2='data/corrected/solar/ftsspec_830626_2_*.npz' \\
         j83_3='data/corrected/solar/ftsspec_830626_3_*.npz' \\
         niratl='data/corrected/solar/niratl/*.npz' \\
@@ -39,7 +39,6 @@ RANGE_CM1 = (8800.0, 17600.0)
 LINK_CM1 = 0.08
 MIN_FEATURE_S = 3e-25
 MIN_LINE_S = 3e-27
-CORE_CM1 = 0.05
 # A ratio this far from 1 is a missing line, a solar line the clean cut let through,
 # or a misfit window; it would dominate every rms.
 OUTLIER = 0.5
@@ -73,6 +72,8 @@ def features(nu, strength, lower, molecule):
 
 
 def measure(files, centres):
+    from tellurix_fts.line_depth import feature_measurements
+
     ratios = {}
     for path in files:
         with np.load(path) as data:
@@ -81,14 +82,8 @@ def measure(files, centres):
             continuum = take("continuum")
             observed = take("flux") / continuum; model = take("model_flux") / continuum
             solar = take("stellar_only_pixels") / continuum; mask = take("mask").astype(bool)
-        tau_model = -np.log(np.clip(model / solar, 1e-6, None))
-        tau_observed = -np.log(np.clip(observed / solar, 1e-6, None))
-        good = mask & (solar > 0.97) & (model > 0.02) & (tau_model > 0.1)
-        for i in np.where((centres > nu[10]) & (centres < nu[-10]))[0]:
-            core = (np.abs(nu - centres[i]) < CORE_CM1) & good
-            if core.sum() >= 3:
-                ratios[int(i)] = [round(float(tau_observed[core].sum() / tau_model[core].sum()), 4),
-                                  round(float(tau_model[core].max()), 3)]
+        for i, (ratio, peak, _) in feature_measurements(nu, observed, model, solar, mask, centres).items():
+            ratios[i] = [round(ratio, 4), round(peak, 3)]
     return ratios
 
 
