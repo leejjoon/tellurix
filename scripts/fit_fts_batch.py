@@ -36,6 +36,14 @@ consistency check rather than duplicates to average. The atlas records no air
 mass, so ``--airmass`` or ``--zenith-angle-deg`` is required. **niratl** pages
 (``phNNNNN``) run the same way.
 
+**Wallace 2011** (Kitt Peak flux atlas #2) is disc-integrated flux, read by
+``tellurix_fts.flux_atlas``: ``--wallace2011-region 1`` or ``2`` fits that region's
+observed column at the air mass and sinc carried there, tiled like a raw file, with
+the solar lines broadened by ``--vsini-kms`` (1.9 for the Sun as a star).
+
+    UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
+        --wallace2011-region 1 --vsini-kms 1.9 --profile data/profiles/kitt_peak_19891013_era5.csv
+
     UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
         --spectrum .../nso/photatl --airmass 2.0
 """
@@ -57,11 +65,13 @@ from tellurix import (  # noqa: E402
     species_above,
 )
 from tellurix_fts import read_solar_spectrum  # noqa: E402
+from tellurix_fts.flux_atlas import WALLACE2011_REGIONS, read_flux_atlas  # noqa: E402
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_atlas_page, window_continuum_snr  # noqa: E402
 
 from tellurix.download import DataPaths  # noqa: E402
 from tellurix_fts.window import WindowSettings, fit_window  # noqa: E402
 
+WALLACE2011 = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso/wallace2011_flux")
 LINE_ROOT = Path("data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
 
 # Everything about the fit that is the same for every window. Named here and
@@ -186,6 +196,9 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
         "aer_line_root": str(line_root), "aer_version": "3.9",
         "scan_cache": str(args.scan_cache),
     }
+    if getattr(args, "scan_profile", None):
+        entries["scan_profile"] = str(root / args.scan_profile)
+        entries["scan_profile_sha256"] = file_sha256(root / args.scan_profile)
     if args.accuracy_mode == "fast":
         # Not consumed: a record must not name an input the run never read.
         del entries["mt_ckd"]
@@ -212,7 +225,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    stellar_broadening: bool = False, h2o_pressure_shift: str = "aer",
                    pressure_width_scale: float = 1.0, pressure_width_species: str = "H2O,O2",
                    telluric_from_clean_pixels: bool = False,
-                   clean_solar_depth: float = 0.01, clean_max_masked: float = 0.6) -> dict:
+                   clean_solar_depth: float = 0.01, clean_max_masked: float = 0.6,
+                   vsini_kms: float = 0.0) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -233,6 +247,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         # runs at 0.01859, and a record that named 0.01753 would rebuild every
         # window on the wrong grid (export_transmission_hdf5 reads this).
         "fwhm_cm1": float(fwhm_cm1),
+        # Disc centre is fitted at 0; a flux atlas carries the Sun's rotation.
+        "vsini_kms": float(vsini_kms),
         "accuracy_mode": accuracy_mode,
         # A record without the key predates the option and had no O2 continuum.
         "o2_cia": bool(o2_cia),
@@ -265,7 +281,8 @@ def physics_of(root: Path, args) -> dict:
         pressure_width_scale=args.pressure_width_scale,
         pressure_width_species=args.pressure_width_species,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
-        clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked)
+        clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
+        vsini_kms=args.vsini_kms)
 
 
 def scan_species(entry, args, root, profile, airmass: float) -> dict:
@@ -278,7 +295,7 @@ def scan_species(entry, args, root, profile, airmass: float) -> dict:
     """
 
     identity = ScanIdentity.for_profile(
-        root / args.profile, (entry["v1"], entry["v2"]),
+        root / (args.scan_profile or args.profile), (entry["v1"], entry["v2"]),
         threshold=args.scan_threshold, line_budget=args.scan_line_budget,
         margin_cm1=args.margin_cm1, fwhm_cm1=args.scan_fwhm_cm1,
         samples_per_resolution=args.scan_samples_per_resolution)
@@ -294,11 +311,11 @@ def scan_species(entry, args, root, profile, airmass: float) -> dict:
             "scan_headroom": cached["headroom"]}
 
 
-def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
+def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
     """Scan, fit and export one window."""
 
     started = time.time()
-    scan = scan_species(entry, args, root, profile, airmass)
+    scan = scan_species(entry, args, root, scan_profile, airmass)
     if not scan["species"]:
         # Nothing absorbs here at the scan's threshold. That is a result, not a
         # failure: record it and do not spend a fit proving it.
@@ -310,7 +327,7 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
         margin_cm1=args.margin_cm1, grid_margin_cm1=args.grid_margin_cm1,
         samples_per_resolution=args.samples_per_resolution, fwhm_cm1=args.fwhm_cm1,
         profile=args.profile, species=",".join(scan["species"]),
-        stellar="auto", vsini_kms=PHYSICS["vsini_kms"],
+        stellar="auto", vsini_kms=args.vsini_kms,
         macroturbulence_kms=PHYSICS["macroturbulence_kms"],
         source_continuum=False, normalize_source=False,
         continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=(),
@@ -355,7 +372,7 @@ def run_one(entry, args, root, profile, airmass: float, spectrum) -> dict:
     level = float(np.median(corrected[clean] / star[clean])) if clean.sum() >= 20 else float("nan")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    npz = args.output_dir / f"{Path(entry['file']).stem}_{entry['v1']:.0f}.npz"
+    npz = args.output_dir / f"{args.window_stem or Path(entry['file']).stem}_{entry['v1']:.0f}.npz"
     np.savez_compressed(
         npz, corrected=corrected,
         corrected_normalized=corrected / np.maximum(continuum, 1e-12),
@@ -462,8 +479,15 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--spectrum", type=Path, required=True,
+    parser.add_argument("--spectrum", type=Path, default=None,
                         help="a raw FTS spectrum, or a directory of photatl or niratl pages")
+    parser.add_argument("--wallace2011-region", type=int, choices=sorted(WALLACE2011_REGIONS),
+                        default=None,
+                        help="fit this region of the Wallace 2011 flux atlas instead of --spectrum; "
+                             "its air mass and sinc FWHM are the defaults")
+    parser.add_argument("--vsini-kms", type=float, default=0.0,
+                        help="rotational broadening of the solar source: 0 for disc centre, "
+                             "1.9 for a flux atlas")
     parser.add_argument("--v1", type=float, default=None,
                         help="default: 1876, the blue edge of the reddest solar source, for "
                              "a raw spectrum; every page for an atlas")
@@ -544,6 +568,11 @@ def main() -> None:
                              "files of one campaign whose sincs differ by a percent (the 1983 "
                              "pair: 0.04167 and 0.04102) rank the same molecules, so one scan "
                              "can serve both while each is still fitted with its own sinc.")
+    parser.add_argument("--scan-profile", type=Path, default=None,
+                        help="the profile the scan ranks species with; default --profile. "
+                             "Another date at the same site ranks the same molecules, so its "
+                             "scans can serve (Wallace 2011 reuses the 1983 pair's), while the "
+                             "fit still uses --profile.")
     parser.add_argument("--verbose-scan", action="store_true")
     parser.add_argument("--stride", type=int, default=1, help="take every Nth window")
     parser.add_argument("--shard", default=None, metavar="I/N",
@@ -566,7 +595,23 @@ def main() -> None:
                              "is shared between files and worth running once")
     args = parser.parse_args()
 
-    stem = args.spectrum.stem
+    region = None
+    args.window_stem = None
+    if args.wallace2011_region is not None:
+        if args.spectrum is not None:
+            raise SystemExit("pass --spectrum or --wallace2011-region, not both")
+        region = WALLACE2011_REGIONS[args.wallace2011_region]
+        args.spectrum = WALLACE2011 / region["file"]
+        # sptr.reg1 and sptr.reg2 share the stem "sptr".
+        args.window_stem = f"wallace2011_reg{args.wallace2011_region}"
+        if args.airmass is None and args.zenith_angle_deg is None:
+            args.airmass = region["airmass"]
+        if args.fwhm_cm1 == MEASURED_FWHM_CM1:
+            args.fwhm_cm1 = region["fwhm_cm1"]
+    elif args.spectrum is None:
+        raise SystemExit("pass --spectrum or --wallace2011-region")
+
+    stem = args.window_stem or args.spectrum.stem
     args.summary = args.summary or args.output_dir / f"{stem}_summary.json"
     args.record = args.record or args.output_dir / f"{stem}.h5"
     if args.compilation_cache:
@@ -580,7 +625,7 @@ def main() -> None:
         if args.airmass < 1.0:
             raise SystemExit("--airmass must be at least 1")
         args.zenith_angle_deg = float(np.degrees(np.arccos(1.0 / args.airmass)))
-    profile = load_atmosphere_csv(root / args.profile)
+    profile = load_atmosphere_csv(root / (args.scan_profile or args.profile))
     if args.spectrum.is_dir():
         jobs, spectra = atlas_pages(args.spectrum, args.v1, args.v2, args.minimum_snr,
                                       names=args.pages.split(",") if args.pages else None)
@@ -588,12 +633,23 @@ def main() -> None:
         if args.zenith_angle_deg is None:
             raise SystemExit("an atlas page records no air mass; pass --airmass or --zenith-angle-deg")
     else:
-        spectrum = read_solar_spectrum(args.spectrum)
+        if region is not None:
+            # The whole file: the atlas's region edges are where its good data
+            # ends, and the S/N test below drops anything past them.
+            spectrum = read_flux_atlas(
+                "wallace2011", args.spectrum, (0.0, 1.0e6), cache_directory=root / "data/databases/wallace2011",
+                airmass=args.airmass, fwhm_cm1=args.fwhm_cm1,
+                source_name=f"Kitt Peak flux atlas #2, {region['spectrum']}, observed flux")
+        else:
+            spectrum = read_solar_spectrum(args.spectrum)
         spectra = {str(args.spectrum): spectrum}
         if args.zenith_angle_deg is None and spectrum.airmass_mean is None:
             raise SystemExit(f"{args.spectrum.name} has no air mass; pass --zenith-angle-deg")
-        jobs = window_edges(spectrum, 1876.0 if args.v1 is None else args.v1,
-                            9091.0 if args.v2 is None else args.v2,
+        nu = spectrum.wavenumber_vacuum_cm1
+        first, last = ((float(np.ceil(nu.min() / 10.0) * 10.0), float(nu.max())) if region is not None
+                       else (1876.0, 9091.0))
+        jobs = window_edges(spectrum, first if args.v1 is None else args.v1,
+                            last if args.v2 is None else args.v2,
                             args.window_cm1, args.minimum_snr)
     airmass = (1.0 / np.cos(np.radians(args.zenith_angle_deg))
                if args.zenith_angle_deg is not None else float(spectrum.airmass_mean))
@@ -656,6 +712,7 @@ def main() -> None:
                           "continuum_degree": args.continuum_degree,
                           "min_transmission": args.min_transmission,
                           "scan_threshold": args.scan_threshold, "scan_fwhm_cm1": args.scan_fwhm_cm1,
+                          "scan_profile": str(args.scan_profile or args.profile),
                           "species_threshold": args.species_threshold,
                           "scan_line_budget": args.scan_line_budget,
                           "airmass": airmass},
@@ -701,6 +758,7 @@ def main() -> None:
                     "continuum_degree": args.continuum_degree,
                     "min_transmission": args.min_transmission,
                     "scan_threshold": args.scan_threshold, "scan_fwhm_cm1": args.scan_fwhm_cm1,
+                    "scan_profile": str(args.scan_profile or args.profile),
                     "species_threshold": args.species_threshold,
                     "scan_line_budget": args.scan_line_budget, "airmass": airmass},
             physics=physics_of(root, args),

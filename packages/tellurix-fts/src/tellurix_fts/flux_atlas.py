@@ -67,7 +67,9 @@ def read_flux_atlas(atlas: str, path: str | Path, keep: tuple[float, float], *,
 
     path = Path(path)
     cache = (None if cache_directory is None else
-             Path(cache_directory) / f"{path.name.split('.')[0]}_{keep[0]:.0f}_{keep[1]:.0f}.npz")
+             # The whole name: sptr.reg1 and sptr.reg2 differ only after the dot.
+             Path(cache_directory) / f"{path.name.removesuffix('.gz').removesuffix('.dat').replace('.', '_')}"
+                                     f"_{keep[0]:.0f}_{keep[1]:.0f}.npz")
     if cache is not None and cache.exists():
         stored = np.load(cache)
         nu, flux = stored["nu"], stored["flux"]
@@ -87,3 +89,24 @@ def read_flux_atlas(atlas: str, path: str | Path, keep: tuple[float, float], *,
         airmass_start=airmass, airmass_stop=airmass, stated_resolution_cm1=fwhm_cm1,
         transform_samples=0, point_of_center=0, wavenumber_vacuum_cm1=nu, flux=flux,
         grid_residual_cm1=0.0)
+
+
+def read_wallace2011_correction(path: str | Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """The authors' telluric correction in a Wallace 2011 region: wavenumber, corrected, transmission.
+
+    Their corrected column is the observed flux over the transmission where that
+    transmission is above about 0.8, **zero** below it and ``NaN`` across the bands
+    they did not correct (0.94 um, the A-band); both come back as ``NaN``, so only
+    pixels they corrected compare. One field in region 1 overflowed its format
+    (``*******``) and is read as ``NaN`` too.
+    """
+
+    with open(path) as handle:
+        rows = [[float(field) if "*" not in field else np.nan for field in line.split()[:3]]
+                for line in handle]
+    nu, corrected, transmission = np.array(rows).T
+    order = np.argsort(nu, kind="stable")
+    nu, corrected, transmission = nu[order], corrected[order], transmission[order]
+    distinct = np.concatenate([[True], np.diff(nu) > 0])
+    corrected = np.where(corrected > 0, corrected, np.nan)
+    return nu[distinct], corrected[distinct], transmission[distinct]

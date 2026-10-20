@@ -31,6 +31,14 @@ it by each window's 99th percentile first:
 
     uv run python scripts/score_telluric_correction.py --stem ftsspec_901218_5 \\
         --authors photatl --relative-transmission old=data/corrected/solar new=...
+
+Wallace 2011 regions 1-2 carry the authors' correction of the same pixels, but only
+where their transmission is above about 0.8 (zero below, absent over the 0.94 um band
+and the A-band), so ``--authors wallace2011`` scores only the pixels they corrected,
+and ``--authors none`` on the same runs scores the rest:
+
+    uv run python scripts/score_telluric_correction.py --stem wallace2011_reg1 \\
+        --authors wallace2011 --wallace2011-region 1 run=data/corrected/solar/wallace2011_reg1
 """
 from __future__ import annotations
 
@@ -89,7 +97,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("runs", nargs="+", metavar="NAME=DIRECTORY")
     parser.add_argument("--stem", default="ph*", help="window files are <stem>_<v1>.npz (default: niratl pages)")
-    parser.add_argument("--authors", choices=("niratl", "photatl", "none"), default="niratl")
+    parser.add_argument("--authors", choices=("niratl", "photatl", "wallace2011", "none"), default="niratl")
+    parser.add_argument("--wallace2011-region", type=int, choices=(1, 2), default=1)
+    parser.add_argument("--wallace2011", type=Path, default=ATLASES / "wallace2011_flux")
     parser.add_argument("--niratl", type=Path, default=ATLASES / "niratl")
     parser.add_argument("--photatl", type=Path, default=ATLASES / "photatl")
     parser.add_argument("--relative-transmission", action="store_true",
@@ -99,12 +109,15 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
 
+    from tellurix_fts.flux_atlas import WALLACE2011_REGIONS, read_wallace2011_correction
     from tellurix_fts.nso import read_niratl_page, read_photatl_page
 
     runs = dict(entry.split("=", 1) for entry in args.runs)
     first, *_ = runs
     photatl = ([read_photatl_page(p) for p in sorted(args.photatl.glob("wn*")) if p.name[2:].isdigit()]
                if args.authors == "photatl" else [])
+    wallace = (read_wallace2011_correction(args.wallace2011 / WALLACE2011_REGIONS[args.wallace2011_region]["file"])
+               if args.authors == "wallace2011" else None)
     pages = {}
     for path in sorted(Path(runs[first]).glob(f"{args.stem}_*.npz")):
         page = path.stem if args.authors != "niratl" else path.stem.split("_")[0]
@@ -123,6 +136,11 @@ def main() -> None:
         elif args.authors == "photatl":
             authors, filled = photatl_solar(photatl, nu)
             clean &= ~filled
+        elif args.authors == "wallace2011":
+            w_nu, w_corrected, _ = wallace
+            authors = np.interp(nu, w_nu, np.nan_to_num(w_corrected))
+            # A pixel next to one they did not correct is partly interpolated from it.
+            authors[np.interp(nu, w_nu, np.isfinite(w_corrected).astype(float)) < 0.999] = np.nan
         if authors is not None:
             clean &= np.isfinite(authors)
         if args.relative_transmission and mask.any():
@@ -175,6 +193,7 @@ def main() -> None:
         args.output.write_text(json.dumps({
             "method": __doc__.split("\n\n")[1].replace("\n", " "),
             "settings": {"stem": args.stem, "authors": args.authors,
+                         **({"wallace2011_region": args.wallace2011_region} if args.authors == "wallace2011" else {}),
                          "relative_transmission": args.relative_transmission},
             "runs": runs, "summary": summary, "pages": pages}, indent=1) + "\n")
         print(f"wrote {args.output}")

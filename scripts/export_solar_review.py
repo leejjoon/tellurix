@@ -33,6 +33,7 @@ import numpy as np
 
 from tellurix import TelluricParameters, read_scan  # noqa: E402
 from tellurix_fts import read_niratl_page, read_photatl_page, read_solar_spectrum  # noqa: E402
+from tellurix_fts.flux_atlas import read_wallace2011_correction  # noqa: E402
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_niratl_page, is_photatl_page  # noqa: E402
 
 from tellurix.download import DataPaths  # noqa: E402
@@ -127,8 +128,16 @@ def authors_columns(path: Path, nu: np.ndarray) -> dict:
     For comparison only: both are at atlas resolution and ratio-based (Wallace
     et al. 1996 §2). niratl fills them with -1.0 where it could not separate
     them, and photatl's solar column is interpolated where the sky is opaque;
-    both become NaN rather than being drawn as data.
+    both become NaN rather than being drawn as data. A Wallace 2011 region
+    (``sptr.regN``) carries the transmission its authors divided by and their
+    corrected flux, which they left zero or NaN where they did not correct.
     """
+    if path.name.startswith("sptr.reg"):
+        w_nu, corrected, transmission = read_wallace2011_correction(path)
+        at = np.searchsorted(w_nu, nu)
+        if at.max() >= w_nu.size or not np.allclose(w_nu[at], nu, atol=1e-4, rtol=0):
+            raise ValueError(f"{path.name}: the authors' columns are not on the fitted pixels")
+        return {"authors_atmospheric": transmission[at], "authors_solar": corrected[at]}
     if is_niratl_page(path):
         page = read_niratl_page(path)
         solar = np.where(page.solar == -1.0, np.nan, page.solar)
@@ -142,6 +151,18 @@ def authors_columns(path: Path, nu: np.ndarray) -> dict:
     if not np.allclose(page.wavenumber_vacuum_cm1, nu, atol=1e-4, rtol=0):
         raise ValueError(f"{path.name}: the authors' columns are not on the fitted pixels")
     return {"authors_atmospheric": atmospheric, "authors_solar": solar}
+
+
+def file_row0(path: Path, nu: np.ndarray, cache: dict) -> int | None:
+    """Row of ``nu[0]`` in a Wallace 2011 region file, if the pixels are consecutive rows there."""
+    if not path.name.startswith("sptr.reg"):
+        return None
+    if str(path) not in cache:
+        cache[str(path)] = np.loadtxt(path, usecols=0)
+    rows = cache[str(path)]
+    at = np.searchsorted(rows, nu)
+    # The reader drops tied neighbours, so a window spanning a tie is one row short.
+    return int(at[0]) if np.all(np.diff(at) == 1) else None
 
 
 def scan_rows(scan_name: str, root: Path, airmass: float, fitted) -> list[dict]:
@@ -235,7 +256,10 @@ def main() -> None:
     jobs = []
     for path in summaries:
         blob = json.loads(Path(path).read_text())
-        label = Path(blob["spectrum"]).stem.rsplit("_", 1)[-1]
+        name = Path(blob["spectrum"]).name
+        # sptr.reg1 and sptr.reg2 differ only in the suffix.
+        label = (name.split(".", 1)[1] if name.startswith("sptr.")
+                 else Path(blob["spectrum"]).stem.rsplit("_", 1)[-1])
         for row in blob["results"]:
             if row.get("npz"):
                 # An atlas run has one file per page; a raw spectrum, one file.
@@ -251,6 +275,7 @@ def main() -> None:
     spectra: dict[str, object] = {}
     profiles: dict[Path, object] = {}
     manifest, failures = [], []
+    rows_cache: dict[str, np.ndarray] = {}
     chunk, chunk_bytes, chunk_index = [], 0, 0
     started = time.time()
 
@@ -342,6 +367,12 @@ def main() -> None:
 
             entry = {
                 "file": label, "page": spectrum_path.name, "v1": row["v1"], "v2": row["v2"],
+                # The row of the window's first pixel in the file it was read from,
+                # for a pixel axis, where the file is one the page can name rows of.
+                "row0": file_row0(spectrum_path, nu, rows_cache),
+                # How far the pixels sit from the uniform axis the page draws.
+                "axis_error_cm1": float(np.max(np.abs(
+                    nu - (nu[0] + np.arange(nu.size) * (nu[-1] - nu[0]) / (nu.size - 1))))),
                 "airmass": row["airmass"], "zenith_angle_deg": row["zenith_angle_deg"],
                 "n": int(nu.size), "nu0": float(nu[0]),
                 "dnu": float((nu[-1] - nu[0]) / (nu.size - 1)),
@@ -377,6 +408,15 @@ def main() -> None:
                 entry["arrays"][name] = {"offset": chunk_bytes, "lo": lo, "hi": hi}
                 if keep:
                     entry["arrays"][name]["nan_code"] = NAN_CODE
+                chunk.append(payload)
+                chunk_bytes += len(payload)
+            # Wallace 2011's rows are not evenly spaced (steps 0.0068-0.0079 cm-1 in one
+            # window, and gaps near the B-band put a uniform axis 3 pixels off), so
+            # where the uniform axis misses by over a tenth of a pixel the window
+            # ships its own, as float32 offsets from nu0.
+            if entry["axis_error_cm1"] > 0.1 * entry["dnu"]:
+                entry["axis_offset"] = chunk_bytes
+                payload = (nu - nu[0]).astype("<f4").tobytes()
                 chunk.append(payload)
                 chunk_bytes += len(payload)
             packed = np.packbits(mask).tobytes()

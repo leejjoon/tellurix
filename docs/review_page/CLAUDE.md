@@ -11,6 +11,7 @@ capability. The URLs are in the user's memory, not here.
 | page | exporter | bundle |
 |---|---|---|
 | `index.html` (Kitt Peak), `niratl.html`, `niratl_clean.html` (the width-scale, clean-pixel refit, with per-page flatness badges from `docs/niratl_correction_score.json`), `fts1983.html` | `export_solar_review.py` (`--shard`), `merge_review_bundle.py` | `data/review*/` |
+| `wallace2011.html` -- Kitt Peak flux atlas #2, regions 1-2 (a region switch), with the authors' transmission and corrected flux and per-window flatness badges from the scores in `data/corrected/solar/wallace2011/`; a top axis gives the row in `sptr.regN` | `export_solar_review.py` with both region summaries | `data/review_wallace2011_pub` |
 | `igrins.html` -- A0V standards, DCT 2018-12-20 | `export_igrins_review.py --shard I/N`, then `--merge` | `data/review_igrins/` |
 | `igrins_targets.html` -- science corrections, same night | `export_igrins_target_review.py` (numpy only, 30 s) | `data/review_igrins_targets/` |
 | `arcturus.html` -- Arcturus atlas, full-coverage record, 598 page-epochs | `export_arcturus_review.py --shard I/N`, then `--merge` (`--no-species`: total only, numpy) | `data/review_arcturus/` |
@@ -50,6 +51,9 @@ What the exporters check, and the traps that shaped them:
   atlas row index, matched by wavenumber against the page file; the axis is
   float32 offsets because the atlas prints wavenumbers to 0.01 cm-1 (steps vary
   by 3%). The atlas authors' telluric column is NaN above the fit's 1.05 ceiling.
+- **Wallace 2011's rows are not evenly spaced** (0.0068-0.0079 cm-1 steps in one window, gaps near the
+  B-band), and four region 2 windows sit up to 3 pixels off a uniform axis: the exporter ships those
+  windows' own wavenumbers as float32 offsets (`axis_offset`), and the page uses them when present.
 - **The solar manifest names the continua.** `export_solar_review.py` writes each
   window's `continua` -- the between-line loss of the MT_CKD water continuum and O2's
   collision-induced bands, in percent -- because the bundle ships them as one curve and
