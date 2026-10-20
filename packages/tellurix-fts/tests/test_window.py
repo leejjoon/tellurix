@@ -61,3 +61,18 @@ def test_the_solar_line_mask_measures_depth_below_the_models_own_top():
     assert mask[np.argmin(np.abs(nu - 9295.0))]
     assert not mask[np.abs(nu - 9295.0) > 0.5].any()
     assert 0.0 < mask.mean() < 0.05
+
+
+def test_the_closing_envelope_lets_a_broad_wing_through_and_keeps_narrow_lines():
+    nu = np.linspace(11710.0, 11680.0, 6001)
+    # A Ca II-like wing: 30% deep at 11704, a few cm-1 wide, and a narrow line on it.
+    wing = 1.0 - 0.3 / (1.0 + ((nu - 11704.0) / 3.0) ** 2)
+    solar = wing * (1.0 - 0.2 * np.exp(-0.5 * ((nu - 11695.0) / 0.05) ** 2))
+    arrays = {"wavenumber_cm1": nu, "stellar_only_pixels": solar, "continuum": np.ones_like(nu)}
+    flank = (np.abs(nu - 11698.0) < 1.0)
+    assert solar_line_mask(arrays, depth=0.01)[flank].mean() > 0.9
+    closing = solar_line_mask(arrays, depth=0.01, envelope="closing")
+    assert not closing[flank].any()
+    assert closing[np.argmin(np.abs(nu - 11695.0))]
+    with pytest.raises(ValueError):
+        solar_line_mask(arrays, envelope="hull")

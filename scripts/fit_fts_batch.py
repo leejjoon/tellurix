@@ -226,7 +226,7 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    pressure_width_scale: float = 1.0, pressure_width_species: str = "H2O,O2",
                    telluric_from_clean_pixels: bool = False,
                    clean_solar_depth: float = 0.01, clean_max_masked: float = 0.6,
-                   vsini_kms: float = 0.0) -> dict:
+                   clean_envelope: str = "max", vsini_kms: float = 0.0) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -264,7 +264,9 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         "pressure_width_scale": float(pressure_width_scale),
         "pressure_width_species": pressure_width_species,
         "telluric_from_clean_pixels": bool(telluric_from_clean_pixels),
-        **({"clean_solar_depth": float(clean_solar_depth), "clean_max_masked": float(clean_max_masked)}
+        # A record without clean_envelope used the running maximum.
+        **({"clean_solar_depth": float(clean_solar_depth), "clean_max_masked": float(clean_max_masked),
+            "clean_envelope": clean_envelope}
            if telluric_from_clean_pixels else {}),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
@@ -282,7 +284,7 @@ def physics_of(root: Path, args) -> dict:
         pressure_width_species=args.pressure_width_species,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
-        vsini_kms=args.vsini_kms)
+        clean_envelope=args.clean_envelope, vsini_kms=args.vsini_kms)
 
 
 def scan_species(entry, args, root, profile, airmass: float) -> dict:
@@ -339,7 +341,7 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         pressure_width_species=args.pressure_width_species,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
-        vectorize_layers=True, mixed_precision=True,
+        clean_envelope=args.clean_envelope, vectorize_layers=True, mixed_precision=True,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
         layer_chunk_size=args.layer_chunk_size,
     )
@@ -559,6 +561,8 @@ def main() -> None:
                              "records.")
     parser.add_argument("--clean-solar-depth", type=float, default=0.01)
     parser.add_argument("--clean-max-masked", type=float, default=0.6)
+    parser.add_argument("--clean-envelope", choices=("max", "closing"), default="max",
+                        help="what solar-line depth is measured below (WindowSettings.clean_envelope)")
     parser.add_argument("--accuracy-mode", choices=("mt_ckd", "fast"), default="mt_ckd",
                         help="'fast' drops the water continuum: only for windows past the end "
                              "of the MT_CKD table at 20000 cm-1, and as its own run with its "

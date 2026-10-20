@@ -138,10 +138,14 @@ class WindowSettings:
     # solar model calls clean, then everything else with them pinned; see
     # fit_window. A solar line deeper than clean_solar_depth below the model's
     # local maximum is masked; past clean_max_masked of the window masked, the
-    # all-pixel fit is kept.
+    # all-pixel fit is kept. clean_envelope "closing" takes that maximum as a
+    # morphological closing instead, which follows a broad wing's slope: against
+    # the running maximum the Ca II 8542 and H-alpha wings counted as solar line
+    # and refused their windows (solar_line_mask).
     telluric_from_clean_pixels: bool = False
     clean_solar_depth: float = 0.01
     clean_max_masked: float = 0.6
+    clean_envelope: str = "max"
     negative_tolerance: float = 1.0e-3
     vectorize_layers: bool = True
     mixed_precision: bool = True
@@ -369,23 +373,35 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
     )
 
 
-def solar_line_mask(arrays, depth: float = 0.01, width_cm1: float = 3.0) -> np.ndarray:
+def solar_line_mask(arrays, depth: float = 0.01, width_cm1: float = 3.0,
+                    envelope: str = "max") -> np.ndarray:
     """Pixels where a fitted window's solar model dips more than ``depth``.
 
     The depth is taken below the model's own running maximum over ``width_cm1``,
     not below the fitted continuum: deep in a water band that continuum does
     not sit on the solar model's top, and measured against it 90% of a page
-    looked like solar line (ph11675). Returned in the arrays' pixel order.
+    looked like solar line (ph11675). On a broad wing the running maximum sits
+    up the slope, half a width away, so a smooth wing reads as line: 66% of
+    Wallace 2011's 11680 window (Ca II 8542) and 83% of 15220 (H-alpha).
+    ``envelope="closing"`` follows the slope instead -- the running minimum of
+    that maximum, which fills only dips narrower than ``width_cm1`` -- and
+    masks 19% and 21%. Returned in the arrays' pixel order.
     """
 
-    from scipy.ndimage import maximum_filter
+    from scipy.ndimage import grey_closing, maximum_filter
+
+    if envelope not in ("max", "closing"):
+        raise ValueError(f"unknown solar envelope {envelope!r}")
 
     nu = np.asarray(arrays["wavenumber_cm1"])
     solar = np.asarray(arrays["stellar_only_pixels"]) / np.asarray(arrays["continuum"])
     order = np.argsort(nu)
     size = max(int(round(width_cm1 / float(np.median(np.diff(nu[order]))))), 1)
     top = np.empty_like(solar)
-    top[order] = maximum_filter(solar[order], size, mode="nearest")
+    if envelope == "closing":
+        top[order] = grey_closing(solar[order], size=size, mode="nearest")
+    else:
+        top[order] = maximum_filter(solar[order], size, mode="nearest")
     return solar < (1.0 - depth) * top
 
 
@@ -437,8 +453,8 @@ def _fit_from_clean_pixels(settings: WindowSettings, paths: DataPaths, *, stella
     spectrum = read_solar_spectrum(settings.spectrum) if spectrum is None else spectrum
     plain = replace(settings, telluric_from_clean_pixels=False)
     report, arrays = run(plain, spectrum)
-    solar_lines = solar_line_mask(arrays, settings.clean_solar_depth)
-    note = {"clean_solar_depth": settings.clean_solar_depth,
+    solar_lines = solar_line_mask(arrays, settings.clean_solar_depth, envelope=settings.clean_envelope)
+    note = {"clean_solar_depth": settings.clean_solar_depth, "clean_envelope": settings.clean_envelope,
             "masked_fraction": float(solar_lines.mean()), "used": False}
     if note["masked_fraction"] > settings.clean_max_masked:
         note["reason"] = f"more than {settings.clean_max_masked:g} of the window is solar line"

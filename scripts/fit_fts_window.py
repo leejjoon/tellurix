@@ -67,7 +67,8 @@ def settings_from(args) -> WindowSettings:
         pressure_width_scale=args.pressure_width_scale,
         pressure_width_species=args.pressure_width_species,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
-        clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked)
+        clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
+        clean_envelope=args.clean_envelope)
 
 
 def main() -> None:
@@ -142,6 +143,7 @@ def main() -> None:
                              "tellurix_fts.window.fit_window")
     parser.add_argument("--clean-solar-depth", type=float, default=0.01)
     parser.add_argument("--clean-max-masked", type=float, default=0.6)
+    parser.add_argument("--clean-envelope", choices=("max", "closing"), default="max")
     parser.add_argument("--layer-chunk-size", type=int, default=0)
     parser.add_argument("--report", type=Path, default=Path("docs/solar_fts_window_fit.json"))
     parser.add_argument("--diagnostic-npz", type=Path,
