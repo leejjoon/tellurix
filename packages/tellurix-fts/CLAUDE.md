@@ -146,7 +146,13 @@ for the 1983 pair, **1.00 for the 1990 files**, where any widening is worse --
 `docs/kitt_peak_clean_trial.json`) and `--telluric-from-clean-pixels` (columns, velocity and
 `lsf_sigma_kms` from pixels clear of solar lines, then pinned; three fits a window) took
 niratl from 24 to 46 of 71 pages at or below the authors' own correction
-(`scripts/score_telluric_correction.py`, the yardstick). The refit is in
+(`scripts/score_telluric_correction.py`, the yardstick). A window more than 60% "solar
+line" keeps the all-pixel fit, and a broad wing counts as line against the 3 cm-1 running
+maximum; `--clean-envelope closing` follows the wing instead. It is opt-in and used only
+in Wallace 2011's 11680 (Ca II 8542, 66% -> 19% masked) and 15220 (H-alpha, 83% -> 21%),
+spliced into the x1.00 runs 2026-10-20 (the rows before are in
+`data/corrected/solar/wallace2011/pre_closing_splice/`); it would also rescue 17 of the
+June 1983 pair's 30 refused windows, not tried. The refit is in
 `data/corrected/solar/niratl/`, promoted 2026-10-18 (the old run is in
 `data/corrected/superseded_pre_widthscale/`). The 1983 pair was refitted the same way at x1.06 and promoted the same day
 (median flatness 1.44 -> 1.06% and 1.40 -> 1.00%); files 4 and 5 are not refitted. What stays behind is per-line
