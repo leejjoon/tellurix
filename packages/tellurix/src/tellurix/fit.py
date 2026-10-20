@@ -10,7 +10,8 @@ import jax.numpy as jnp
 import numpy as np
 from scipy.optimize import minimize
 
-from .model import TelluricModel
+from .compiled import hoist_constants
+from .model import ArrayOpacityBackend, LinearizedOpacityBackend, TelluricModel
 from .types import SpectralOrder, TelluricParameters
 
 
@@ -254,10 +255,21 @@ class OrderObjective:
             )
             return 0.5 * jnp.sum(jnp.where(mask, terms, 0.0))
 
-        self._value_and_grad = jax.jit(jax.value_and_grad(objective))
+        # A precomputed model's own arrays -- the atmosphere and the opacity --
+        # are hoisted to operands too (tellurix.compiled), so another profile on
+        # the same window compiles the same program and the persistent cache,
+        # where enabled, serves it. A live line-by-line kernel is left alone: with
+        # the profile an operand its out-of-range branch is compiled too, and the
+        # dense fallback costs 8x the memory.
+        if isinstance(model.opacity, (LinearizedOpacityBackend, ArrayOpacityBackend)):
+            run, self._constants = hoist_constants(
+                objective, jnp.zeros(len(self.codec.names)), *self._data)
+        else:
+            run, self._constants = (lambda constants, *args: objective(*args)), []
+        self._value_and_grad = jax.jit(jax.value_and_grad(run, argnums=1))
         # Over the full parameter vector, so one compilation serves every stage
         # and every choice of free set; the caller slices out what it needs.
-        self._hessian = jax.jit(jax.hessian(objective))
+        self._hessian = jax.jit(jax.hessian(run, argnums=1))
 
     def _bind(self, order: SpectralOrder) -> None:
         self.order = order
@@ -293,12 +305,12 @@ class OrderObjective:
         return self
 
     def __call__(self, vector: np.ndarray) -> tuple[float, np.ndarray]:
-        value, gradient = self._value_and_grad(jnp.asarray(vector), *self._data)
+        value, gradient = self._value_and_grad(self._constants, jnp.asarray(vector), *self._data)
         return float(value), np.asarray(gradient, dtype=float)
 
     def hessian(self, vector: np.ndarray) -> np.ndarray:
         """Second derivatives of the objective at one full parameter vector."""
-        return np.asarray(self._hessian(jnp.asarray(vector), *self._data), dtype=float)
+        return np.asarray(self._hessian(self._constants, jnp.asarray(vector), *self._data), dtype=float)
 
 
 def fit_order(

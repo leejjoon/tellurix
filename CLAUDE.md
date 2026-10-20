@@ -216,6 +216,17 @@ many times it compiles. Two seams exist for that, and both drivers use them:
 Measured together: 61 s to 3.3 s for a three-stage fit, 8.1x end to end
 including the precompute, with fitted parameters agreeing to 1.8e-5.
 
+A third, for many profiles on one grid: `jax.jit` bakes every array a function
+closes over into its program, so a second profile on the same window compiled the
+objective afresh and the persistent cache (`tellurix.compiled.enable_compilation_cache`,
+`.jax-cache/`) never hit. `OrderObjective` now traces once and takes the model's
+arrays as operands (`hoist_constants`): the second profile loads it, 2.2 s to
+0.06 s on the Baker et al. fits, objectives unchanged to the printed digits. **Do
+not do the same to the opacity precompute.** With temperature and pressure as
+operands the sparse kernel's out-of-range `lax.cond` can no longer be resolved at
+compile time, and the dense Direct fallback is compiled and given memory: 0.54 GB
+to 4.6 GB a window, and slower.
+
 Two traps follow from this. **Never call the forward model eagerly on a live
 opacity backend** — an uncompiled kernel dispatches operation by operation and
 one call costs more than the whole fit (measured: 37 s of a 57 s page). For

@@ -16,18 +16,25 @@ driver lists the hours its spectra need:
           --output data/profiles/baker2020/goettingen_$(echo $t | tr -d :-).csv
     done
 
-Then fit, one shard per GPU; a rerun skips the windows already written:
+Then fit, four workers a GPU; a rerun skips the windows already written:
 
-    CUDA_VISIBLE_DEVICES=0 uv run python scripts/fit_baker_telluric.py --shard 0/2
-    CUDA_VISIBLE_DEVICES=1 uv run python scripts/fit_baker_telluric.py --shard 1/2
+    for i in 0 1 2 3 4 5 6 7; do
+      CUDA_VISIBLE_DEVICES=$((i % 2)) XLA_PYTHON_CLIENT_PREALLOCATE=false \
+          uv run python scripts/fit_baker_telluric.py --shard $i/8 &
+    done
 
 By default one spectrum per ERA5 hour, the first distinct one of each: 53 of the
 106 distinct spectra (35 appear in more than one group, there divided by another
 group's solar model). And the 30 cm-1 windows over 9020-17600 cm-1 holding at
 least three features the solar fits measured (docs/line_depth_ratios.json): 154.
 H2O and O2 only, the instrument the IAG atlas's 0.0145 cm-1 sinc, MT_CKD and O2
-CIA on, HITRAN's H2O pressure shifts, no covariance (``WindowSettings.covariance``):
-about 7 s a window, 8 h for the default set on two GPUs.
+CIA on, HITRAN's H2O pressure shifts, no covariance (``WindowSettings.covariance``).
+
+A fit is mostly compilation, on the CPU, and the GPU idles: so run several workers
+a GPU with ``XLA_PYTHON_CLIENT_PREALLOCATE=false`` (a fit peaks at 0.5 GB). The
+objective's compilation is shared by every spectrum on a window -- the model's
+arrays are its operands (``tellurix.compiled``) and the workers share
+``--compilation-cache`` -- while the opacity precompute's (1.9 s) is not.
 
 Each window writes ``gGG_NNNN_V1.npz`` (fit_window's arrays) and ``.json`` (its
 report and the spectrum's header entries). These are measurements, not products:
@@ -86,6 +93,8 @@ def main() -> None:
     parser.add_argument("--v1", type=float, default=9020.0)
     parser.add_argument("--v2", type=float, default=17600.0)
     parser.add_argument("--shard", default="0/1", help="I/N: this process takes every Nth window")
+    parser.add_argument("--compilation-cache", default=str(ROOT / ".jax-cache"),
+                        help="shared by the workers; empty string to disable")
     parser.add_argument("--list-hours", action="store_true",
                         help="print the ERA5 hours the chosen spectra need, and stop")
     args = parser.parse_args()
@@ -104,6 +113,7 @@ def main() -> None:
         raise SystemExit(f"{len(missing)} profiles missing, e.g. {missing[0]}; see --list-hours")
 
     from tellurix import DataPaths
+    from tellurix.compiled import enable_compilation_cache
     from tellurix_fts.flux_atlas import IAG_FWHM_CM1
     from tellurix_fts.window import WindowSettings, fit_window
 
@@ -113,6 +123,8 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     print(f"{len(spectra)} spectra x {len(windows)} windows (shard {args.shard})", flush=True)
     paths = DataPaths.bootstrapped(ROOT)
+    if args.compilation_cache:
+        enable_compilation_cache(args.compilation_cache)
     failures = []
     for observation in spectra:
         stem = f"g{observation.group:02d}_{observation.number}"

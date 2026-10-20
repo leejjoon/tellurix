@@ -104,21 +104,6 @@ PHYSICS = {
 }
 
 
-def enable_compilation_cache(directory: Path) -> None:
-    """Persist compiled executables so a repeated shape never recompiles.
-
-    Shapes vary per window, so within one pass this mostly does not hit. It pays
-    on a resumed run and across workers sharing one directory.
-    """
-
-    import jax
-
-    directory.mkdir(parents=True, exist_ok=True)
-    jax.config.update("jax_compilation_cache_dir", str(directory))
-    jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
-    jax.config.update("jax_persistent_cache_min_compile_time_secs", 1.0)
-
-
 def window_edges(spectrum, v1: float, v2: float, width_cm1: float,
                  minimum_snr: float) -> list[dict]:
     """Tile the requested range, keeping only windows the file actually measured.
@@ -634,6 +619,8 @@ def main() -> None:
     args.summary = args.summary or args.output_dir / f"{stem}_summary.json"
     args.record = args.record or args.output_dir / f"{stem}.h5"
     if args.compilation_cache:
+        from tellurix.compiled import enable_compilation_cache
+
         enable_compilation_cache(Path(args.compilation_cache))
 
     if args.scan_fwhm_cm1 is None:
