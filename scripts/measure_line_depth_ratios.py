@@ -16,7 +16,7 @@ optical depth does not grow with air mass. And a held-out test: each fit's ratio
 predicted by the mean of the others'. See docs/line_intensity_corrections.md.
 
     uv run python scripts/measure_line_depth_ratios.py \\
-        wallace='data/corrected/solar/wallace2011/reg[12]_w100/*.npz' \\
+        wallace='data/corrected/solar/wallace2011/*.npz' \\
         j83_2='data/corrected/solar/ftsspec_830626_2_*.npz' \\
         j83_3='data/corrected/solar/ftsspec_830626_3_*.npz' \\
         niratl='data/corrected/solar/niratl/*.npz' \\

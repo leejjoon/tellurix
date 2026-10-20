@@ -38,7 +38,7 @@ and the A-band), so ``--authors wallace2011`` scores only the pixels they correc
 and ``--authors none`` on the same runs scores the rest:
 
     uv run python scripts/score_telluric_correction.py --stem wallace2011_reg1 \\
-        --authors wallace2011 --wallace2011-region 1 run=data/corrected/solar/wallace2011_reg1
+        --authors wallace2011 --wallace2011-region 1 w100=data/corrected/solar/wallace2011
 """
 from __future__ import annotations
 

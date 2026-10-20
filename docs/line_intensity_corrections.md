@@ -32,7 +32,7 @@ cause.
 
 The fits measured are:
 
-- `wallace`: Wallace 2011 regions 1-2, the x1.00 runs in `data/corrected/solar/wallace2011/reg{1,2}_w100/` (not yet promoted);
+- `wallace`: Wallace 2011 regions 1-2, the x1.00 runs, promoted 2026-10-20 to `data/corrected/solar/wallace2011/`;
 - `j83_2` and `j83_3`: the June 1983 pair, x1.06;
 - `niratl`: x1.11.
 

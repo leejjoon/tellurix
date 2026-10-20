@@ -151,8 +151,11 @@ line" keeps the all-pixel fit, and a broad wing counts as line against the 3 cm-
 maximum; `--clean-envelope closing` follows the wing instead. It is opt-in and used only
 in Wallace 2011's 11680 (Ca II 8542, 66% -> 19% masked) and 15220 (H-alpha, 83% -> 21%),
 spliced into the x1.00 runs 2026-10-20 (the rows before are in
-`data/corrected/solar/wallace2011/pre_closing_splice/`); it would also rescue 17 of the
-June 1983 pair's 30 refused windows, not tried. The refit is in
+`data/corrected/superseded_wallace2011_trials/pre_closing_splice/`); it would also rescue 17 of the
+June 1983 pair's 30 refused windows, not tried. **Wallace 2011 regions 1-2 at x1.00 were
+promoted 2026-10-20** to `data/corrected/solar/wallace2011/` (records, npz and scores; median
+flatness 0.61% and 0.60% on the authors' pixels against their 0.71%); the x1.05 trial and
+the closing refits are in `data/corrected/superseded_wallace2011_trials/`. The refit is in
 `data/corrected/solar/niratl/`, promoted 2026-10-18 (the old run is in
 `data/corrected/superseded_pre_widthscale/`). The 1983 pair was refitted the same way at x1.06 and promoted the same day
 (median flatness 1.44 -> 1.06% and 1.40 -> 1.00%); files 4 and 5 are not refitted. What stays behind is per-line
