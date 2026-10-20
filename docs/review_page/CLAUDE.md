@@ -65,6 +65,12 @@ What the exporters check, and the traps that shaped them:
   1/2/3 are good/suspect/reject. The handler clicks the button the key names rather
   than reimplementing it, so a key cannot drift from what a click does. Keep j/k/h/l
   and the arrows free for stepping. The verdict panel sits at the foot of the left rail.
+- **Keep every array aligned to its element size.** A uint16 view must start at an even
+  byte and the float32 axis at a multiple of 4. The bit-packed mask is ceil(n / 8) bytes,
+  and Wallace 2011's uneven pixel counts made it odd, which put every window after it in
+  that chunk at an odd offset ("start offset of Uint16Array should be a multiple of 2", the
+  plot frozen on the last good window). `export_solar_review.py` pads before the axis and
+  after the mask; check `offset % 2` over a manifest after changing the layout.
 - **Hand uPlot `null`, never `NaN`.** The pages blank masked pixels with NaN, which
   uPlot does not treat as a gap: a zoom whose range held one made that series'
   min and max NaN, the auto-ranged flux scale lost its extent, and the chart drew

@@ -279,6 +279,16 @@ def main() -> None:
     chunk, chunk_bytes, chunk_index = [], 0, 0
     started = time.time()
 
+    # A typed array must start at a multiple of its element size: the bit-packed
+    # mask is ceil(n / 8) bytes, and an odd count put every uint16 array of the
+    # next window at an odd offset, which the page cannot view (2026-10-20).
+    def pad(boundary: int) -> None:
+        nonlocal chunk_bytes
+        extra = -chunk_bytes % boundary
+        if extra:
+            chunk.append(bytes(extra))
+            chunk_bytes += extra
+
     def flush() -> None:
         nonlocal chunk, chunk_bytes, chunk_index
         if not chunk:
@@ -415,6 +425,7 @@ def main() -> None:
             # where the uniform axis misses by over a tenth of a pixel the window
             # ships its own, as float32 offsets from nu0.
             if entry["axis_error_cm1"] > 0.1 * entry["dnu"]:
+                pad(4)
                 entry["axis_offset"] = chunk_bytes
                 payload = (nu - nu[0]).astype("<f4").tobytes()
                 chunk.append(payload)
@@ -423,6 +434,7 @@ def main() -> None:
             entry["mask_offset"] = chunk_bytes
             chunk.append(packed)
             chunk_bytes += len(packed)
+            pad(8)
             manifest.append(entry)
             status = (f"{len(pieces)} species{' (rebuilt)' if rebuilt else ''}, "
                       f"split {drift:.1e}" if drift is not None else
