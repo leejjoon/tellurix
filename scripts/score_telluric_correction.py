@@ -98,7 +98,7 @@ def main() -> None:
     parser.add_argument("runs", nargs="+", metavar="NAME=DIRECTORY")
     parser.add_argument("--stem", default="ph*", help="window files are <stem>_<v1>.npz (default: niratl pages)")
     parser.add_argument("--authors", choices=("niratl", "photatl", "wallace2011", "none"), default="niratl")
-    parser.add_argument("--wallace2011-region", type=int, choices=(1, 2), default=1)
+    parser.add_argument("--wallace2011-region", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--wallace2011", type=Path, default=ATLASES / "wallace2011_flux")
     parser.add_argument("--niratl", type=Path, default=ATLASES / "niratl")
     parser.add_argument("--photatl", type=Path, default=ATLASES / "photatl")
@@ -106,8 +106,12 @@ def main() -> None:
                         help="measure transmission against each window's 99th percentile")
     parser.add_argument("--minimum-pixels", type=int, default=30,
                         help="telluric pixels a page needs to be scored (deep: a sixth of it)")
+    parser.add_argument("--telluric-below", type=float, default=BINS["telluric"],
+                        help="the telluric bin's transmission ceiling; Wallace 2011 region 3's "
+                             "water lines are 1-4%% deep, so few of its pixels reach 0.97")
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
+    bins = {**BINS, "telluric": args.telluric_below}
 
     from tellurix_fts.flux_atlas import WALLACE2011_REGIONS, read_wallace2011_correction
     from tellurix_fts.nso import read_niratl_page, read_photatl_page
@@ -154,7 +158,7 @@ def main() -> None:
         interior = np.zeros(nu.size, bool)
         interior[EDGE_PIXELS:-EDGE_PIXELS] = True
         scores = {}
-        for label, ceiling in BINS.items():
+        for label, ceiling in bins.items():
             scored = clean & interior & (transmission < ceiling)
             if scored.sum() < (args.minimum_pixels if label == "telluric" else args.minimum_pixels // 6):
                 continue
@@ -167,7 +171,7 @@ def main() -> None:
     authored = args.authors != "none"
     names = [*runs, *(["authors"] if authored else [])]
     summary = {}
-    for label in BINS:
+    for label in bins:
         table = np.array([[pages[p][label][n] for n in names] for p in pages if label in pages[p]])
         if not table.size:
             continue
@@ -182,7 +186,7 @@ def main() -> None:
                 n: int(np.sum(table[:, i] <= table[:, -1])) for i, n in enumerate(names[:-1])}
             summary[label]["pages_worse_than_authors_by_0p2"] = {
                 n: int(np.sum(table[:, i] - table[:, -1] > 0.2)) for i, n in enumerate(names[:-1])}
-        print(f"{label} (T < {BINS[label]}), {len(table)} pages, median %: "
+        print(f"{label} (T < {bins[label]}), {len(table)} pages, median %: "
               + "  ".join(f"{n} {v:.3f}" for n, v in summary[label]["median_percent"].items()))
         print(f"  flatter than {first}: " + "  ".join(
             f"{n} {v}" for n, v in summary[label][f"pages_flatter_than_{first}"].items()))
@@ -194,7 +198,9 @@ def main() -> None:
             "method": __doc__.split("\n\n")[1].replace("\n", " "),
             "settings": {"stem": args.stem, "authors": args.authors,
                          **({"wallace2011_region": args.wallace2011_region} if args.authors == "wallace2011" else {}),
-                         "relative_transmission": args.relative_transmission},
+                         "relative_transmission": args.relative_transmission,
+                         **({"telluric_below": args.telluric_below}
+                            if args.telluric_below != BINS["telluric"] else {})},
             "runs": runs, "summary": summary, "pages": pages}, indent=1) + "\n")
         print(f"wrote {args.output}")
 

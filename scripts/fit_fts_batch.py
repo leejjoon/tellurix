@@ -44,6 +44,14 @@ the solar lines broadened by ``--vsini-kms`` (1.9 for the Sun as a star).
     UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
         --wallace2011-region 1 --vsini-kms 1.9 --profile data/profiles/kitt_peak_19891013_era5.csv
 
+Region 3's water lines are too weak to set the atmosphere window by window, so it was
+fitted with the values its 571 nm band measured held fixed:
+
+    UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
+        --wallace2011-region 3 --vsini-kms 1.9 --profile data/profiles/kitt_peak_19891001_era5.csv \\
+        --scan-profile data/profiles/kitt_peak_19830626_file3.csv --scan-fwhm-cm1 0.04167 --o2-cia \\
+        --pin H2O=0.035 --pin velocity_kms=-0.36 --pin lsf_sigma_kms=0.43 --v1 17410
+
     UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
         --spectrum .../nso/photatl --airmass 2.0
 """
@@ -226,7 +234,7 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    pressure_width_scale: float = 1.0, pressure_width_species: str = "H2O,O2",
                    telluric_from_clean_pixels: bool = False,
                    clean_solar_depth: float = 0.01, clean_max_masked: float = 0.6,
-                   clean_envelope: str = "max", vsini_kms: float = 0.0) -> dict:
+                   clean_envelope: str = "max", vsini_kms: float = 0.0, pin=()) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -268,6 +276,9 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         **({"clean_solar_depth": float(clean_solar_depth), "clean_max_masked": float(clean_max_masked),
             "clean_envelope": clean_envelope}
            if telluric_from_clean_pixels else {}),
+        # A record without pin fitted every window's telluric parameters itself.
+        # One string: a record's physics are HDF5 attributes, which hold no dict.
+        **({"pin": ",".join(sorted(pin))} if pin else {}),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "fitter": f"{fitter.parent.name}/{fitter.name}",
@@ -284,7 +295,7 @@ def physics_of(root: Path, args) -> dict:
         pressure_width_species=args.pressure_width_species,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
-        clean_envelope=args.clean_envelope, vsini_kms=args.vsini_kms)
+        clean_envelope=args.clean_envelope, vsini_kms=args.vsini_kms, pin=args.pin)
 
 
 def scan_species(entry, args, root, profile, airmass: float) -> dict:
@@ -332,7 +343,7 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         stellar="auto", vsini_kms=args.vsini_kms,
         macroturbulence_kms=PHYSICS["macroturbulence_kms"],
         source_continuum=False, normalize_source=False,
-        continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=(),
+        continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=tuple(args.pin),
         zenith_angle_deg=args.zenith_angle_deg,
         accuracy_mode=args.accuracy_mode, correction=None, gaussian_ils=False,
         o2_cia=args.o2_cia, line_coupling=args.line_coupling,
@@ -563,6 +574,10 @@ def main() -> None:
     parser.add_argument("--clean-max-masked", type=float, default=0.6)
     parser.add_argument("--clean-envelope", choices=("max", "closing"), default="max",
                         help="what solar-line depth is measured below (WindowSettings.clean_envelope)")
+    parser.add_argument("--pin", action="append", default=[], metavar="NAME=VALUE",
+                        help="hold a parameter fixed in every window (WindowSettings.pin), for a "
+                             "spectrum whose telluric lines are too weak to set it window by "
+                             "window; measure it from the windows that can. Repeatable.")
     parser.add_argument("--accuracy-mode", choices=("mt_ckd", "fast"), default="mt_ckd",
                         help="'fast' drops the water continuum: only for windows past the end "
                              "of the MT_CKD table at 20000 cm-1, and as its own run with its "

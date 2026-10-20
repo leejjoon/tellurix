@@ -13,7 +13,7 @@ what a fit needs from the header -- air mass, resolution -- is carried here.
   2011, ApJS 195, 6), ``sptr.regN``. Regions 1-3 carry vacuum wavenumber, the
   telluric-corrected flux, the transmission used for it, and the observed flux.
   The corrected column borrowed its transmission from the 1983-06-26 disc-centre
-  pair, so a telluric fit reads the observed one. Regions 1 and 2 are each one
+  pair, so a telluric fit reads the observed one. Regions 1-3 are each one
   McMath integrated-sun spectrum.
 """
 
@@ -32,12 +32,20 @@ from .nso import FTSSpectrum
 # `describe_truncation` in 100 cm-1 pieces: region 1 MOPD 26.1-26.8 cm over
 # 10000-13400 cm-1, 0.0227 cm-1 (R 577,000 at 13050); region 2 18.3-18.5 cm over
 # 13600-17400, 0.0328 cm-1 (R 441,000 at 14455). The paper's Table 1 gives
-# 676,000 and 698,000, which neither interferogram supports.
+# 676,000 and 698,000, which neither interferogram supports. Region 3 is not in the
+# paper's text: its air mass and time are the archive header's (891001R0.004,
+# FTS_cdrom/FTS23: 11:41 MST, 37 min, air mass 1.24 -> 1.22), and its MOPD is
+# 10.3-10.4 cm everywhere over 17400-22500, 0.0578 cm-1. The header's RESOLUTN
+# times the sinc's 1.207 gives all three measured widths (0.0229, 0.0330, 0.0578),
+# so the archive, not Table 1, is the one to trust. Region 3's authors' correction
+# stops at 20040 cm-1: above it the corrected and transmission columns are zero.
 WALLACE2011_REGIONS = {
     1: {"file": "sptr.reg1", "spectrum": "1989/10/13 #8", "airmass": 1.5, "fwhm_cm1": 0.02266,
         "atlas_range_cm1": (10800.0, 13500.0)},
     2: {"file": "sptr.reg2", "spectrum": "1989/10/13 #7", "airmass": 1.4, "fwhm_cm1": 0.03282,
         "atlas_range_cm1": (13500.0, 17500.0)},
+    3: {"file": "sptr.reg3", "spectrum": "1989/10/01 #4", "airmass": 1.23, "fwhm_cm1": 0.0578,
+        "atlas_range_cm1": (17500.0, 22500.0)},
 }
 # Reiners et al. (Table 1) put the optics limit at R ~ 1e6, 0.0145 cm-1
 # at the B-band; the FTS was scanned finer than its optics resolve.

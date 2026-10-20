@@ -155,7 +155,19 @@ spliced into the x1.00 runs 2026-10-20 (the rows before are in
 June 1983 pair's 30 refused windows, not tried. **Wallace 2011 regions 1-2 at x1.00 were
 promoted 2026-10-20** to `data/corrected/solar/wallace2011/` (records, npz and scores; median
 flatness 0.61% and 0.60% on the authors' pixels against their 0.71%); the x1.05 trial and
-the closing refits are in `data/corrected/superseded_wallace2011_trials/`. The refit is in
+the closing refits are in `data/corrected/superseded_wallace2011_trials/`. **Region 3**
+(17400-22530 cm-1, 1989/10/01 #4) is there too, fitted 2026-10-20: air mass 1.23 and the
+time come from the NSO archive header (`FTS_cdrom/FTS23/891001R0.004`; the paper gives
+neither), the sinc is 0.0578 cm-1 (header RESOLUTN x 1.207 matches all three regions'
+measured widths), the profile `kitt_peak_19891001_era5.csv`. Its water lines are 1-4%
+deep against 2-4% of solar-model error, and a window-by-window fit drove water to its
+x0.01 bound outside the 571 nm band, so water, velocity and `lsf_sigma_kms` were measured
+on 17410-17500 (clean-pixel fits; log H2O 0.035, -0.36 km/s, 0.43 km/s) and **pinned**
+for the whole region (`fit_fts_batch.py --pin`, recorded as `physics["pin"]`). 25 of 171
+windows have a species above 1%; nothing does past 19900 at this air mass, so MT_CKD's
+20000 cm-1 end never matters. Flatness on the authors' pixels at T < 0.99
+(`score_telluric_correction.py --telluric-below 0.99`): 0.42% against their 0.52%, 4 of 6
+windows at or below theirs; the 505 nm band is worse than theirs, from solar-model error. The refit is in
 `data/corrected/solar/niratl/`, promoted 2026-10-18 (the old run is in
 `data/corrected/superseded_pre_widthscale/`). The 1983 pair was refitted the same way at x1.06 and promoted the same day
 (median flatness 1.44 -> 1.06% and 1.40 -> 1.00%); files 4 and 5 are not refitted. What stays behind is per-line
