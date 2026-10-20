@@ -150,7 +150,10 @@ niratl from 24 to 46 of 71 pages at or below the authors' own correction
 `data/corrected/solar/niratl/`, promoted 2026-10-18 (the old run is in
 `data/corrected/superseded_pre_widthscale/`). The 1983 pair was refitted the same way at x1.06 and promoted the same day
 (median flatness 1.44 -> 1.06% and 1.40 -> 1.00%); files 4 and 5 are not refitted. What stays behind is per-line
-line-list error, mostly in the 0.89 um band.
+line-list error, mostly in the 0.89 um band. It repeats from fit to fit (r 0.82-0.92 across
+Wallace 2011, the 1983 pair and niratl; `scripts/measure_line_depth_ratios.py` ->
+`docs/line_depth_ratios.json`), so a per-line strength table could remove half of it --
+proposed, not built: `docs/line_intensity_corrections.md`.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

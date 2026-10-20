@@ -1864,6 +1864,12 @@ in `data/corrected/superseded_pre_widthscale/`.
   - **What to measure first**: on the 1983 trio over one band, whether a joint fit lowers
     the pair disagreement (`check_fts_pair_consistency.py`) and niratl's flatness against
     the authors', and how far the recovered solar lines move from Payne Zero's.
+- **Per-line intensity corrections** (proposed 2026-10-20, `docs/line_intensity_corrections.md`):
+  per-feature observed/model optical depth repeats across Wallace 2011, the June 1983 pair
+  and niratl (r = 0.82-0.92; same-day air-mass slope 0.96, so the line list and not the
+  Sun), and the other fits' mean predicts each one's to halve its 5-6% scatter. Plan: a
+  strength-multiplier table in `AERLineDatabase`, tested by refitting Wallace with a table
+  built without it. Measured by `measure_line_depth_ratios.py` -> `docs/line_depth_ratios.json`.
 - **Atlases not started**: `fluxatl` (disc-integrated, so the one atlas where Payne Zero's
   quantity is right -- a measure of how much of the floor is the flux/intensity mismatch;
   needs an air-wavelength, uneven-grid reader), `spot1atl` (waits on the solar model),
