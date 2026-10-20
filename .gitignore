@@ -15,6 +15,9 @@ data/stellar/*.npz
 # scripts/export_corrected_spectrum.py and scripts/build_arcturus_review.py.
 # The .json summaries beside them stay in git.
 data/corrected/**/*.npz
+# Baker et al. 2020 window fits: measurements read by analyse_baker_telluric.py,
+# summarised in docs/baker_telluric_ratios.json.
+data/corrected/baker2020/
 # Self-contained spectra files from scripts/export_spectra_hdf5.py. Produced on
 # demand for distribution; the run records beside them are the archival product
 # and stay in git.

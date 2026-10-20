@@ -107,14 +107,19 @@ def main() -> None:
         airmass, ratio, offset = airmass[keep], ratio[keep], offset[keep]
         halves = np.array([half[n] for n, k in zip(names, keep) if k])
         inverse = 1.0 / airmass - np.mean(1.0 / airmass)
-        b = (float(np.sum(inverse * (ratio - ratio.mean())) / np.sum(inverse ** 2))
-             if np.ptp(airmass) > 0.5 else float("nan"))
+        spread = np.ptp(airmass) > 0.5 and keep.sum() > 3
+        b = float(np.sum(inverse * (ratio - ratio.mean())) / np.sum(inverse ** 2)) if spread else float("nan")
+        # Its error from the scatter about the line, so b / error is ~N(0, 1)
+        # when nothing in the ratio follows 1/X.
+        residual = ratio - ratio.mean() - b * inverse
+        b_error = (float(np.sqrt(np.sum(residual ** 2) / (keep.sum() - 2) / np.sum(inverse ** 2)))
+                   if spread else float("nan"))
         finite = np.isfinite(offset)
         mean_half = lambda v, h: float(np.mean(v[halves == h])) if np.any(halves == h) else float("nan")
         table.append(dict(
             feature=i, nu=features[i]["nu"], spectra=int(keep.sum()),
             ratio=round(float(ratio.mean()), 4), ratio_std=round(float(ratio.std(ddof=1)), 4),
-            inverse_airmass_slope=round(b, 4),
+            inverse_airmass_slope=round(b, 4), inverse_airmass_slope_error=round(b_error, 4),
             offset_ms=round(float(np.mean(offset[finite])), 1) if finite.any() else None,
             offset_std_ms=round(float(np.std(offset[finite], ddof=1)), 1) if finite.sum() > 1 else None,
             halves=[mean_half(ratio, 0), mean_half(ratio, 1)],
@@ -131,11 +136,14 @@ def main() -> None:
     split_offset, n_offset = correlation([r["offset_halves"][0] for r in table],
                                          [r["offset_halves"][1] for r in table])
     slopes = np.array([r["inverse_airmass_slope"] for r in table], dtype=float)
+    pulls = slopes / np.array([r["inverse_airmass_slope_error"] for r in table], dtype=float)
+    pulls = pulls[np.isfinite(pulls)]
     intercepts = np.array([r["ratio"] - 1 for r in table])
     print(f"{len(spectra)} spectra, {len(files)} windows; {len(table)} features in >= {MIN_SPECTRA} spectra")
     print(f"  split halves: ratio r = {split:.2f} ({n_split}), offset r = {split_offset:.2f} ({n_offset})")
     print(f"  per-feature 1/X slope: median {np.nanmedian(slopes):+.3f}, rms {rms(slopes[np.isfinite(slopes)]):.3f}"
-          f" against rms(ratio - 1) {rms(intercepts):.3f}")
+          f" against rms(ratio - 1) {rms(intercepts):.3f}; slope/error rms {rms(pulls):.2f}"
+          f" (1 if nothing follows 1/X), |slope/error| > 3 for {np.mean(np.abs(pulls) > 3):.1%}")
 
     both = [r for r in table if len(r["solar"]) >= 2
             and all(abs(v - 1) < OUTLIER for v in r["solar"].values())]
@@ -184,7 +192,8 @@ def main() -> None:
         repeatability=dict(ratio_split_half_r=split, features=n_split,
                            offset_split_half_r=split_offset, offset_features=n_offset),
         airmass=dict(inverse_airmass_slope_median=float(np.nanmedian(slopes)),
-                     inverse_airmass_slope_rms=rms(slopes[np.isfinite(slopes)]), ratio_rms=rms(intercepts)),
+                     inverse_airmass_slope_rms=rms(slopes[np.isfinite(slopes)]), ratio_rms=rms(intercepts),
+                     slope_over_error_rms=rms(pulls), fraction_over_3_sigma=float(np.mean(np.abs(pulls) > 3))),
         solar_fits=comparison, held_out=held_out,
         positions=dict(median_abs_offset_ms=float(np.median(np.abs(offsets))),
                        median_between_spectra_ms=float(np.median(scatter))),

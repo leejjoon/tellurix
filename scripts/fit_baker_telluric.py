@@ -26,7 +26,7 @@ Then fit, four workers a GPU; a rerun skips the windows already written:
 By default one spectrum per ERA5 hour, the first distinct one of each: 53 of the
 106 distinct spectra (35 appear in more than one group, there divided by another
 group's solar model). And the 30 cm-1 windows over 9020-17600 cm-1 holding at
-least three features the solar fits measured (docs/line_depth_ratios.json): 154.
+least three features the solar fits measured (docs/line_depth_ratios.json): 146.
 H2O and O2 only, the instrument the IAG atlas's 0.0145 cm-1 sinc, MT_CKD and O2
 CIA on, HITRAN's H2O pressure shifts, no covariance (``WindowSettings.covariance``).
 

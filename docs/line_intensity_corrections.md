@@ -1,6 +1,6 @@
 # Per-line intensity corrections from the solar fits -- future work
 
-Status: **proposed, not started** (2026-10-20). Measured on CPU from existing runs; no
+Status: **proposed, not started** (2026-10-20); tested without our solar model the same day (Baker et al. 2020, below). Measured on CPU from existing runs; no
 code in the forward model yet. Report: `docs/line_depth_ratios.json`, written by
 `scripts/measure_line_depth_ratios.py` (command in its docstring, ~5 min on CPU).
 
@@ -136,6 +136,81 @@ can be measured the same way: centroid offsets per feature across the fits, with
 fit's mean removed. They would be carried as a position column beside the strength
 multiplier (step 1 below), with the same held-out test. A position error is invisible
 to the optical-depth ratio, which uses core sums, so it needs its own measurement.
+
+## Without our solar model: Baker et al. 2020's telluric spectra
+
+Every fit above divides by Payne Zero, so a shared solar-model error could pass for a
+line-list one. Baker, Blake & Reiners 2020 (ApJS 247, 24) published what their joint
+fits of 141 Goettingen spectra left once the Sun and the iodine cell were divided out
+(`tellurix_fts.baker`). That is the atmosphere alone, at another site (0.2 km), with
+another instrument (the IAG FTS, R ~ 1e6), in another decade (2015-16).
+
+- **The run** (`scripts/fit_baker_telluric.py`, 2026-10-20):
+  - one spectrum per ERA5 hour, 53 of the 106 distinct spectra, each with its own profile
+    (`data/profiles/baker2020/`);
+  - the 146 windows of 9020-17600 cm-1 holding at least three features the solar fits
+    measured;
+  - a flat Sun, H2O and O2, otherwise the solar fits' physics at x1.00 widths;
+  - 7733 windows fitted. The other 5 are spectrum 0139 at 9020-9140, too opaque to fit.
+- **The measurement** (`scripts/analyse_baker_telluric.py` -> `docs/baker_telluric_ratios.json`):
+  - the same per-feature ratio as the solar fits (`tellurix_fts.line_depth`);
+  - their solar model's lines masked (within 0.1 cm-1 of `stel_mod` < 0.97);
+  - 1962 features measured in at least three spectra, a median 52.
+
+**The ratios are the line list's.**
+
+- **Repeatable:** split into two halves of the spectra, the per-feature mean ratio
+  correlates at r = 0.98. One spectrum scatters 1.8% about the mean, so a feature's
+  mean is good to 0.3%.
+- **Grows with air mass:** fitting ratio - 1 = a + b (1/X - mean) per feature over
+  X 1.1-3.5, b / its error has rms 1.18 (1 if nothing in the ratio follows 1/X), and
+  1.2% of features exceed 3 sigma. Error their solar model left under a line would
+  not grow with air mass, so it would show up in b. Almost none does.
+- **The same errors as the solar fits:** over the 1608 features both measure, r = 0.79.
+  Of the 164 features more than 8% off in the solar fits' mean, 155 are off the same
+  way here. The window-13690 lines:
+
+  | cm-1 | Wallace | `_2` | `_3` | Baker (53 spectra) |
+  |---|---|---|---|---|
+  | 13701.89 | 1.157 | 1.217 | 1.216 | 1.132 +- 0.014 |
+  | 13704.54 | 0.858 | 0.844 | 0.834 | 0.832 +- 0.016 |
+
+- **The features the solar fits could not reach:** 83 features no solar fit measured are
+  measured here, 32 of them more than 5% off. One is **10511.5, where this started**:
+  0.789 +- 0.014 over 34 spectra, the 0.80-0.82 read off by eye in Wallace and the 1983 pair.
+
+**As a source for the table, Baker alone does a little worse than the other solar fits.**
+This is the held-out test above, rms of (ratio - 1) predicted three ways:
+
+| held out | before | by the other solar fits | by Baker | by both |
+|---|---|---|---|---|
+| wallace | 4.9% | 2.6% | 3.1% | 2.3% |
+| j83_2 | 5.6% | 2.3% | 3.5% | 2.2% |
+| j83_3 | 5.7% | 2.0% | 3.9% | 2.4% |
+| niratl | 5.0% | 2.6% | 3.6% | 2.6% |
+
+The 1-1.5% Baker leaves beyond the solar fits is not noise (0.3%). It is something the
+Kitt Peak fits share and Goettingen does not. Two candidates:
+- the width scales: these fits use AER's widths, the solar fits x1.06-1.11, and a width
+  error reads as a strength error in a saturated core;
+- the temperature profile (E'' terms, -1.4% at 700-1500 between two Kitt Peak dates).
+
+Not settled. Baker helps most where the other fits are fewest: Wallace, predicted by
+the 1983 pair and niratl only, goes from 2.6% to 2.3%.
+
+**Positions repeat too, but are noisier than the strengths.**
+- One spectrum's offset scatters 36 m/s per feature, against 0.2-0.3% for its ratio.
+- The halves correlate at r = 0.89 over the 334 features measured in every spectrum.
+- The median |offset| is 38 m/s.
+- The offset is a joint fit of a shift and an optical-depth scale. A centroid over a
+  window fixed on the model's centre read offsets 3-5x too small.
+- The measurement uses H2O features only. The O2 gamma-band lines of the section above are
+  below the feature list's S >= 3e-25, and need their own list.
+
+**What it changes in the plan:** the table can be built from Baker and the solar fits
+together. Baker adds coverage under solar lines and many air masses, and is held out for
+the solar fits. Before mixing them, find the 1-1.5% difference above, starting with
+the width scale.
 
 ## Plan
 

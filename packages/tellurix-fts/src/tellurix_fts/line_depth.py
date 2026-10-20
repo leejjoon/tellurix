@@ -17,6 +17,8 @@ from scipy.interpolate import CubicSpline
 CORE_CM1 = 0.05
 # A line's position is in its flanks, which the core cut drops.
 SHIFT_CM1 = 0.1
+# 0.02 cm-1 is ~400 m/s: twenty times the line-list offsets being measured.
+MAX_SHIFT_CM1 = 0.02
 MIN_PIXELS = 3
 SPEED_OF_LIGHT_MS = 299792458.0
 
@@ -70,10 +72,17 @@ def shift_and_scale(spline, nu, observed, iterations: int = 5):
 
     shift, scale = 0.0, 0.0
     for _ in range(iterations):
-        model = np.clip(spline(nu - shift), 1e-6, None)
+        model = np.clip(spline(nu - shift), 1e-6, 1.0)
         predicted = model ** (1.0 + scale)
         jacobian = np.stack([-(1.0 + scale) * predicted / model * spline(nu - shift, 1),
                              predicted * np.log(model)], axis=1)
-        step = np.linalg.lstsq(jacobian, observed - predicted, rcond=None)[0]
+        try:
+            step = np.linalg.lstsq(jacobian, observed - predicted, rcond=None)[0]
+        except np.linalg.LinAlgError:
+            return np.nan, np.nan
         shift, scale = shift + step[0], scale + step[1]
+        # A feature this far off is a blend the model has wrong or a masked core,
+        # not a position: give up rather than follow it.
+        if not (np.isfinite(shift) and abs(shift) < MAX_SHIFT_CM1 and -0.9 < scale < 3.0):
+            return np.nan, np.nan
     return shift, scale

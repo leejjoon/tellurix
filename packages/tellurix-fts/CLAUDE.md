@@ -186,7 +186,12 @@ one group, each copy divided by that group's solar model; and the site is below 
 up to 300 m. Profiles are `data/profiles/baker2020/goettingen_<hour>.csv`; the fits
 (`data/corrected/baker2020/`) are measurements, not products, and are not in the results
 archive. The per-feature ratio and offset are one definition for both
-(`tellurix_fts.line_depth`).
+(`tellurix_fts.line_depth`). Result (2026-10-20, 53 spectra x 146 windows): the ratios
+repeat at r 0.98, grow with air mass as a line-list error must, and match the solar fits'
+at r 0.79, 155 of 164 large outliers in sign; Baker alone predicts the solar fits 1-1.5%
+worse than the other solar fits do (`docs/line_intensity_corrections.md`). The run took
+about an hour on one GPU at 12 workers: a fit is mostly CPU compilation, so run several
+workers a GPU with `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

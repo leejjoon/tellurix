@@ -32,3 +32,12 @@ def test_a_shift_is_recovered_beside_a_strength_error():
     # 0.001 cm-1 is 23 m/s at 13000 cm-1, the size of the offsets measured.
     _, _, offset = _measure(1.2, 0.001)
     assert offset == pytest.approx(0.001 / CENTRE * SPEED_OF_LIGHT_MS, rel=0.02)
+
+
+def test_a_feature_the_model_does_not_describe_gives_no_offset():
+    # A line the model lacks altogether: the fit would chase it out of the window.
+    nu, model = _line()
+    observed = model * np.exp(-2.0 * np.exp(-0.5 * ((nu - CENTRE - 0.06) / 0.02) ** 2))
+    ones = np.ones_like(nu)
+    found = feature_measurements(nu, observed, model, ones, ones.astype(bool), np.array([CENTRE]))
+    assert np.isnan(found[0][2]) or abs(found[0][2]) < 0.02 / CENTRE * SPEED_OF_LIGHT_MS
