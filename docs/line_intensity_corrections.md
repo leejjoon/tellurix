@@ -86,6 +86,57 @@ ignores the instrument convolution. And the four fits have different width scale
 (x1.00, x1.06, x1.11). Treat these numbers as no evidence either way. Only a refit with
 scaled intensities tells whether flatness improves.
 
+## Line positions: O2 too, and neither list fixes them
+
+Found 2026-10-20 reviewing Wallace 2011 region 2 window 15910 (the O2 gamma band, 628 nm),
+where the corrected spectrum swings positive-negative across each O2 line. The window's
+median offset is -4 m/s, so the wavenumber scale and the fitted velocity are right. What
+is left is per-line. The method is the S-weighted centroid of 1 - observed/solar minus
+that of 1 - model/solar, over +-6 pixels around each model minimum.
+
+| line (cm-1) | Wallace (X 1.4) | June 1983 `_2` (X 5.37) | June 1983 `_3` (X 3.09) |
+|---|---|---|---|
+| 15914.2 | +17 | +20 | +38 |
+| 15916.2 | +11 | +15 | +38 |
+| 15918.2 | +10 | +21 | +41 |
+| 15925.7 | -32 | -28 | -47 |
+| 15927.8 | -40 | -35 | -32 |
+
+The offsets are observed minus AER v3.9, in m/s. `_3` runs about 20 m/s high throughout,
+because its own velocity differs. The pattern repeats over two dates and three air masses,
+so it belongs to the line data, and it is +-20 m/s (+-0.001 cm-1).
+
+Two candidates were tested in scratch, refitting windows 15910 (gamma), 14500 (B), 13060
+and 13120 (A) with the x1.00 settings:
+
+- **HITRAN2024's O2 positions** (HITRANonline, isotopologue ids 36-38, 12900-16000 cm-1,
+  fetched 2026-10-20, 195 matched lines substituted). They differ from AER's by 0.5 mK rms
+  in the A band, 1.0 in the B band and 2.9 in the gamma band. In the gamma band they are
+  13-93 m/s bluer, increasingly so toward the head. Pressure shifts and intensities are
+  identical to AER's.
+  - HITRAN flattens the 15914-15919 offsets (to +1 to +10 m/s), but band-head lines stay
+    30 m/s off, and the scatter about the mean only drops from 20 to 17 m/s.
+  - Flatness, AER -> HITRAN, at T < 0.97 (authors' pixels) and deep pixels (T < 0.7):
+
+    | window | T < 0.97 | deep |
+    |---|---|---|
+    | 15910 | 1.74 -> 1.67% | 1.05 -> 1.28% |
+    | 14500 | 0.60 -> 0.61% | 2.36 -> 2.58% |
+    | 13060 | 0.95 -> 0.95% | 3.34 -> 3.33% |
+    | 13120 | 1.93 -> 1.96% | 1.78 -> 1.82% |
+
+  - No gain. It is not the H2O pressure-shift story (§4q), where HITRAN helped everywhere.
+- **AER's first-order O2 line coupling** (`--line-coupling`; `lncpl_lines` carries 182 O2
+  lines in 12900-16000 cm-1). Coupling would make a line's shape asymmetric, which leaves
+  this kind of S-shape. It was applied at 15910 and 14500 and changed nothing to four
+  decimals, per-line offsets included. The A band was the same.
+
+So positions are a per-line error neither list resolves, like the intensities above. They
+can be measured the same way: centroid offsets per feature across the fits, with each
+fit's mean removed. They would be carried as a position column beside the strength
+multiplier (step 1 below), with the same held-out test. A position error is invisible
+to the optical-depth ratio, which uses core sums, so it needs its own measurement.
+
 ## Plan
 
 1. **A strength-multiplier table in the line database.** Model it on the H2O pressure-shift
