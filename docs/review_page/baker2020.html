@@ -187,8 +187,8 @@
   .plotwrap.resid { flex: 0 0 auto; }
   /* Reserved, not left to the chart: both charts are destroyed before the main
      one measures its space, so an empty strip here handed the main chart this
-     strip's 118 px and put its x axis on top of the residuals. */
-  #rplot { min-height: 118px; }
+     strip's 150 px and put its x axis on top of the residuals. */
+  #rplot { min-height: 150px; }
   .plot-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 2px 2px 8px; }
   .trace { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; background: none; border: 0; padding: 0; color: var(--muted); }
   .trace[aria-pressed="true"] { color: var(--ink); }
@@ -683,7 +683,7 @@
     var pct = Float64Array.from(spec.residual, function (v) { return 100 * v; });
     var med = Float64Array.from(pack.median, function (v) { return 100 * v; });
     STATE.rplot = new uPlot({
-      width: width, height: 118, legend: { show: false },
+      width: width, height: 150, legend: { show: false },
       scales: { x: { time: false } },
       cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
       series: [{}, { stroke: "transparent", points: { show: false } }, { stroke: "transparent", points: { show: false } },
@@ -691,7 +691,13 @@
                { stroke: css("--corrected"), width: 1.4, points: { show: false }, spanGaps: false, show: STATE.traces.median }],
       bands: [{ series: [1, 2], fill: css("--hair") }],
       axes: [{ stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", values: axisTicks },
-             { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", size: 52 }]
+             // The strip is ~80 px of plot: uPlot's default 30 px tick spacing left
+             // one or two labels, often only 0. Four to six nice steps, labelled in %.
+             { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", size: 52,
+               splits: percentSplits, values: function (u, vs) {
+                 var step = vs.length > 1 ? Math.abs(vs[1] - vs[0]) : 1, digits = step >= 1 ? 0 : step >= 0.1 ? 1 : 2;
+                 return vs.map(function (v) { return (Math.abs(v) < step / 1e6 ? 0 : v).toFixed(digits) + "%"; });
+               } }]
     }, gaps([pack.x, up, dn, pct, med]), rel);
     $("resid-hint").textContent = "residual, observed − model, % of continuum — the band is ±1σ of pixel noise (" +
       sigma.toFixed(2) + "%); rms " + fmt(100 * spec.meta.rms, 2) + "%" +
@@ -709,6 +715,13 @@
     requestAnimationFrame(function () { drawStack(pack); });
   }
 
+  function percentSplits(u, axis, min, max) {
+    var raw = (max - min) / 5, mag = Math.pow(10, Math.floor(Math.log10(raw || 1)));
+    var step = [1, 2, 2.5, 5, 10].map(function (k) { return k * mag; }).find(function (v) { return v >= raw; });
+    var out = [];
+    for (var v = Math.ceil(min / step) * step; v <= max + step * 1e-9; v += step) out.push(v);
+    return out;
+  }
   // One row per spectrum, coloured by its residual, over the main plot's x range.
   function drawStack(pack) {
     var canvas = $("stack"), u = STATE.plot;
