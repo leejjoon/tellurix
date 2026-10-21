@@ -1,5 +1,5 @@
 {
- "method": "What else than the line list could leave a residual common to every Baker et al. spectrum.\n\nA residual in every spectrum of ``fit_baker_telluric.py``'s fits is not by that alone\nthe line list's. This reads those fits and ``analyse_baker_telluric.py``'s ratios,\nnumpy only, and tests the other candidates:\n\n- **isotopologues**: each feature tagged with the AER lines within 0.1 cm-1, by\n  their share of S. An HDO depletion would show in HDO-dominated features;\n- **strength and E''**: per fit, over features at least 80% H2-16O, the joint\n  least-squares (ratio - 1) = a + b log10 S + c E''/1000 cm-1. A line-list error is\n  the same in every fit; a temperature profile error is the fit's own (E''); a width\n  error reads as strength in saturated cores, so it follows the fit's width scale;\n- **line shape**: the residual of isolated H2O lines (>= 95% H2-16O, no other line\n  over 3% of S within 0.5 cm-1, clear of 1% solar lines and 2% iodine lines within\n  0.4 cm-1), over the model's depth, median over lines and spectra, set beside the\n  residual a Voigt fit leaves on a line that is a wider Voigt or speed-dependent.\n  Those templates are one layer at 14000 cm-1 and 280 K: an order of magnitude.\n  ``--stack`` does the same for the Kitt Peak solar fits, against their solar model,\n  with each run's pixel step and instrument FWHM: a profile error is on the\n  instrument's scale, a width error on the lines';\n- **iodine**: off the telluric lines (model above 0.995) and the solar ones (the\n  analysis's cut), the median residual over a window's spectra, where at least half\n  of them are clean, against their iodine template's depth. A\n  template divided out k too deep leaves +k (1 - iodine) in every spectrum.",
+ "method": "What else than the line list could leave a residual common to every Baker et al. spectrum.\n\nA residual in every spectrum of ``fit_baker_telluric.py``'s fits is not by that alone\nthe line list's. This reads those fits and ``analyse_baker_telluric.py``'s ratios,\nnumpy only, and tests the other candidates:\n\n- **isotopologues**: each feature tagged with the AER lines within 0.1 cm-1, by\n  their share of S. An HDO depletion would show in HDO-dominated features;\n- **strength and E''**: per fit, over features at least 80% H2-16O, the joint\n  least-squares (ratio - 1) = a + b log10 S + c E''/1000 cm-1. A line-list error is\n  the same in every fit; a temperature profile error is the fit's own (E''); a width\n  error reads as strength in saturated cores, so it follows the fit's width scale;\n- **line shape**: the residual of isolated H2O lines (>= 95% H2-16O, no other line\n  over 3% of S within 0.5 cm-1, clear of 1% solar lines and 2% iodine lines within\n  0.4 cm-1), over the model's depth, median over lines and spectra, set beside the\n  residual a Voigt fit leaves on a line that is a wider Voigt or speed-dependent.\n  Those templates are one layer at 14000 cm-1 and 280 K: an order of magnitude.\n  ``--stack`` does the same for the Kitt Peak solar fits, against their solar model,\n  with each run's pixel step and instrument FWHM: a profile error is on the\n  instrument's scale, a width error on the lines';\n- **speed dependence**: for the same lines, what a speed-dependent Voigt at\n  ``--sdv-ratio`` would change in the model (``speed_dependence_terms``), regressed\n  against the residual with each line's strength, and then also width, free: one\n  amplitude, 1 if it accounts for the residual, bootstrapped over lines;\n- **iodine**: off the telluric lines (model above 0.995) and the solar ones (the\n  analysis's cut), the median residual over a window's spectra, where at least half\n  of them are clean, against their iodine template's depth. A\n  template divided out k too deep leaves +k (1 - iodine) in every spectrum.",
  "inputs": {
   "fits": "data/corrected/baker2020_w106",
   "ratios": "docs/baker_telluric_ratios_w106.json",
@@ -413,5 +413,61 @@
     "correlation": 0.193
    }
   ]
+ },
+ "speed_dependence": {
+  "ratio": 0.13,
+  "profiles": 702,
+  "strength": {
+   "amplitude": 1.344467861286046,
+   "error": 0.03534151574388006,
+   "implied_ratio": 0.17478082196718597
+  },
+  "strength_and_width": {
+   "amplitude": 0.5382020658400051,
+   "error": 0.04007368762036745,
+   "implied_ratio": 0.06996626855920066
+  },
+  "depth_0.2_0.5": {
+   "profiles": 386,
+   "observed": {
+    "0.00": -0.01778,
+    "0.03": -0.00783,
+    "0.06": 0.00625,
+    "0.10": 0.00967,
+    "0.15": 0.0047,
+    "0.20": 0.00135,
+    "0.30": -0.00198
+   },
+   "sdv": {
+    "0.00": -0.01357,
+    "0.03": -0.00519,
+    "0.06": 0.00645,
+    "0.10": 0.00725,
+    "0.15": 0.00244,
+    "0.20": -0.00011,
+    "0.30": -0.00185
+   }
+  },
+  "depth_0.5_0.9": {
+   "profiles": 255,
+   "observed": {
+    "0.00": -0.01667,
+    "0.03": -0.00925,
+    "0.06": 0.00212,
+    "0.10": 0.00678,
+    "0.15": 0.00437,
+    "0.20": 0.00234,
+    "0.30": -0.00197
+   },
+   "sdv": {
+    "0.00": -0.01184,
+    "0.03": -0.00583,
+    "0.06": 0.00346,
+    "0.10": 0.00538,
+    "0.15": 0.00239,
+    "0.20": 0.0004,
+    "0.30": -0.0011
+   }
+  }
  }
 }

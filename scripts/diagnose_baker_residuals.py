@@ -19,6 +19,10 @@ numpy only, and tests the other candidates:
   ``--stack`` does the same for the Kitt Peak solar fits, against their solar model,
   with each run's pixel step and instrument FWHM: a profile error is on the
   instrument's scale, a width error on the lines';
+- **speed dependence**: for the same lines, what a speed-dependent Voigt at
+  ``--sdv-ratio`` would change in the model (``speed_dependence_terms``), regressed
+  against the residual with each line's strength, and then also width, free: one
+  amplitude, 1 if it accounts for the residual, bootstrapped over lines;
 - **iodine**: off the telluric lines (model above 0.995) and the solar ones (the
   analysis's cut), the median residual over a window's spectra, where at least half
   of them are clean, against their iodine template's depth. A
@@ -79,19 +83,19 @@ def regression(ratio, log_s, e_lower) -> dict:
                 per_1000_cm1_of_e_lower=float(coef[2]), per_1000_cm1_of_e_lower_error=float(error[2]))
 
 
-def voigt(x, lorentz):
+def voigt(x, lorentz, doppler=DOPPLER_HWHM_CM1):
     from scipy.special import wofz
 
-    sigma = DOPPLER_HWHM_CM1 / np.sqrt(2 * np.log(2))
+    sigma = doppler / np.sqrt(2 * np.log(2))
     return wofz((x + 1j * lorentz) / (sigma * np.sqrt(2))).real / (sigma * np.sqrt(2 * np.pi))
 
 
-def speed_dependent(x, lorentz, ratio):
+def speed_dependent(x, lorentz, ratio, doppler=DOPPLER_HWHM_CM1):
     """Lorentz width Gamma0 (1 + ratio ((v / v_p)^2 - 3/2)), averaged over Maxwell speeds and directions."""
     speeds = np.linspace(0.02, 3.5, 140)
     weights = speeds ** 2 * np.exp(-speeds ** 2); weights /= weights.sum()
     cosines = np.linspace(-1, 1, 81)
-    shift_cm1 = DOPPLER_HWHM_CM1 / np.sqrt(np.log(2))
+    shift_cm1 = doppler / np.sqrt(np.log(2))
     out = np.zeros_like(x)
     for speed, weight in zip(speeds, weights):
         width = lorentz * (1 + ratio * (speed ** 2 - 1.5))
@@ -113,6 +117,64 @@ def voigt_misfit(truth, depth):
                             bounds=(0.5, 2), method="bounded").x
     model = np.exp(-scale * tau0 * shape)
     return np.interp(OFFSETS_CM1, x, (observed - model) / (1 - model[np.argmin(np.abs(x))]))
+
+
+def doppler_hwhm_cm1(nu, temperature_k=280.0):
+    """H2-16O's Doppler half width at ``nu``."""
+    return nu * np.sqrt(2 * np.log(2) * 1.380649e-23 * temperature_k / (18.0106 * 1.66054e-27)) / 2.99792458e8
+
+
+def speed_dependence_terms(nu, observed, model, grid, transmission, kernel, centre, ratio):
+    """One isolated line's residual and what an SDV at ``ratio`` would add to the model, at its pixels.
+
+    One Voigt (Doppler at 280 K) is fitted to the model's own optical depth on the fit grid;
+    the SDV at the same Gamma0 changes that by Delta tau, and T exp(-Delta tau) - T goes
+    through the instrument. The stored kernel is truncated, which only touches Delta at
+    second order. Also the model's derivatives in the line's ln strength and ln width, the
+    nuisances a refit would absorb. None for a line one Voigt does not describe.
+    """
+    from scipy.optimize import least_squares
+
+    local = np.abs(grid - centre) < 1.0
+    nu_grid, t_grid = grid[local], transmission[local]
+    tau = -np.log(np.clip(t_grid, 1e-12, None))
+    near_grid = np.abs(nu_grid - centre) < 0.6
+    doppler = doppler_hwhm_cm1(centre)
+
+    def misfit(p):
+        area, at, width, b0, b1 = p
+        return (area * voigt(nu_grid[near_grid] - at, width, doppler) + b0 + b1 * (nu_grid[near_grid] - centre)
+                - tau[near_grid])
+
+    fit = least_squares(misfit, [tau[near_grid].max() * np.pi * 0.07, centre, 0.07, 0.0, 0.0],
+                        bounds=([0, centre - 0.05, 0.005, -10, -10], [100, centre + 0.05, 0.5, 10, 10]))
+    if np.sqrt(np.mean(fit.fun ** 2)) > 0.03 * tau[near_grid].max():
+        return None
+    area, at, width = fit.x[:3]
+    shape = voigt(nu_grid - at, width, doppler)
+    dshape = (voigt(nu_grid - at, 1.01 * width, doppler) - voigt(nu_grid - at, 0.99 * width, doppler)) / 0.02
+    delta_tau = area * (speed_dependent(nu_grid - at, width, ratio, doppler) - shape)
+    near = np.abs(nu - centre) < 0.4
+    through = lambda y: np.interp(nu[near], nu_grid, np.convolve(y, kernel[::-1], mode="same"))
+    return dict(residual=observed[near] - model[near],
+                sdv=through(t_grid * np.exp(-delta_tau)) - through(t_grid),
+                strength=through(-t_grid * area * shape), width=through(-t_grid * area * dshape),
+                offset=nu[near] - centre, depth=1 - np.interp(centre, nu, model))
+
+
+def sdv_amplitude(lines, with_width: bool) -> float:
+    """The one amplitude a of the SDV term over all lines, each line's nuisances projected out.
+
+    a = 1 when an SDV at the ratio assumed accounts for the residual, 0 when none of it.
+    """
+    numerator = denominator = 0.0
+    for line in lines:
+        nuisance = np.column_stack([line["strength"], np.ones_like(line["residual"])]
+                                   + ([line["width"]] if with_width else []))
+        project = np.eye(line["residual"].size) - nuisance @ np.linalg.pinv(nuisance)
+        x, y = project @ line["sdv"], project @ line["residual"]
+        numerator += x @ y; denominator += x @ x
+    return float(numerator / denominator)
 
 
 def at_offsets(profile) -> dict:
@@ -196,6 +258,8 @@ def main() -> None:
     parser.add_argument("--atlas", type=Path, default=ATLAS)
     parser.add_argument("--baker-width-scale", type=float, default=1.0,
                         help="the --pressure-width-scale the Baker fits in --fits were run at")
+    parser.add_argument("--sdv-ratio", type=float, default=0.13,
+                        help="the Gamma2/Gamma0 of the SDV check (HITRAN 2024's median for H2O-air, 1850-6575 cm-1)")
     parser.add_argument("--stack", action="append", default=[], metavar="NAME=GLOB",
                         help="also stack the isolated lines of a solar fit's window npz files; repeat")
     parser.add_argument("--output", type=Path, required=True)
@@ -265,7 +329,7 @@ def main() -> None:
             iodine = columns["iodine"]
     iodine_clear = minimum_filter1d(iodine, 2 * int(0.4 / (grid[1] - grid[0])) + 1) > 0.98
 
-    stacks, baker_ils = {}, []
+    stacks, baker_ils, sdv_lines = {}, [], []
     background = []   # per window: iodine depth and median residual off the lines
     by_window = {}
     for path in sorted(glob.glob(str(args.fits / "g*_*_*.npz"))):
@@ -282,10 +346,23 @@ def main() -> None:
                 model = np.asarray(data["model_flux"])[order] / continuum
                 mask = np.asarray(data["mask"])[order].astype(bool)
                 baker_ils.append(ils_fwhm_cm1(data, nu.mean()))
+                fine, transmission = np.asarray(data["grid_wavenumber_cm1"]), np.asarray(data["grid_transmission"])
+                velocity, profile = np.asarray(data["ils_velocity_kms"]), np.asarray(data["ils_profile"])
             start = int(np.argmin(np.abs(grid - nu[0])))
             span = slice(start, start + nu.size)
             wide, narrow = clear[group][0][span], clear[group][1][span]
-            add_profiles(stacks, nu, observed, model, mask & wide & iodine_clear[span], here)
+            usable_here = mask & wide & iodine_clear[span]
+            add_profiles(stacks, nu, observed, model, usable_here, here)
+            step_kms = np.log(fine[1] / fine[0]) * 299792.458
+            kernel = np.interp(np.arange(velocity.min(), velocity.max() + 1e-9, step_kms), velocity, profile)
+            kernel /= kernel.sum()
+            for centre in here[(here > nu[0] + 0.7) & (here < nu[-1] - 0.7)]:
+                near = np.abs(nu - centre) < 0.4
+                if usable_here[near].all() and 0.05 <= 1 - np.interp(centre, nu, model) <= 0.9:
+                    terms = speed_dependence_terms(nu, observed, model, fine, transmission, kernel, centre,
+                                                   args.sdv_ratio)
+                    if terms is not None:
+                        sdv_lines.append(terms)
             residuals.append(np.where(mask & narrow & (model > 0.995), observed - model, np.nan))
         residuals = np.array(residuals)
         # Each group moves the Sun differently: a pixel counts where half the spectra see it clean.
@@ -297,6 +374,32 @@ def main() -> None:
             background.append((v1, depth[take], median[take]))
 
     shapes = summarise(stacks, "baker")
+    rng = np.random.default_rng(1)
+    speed_dependence = dict(ratio=args.sdv_ratio, profiles=len(sdv_lines))
+    for label, with_width in (("strength", False), ("strength_and_width", True)):
+        amplitude = sdv_amplitude(sdv_lines, with_width)
+        resampled = [sdv_amplitude([sdv_lines[i] for i in rng.integers(0, len(sdv_lines), len(sdv_lines))], with_width)
+                     for _ in range(200)]
+        speed_dependence[label] = dict(amplitude=amplitude, error=float(np.std(resampled)),
+                                       implied_ratio=amplitude * args.sdv_ratio)
+        print(f"SDV at {args.sdv_ratio} over {len(sdv_lines)} profiles, nuisance {label}: a = {amplitude:.2f} +- "
+              f"{np.std(resampled):.2f} (ratio ~{amplitude * args.sdv_ratio:.3f})")
+    for low, high in ((0.2, 0.5), (0.5, 0.9)):
+        chosen = [line for line in sdv_lines if low <= line["depth"] < high]
+        observed_stack, predicted_stack = [], []
+        for line in chosen:
+            nuisance = np.column_stack([line["strength"], np.ones_like(line["residual"])])
+            project = np.eye(line["residual"].size) - nuisance @ np.linalg.pinv(nuisance)
+            observed_stack.append(np.interp(OFFSETS_CM1, line["offset"], project @ line["residual"]) / line["depth"])
+            predicted_stack.append(np.interp(OFFSETS_CM1, line["offset"], project @ line["sdv"]) / line["depth"])
+        pair = {}
+        for name, rows in (("observed", observed_stack), ("sdv", predicted_stack)):
+            median = np.median(rows, axis=0)
+            pair[name] = at_offsets(0.5 * (median + median[::-1]))
+        speed_dependence[f"depth_{low}_{high}"] = dict(profiles=len(chosen), **pair)
+        print(f"  depth {low}-{high} ({len(chosen)}), strength refitted: observed "
+              + " ".join(f"{100 * v:+.2f}" for v in pair["observed"].values()) + " | SDV "
+              + " ".join(f"{100 * v:+.2f}" for v in pair["sdv"].values()))
     solar_stacks = {}
     for item in args.stack:
         name, pattern = item.split("=", 1)
@@ -342,7 +445,7 @@ def main() -> None:
                         solar_fits=solar_stacks,
                         templates=templates,
                         template_line=dict(doppler_hwhm_cm1=DOPPLER_HWHM_CM1, lorentz_hwhm_cm1=LORENTZ_HWHM_CM1)),
-        iodine=iodine_report,
+        iodine=iodine_report, speed_dependence=speed_dependence,
     ), indent=1) + "\n")
     print("wrote", args.output)
 

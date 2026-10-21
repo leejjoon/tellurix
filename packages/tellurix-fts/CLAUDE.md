@@ -200,7 +200,10 @@ that no strength table can fix. Refitted at x1.06 (`--pressure-width-scale`,
 `data/corrected/baker2020_w106/`), Baker's spectra fit worse in 89% of windows and grow a
 far-wing residual: the Kitt Peak width excess is not the database's. `--stack` runs the same
 isolated-line stack on Kitt Peak fits; they are one spectrum each (60-160 lines, +-0.3%) and
-cannot tell a wider instrument from wider lines.
+cannot tell a wider instrument from wider lines. The SDV check in the same script puts each
+isolated line's SDV change through the model's own grid and kernel: at Gamma2/Gamma0 0.09-0.13
+it accounts for the whole core-and-shoulder residual (a = 1.03 +- 0.05 at 0.13). HITRAN 2024
+lists no H2O Gamma2 above 6575 cm-1.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

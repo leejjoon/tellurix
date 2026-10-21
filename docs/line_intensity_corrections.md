@@ -272,7 +272,43 @@ candidates were tested on 2026-10-21 (`scripts/diagnose_baker_residuals.py` ->
   - It is about 1% of a line's depth in every spectrum. A line-strength table cannot fix
     it, because it is a shape. In a core ratio it reads as a strength error of the same
     sign for every line.
-- **A hypothesis joining the last two, untested.** A database width fitted to a lab line
+- **Tested against an SDV with real line parameters (2026-10-21): Gamma2/Gamma0 = 0.09-0.13
+  accounts for all of it.**
+  - The method: for each of 698 isolated-line profiles, one Voigt is fitted to the
+    model's own optical depth on the fit grid (`speed_dependence_terms`). The change an
+    SDV at the same Gamma0 would make is put through the instrument kernel and regressed
+    against the residual, with the line's strength, and then also its width, free.
+    One amplitude a over all lines; a = 1 means it accounts for all of the residual.
+  - At Gamma2/Gamma0 = 0.13, HITRAN 2024's median for H2O-air (below):
+    a = 1.03 +- 0.05 with strength and width free, and 0.72 +- 0.03 with strength alone.
+    So the data want 0.09-0.13.
+  - With the strength refitted, the stacked shape follows the prediction, as % of depth:
+
+    | depth | | 0 | 0.03 | 0.06 | 0.10 | 0.15 | 0.20 | 0.30 cm-1 |
+    |---|---|---|---|---|---|---|---|---|
+    | 0.2-0.5 (383) | observed | -1.17 | -0.31 | +0.62 | +0.48 | +0.02 | -0.08 | 0.00 |
+    | | SDV 0.13 | -1.26 | -0.48 | +0.60 | +0.66 | +0.22 | -0.01 | -0.17 |
+    | 0.5-0.9 (260) | observed | -1.06 | -0.52 | +0.44 | +0.57 | +0.12 | -0.03 | -0.06 |
+    | | SDV 0.13 | -1.02 | -0.50 | +0.31 | +0.48 | +0.21 | +0.03 | -0.10 |
+
+  - On the x1.06 fits the amplitude falls to 0.54 with the width free and rises to 1.34
+    without it. A width 6% off is beyond the first-order width term, which then trades
+    against the SDV term. The estimate holds only where the widths are right, which is
+    x1.00 here.
+  - **HITRAN 2024 gives no Gamma2 here.** Fetched from HITRANonline on 2026-10-21, it gives
+    H2O Gamma0 and Gamma2 (`gamma_HT_0_air_296`, `gamma_HT_2_air_296`, with no Dicke term)
+    for 2361 H2-16O lines, all between 1850 and 6575 cm-1. There Gamma2/Gamma0 has a median
+    of 0.13 and a 10-90% range of 0.105-0.21. There are none from 6575 to 17600 cm-1,
+    so the per-line ratio cannot be checked in these spectra. A model here would assume one
+    ratio or fit it.
+  - **IGRINS cannot test it.** HITRAN's lines in 4000-6700 cm-1 strong enough to see
+    (41 at S >= 3e-24) include no isolated ones, and none fall in the 1.8-2 um band.
+    At a fixed 0.13, 142 isolated A0V-fit profiles (McDonald 2017, DCT 2018) give
+    a = +1.85 +- 0.46 with strength free and -1.73 +- 0.94 with width too, and the
+    nights disagree. At R ~ 45,000 the instrument smooths the pattern into what the
+    strength and width terms absorb. (A scratch analysis: the IGRINS npz keep the
+    unconvolved `transmission`, so the one-layer fit used that.)
+- **A hypothesis joining the last two, refuted at Goettingen.** A database width fitted to a lab line
   that is really speed-dependent comes out below the true Gamma0. A Voigt at that width
   has wings that are too weak. They want x1.06-1.11, the strength slope, and niratl's
   width excess. Its core is too shallow at the same time. If so, a uniform width scale
