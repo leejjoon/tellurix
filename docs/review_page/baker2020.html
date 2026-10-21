@@ -391,14 +391,17 @@
     // it is to the pixel.
     { key: "stel", hotkey: "s", label: "their solar model (solar frame)", token: "--stel", width: 1.0, dash: [4, 3] },
     { key: "features", hotkey: "f", label: "feature ticks", token: "--muted", width: 1, overlay: true },
-    { key: "clean", hotkey: "c", label: "solar-line shading", token: "--stel", width: 6, overlay: true }
+    { key: "clean", hotkey: "c", label: "solar-line shading", token: "--stel", width: 6, overlay: true },
+    // In the residual strip: what every spectrum shares is the line list's, what
+    // this one adds is its own.
+    { key: "median", hotkey: "r", label: "median residual, all spectra", token: "--corrected", width: 1.4, overlay: true }
   ];
   var SOLAR_NAMES = { wallace: "W", j83_2: "83/2", j83_3: "83/3", niratl: "nir" };
   var STACK_LIMITS = [0.01, 0.02, 0.05];
 
   var STATE = {
     windows: [], byV1: new Map(), chunks: new Map(), pending: new Map(), summary: null,
-    v1: null, spec: null, traces: { observed: true, model: true, stel: false, features: true, clean: true },
+    v1: null, spec: null, traces: { observed: true, model: true, stel: false, features: true, clean: true, median: true },
     filter: "all", marks: {}, stackLimit: 0.02, plot: null, rplot: null, plotWindow: null, pack: null,
     db: null, writing: Promise.resolve()
   };
@@ -443,6 +446,18 @@
     for (var i = 0; i < n; i++) out[i] = (bytes[i >> 3] >> (7 - (i & 7))) & 1;
     return out;
   }
+  // Over the spectra unmasked at each pixel; NaN where none is.
+  function medianResidual(spectra, n) {
+    var out = new Float64Array(n), column = new Float64Array(spectra.length);
+    for (var j = 0; j < n; j++) {
+      var k = 0;
+      for (var r = 0; r < spectra.length; r++) { var v = spectra[r].residual[j]; if (isFinite(v)) column[k++] = v; }
+      if (!k) { out[j] = NaN; continue; }
+      var sorted = column.subarray(0, k).sort();
+      out[j] = k % 2 ? sorted[(k - 1) / 2] : 0.5 * (sorted[k / 2 - 1] + sorted[k / 2]);
+    }
+    return out;
+  }
   function load(entry) {
     return chunkBuffer(entry.chunk).then(function (buf) {
       var n = entry.n, x = new Float64Array(n);
@@ -454,6 +469,7 @@
         for (var j = 0; j < n; j++) { if (!mask[j]) obs[j] = NaN; res[j] = mask[j] ? obs[j] - mod[j] : NaN; }
         pack.spectra.push({ meta: s, observed: obs, model: mod, residual: res });
       });
+      pack.median = medianResidual(pack.spectra, n);
       Object.keys(entry.groups).forEach(function (g) {
         pack.groups[g] = { stel: decode(buf, entry.groups[g].stel_mod, n), clean: bits(buf, entry.groups[g].clean, n) };
       });
@@ -652,6 +668,7 @@
             bits.push('obs <b>' + spec.observed[i].toFixed(4) + '</b>');
             bits.push('model <b>' + spec.model[i].toFixed(4) + '</b>');
             bits.push('resid <b>' + (100 * spec.residual[i]).toFixed(2) + '%</b>');
+            if (isFinite(pack.median[i])) bits.push('median <b>' + (100 * pack.median[i]).toFixed(2) + '%</b>');
           } else bits.push('<b>masked</b>');
           if (group) bits.push('stel_mod <b>' + group.stel[i].toFixed(3) + '</b>' + (group.clean[i] ? '' : ' (solar line)'));
           var near = entry.features.find(function (f) { return Math.abs(f.nu - pack.x[i]) < 0.05; });
@@ -664,18 +681,21 @@
     var sigma = 100 * spec.meta.sigma;
     var up = new Float64Array(pack.x.length).fill(sigma), dn = new Float64Array(pack.x.length).fill(-sigma);
     var pct = Float64Array.from(spec.residual, function (v) { return 100 * v; });
+    var med = Float64Array.from(pack.median, function (v) { return 100 * v; });
     STATE.rplot = new uPlot({
       width: width, height: 118, legend: { show: false },
       scales: { x: { time: false } },
       cursor: { drag: { x: true, y: false }, sync: { key: "review" } },
       series: [{}, { stroke: "transparent", points: { show: false } }, { stroke: "transparent", points: { show: false } },
-               { stroke: css("--telluric"), width: 0.9, points: { show: false }, spanGaps: false }],
+               { stroke: css("--telluric"), width: 0.9, points: { show: false }, spanGaps: false },
+               { stroke: css("--corrected"), width: 1.4, points: { show: false }, spanGaps: false, show: STATE.traces.median }],
       bands: [{ series: [1, 2], fill: css("--hair") }],
       axes: [{ stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", values: axisTicks },
              { stroke: css("--muted"), grid: { stroke: css("--hair") }, font: "11px 'IBM Plex Mono', monospace", size: 52 }]
-    }, gaps([pack.x, up, dn, pct]), rel);
+    }, gaps([pack.x, up, dn, pct, med]), rel);
     $("resid-hint").textContent = "residual, observed − model, % of continuum — the band is ±1σ of pixel noise (" +
-      sigma.toFixed(2) + "%); rms " + fmt(100 * spec.meta.rms, 2) + "%";
+      sigma.toFixed(2) + "%); rms " + fmt(100 * spec.meta.rms, 2) + "%" +
+      (STATE.traces.median ? "; the thicker line is the median over all " + pack.spectra.length + " spectra" : "");
 
     if (keep) {
       STATE.plot.setScale("x", { min: keep[0], max: keep[1] });
