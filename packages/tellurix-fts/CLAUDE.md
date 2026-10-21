@@ -191,7 +191,12 @@ repeat at r 0.98, grow with air mass as a line-list error must, and match the so
 at r 0.79, 155 of 164 large outliers in sign; Baker alone predicts the solar fits 1-1.5%
 worse than the other solar fits do (`docs/line_intensity_corrections.md`). The run took
 about an hour on one GPU at 12 workers: a fit is mostly CPU compilation, so run several
-workers a GPU with `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
+workers a GPU with `XLA_PYTHON_CLIENT_PREALLOCATE=false`. What else could be common to every
+spectrum (`scripts/diagnose_baker_residuals.py` -> `docs/baker_residual_causes.json`): their
+iodine template is 0.5-1% of its depth too deep, so the analysis cuts pixels under it
+(`--keep-iodine` does not); the E'' slope is each date's temperature, the strength slope
+follows the width scale, and isolated lines show a speed-dependent shape (Gamma2/Gamma0 ~ 0.1)
+that no strength table can fix.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

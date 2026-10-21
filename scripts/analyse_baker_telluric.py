@@ -7,7 +7,12 @@ depth ratio and the centroid offset (``tellurix_fts.line_depth``; positions with
 each window's median removed, because the velocity is fitted per window). Their
 solar model is divided out already, so the solar-clean cut is theirs: ``stel_mod``
 above 0.97 everywhere within 0.1 cm-1, the most the Sun moves against the
-atmosphere in a year (2-3 km/s here).
+atmosphere in a year (2-3 km/s here). Their iodine template is divided out too,
+about 1% of its depth too deep (``diagnose_baker_residuals.py``), which leaves the
+same residue in every spectrum as a line-list error would: pixels within 0.03 cm-1
+of the template below 0.98 are cut as well. The cell is at rest with the
+atmosphere, so the reach is only the lines' width. Above 15500 cm-1 that is 7-48%
+of the pixels.
 
 What it reports, each a test of "the error is the line list's":
 
@@ -35,19 +40,27 @@ ROOT = Path(__file__).resolve().parents[1]
 ATLAS = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/iag_telfree")
 SOLAR_CLEAN = 0.97
 SOLAR_SHIFT_CM1 = 0.1
+IODINE_CLEAN = 0.98
+IODINE_REACH_CM1 = 0.03
 MIN_SPECTRA = 3
 # As in measure_line_depth_ratios.py: further off is a missing line or a misfit window.
 OUTLIER = 0.5
 
 
-def solar_clean(atlas: Path, group: int, cache: dict) -> tuple[np.ndarray, np.ndarray]:
+def clean_pixels(atlas: Path, group: int, cache: dict, iodine: bool) -> tuple[np.ndarray, np.ndarray]:
+    """The group's grid and the pixels clear of their solar model's lines and, with ``iodine``, the cell's."""
     if group not in cache:
         from scipy.ndimage import minimum_filter1d
         from tellurix_fts.baker import read_baker_table
 
-        nu, columns = read_baker_table(atlas, group, ["stel_mod"])
-        reach = int(np.ceil(SOLAR_SHIFT_CM1 / np.median(np.diff(nu))))
-        cache[group] = nu, minimum_filter1d(columns["stel_mod"], 2 * reach + 1) > SOLAR_CLEAN
+        nu, columns = read_baker_table(atlas, group, ["stel_mod", "iodine"])
+        step = np.median(np.diff(nu))
+        reach = int(np.ceil(SOLAR_SHIFT_CM1 / step))
+        clean = minimum_filter1d(columns["stel_mod"], 2 * reach + 1) > SOLAR_CLEAN
+        if iodine:
+            reach = int(np.ceil(IODINE_REACH_CM1 / step))
+            clean &= minimum_filter1d(columns["iodine"], 2 * reach + 1) > IODINE_CLEAN
+        cache[group] = nu, clean
     return cache[group]
 
 
@@ -73,6 +86,8 @@ def main() -> None:
     parser.add_argument("--features-from", type=Path, default=ROOT / "docs/line_depth_ratios.json")
     parser.add_argument("--atlas", type=Path, default=ATLAS)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--keep-iodine", action="store_true",
+                        help="do not cut pixels under the iodine template's lines (the analysis before 2026-10-21)")
     args = parser.parse_args()
 
     from tellurix_fts.line_depth import feature_measurements
@@ -98,7 +113,7 @@ def main() -> None:
             continuum = take("continuum")
             observed, model = take("flux") / continuum, take("model_flux") / continuum
             mask = take("mask").astype(bool)
-        grid, clean = solar_clean(args.atlas, meta["group"], cache)
+        grid, clean = clean_pixels(args.atlas, meta["group"], cache, iodine=not args.keep_iodine)
         clean = np.interp(nu, grid, clean.astype(float)) > 0.999
         found = feature_measurements(nu, observed, model, np.ones_like(nu), mask, centres, clean=clean)
         if not found:
@@ -198,7 +213,9 @@ def main() -> None:
         method=__doc__.split("\n\n    uv run")[0],
         settings=dict(fits=str(args.fits.relative_to(ROOT)) if args.fits.is_relative_to(ROOT) else str(args.fits),
                       features_from=str(args.features_from.relative_to(ROOT)), solar_clean=SOLAR_CLEAN,
-                      solar_shift_cm1=SOLAR_SHIFT_CM1, min_spectra=MIN_SPECTRA),
+                      solar_shift_cm1=SOLAR_SHIFT_CM1, min_spectra=MIN_SPECTRA,
+                      iodine_clean=None if args.keep_iodine else IODINE_CLEAN,
+                      iodine_reach_cm1=None if args.keep_iodine else IODINE_REACH_CM1),
         spectra=spectra, windows=len(files),
         repeatability=dict(ratio_split_half_r=split, features=n_split,
                            offset_split_half_r=split_offset, offset_features=n_offset),

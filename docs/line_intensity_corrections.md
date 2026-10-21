@@ -154,8 +154,11 @@ another instrument (the IAG FTS, R ~ 1e6), in another decade (2015-16).
   - 7733 windows fitted. The other 5 are spectrum 0139 at 9020-9140, too opaque to fit.
 - **The measurement** (`scripts/analyse_baker_telluric.py` -> `docs/baker_telluric_ratios.json`):
   - the same per-feature ratio as the solar fits (`tellurix_fts.line_depth`);
-  - their solar model's lines masked (within 0.1 cm-1 of `stel_mod` < 0.97);
-  - 1962 features measured in at least three spectra, a median 52.
+  - their solar model's lines masked (within 0.1 cm-1 of `stel_mod` < 0.97), and since
+    2026-10-21 their iodine template's (within 0.03 cm-1 of `iodine` < 0.98; below);
+  - 1908 features measured in at least three spectra, a median 52. The iodine cut took
+    54 of them, all above 15500 cm-1, where it removes 7-48% of the pixels; it moved the
+    rest by 0.9% rms. `--keep-iodine` gives the analysis without it.
 
 **The ratios are the line list's.**
 
@@ -163,11 +166,11 @@ another instrument (the IAG FTS, R ~ 1e6), in another decade (2015-16).
   correlates at r = 0.98. One spectrum scatters 1.8% about the mean, so a feature's
   mean is good to 0.3%.
 - **Grows with air mass:** fitting ratio - 1 = a + b (1/X - mean) per feature over
-  X 1.1-3.5, b / its error has rms 1.18 (1 if nothing in the ratio follows 1/X), and
+  X 1.1-3.5, b / its error has rms 1.17 (1 if nothing in the ratio follows 1/X), and
   1.2% of features exceed 3 sigma. Error their solar model left under a line would
   not grow with air mass, so it would show up in b. Almost none does.
-- **The same errors as the solar fits:** over the 1608 features both measure, r = 0.79.
-  Of the 164 features more than 8% off in the solar fits' mean, 155 are off the same
+- **The same errors as the solar fits:** over the 1574 features both measure, r = 0.79.
+  Of the 159 features more than 8% off in the solar fits' mean, 150 are off the same
   way here. The window-13690 lines:
 
   | cm-1 | Wallace | `_2` | `_3` | Baker (53 spectra) |
@@ -175,8 +178,8 @@ another instrument (the IAG FTS, R ~ 1e6), in another decade (2015-16).
   | 13701.89 | 1.157 | 1.217 | 1.216 | 1.132 +- 0.014 |
   | 13704.54 | 0.858 | 0.844 | 0.834 | 0.832 +- 0.016 |
 
-- **The features the solar fits could not reach:** 83 features no solar fit measured are
-  measured here, 32 of them more than 5% off. One is **10511.5, where this started**:
+- **The features the solar fits could not reach:** 79 features no solar fit measured are
+  measured here, 29 of them more than 5% off. One is **10511.5, where this started**:
   0.789 +- 0.014 over 34 spectra, the 0.80-0.82 read off by eye in Wallace and the 1983 pair.
 
 **As a source for the table, Baker alone does a little worse than the other solar fits.**
@@ -184,7 +187,7 @@ This is the held-out test above, rms of (ratio - 1) predicted three ways:
 
 | held out | before | by the other solar fits | by Baker | by both |
 |---|---|---|---|---|
-| wallace | 4.9% | 2.6% | 3.1% | 2.3% |
+| wallace | 4.9% | 2.6% | 3.0% | 2.3% |
 | j83_2 | 5.6% | 2.3% | 3.5% | 2.2% |
 | j83_3 | 5.7% | 2.0% | 3.9% | 2.4% |
 | niratl | 5.0% | 2.6% | 3.6% | 2.6% |
@@ -195,17 +198,85 @@ Kitt Peak fits share and Goettingen does not. Two candidates:
   error reads as a strength error in a saturated core;
 - the temperature profile (E'' terms, -1.4% at 700-1500 between two Kitt Peak dates).
 
-Not settled. Baker helps most where the other fits are fewest: Wallace, predicted by
+Partly settled (below): the width scale shows as a strength slope, and the temperature
+profile as an E'' slope that differs from fit to fit. Baker helps most where the other fits are fewest: Wallace, predicted by
 the 1983 pair and niratl only, goes from 2.6% to 2.3%.
 
 **Positions repeat too, but are noisier than the strengths.**
-- One spectrum's offset scatters 36 m/s per feature, against 0.2-0.3% for its ratio.
-- The halves correlate at r = 0.89 over the 334 features measured in every spectrum.
-- The median |offset| is 38 m/s.
+- One spectrum's offset scatters 35 m/s per feature, against 0.2-0.3% for its ratio.
+- The halves correlate at r = 0.95 over the 320 features measured in every spectrum
+  (0.89 before the iodine cut).
+- The median |offset| is 37 m/s.
 - The offset is a joint fit of a shift and an optical-depth scale. A centroid over a
   window fixed on the model's centre read offsets 3-5x too small.
 - The measurement uses H2O features only. The O2 gamma-band lines of the section above are
   below the feature list's S >= 3e-25, and need their own list.
+
+### What else a residual common to every spectrum could be
+
+A residual the same at every air mass is not by that alone the line list's. The
+candidates were tested on 2026-10-21 (`scripts/diagnose_baker_residuals.py` ->
+`docs/baker_residual_causes.json`, numpy only, half a minute):
+
+- **Their iodine template, divided out slightly too deep. Real, small, and now cut.**
+  Off the telluric and solar lines, above 15500 cm-1, the median residual over a
+  window's spectra follows the template's depth: r = 0.15-0.47 in 11 of the 12 windows of
+  16670-17030, and +0.07%, +0.30% of the continuum at a median iodine depth of 15% and
+  34%. So the template is 0.5-1% of its depth too deep. It is the same in every spectrum,
+  so under a telluric line it would pass for a line-list error. The analysis now cuts
+  those pixels (above). Below 15500 there is no iodine to speak of (r = 0.02). The
+  template also holds a spike at 15796 cm-1, to -0.12, which is not iodine. Near the
+  632.8 nm HeNe line, it is presumably the metrology laser.
+- **HDO: not testable here.** No feature in 9020-17600 cm-1 is HDO-dominated. The
+  16 H2-18O features read -0.6% (Wallace -1.8%, the 1983 pair -1.7% and -0.9%), too few to
+  be an abundance.
+- **The temperature profile, through E''. Each fit's own.** Over features at least 80%
+  H2-16O, the joint fit (ratio - 1) = a + b log10 S + c E''/1000 cm-1:
+
+  | fit | widths | per decade of S | per 1000 cm-1 of E'' |
+  |---|---|---|---|
+  | Baker | x1.00 | -2.42 +- 0.21% | +1.03 +- 0.31% |
+  | Wallace | x1.00 | -1.33 +- 0.26% | -0.55 +- 0.37% |
+  | `j83_2` | x1.06 | +0.32 +- 0.36% | +3.52 +- 0.36% |
+  | `j83_3` | x1.06 | +1.12 +- 0.30% | +2.46 +- 0.34% |
+  | niratl | x1.11 | +0.64 +- 0.27% | +3.91 +- 0.37% |
+
+  The E'' slope differs from fit to fit, so it is not the line list. It is each
+  date's temperature profile: Baker's +1% is about 0.5 K.
+- **The strength slope follows the width scale.** At AER's widths the strong lines
+  read weak, -2.4% and -1.3% a decade. At x1.06-1.11 the slope is +0.3% to +1.1%. That is
+  what a width error does in saturated cores, and it is part of the 1-1.5% gap between
+  Baker and the solar fits (above).
+- **The line shape: our Voigt, not AER's numbers.** The residual of 971 profiles of 482
+  isolated H2-16O lines, each over its model depth, with the median taken over lines and
+  spectra and the even part kept. The Voigt rows are what a Voigt at the database width,
+  with its strength refitted, leaves on a line of the other shape. Single layer, 14000 cm-1,
+  280 K, so they are an order of magnitude:
+
+  | at offset (cm-1) | 0 | 0.03 | 0.06 | 0.10 | 0.20 | 0.30 |
+  |---|---|---|---|---|---|---|
+  | observed, depth 0.5-0.9 (460) | -0.70% | -0.07 | +0.65 | +0.65 | +0.06 | +0.03 |
+  | observed, depth 0.2-0.5 (453) | -1.38 | -0.68 | +0.24 | +0.24 | -0.11 | -0.06 |
+  | speed-dependent, Gamma2/Gamma0 = 0.10, depth 0.7 | -1.12 | -0.38 | +0.43 | +0.35 | +0.02 | 0.00 |
+  | speed-dependent, Gamma2/Gamma0 = 0.10, depth 0.35 | -1.43 | -0.25 | +0.70 | +0.46 | +0.07 | +0.02 |
+  | true widths x0.94, depth 0.7 | -2.43 | -1.70 | -0.08 | +1.15 | +0.89 | +0.49 |
+
+  - The observed shape has a deeper core and shallower shoulders, and nothing beyond
+    0.2 cm-1. That is speed-dependent narrowing at Gamma2/Gamma0 ~ 0.1, a usual value for
+    H2O in air.
+  - A width error leaves a tail in the far wings that is not there, so the shape is not a
+    width error. A width error in the other direction has the opposite sign throughout.
+  - The pattern is 0.06-0.1 cm-1 wide, against the instrument's 0.0145 cm-1 sinc, so it is
+    not the instrument profile.
+  - It is about 1% of a line's depth in every spectrum. A line-strength table cannot fix
+    it, because it is a shape. In a core ratio it reads as a strength error of the same
+    sign for every line.
+- **A hypothesis joining the last two, untested.** A database width fitted to a lab line
+  that is really speed-dependent comes out below the true Gamma0. A Voigt at that width
+  has wings that are too weak. They want x1.06-1.11, the strength slope, and niratl's
+  width excess. Its core is too shallow at the same time. If so, a uniform width scale
+  trades one error for the other, and only a speed-dependent profile fixes both. The
+  x1.06 refit of Baker's spectra below tests the first half.
 
 **What it changes in the plan:** the table can be built from Baker and the solar fits
 together. Baker adds coverage under solar lines and many air masses, and is held out for
