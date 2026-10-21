@@ -38,7 +38,7 @@ AER = ROOT / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
 ISOTOPOLOGUES = {11: "H2-16O", 12: "H2-18O", 13: "H2-17O", 14: "HD-16O", 15: "HD-18O", 16: "HD-17O",
                  71: "O2-16-16", 72: "O2-16-18", 73: "O2-16-17"}
 # The pressure-width scale each fit was run at (docs/line_intensity_corrections.md).
-WIDTH_SCALE = {"baker": 1.00, "wallace": 1.00, "j83_2": 1.06, "j83_3": 1.06, "niratl": 1.11}
+WIDTH_SCALE = {"wallace": 1.00, "j83_2": 1.06, "j83_3": 1.06, "niratl": 1.11}
 OUTLIER = 0.5
 OFFSETS_CM1 = np.round(np.arange(-0.35, 0.3501, 0.01), 3)
 SHOW_CM1 = (0.0, 0.03, 0.06, 0.1, 0.15, 0.2, 0.3)
@@ -119,6 +119,8 @@ def main() -> None:
     parser.add_argument("--ratios", type=Path, default=ROOT / "docs/baker_telluric_ratios.json")
     parser.add_argument("--solar-ratios", type=Path, default=ROOT / "docs/line_depth_ratios.json")
     parser.add_argument("--atlas", type=Path, default=ATLAS)
+    parser.add_argument("--baker-width-scale", type=float, default=1.0,
+                        help="the --pressure-width-scale the Baker fits in --fits were run at")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -155,7 +157,7 @@ def main() -> None:
     for name, table in ratios.items():
         pick = [i for i, r in table.items() if i in tags and tags[i][0] == 11 and tags[i][1] >= 0.8
                 and abs(r - 1) < OUTLIER]
-        trends[name] = dict(width_scale=WIDTH_SCALE[name], **regression(
+        trends[name] = dict(width_scale=args.baker_width_scale if name == "baker" else WIDTH_SCALE[name], **regression(
             np.array([table[i] for i in pick]), np.log10([features[i]["s_max"] for i in pick]),
             np.array([features[i]["e_lower_strongest"] for i in pick])))
         t = trends[name]
@@ -263,8 +265,8 @@ def main() -> None:
 
     args.output.write_text(json.dumps(dict(
         method=__doc__.split("\n\n    uv run")[0],
-        inputs=dict(fits=str(args.fits.relative_to(ROOT)), ratios=str(args.ratios.relative_to(ROOT)),
-                    solar_ratios=str(args.solar_ratios.relative_to(ROOT))),
+        inputs=dict(fits=str(args.fits.resolve().relative_to(ROOT)), ratios=str(args.ratios.resolve().relative_to(ROOT)),
+                    solar_ratios=str(args.solar_ratios.resolve().relative_to(ROOT))),
         isotopologues=isotopologues, strength_and_e_lower=trends,
         line_shape=dict(isolated_lines=int(isolated.size), offsets_cm1=list(SHOW_CM1), observed=shapes,
                         templates=templates,

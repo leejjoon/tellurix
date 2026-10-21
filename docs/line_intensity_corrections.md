@@ -198,8 +198,9 @@ Kitt Peak fits share and Goettingen does not. Two candidates:
   error reads as a strength error in a saturated core;
 - the temperature profile (E'' terms, -1.4% at 700-1500 between two Kitt Peak dates).
 
-Partly settled (below): the width scale shows as a strength slope, and the temperature
-profile as an E'' slope that differs from fit to fit. Baker helps most where the other fits are fewest: Wallace, predicted by
+Partly settled (below): the temperature profile shows as an E'' slope that differs from
+fit to fit. The width scale is not it: Baker refitted at x1.06 predicts the solar fits
+worse (3.9-4.1%), not better. Baker helps most where the other fits are fewest: Wallace, predicted by
 the 1983 pair and niratl only, goes from 2.6% to 2.3%.
 
 **Positions repeat too, but are noisier than the strengths.**
@@ -243,10 +244,10 @@ candidates were tested on 2026-10-21 (`scripts/diagnose_baker_residuals.py` ->
 
   The E'' slope differs from fit to fit, so it is not the line list. It is each
   date's temperature profile: Baker's +1% is about 0.5 K.
-- **The strength slope follows the width scale.** At AER's widths the strong lines
-  read weak, -2.4% and -1.3% a decade. At x1.06-1.11 the slope is +0.3% to +1.1%. That is
-  what a width error does in saturated cores, and it is part of the 1-1.5% gap between
-  Baker and the solar fits (above).
+- **The strength slope seemed to follow the width scale.** At AER's widths the strong
+  lines read weak, -2.4% and -1.3% a decade. At x1.06-1.11 the slope is +0.3% to +1.1%.
+  But refitting Baker at x1.06 moves its slope only to -2.0% (below), so across fits it
+  is the dates, not the widths.
 - **The line shape: our Voigt, not AER's numbers.** The residual of 971 profiles of 482
   isolated H2-16O lines, each over its model depth, with the median taken over lines and
   spectra and the even part kept. The Voigt rows are what a Voigt at the database width,
@@ -275,13 +276,39 @@ candidates were tested on 2026-10-21 (`scripts/diagnose_baker_residuals.py` ->
   that is really speed-dependent comes out below the true Gamma0. A Voigt at that width
   has wings that are too weak. They want x1.06-1.11, the strength slope, and niratl's
   width excess. Its core is too shallow at the same time. If so, a uniform width scale
-  trades one error for the other, and only a speed-dependent profile fixes both. The
-  x1.06 refit of Baker's spectra below tests the first half.
+  trades one error for the other, and only a speed-dependent profile fixes both.
+- **Tested, and refuted for Goettingen: the x1.06 refit (2026-10-21).** All 53 spectra,
+  the same 146 windows and settings, with H2O and O2 widths x1.06
+  (`fit_baker_telluric.py --pressure-width-scale 1.06`, `data/corrected/baker2020_w106/`;
+  `docs/baker_telluric_ratios_w106.json`, `docs/baker_residual_causes_w106.json`):
+
+  | | x1.00 | x1.06 |
+  |---|---|---|
+  | fit rms, median over windows | 0.664% | 0.722% (worse in 89% of the 7733 pairs) |
+  | extra Gaussian LSF at its floor | 29% | 79% |
+  | strength slope, per decade of S | -2.42 +- 0.21% | -2.00 +- 0.24% |
+  | E'' slope, per 1000 cm-1 | +1.03 +- 0.31% | -0.13 +- 0.34% |
+  | Baker against the solar fits, r | 0.79 | 0.76 |
+  | Wallace held out, predicted by Baker | 3.0% | 3.9% |
+  | isolated lines, depth 0.5-0.9: core / 0.1 / 0.3 cm-1 | -0.70 / +0.65 / +0.03% | -2.51 / -0.03 / +0.28% |
+
+  Wider lines fit Baker's spectra worse almost everywhere. The fitter pushes the extra LSF
+  to its floor to get narrower lines back. The isolated-line residual takes on the
+  x1.06 template's far-wing tail, with model wings too strong at 0.2-0.3 cm-1, which
+  x1.00 does not have. The strength slope hardly moves. So at Goettingen AER's widths
+  are right in the wings, and the strength slope is not a width error there.
+  **The x1.06-1.11 the Kitt Peak fits want is Kitt Peak's**, not the database's. It is
+  either that instrument's line profile or something in those fits; the Kitt Peak
+  spectra need the same isolated-line stack to tell which. That also makes the
+  hypothesis above wrong for the wings: what stays at x1.00 is the core-and-shoulder
+  pattern of speed dependence alone. The strength slope of -2.4% per decade at x1.00
+  is still open: a line-list trend, or the core pattern read as strength, since it
+  grows with depth.
 
 **What it changes in the plan:** the table can be built from Baker and the solar fits
 together. Baker adds coverage under solar lines and many air masses, and is held out for
-the solar fits. Before mixing them, find the 1-1.5% difference above, starting with
-the width scale.
+the solar fits. Before mixing them, find the 1-1.5% difference above. The width scale is
+ruled out, so the Kitt Peak line profile comes next.
 
 ## Plan
 

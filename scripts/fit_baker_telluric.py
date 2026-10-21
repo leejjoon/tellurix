@@ -28,7 +28,10 @@ By default one spectrum per ERA5 hour, the first distinct one of each: 53 of the
 group's solar model). And the 30 cm-1 windows over 9020-17600 cm-1 holding at
 least three features the solar fits measured (docs/line_depth_ratios.json): 146.
 H2O and O2 only, the instrument the IAG atlas's 0.0145 cm-1 sinc, MT_CKD and O2
-CIA on, HITRAN's H2O pressure shifts, no covariance (``WindowSettings.covariance``).
+CIA on, HITRAN's H2O pressure shifts, no covariance (``WindowSettings.covariance``),
+AER's widths unless ``--pressure-width-scale``:
+
+    ... fit_baker_telluric.py --pressure-width-scale 1.06 --output-dir data/corrected/baker2020_w106
 
 A fit is mostly compilation, on the CPU, and the GPU idles: so run several workers
 a GPU with ``XLA_PYTHON_CLIENT_PREALLOCATE=false`` (a fit peaks at 0.5 GB). The
@@ -95,6 +98,9 @@ def main() -> None:
     parser.add_argument("--shard", default="0/1", help="I/N: this process takes every Nth window")
     parser.add_argument("--compilation-cache", default=str(ROOT / ".jax-cache"),
                         help="shared by the workers; empty string to disable")
+    parser.add_argument("--pressure-width-scale", type=float, default=1.0,
+                        help="multiply H2O's and O2's gamma_air and gamma_self, as the solar fits "
+                             "did (x1.06-1.11); write to another --output-dir")
     parser.add_argument("--list-hours", action="store_true",
                         help="print the ERA5 hours the chosen spectra need, and stop")
     args = parser.parse_args()
@@ -137,7 +143,8 @@ def main() -> None:
             settings = WindowSettings(
                 spectrum=spectrum.path, profile=profile_for(args.profiles, observation),
                 v1=v1, v2=v1 + WIDTH_CM1, fwhm_cm1=IAG_FWHM_CM1, species="H2O,O2",
-                stellar="flat", o2_cia=True, h2o_pressure_shift="hitran", covariance=False)
+                stellar="flat", o2_cia=True, h2o_pressure_shift="hitran", covariance=False,
+                pressure_width_scale=args.pressure_width_scale)
             try:
                 report, arrays = fit_window(settings, paths, stellar_directory=ROOT / "data/stellar",
                                             base=ROOT, spectrum=spectrum)

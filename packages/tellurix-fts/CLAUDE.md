@@ -196,7 +196,9 @@ spectrum (`scripts/diagnose_baker_residuals.py` -> `docs/baker_residual_causes.j
 iodine template is 0.5-1% of its depth too deep, so the analysis cuts pixels under it
 (`--keep-iodine` does not); the E'' slope is each date's temperature, the strength slope
 follows the width scale, and isolated lines show a speed-dependent shape (Gamma2/Gamma0 ~ 0.1)
-that no strength table can fix.
+that no strength table can fix. Refitted at x1.06 (`--pressure-width-scale`,
+`data/corrected/baker2020_w106/`), Baker's spectra fit worse in 89% of windows and grow a
+far-wing residual: the Kitt Peak width excess is not the database's.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error
