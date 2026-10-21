@@ -8,7 +8,8 @@ every spectrum: the page draws one at a time and stacks all their residuals.
 
 Per spectrum: observed and model, both over the fitted continuum, and the fit
 mask. Per window: each group's solar model ``stel_mod`` (in the solar frame, as
-published) and the solar-clean cut the analysis used. Per feature: the
+published) and the solar-clean cut the analysis used, and the iodine template they
+divided out, which is the same in every group file. Per feature: the
 analysis's mean ratio and offset, and the solar fits' ratios.
 
 Arrays are uint16 with a per-array scale (1.6e-5 of the continuum against
@@ -97,13 +98,18 @@ def main() -> None:
         v1 = float(Path(path).stem.rsplit("_", 1)[1])
         by_window.setdefault(v1, []).append((meta, Path(path).with_suffix(".npz")))
 
-    solar, grid = {}, None
+    solar, grid, iodine = {}, None, None
     for group in sorted({m["group"] for rows in by_window.values() for m, _ in rows}):
         with pyfits.open(args.atlas / f"telluric_spectra_{group}.fits", memmap=True) as handle:
             table = handle[1].data
             if grid is None:
                 grid = baker_wavenumber_grid(table["v"])
             stel = np.asarray(table["stel_mod"], dtype=float)
+            this_iodine = np.asarray(table["iodine"], dtype=float)
+        if iodine is None:
+            iodine = this_iodine
+        elif not np.array_equal(iodine, this_iodine):
+            raise SystemExit(f"group {group}: an iodine template unlike group 0's")
         reach = int(np.ceil(SOLAR_SHIFT_CM1 / (grid[1] - grid[0])))
         solar[group] = (stel, minimum_filter1d(stel, 2 * reach + 1) > SOLAR_CLEAN)
 
@@ -149,6 +155,7 @@ def main() -> None:
             stel, clean = solar[group]
             groups[str(group)] = {"stel_mod": chunk.array(stel[start:start + axis.size]),
                                   "clean": chunk.bits(clean[start:start + axis.size])}
+        window_iodine = chunk.array(iodine[start:start + axis.size])
         inside = (feature_nu > axis[0]) & (feature_nu < axis[-1])
         name = f"chunk_{number:03d}.bin"
         (args.output / name).write_bytes(b"".join(chunk.parts))
@@ -157,7 +164,7 @@ def main() -> None:
         windows.append({
             "v1": v1, "v2": v1 + 30.0, "chunk": name, "n": int(axis.size),
             "nu0": float(axis[0]), "dnu": float(grid[1] - grid[0]), "row0": start,
-            "spectra": spectra, "groups": groups,
+            "spectra": spectra, "groups": groups, "iodine": window_iodine,
             "median_rms": float(np.median(rms)) if rms else None,
             "worst_rms": float(np.max(rms)) if rms else None,
             "features": [{k: f[k] for k in ("nu", "spectra", "ratio", "ratio_std", "offset_ms",

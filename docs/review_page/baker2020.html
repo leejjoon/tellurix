@@ -390,6 +390,9 @@
     // by up to ~1 km/s over a year: it marks where a solar residue can be, not where
     // it is to the pixel.
     { key: "stel", hotkey: "s", label: "their solar model (solar frame)", token: "--stel", width: 1.0, dash: [4, 3] },
+    // The cell sits in the beam, at rest with the atmosphere: an error in this
+    // template stays on one pixel in every spectrum, at the same size at any air mass.
+    { key: "iodine", hotkey: "i", label: "their iodine template", token: "--continuum", width: 1.0, dash: [2, 2] },
     { key: "features", hotkey: "f", label: "feature ticks", token: "--muted", width: 1, overlay: true },
     { key: "clean", hotkey: "c", label: "solar-line shading", token: "--stel", width: 6, overlay: true },
     // In the residual strip: what every spectrum shares is the line list's, what
@@ -401,7 +404,7 @@
 
   var STATE = {
     windows: [], byV1: new Map(), chunks: new Map(), pending: new Map(), summary: null,
-    v1: null, spec: null, traces: { observed: true, model: true, stel: false, features: true, clean: true, median: true },
+    v1: null, spec: null, traces: { observed: true, model: true, stel: false, iodine: false, features: true, clean: true, median: true },
     filter: "all", marks: {}, stackLimit: 0.02, plot: null, rplot: null, plotWindow: null, pack: null,
     db: null, writing: Promise.resolve()
   };
@@ -470,6 +473,7 @@
         pack.spectra.push({ meta: s, observed: obs, model: mod, residual: res });
       });
       pack.median = medianResidual(pack.spectra, n);
+      pack.iodine = entry.iodine ? decode(buf, entry.iodine, n) : new Float64Array(n).fill(NaN);
       Object.keys(entry.groups).forEach(function (g) {
         pack.groups[g] = { stel: decode(buf, entry.groups[g].stel_mod, n), clean: bits(buf, entry.groups[g].clean, n) };
       });
@@ -620,9 +624,9 @@
       return [lo - pad, hi + 2.2 * pad];
     }
 
-    var data = [pack.x, spec.observed, spec.model, group ? group.stel : null];
+    var data = [pack.x, spec.observed, spec.model, group ? group.stel : null, pack.iodine];
     var series = [{}];
-    TRACES.slice(0, 3).forEach(function (t) {
+    TRACES.slice(0, 4).forEach(function (t) {
       var s = { label: t.label, stroke: css(t.token), width: t.width, scale: "f", spanGaps: false,
                 points: { show: false }, show: STATE.traces[t.key] };
       if (t.dash) s.dash = t.dash;
@@ -670,6 +674,7 @@
             bits.push('resid <b>' + (100 * spec.residual[i]).toFixed(2) + '%</b>');
             if (isFinite(pack.median[i])) bits.push('median <b>' + (100 * pack.median[i]).toFixed(2) + '%</b>');
           } else bits.push('<b>masked</b>');
+          if (isFinite(pack.iodine[i]) && pack.iodine[i] < 0.999) bits.push('iodine <b>' + pack.iodine[i].toFixed(3) + '</b>');
           if (group) bits.push('stel_mod <b>' + group.stel[i].toFixed(3) + '</b>' + (group.clean[i] ? '' : ' (solar line)'));
           var near = entry.features.find(function (f) { return Math.abs(f.nu - pack.x[i]) < 0.05; });
           if (near) bits.push('feature <b>' + near.nu.toFixed(3) + '</b> ratio <b>' + near.ratio.toFixed(3) + '</b>');
