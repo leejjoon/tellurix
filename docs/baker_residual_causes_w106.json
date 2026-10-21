@@ -1,5 +1,5 @@
 {
- "method": "What else than the line list could leave a residual common to every Baker et al. spectrum.\n\nA residual in every spectrum of ``fit_baker_telluric.py``'s fits is not by that alone\nthe line list's. This reads those fits and ``analyse_baker_telluric.py``'s ratios,\nnumpy only, and tests the other candidates:\n\n- **isotopologues**: each feature tagged with the AER lines within 0.1 cm-1, by\n  their share of S. An HDO depletion would show in HDO-dominated features;\n- **strength and E''**: per fit, over features at least 80% H2-16O, the joint\n  least-squares (ratio - 1) = a + b log10 S + c E''/1000 cm-1. A line-list error is\n  the same in every fit; a temperature profile error is the fit's own (E''); a width\n  error reads as strength in saturated cores, so it follows the fit's width scale;\n- **line shape**: the residual of isolated H2O lines (>= 95% H2-16O, no other line\n  over 3% of S within 0.5 cm-1, clear of 1% solar lines and 2% iodine lines within\n  0.4 cm-1), over the model's depth, median over lines and spectra, set beside the\n  residual a Voigt fit leaves on a line that is a wider Voigt or speed-dependent.\n  Those templates are one layer at 14000 cm-1 and 280 K: an order of magnitude;\n- **iodine**: off the telluric lines (model above 0.995) and the solar ones (the\n  analysis's cut), the median residual over a window's spectra, where at least half\n  of them are clean, against their iodine template's depth. A\n  template divided out k too deep leaves +k (1 - iodine) in every spectrum.",
+ "method": "What else than the line list could leave a residual common to every Baker et al. spectrum.\n\nA residual in every spectrum of ``fit_baker_telluric.py``'s fits is not by that alone\nthe line list's. This reads those fits and ``analyse_baker_telluric.py``'s ratios,\nnumpy only, and tests the other candidates:\n\n- **isotopologues**: each feature tagged with the AER lines within 0.1 cm-1, by\n  their share of S. An HDO depletion would show in HDO-dominated features;\n- **strength and E''**: per fit, over features at least 80% H2-16O, the joint\n  least-squares (ratio - 1) = a + b log10 S + c E''/1000 cm-1. A line-list error is\n  the same in every fit; a temperature profile error is the fit's own (E''); a width\n  error reads as strength in saturated cores, so it follows the fit's width scale;\n- **line shape**: the residual of isolated H2O lines (>= 95% H2-16O, no other line\n  over 3% of S within 0.5 cm-1, clear of 1% solar lines and 2% iodine lines within\n  0.4 cm-1), over the model's depth, median over lines and spectra, set beside the\n  residual a Voigt fit leaves on a line that is a wider Voigt or speed-dependent.\n  Those templates are one layer at 14000 cm-1 and 280 K: an order of magnitude.\n  ``--stack`` does the same for the Kitt Peak solar fits, against their solar model,\n  with each run's pixel step and instrument FWHM: a profile error is on the\n  instrument's scale, a width error on the lines';\n- **iodine**: off the telluric lines (model above 0.995) and the solar ones (the\n  analysis's cut), the median residual over a window's spectra, where at least half\n  of them are clean, against their iodine template's depth. A\n  template divided out k too deep leaves +k (1 - iodine) in every spectrum.",
  "inputs": {
   "fits": "data/corrected/baker2020_w106",
   "ratios": "docs/baker_telluric_ratios_w106.json",
@@ -193,8 +193,40 @@
      "0.20": -0.00195,
      "0.30": 0.00052
     }
+   },
+   "mid_and_deep": {
+    "profiles": 917,
+    "even": {
+     "0.00": -0.03105,
+     "0.03": -0.02348,
+     "0.06": -0.0101,
+     "0.10": -1e-05,
+     "0.15": 0.00191,
+     "0.20": 0.00296,
+     "0.30": 0.00272
+    },
+    "odd": {
+     "0.00": 0.0,
+     "0.03": 0.00171,
+     "0.06": -0.00113,
+     "0.10": -0.00347,
+     "0.15": -0.00333,
+     "0.20": -0.00201,
+     "0.30": 1e-05
+    },
+    "even_error": {
+     "0.00": 0.00146,
+     "0.03": 0.00149,
+     "0.06": 0.00147,
+     "0.10": 0.0013,
+     "0.15": 0.00102,
+     "0.20": 0.00098,
+     "0.30": 0.00088
+    }
    }
   },
+  "ils_fwhm_cm1": 0.012016143867254536,
+  "solar_fits": {},
   "templates": {
    "widths x0.94 at depth 0.35": {
     "0.00": -0.02641,

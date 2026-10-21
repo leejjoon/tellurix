@@ -1,5 +1,5 @@
 {
- "method": "What else than the line list could leave a residual common to every Baker et al. spectrum.\n\nA residual in every spectrum of ``fit_baker_telluric.py``'s fits is not by that alone\nthe line list's. This reads those fits and ``analyse_baker_telluric.py``'s ratios,\nnumpy only, and tests the other candidates:\n\n- **isotopologues**: each feature tagged with the AER lines within 0.1 cm-1, by\n  their share of S. An HDO depletion would show in HDO-dominated features;\n- **strength and E''**: per fit, over features at least 80% H2-16O, the joint\n  least-squares (ratio - 1) = a + b log10 S + c E''/1000 cm-1. A line-list error is\n  the same in every fit; a temperature profile error is the fit's own (E''); a width\n  error reads as strength in saturated cores, so it follows the fit's width scale;\n- **line shape**: the residual of isolated H2O lines (>= 95% H2-16O, no other line\n  over 3% of S within 0.5 cm-1, clear of 1% solar lines and 2% iodine lines within\n  0.4 cm-1), over the model's depth, median over lines and spectra, set beside the\n  residual a Voigt fit leaves on a line that is a wider Voigt or speed-dependent.\n  Those templates are one layer at 14000 cm-1 and 280 K: an order of magnitude;\n- **iodine**: off the telluric lines (model above 0.995) and the solar ones (the\n  analysis's cut), the median residual over a window's spectra, where at least half\n  of them are clean, against their iodine template's depth. A\n  template divided out k too deep leaves +k (1 - iodine) in every spectrum.",
+ "method": "What else than the line list could leave a residual common to every Baker et al. spectrum.\n\nA residual in every spectrum of ``fit_baker_telluric.py``'s fits is not by that alone\nthe line list's. This reads those fits and ``analyse_baker_telluric.py``'s ratios,\nnumpy only, and tests the other candidates:\n\n- **isotopologues**: each feature tagged with the AER lines within 0.1 cm-1, by\n  their share of S. An HDO depletion would show in HDO-dominated features;\n- **strength and E''**: per fit, over features at least 80% H2-16O, the joint\n  least-squares (ratio - 1) = a + b log10 S + c E''/1000 cm-1. A line-list error is\n  the same in every fit; a temperature profile error is the fit's own (E''); a width\n  error reads as strength in saturated cores, so it follows the fit's width scale;\n- **line shape**: the residual of isolated H2O lines (>= 95% H2-16O, no other line\n  over 3% of S within 0.5 cm-1, clear of 1% solar lines and 2% iodine lines within\n  0.4 cm-1), over the model's depth, median over lines and spectra, set beside the\n  residual a Voigt fit leaves on a line that is a wider Voigt or speed-dependent.\n  Those templates are one layer at 14000 cm-1 and 280 K: an order of magnitude.\n  ``--stack`` does the same for the Kitt Peak solar fits, against their solar model,\n  with each run's pixel step and instrument FWHM: a profile error is on the\n  instrument's scale, a width error on the lines';\n- **iodine**: off the telluric lines (model above 0.995) and the solar ones (the\n  analysis's cut), the median residual over a window's spectra, where at least half\n  of them are clean, against their iodine template's depth. A\n  template divided out k too deep leaves +k (1 - iodine) in every spectrum.",
  "inputs": {
   "fits": "data/corrected/baker2020",
   "ratios": "docs/baker_telluric_ratios.json",
@@ -192,6 +192,544 @@
      "0.15": -0.00504,
      "0.20": -0.00254,
      "0.30": 0.00079
+    }
+   },
+   "mid_and_deep": {
+    "profiles": 913,
+    "even": {
+     "0.00": -0.00945,
+     "0.03": -0.00275,
+     "0.06": 0.00525,
+     "0.10": 0.0049,
+     "0.15": 0.00103,
+     "0.20": 2e-05,
+     "0.30": -6e-05
+    },
+    "odd": {
+     "0.00": 0.0,
+     "0.03": -0.00016,
+     "0.06": -0.00408,
+     "0.10": -0.00588,
+     "0.15": -0.00423,
+     "0.20": -0.00217,
+     "0.30": 0.00048
+    },
+    "even_error": {
+     "0.00": 0.00127,
+     "0.03": 0.00128,
+     "0.06": 0.00126,
+     "0.10": 0.00111,
+     "0.15": 0.00087,
+     "0.20": 0.00092,
+     "0.30": 0.00088
+    }
+   }
+  },
+  "ils_fwhm_cm1": 0.018024220651762048,
+  "solar_fits": {
+   "wallace_w100": {
+    "files": "data/corrected/solar/wallace2011/wallace2011_reg[12]_*.npz",
+    "windows": 191,
+    "pixel_cm1": 0.0068000000010215444,
+    "ils_fwhm_cm1": 0.02816750235061269,
+    "observed": {
+     "weak": {
+      "profiles": 16,
+      "even": {
+       "0.00": -0.02374,
+       "0.03": -0.01493,
+       "0.06": -0.01089,
+       "0.10": -0.00217,
+       "0.15": -0.00802,
+       "0.20": -0.0026,
+       "0.30": -0.00019
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.01357,
+       "0.06": 0.01485,
+       "0.10": 0.00971,
+       "0.15": 0.00548,
+       "0.20": 0.00109,
+       "0.30": 0.00393
+      }
+     },
+     "mid": {
+      "profiles": 43,
+      "even": {
+       "0.00": -0.01553,
+       "0.03": -0.00633,
+       "0.06": -0.00162,
+       "0.10": -0.00192,
+       "0.15": -0.00032,
+       "0.20": -0.00191,
+       "0.30": 0.00045
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.00374,
+       "0.06": 0.00146,
+       "0.10": 0.00304,
+       "0.15": 0.00029,
+       "0.20": 0.00079,
+       "0.30": 0.00063
+      }
+     },
+     "deep": {
+      "profiles": 32,
+      "even": {
+       "0.00": -0.00268,
+       "0.03": -0.00041,
+       "0.06": 0.0033,
+       "0.10": 0.00291,
+       "0.15": 0.0001,
+       "0.20": -0.00144,
+       "0.30": -0.00119
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.00202,
+       "0.06": -0.00254,
+       "0.10": -0.00169,
+       "0.15": -0.00117,
+       "0.20": 0.00024,
+       "0.30": 8e-05
+      }
+     },
+     "mid_and_deep": {
+      "profiles": 75,
+      "even": {
+       "0.00": -0.00734,
+       "0.03": -0.00316,
+       "0.06": 0.00142,
+       "0.10": 0.00143,
+       "0.15": -0.00013,
+       "0.20": -0.0019,
+       "0.30": -9e-05
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.00241,
+       "0.06": -0.00117,
+       "0.10": -0.00031,
+       "0.15": -0.00062,
+       "0.20": 0.00075,
+       "0.30": 0.00023
+      },
+      "even_error": {
+       "0.00": 0.00493,
+       "0.03": 0.00438,
+       "0.06": 0.0036,
+       "0.10": 0.00306,
+       "0.15": 0.00293,
+       "0.20": 0.003,
+       "0.30": 0.00284
+      }
+     }
+    }
+   },
+   "j83_w100": {
+    "files": "data/corrected/superseded_pre_widthscale/solar/ftsspec_830626_[23]/*.npz",
+    "windows": 594,
+    "pixel_cm1": 0.022599223852012074,
+    "ils_fwhm_cm1": 0.05098986232057737,
+    "observed": {
+     "weak": {
+      "profiles": 6,
+      "even": {
+       "0.00": -0.08101,
+       "0.03": -0.03852,
+       "0.06": 0.00351,
+       "0.10": 0.03146,
+       "0.15": 0.00498,
+       "0.20": -0.01023,
+       "0.30": -0.00867
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.01353,
+       "0.06": -0.01264,
+       "0.10": -0.00644,
+       "0.15": 0.0082,
+       "0.20": 0.00332,
+       "0.30": 0.01028
+      }
+     },
+     "mid": {
+      "profiles": 67,
+      "even": {
+       "0.00": -0.0245,
+       "0.03": -0.01256,
+       "0.06": 0.00118,
+       "0.10": 0.0082,
+       "0.15": 0.00154,
+       "0.20": -0.00079,
+       "0.30": -0.00257
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.00154,
+       "0.06": -0.00343,
+       "0.10": -0.00055,
+       "0.15": 0.0043,
+       "0.20": -0.00033,
+       "0.30": 0.0027
+      }
+     },
+     "deep": {
+      "profiles": 86,
+      "even": {
+       "0.00": -0.00519,
+       "0.03": 0.00163,
+       "0.06": 0.00675,
+       "0.10": 0.00448,
+       "0.15": -0.00154,
+       "0.20": -0.00347,
+       "0.30": -0.0042
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.00186,
+       "0.06": -0.00493,
+       "0.10": -0.0016,
+       "0.15": 0.00174,
+       "0.20": 0.00042,
+       "0.30": 0.00129
+      }
+     },
+     "mid_and_deep": {
+      "profiles": 153,
+      "even": {
+       "0.00": -0.01112,
+       "0.03": -0.00275,
+       "0.06": 0.00611,
+       "0.10": 0.00553,
+       "0.15": -0.00074,
+       "0.20": -0.00271,
+       "0.30": -0.00369
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.00033,
+       "0.06": -0.00431,
+       "0.10": -0.00183,
+       "0.15": 0.0023,
+       "0.20": -0.00016,
+       "0.30": 0.00169
+      },
+      "even_error": {
+       "0.00": 0.00612,
+       "0.03": 0.00524,
+       "0.06": 0.0037,
+       "0.10": 0.00277,
+       "0.15": 0.00202,
+       "0.20": 0.00154,
+       "0.30": 0.00172
+      }
+     }
+    }
+   },
+   "j83_w106": {
+    "files": "data/corrected/solar/ftsspec_830626_[23]_*.npz",
+    "windows": 594,
+    "pixel_cm1": 0.022599223852012074,
+    "ils_fwhm_cm1": 0.03453189818650504,
+    "observed": {
+     "weak": {
+      "profiles": 5,
+      "even": {
+       "0.00": -0.05309,
+       "0.03": -0.0312,
+       "0.06": -0.01056,
+       "0.10": 0.01071,
+       "0.15": 0.00338,
+       "0.20": -0.00489,
+       "0.30": -0.00487
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.00207,
+       "0.06": 0.00548,
+       "0.10": 0.00027,
+       "0.15": 0.01129,
+       "0.20": -0.00044,
+       "0.30": 0.00743
+      }
+     },
+     "mid": {
+      "profiles": 68,
+      "even": {
+       "0.00": -0.02691,
+       "0.03": -0.01857,
+       "0.06": -0.00776,
+       "0.10": 0.0024,
+       "0.15": 0.00149,
+       "0.20": -0.00117,
+       "0.30": -0.00199
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.00723,
+       "0.06": -0.00109,
+       "0.10": 0.00055,
+       "0.15": 0.00393,
+       "0.20": -0.00029,
+       "0.30": 0.00132
+      }
+     },
+     "deep": {
+      "profiles": 96,
+      "even": {
+       "0.00": -0.00897,
+       "0.03": -0.00418,
+       "0.06": 0.00032,
+       "0.10": 0.00091,
+       "0.15": -0.00052,
+       "0.20": -0.00114,
+       "0.30": -0.00201
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.00097,
+       "0.06": -0.00346,
+       "0.10": -0.00282,
+       "0.15": 0.00094,
+       "0.20": -0.00097,
+       "0.30": 0.00059
+      }
+     },
+     "mid_and_deep": {
+      "profiles": 164,
+      "even": {
+       "0.00": -0.01439,
+       "0.03": -0.00831,
+       "0.06": -0.00314,
+       "0.10": 0.00132,
+       "0.15": 0.00038,
+       "0.20": -0.00112,
+       "0.30": -0.00186
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.00131,
+       "0.06": -0.00228,
+       "0.10": -0.00152,
+       "0.15": 0.00207,
+       "0.20": -0.00082,
+       "0.30": 0.00085
+      },
+      "even_error": {
+       "0.00": 0.00369,
+       "0.03": 0.00321,
+       "0.06": 0.00265,
+       "0.10": 0.00194,
+       "0.15": 0.00167,
+       "0.20": 0.00152,
+       "0.30": 0.00167
+      }
+     }
+    }
+   },
+   "niratl_w100": {
+    "files": "data/corrected/superseded_pre_widthscale/solar/niratl/*.npz",
+    "windows": 164,
+    "pixel_cm1": 0.007326522134462721,
+    "ils_fwhm_cm1": 0.046216572333037775,
+    "observed": {
+     "weak": {
+      "profiles": 27,
+      "even": {
+       "0.00": -0.03377,
+       "0.03": 0.00671,
+       "0.06": 0.03633,
+       "0.10": 0.02944,
+       "0.15": 0.00545,
+       "0.20": 0.00017,
+       "0.30": -0.00108
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.00159,
+       "0.06": 0.0089,
+       "0.10": 0.00298,
+       "0.15": 0.00073,
+       "0.20": -0.00212,
+       "0.30": -0.00106
+      }
+     },
+     "mid": {
+      "profiles": 33,
+      "even": {
+       "0.00": -0.01853,
+       "0.03": 0.00652,
+       "0.06": 0.01946,
+       "0.10": 0.0051,
+       "0.15": -0.00213,
+       "0.20": -0.00553,
+       "0.30": 0.00138
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.00113,
+       "0.06": -0.00345,
+       "0.10": -0.00193,
+       "0.15": 0.00047,
+       "0.20": 0.00239,
+       "0.30": 0.00196
+      }
+     },
+     "deep": {
+      "profiles": 30,
+      "even": {
+       "0.00": -0.00209,
+       "0.03": 0.0071,
+       "0.06": 0.01683,
+       "0.10": 0.00902,
+       "0.15": -0.00098,
+       "0.20": -0.00283,
+       "0.30": -0.0028
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.0027,
+       "0.06": -0.00326,
+       "0.10": -0.00204,
+       "0.15": 0.00099,
+       "0.20": 0.00096,
+       "0.30": 0.00188
+      }
+     },
+     "mid_and_deep": {
+      "profiles": 63,
+      "even": {
+       "0.00": -0.00598,
+       "0.03": 0.00632,
+       "0.06": 0.01747,
+       "0.10": 0.00816,
+       "0.15": -0.00131,
+       "0.20": -0.00344,
+       "0.30": -0.00098
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.00184,
+       "0.06": -0.00315,
+       "0.10": -0.00171,
+       "0.15": 0.00129,
+       "0.20": 0.00149,
+       "0.30": 0.00049
+      },
+      "even_error": {
+       "0.00": 0.00732,
+       "0.03": 0.00641,
+       "0.06": 0.00478,
+       "0.10": 0.00331,
+       "0.15": 0.00288,
+       "0.20": 0.00261,
+       "0.30": 0.0021
+      }
+     }
+    }
+   },
+   "niratl_w111": {
+    "files": "data/corrected/solar/niratl/*.npz",
+    "windows": 164,
+    "pixel_cm1": 0.007326522134462721,
+    "ils_fwhm_cm1": 0.015405524111012592,
+    "observed": {
+     "weak": {
+      "profiles": 26,
+      "even": {
+       "0.00": -0.02092,
+       "0.03": -0.0078,
+       "0.06": -0.00111,
+       "0.10": 0.00399,
+       "0.15": 0.00416,
+       "0.20": 0.00255,
+       "0.30": 0.00593
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": 0.00021,
+       "0.06": 0.00808,
+       "0.10": 0.00492,
+       "0.15": -0.00169,
+       "0.20": 0.00235,
+       "0.30": 0.00131
+      }
+     },
+     "mid": {
+      "profiles": 35,
+      "even": {
+       "0.00": -0.0142,
+       "0.03": -0.0188,
+       "0.06": -0.01117,
+       "0.10": -0.00454,
+       "0.15": -0.00152,
+       "0.20": -0.00044,
+       "0.30": 0.0018
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.00564,
+       "0.06": -0.0038,
+       "0.10": -0.00077,
+       "0.15": -0.00165,
+       "0.20": 0.00151,
+       "0.30": 0.001
+      }
+     },
+     "deep": {
+      "profiles": 33,
+      "even": {
+       "0.00": 0.00022,
+       "0.03": 0.00294,
+       "0.06": 0.00135,
+       "0.10": 0.00054,
+       "0.15": 0.00178,
+       "0.20": 0.00265,
+       "0.30": 0.00128
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.00206,
+       "0.06": -0.00171,
+       "0.10": -0.00018,
+       "0.15": 0.00131,
+       "0.20": 0.00105,
+       "0.30": 0.00048
+      }
+     },
+     "mid_and_deep": {
+      "profiles": 68,
+      "even": {
+       "0.00": -0.00682,
+       "0.03": -0.00476,
+       "0.06": -0.00321,
+       "0.10": -0.00046,
+       "0.15": 0.00158,
+       "0.20": 0.00177,
+       "0.30": 0.00132
+      },
+      "odd": {
+       "0.00": 0.0,
+       "0.03": -0.00393,
+       "0.06": -0.00277,
+       "0.10": -0.00097,
+       "0.15": 0.00129,
+       "0.20": 0.00108,
+       "0.30": 0.00051
+      },
+      "even_error": {
+       "0.00": 0.00454,
+       "0.03": 0.00474,
+       "0.06": 0.00372,
+       "0.10": 0.00269,
+       "0.15": 0.00258,
+       "0.20": 0.00247,
+       "0.30": 0.00189
+      }
+     }
     }
    }
   },

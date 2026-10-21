@@ -297,13 +297,39 @@ candidates were tested on 2026-10-21 (`scripts/diagnose_baker_residuals.py` ->
   x1.06 template's far-wing tail, with model wings too strong at 0.2-0.3 cm-1, which
   x1.00 does not have. The strength slope hardly moves. So at Goettingen AER's widths
   are right in the wings, and the strength slope is not a width error there.
-  **The x1.06-1.11 the Kitt Peak fits want is Kitt Peak's**, not the database's. It is
-  either that instrument's line profile or something in those fits; the Kitt Peak
-  spectra need the same isolated-line stack to tell which. That also makes the
+  **The x1.06-1.11 the Kitt Peak fits want is Kitt Peak's**, not the database's. That also makes the
   hypothesis above wrong for the wings: what stays at x1.00 is the core-and-shoulder
   pattern of speed dependence alone. The strength slope of -2.4% per decade at x1.00
   is still open: a line-list trend, or the core pattern read as strength, since it
   grows with depth.
+- **The same stack on the Kitt Peak fits (2026-10-21): it cannot tell the instrument from the
+  lines.** Each run is one spectrum, so the solar cut is looser (no solar line deeper than 2%
+  within 0.25 cm-1; `--stack`, same report). Isolated lines of depth 0.2-0.9, the even part
+  over model depth, against the fitted instrument FWHM (sinc and free Gaussian together):
+
+  | fit | widths | lines | instrument FWHM, cm-1 | 0 | 0.06 | 0.10 | 0.20 | 0.30 cm-1 | +- |
+  |---|---|---|---|---|---|---|---|---|---|
+  | Baker | x1.00 | 913 | 0.018 | -0.95% | +0.53 | +0.49 | 0.00 | -0.01 | 0.11 |
+  | Baker | x1.06 | 917 | 0.012 | -3.10 | -1.01 | 0.00 | +0.30 | +0.27 | 0.13 |
+  | Wallace | x1.00 | 75 | 0.028 | -0.73 | +0.14 | +0.14 | -0.19 | -0.01 | 0.31 |
+  | 1983 pair | x1.00 | 153 | 0.051 | -1.11 | +0.61 | +0.55 | -0.27 | -0.37 | 0.28 |
+  | 1983 pair | x1.06 | 164 | 0.035 | -1.44 | -0.31 | +0.13 | -0.11 | -0.19 | 0.19 |
+  | niratl | x1.00 | 63 | 0.046 | -0.60 | +1.75 | +0.82 | -0.34 | -0.10 | 0.33 |
+  | niratl | x1.11 | 68 | 0.015 | -0.68 | -0.32 | -0.05 | +0.18 | +0.13 | 0.27 |
+
+  - At x1.00 the Kitt Peak lines leave Baker's core-and-shoulder pattern, with the
+    shoulders larger in niratl, and perhaps a far-wing deficit of 0.3%, at one sigma.
+  - What separates the sites is the free Gaussian. At AER's widths the Kitt Peak fits
+    broaden their instrument to 0.046-0.051 cm-1, 1.5-3 times its sinc, and Baker's
+    stays near its own. At x1.06-1.11 the Kitt Peak instrument falls back to the sinc.
+    The excess is real broadening, but the shapes fit both a wider instrument and wider
+    lines within 0.3%. These stacks cannot say which.
+  - The evidence that it is the lines is older. A Lorentzian instrument kernel lost to the
+    width scale in every test, partly because it broadens the solar lines too. The
+    interferogram ratio scales with each species' own width
+    (`docs/solar_fit_plan.md` §4r). Together with Goettingen at x1.00, that points to
+    something in the Kitt Peak fits' atmosphere, and the profiles' pressure or
+    temperature are where to look. That is not tested.
 
 **What it changes in the plan:** the table can be built from Baker and the solar fits
 together. Baker adds coverage under solar lines and many air masses, and is held out for

@@ -15,7 +15,10 @@ numpy only, and tests the other candidates:
   over 3% of S within 0.5 cm-1, clear of 1% solar lines and 2% iodine lines within
   0.4 cm-1), over the model's depth, median over lines and spectra, set beside the
   residual a Voigt fit leaves on a line that is a wider Voigt or speed-dependent.
-  Those templates are one layer at 14000 cm-1 and 280 K: an order of magnitude;
+  Those templates are one layer at 14000 cm-1 and 280 K: an order of magnitude.
+  ``--stack`` does the same for the Kitt Peak solar fits, against their solar model,
+  with each run's pixel step and instrument FWHM: a profile error is on the
+  instrument's scale, a width error on the lines';
 - **iodine**: off the telluric lines (model above 0.995) and the solar ones (the
   analysis's cut), the median residual over a window's spectra, where at least half
   of them are clean, against their iodine template's depth. A
@@ -44,6 +47,9 @@ OFFSETS_CM1 = np.round(np.arange(-0.35, 0.3501, 0.01), 3)
 SHOW_CM1 = (0.0, 0.03, 0.06, 0.1, 0.15, 0.2, 0.3)
 # One line at 14000 cm-1: H2O's Doppler HWHM at 280 K and a column-weighted pressure HWHM.
 DOPPLER_HWHM_CM1, LORENTZ_HWHM_CM1 = 0.0198, 0.065
+# A Kitt Peak run is one spectrum, not 53: Baker's cut (1% within 0.4 cm-1) leaves 25-60
+# lines a run, this one 60-160, and the shapes agree within their errors.
+SOLAR_STACK_CLEAN, SOLAR_STACK_REACH_CM1 = 0.98, 0.25
 
 
 def read_lines(path: Path, v1: float, v2: float, s_min: float) -> np.ndarray:
@@ -113,6 +119,75 @@ def at_offsets(profile) -> dict:
     return {f"{x:.2f}": round(float(np.interp(x, OFFSETS_CM1, profile)), 5) for x in SHOW_CM1}
 
 
+def add_profiles(stacks, nu, observed, model, usable, centres):
+    """Each isolated line's residual over its model depth, when all of its +-0.4 cm-1 is usable."""
+    for centre in centres[(centres > nu[0] + 0.5) & (centres < nu[-1] - 0.5)]:
+        near = np.abs(nu - centre) < 0.4
+        if not usable[near].all():
+            continue
+        depth = 1 - np.interp(centre, nu, model)
+        if 0.05 <= depth <= 0.9:
+            key = "weak" if depth < 0.2 else "mid" if depth < 0.5 else "deep"
+            stacks.setdefault(key, []).append(np.interp(centre + OFFSETS_CM1, nu, observed - model) / depth)
+
+
+def summarise(stacks, label) -> dict:
+    """The median profile per depth class, its even part at SHOW_CM1 and its odd part.
+
+    ``mid_and_deep`` pools depths 0.2-0.9, with the median's standard error at each offset.
+    """
+    stacks = dict(stacks, mid_and_deep=stacks.get("mid", []) + stacks.get("deep", []))
+    shapes = {}
+    for key in ("weak", "mid", "deep", "mid_and_deep"):
+        if stacks.get(key):
+            stack = np.median(stacks[key], axis=0)
+            even = 0.5 * (stack + stack[::-1])
+            shapes[key] = dict(profiles=len(stacks[key]), even=at_offsets(even), odd=at_offsets(stack - even))
+            if key == "mid_and_deep":
+                error = 1.25 * np.std(stacks[key], axis=0) / np.sqrt(len(stacks[key]) / 2)
+                shapes[key]["even_error"] = at_offsets(error)
+            print(f"{label} {key:4s} ({len(stacks[key])}): "
+                  + "  ".join(f"{k} {100 * v:+.2f}%" for k, v in shapes[key]["even"].items()))
+    return shapes
+
+
+def ils_fwhm_cm1(data, centre) -> float:
+    """The FWHM of a solar fit's instrument profile, from its stored kernel, in cm-1 at ``centre``."""
+    velocity, profile = np.asarray(data["ils_velocity_kms"]), np.asarray(data["ils_profile"])
+    above = velocity[profile >= profile.max() / 2]
+    return float((above.max() - above.min()) / 299792.458 * centre)
+
+
+def stack_solar_fit(pattern: str, centres) -> dict:
+    """The isolated-line stack of a fit_fts_batch.py run, against its own solar model.
+
+    Telluric over continuum and solar: lines with a solar line deeper than
+    SOLAR_STACK_CLEAN within SOLAR_STACK_REACH_CM1 are left out, so the solar model's
+    errors stay out. Also the instrument's FWHM as fitted, sinc and free Gaussian.
+    """
+    from scipy.ndimage import minimum_filter1d
+
+    stacks, steps, widths = {}, [], []
+    files = sorted(glob.glob(pattern))
+    if not files:
+        raise SystemExit(f"no files match {pattern}")
+    for path in files:
+        with np.load(path) as data:
+            nu = np.asarray(data["wavenumber_cm1"]); order = np.argsort(nu); nu = nu[order]
+            take = lambda key: np.asarray(data[key])[order]
+            continuum = take("continuum")
+            solar = take("stellar_only_pixels") / continuum
+            observed, model = take("flux") / continuum / solar, take("model_flux") / continuum / solar
+            mask = take("mask").astype(bool)
+            step = float(np.median(np.diff(nu)))
+            steps.append(step); widths.append(ils_fwhm_cm1(data, nu.mean()))
+        clean = minimum_filter1d(solar, 2 * int(np.ceil(SOLAR_STACK_REACH_CM1 / step)) + 1) > SOLAR_STACK_CLEAN
+        add_profiles(stacks, nu, observed, model, mask & clean, centres)
+    out = dict(windows=len(files), pixel_cm1=float(np.median(steps)), ils_fwhm_cm1=float(np.median(widths)))
+    out["observed"] = summarise(stacks, pattern)
+    return out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--fits", type=Path, default=ROOT / "data/corrected/baker2020")
@@ -121,6 +196,8 @@ def main() -> None:
     parser.add_argument("--atlas", type=Path, default=ATLAS)
     parser.add_argument("--baker-width-scale", type=float, default=1.0,
                         help="the --pressure-width-scale the Baker fits in --fits were run at")
+    parser.add_argument("--stack", action="append", default=[], metavar="NAME=GLOB",
+                        help="also stack the isolated lines of a solar fit's window npz files; repeat")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -188,7 +265,7 @@ def main() -> None:
             iodine = columns["iodine"]
     iodine_clear = minimum_filter1d(iodine, 2 * int(0.4 / (grid[1] - grid[0])) + 1) > 0.98
 
-    stacks = {"weak": [], "mid": [], "deep": []}
+    stacks, baker_ils = {}, []
     background = []   # per window: iodine depth and median residual off the lines
     by_window = {}
     for path in sorted(glob.glob(str(args.fits / "g*_*_*.npz"))):
@@ -204,17 +281,11 @@ def main() -> None:
                 observed = np.asarray(data["flux"])[order] / continuum
                 model = np.asarray(data["model_flux"])[order] / continuum
                 mask = np.asarray(data["mask"])[order].astype(bool)
+                baker_ils.append(ils_fwhm_cm1(data, nu.mean()))
             start = int(np.argmin(np.abs(grid - nu[0])))
             span = slice(start, start + nu.size)
             wide, narrow = clear[group][0][span], clear[group][1][span]
-            for centre in here:
-                near = np.abs(nu - centre) < 0.4
-                if not (mask[near] & wide[near] & iodine_clear[span][near]).all():
-                    continue
-                depth = 1 - np.interp(centre, nu, model)
-                if 0.05 <= depth <= 0.9:
-                    key = "weak" if depth < 0.2 else "mid" if depth < 0.5 else "deep"
-                    stacks[key].append(np.interp(centre + OFFSETS_CM1, nu, observed - model) / depth)
+            add_profiles(stacks, nu, observed, model, mask & wide & iodine_clear[span], here)
             residuals.append(np.where(mask & narrow & (model > 0.995), observed - model, np.nan))
         residuals = np.array(residuals)
         # Each group moves the Sun differently: a pixel counts where half the spectra see it clean.
@@ -225,13 +296,11 @@ def main() -> None:
         if take.sum() > 50:
             background.append((v1, depth[take], median[take]))
 
-    shapes = {}
-    for key, rows in stacks.items():
-        if rows:
-            stack = np.median(rows, axis=0)
-            even = 0.5 * (stack + stack[::-1])
-            shapes[key] = dict(profiles=len(rows), even=at_offsets(even), odd=at_offsets(stack - even))
-            print(f"shape {key:4s} ({len(rows)}): " + "  ".join(f"{k} {100 * v:+.2f}%" for k, v in shapes[key]["even"].items()))
+    shapes = summarise(stacks, "baker")
+    solar_stacks = {}
+    for item in args.stack:
+        name, pattern = item.split("=", 1)
+        solar_stacks[name] = dict(files=pattern, **stack_solar_fit(pattern, isolated))
     templates = {}
     for depth in (0.35, 0.7):
         for name, truth in (("widths x0.94", lambda x: voigt(x, 0.94 * LORENTZ_HWHM_CM1)),
@@ -269,6 +338,8 @@ def main() -> None:
                     solar_ratios=str(args.solar_ratios.resolve().relative_to(ROOT))),
         isotopologues=isotopologues, strength_and_e_lower=trends,
         line_shape=dict(isolated_lines=int(isolated.size), offsets_cm1=list(SHOW_CM1), observed=shapes,
+                        ils_fwhm_cm1=float(np.median(baker_ils)),
+                        solar_fits=solar_stacks,
                         templates=templates,
                         template_line=dict(doppler_hwhm_cm1=DOPPLER_HWHM_CM1, lorentz_hwhm_cm1=LORENTZ_HWHM_CM1)),
         iodine=iodine_report,
