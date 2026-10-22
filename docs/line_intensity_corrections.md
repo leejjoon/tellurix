@@ -372,6 +372,70 @@ together. Baker adds coverage under solar lines and many air masses, and is held
 the solar fits. Before mixing them, find the 1-1.5% difference above. The width scale is
 ruled out, so the Kitt Peak line profile comes next.
 
+### Vetting the corrections: strength, artefact, or shape (2026-10-22)
+
+A ratio is a line-list correction only if it is a *strength* error: tau times one
+factor, in every spectrum. Baker et al.'s reduction can leave a *fixed* error instead
+-- a solar-model or iodine residue, the same fraction of the continuum at any water
+column. `scripts/vet_baker_line_corrections.py` (49 s on CPU) puts every analysed feature
+through three tests and gives one verdict: the summary in `docs/baker_line_corrections.json`,
+a row per feature in `docs/baker_line_corrections.csv`.
+
+**One window first, 14300-14330 cm-1.** Over the 53 spectra the residual variance is 30%
+common to all of them, ~50% pixel noise and ~20% that varies between spectra. The
+quoted uncertainty is low by 2.1x: the pixel-to-pixel scatter of clear pixels is
+1.27x it, and neighbouring pixels correlate at 0.63. Most of the between-spectrum part
+sits on Baker's solar lines and tracks each spectrum's fitted `lsf_sigma_kms` (r 0.95),
+which absorbs what their solar division left. AER v3.9 and HITRAN2024 agree on every
+line there (S and widths identical, positions within 17 m/s), so neither list is the
+fix. Per-line strength, shift and width corrections learned on half the spectra remove
+62-71% of the common residual in the other half -- but that test cannot tell a
+strength error from a fixed one, since both repeat.
+
+**Which test sees what depends on depth:**
+
+- *Air mass* (weak lines): a fixed eps is -eps/(T tau) of the ratio and falls as 1/X; a
+  strength error does not. The test is blind in a saturated core, whose T tau moves only
+  x1.2-1.4 between the low and high third of the spectra.
+- *Profile* (deep lines): jointly over the spectra, in optical depth, rho (strength),
+  eps (as -eps/T), a width and a shift. Across a deep line tau runs from ~3 to 0.03 and
+  1/T is far from linear in it; in a weak line -eps/T is a constant plus the strength
+  shape, and the profile is blind. Injection at Baker's real noise (2.1x quoted,
+  correlated over two pixels) gives unbiased rho and eps, pulls 0.8-1.1 once the errors
+  carry the correlation (x1.59), 0-3% false detections, and finds an eps of 0.5% of the
+  continuum in 76% of lines with peak tau > 1.5, 28% at 0.7-1.5 and 2% below.
+- *Another instrument*: the Kitt Peak solar fits. A Baker artefact is not in them.
+
+At 14304.29, the window's worst line, the profile separates them: rho 0.960 +- 0.002
+with eps 0.14 +- 0.09%, a strength error -- as Baker's ratio (0.961) and Kitt Peak's
+(0.968-0.987) say. 14301.45 and 14310.79, which a regression in transmission had
+called fixed, are strength errors by all three tests.
+
+**Over all 1908 features:**
+
+| verdict | features |
+|---|---|
+| vetted (Kitt Peak agrees, no air-mass trend) | 1576 |
+| disagrees with Kitt Peak | 232 |
+| Baker only (no solar fit measures it) | 78 |
+| fixed part (air-mass trend) | 22 |
+
+Fixed artefacts are rare: 22 features. The vetted corrections have an rms of 4.9%; 354
+are more than 5% from 1 and 80 more than 10%.
+
+The profile flags 350 features where one strength and one width do not describe the
+profile. They are *not* Baker's: they agree with Kitt Peak as well as the rest do
+(Baker - Kitt Peak rms 0.031 for both, 14% against 11% disagreeing) and their eps takes
+either sign. They are shape errors both instruments see, flagged `shape_misfit`; a
+strength factor corrects their core ratio but not their wings. 1302 vetted features
+carry no such flag. Deep lines want to be 1.1% narrower at the median (rms 13% from
+line to line).
+
+The profile is a detector, not the correction. With eps and the width free, its rho
+correlates with the Kitt Peak ratios only 0.07-0.35 by depth, where Baker's core ratio
+does 0.69-0.86: the extra freedom takes real signal. The correction stays the mean of
+Baker's and the solar fits' ratios.
+
 ## Plan
 
 1. **A strength-multiplier table in the line database.** Model it on the H2O pressure-shift
@@ -387,6 +451,9 @@ ruled out, so the Kitt Peak line profile comes next.
      from these data.
    - Build the table from `docs/line_depth_ratios.json`: the mean ratio over the fits that
      measure a feature. Require at least two fits and |ratio - 1| < 0.5, and leave 1 elsewhere.
+     Or take `correction_ratio` of the features `docs/baker_line_corrections.csv` vets,
+     which adds Baker's 53 spectra and drops the 22 with a fixed part and the 232 that
+     disagree between instruments.
    - About a day of code and tests. No GPU.
 2. **The honest test: build from three fits, refit the fourth.** Build the table from
    `j83_2`, `j83_3` and `niratl`. Refit Wallace regions 1-2 with it, with the same settings

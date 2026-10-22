@@ -1,0 +1,132 @@
+{
+ "method": "Which per-line corrections Baker et al. 2020's spectra support: three tests, one verdict.\n\nA feature's optical-depth ratio (``analyse_baker_telluric.py``) is a line-list error\nonly if it is a *strength* error: tau multiplied by one factor, in every spectrum.\nAn error their reduction left in the spectrum -- a solar-model residue, an iodine\nresidue, a misplaced zero -- is *fixed*: the same additive amount eps of the\ncontinuum whatever the water column. The two have different signatures, and which\none a test can see depends on the line's depth:\n\n- **air mass** (weak lines): a fixed eps is -eps / (T tau) of the ratio, which falls\n  as 1/X while a strength error does not. Read from the analysis's slope of the\n  ratio against 1/X. A saturated core's T tau barely moves with X (x1.2-1.4 between\n  the low and high third of the spectra), so the test is blind there;\n- **profile** (deep lines): jointly over every spectrum, in optical depth,\n  tau_obs - tau_mod = (rho - 1) tau + eps (-1/T) + w (-x dtau/dx) + s (-dtau/dnu) + c_k.\n  Across a deep line tau runs from ~3 to 0.03 and 1/T is far from linear in it, so\n  rho and eps separate. In a weak line T ~ 1 - tau and -eps/T is a constant plus\n  eps tau, the strength shape: the profile is blind there (corr(rho, eps) -> 1). The\n  width term is free because a saturated line's strength and width meet in its\n  wings; a fit without it reads a shape error as strength. With both eps and the\n  width free, rho itself is poor -- against the Kitt Peak ratios it correlates 0.07-0.35\n  by depth, where Baker's core ratio does 0.69-0.86 -- so the profile is used only to\n  *detect* eps, never as the correction;\n- **another instrument**: the solar fits' ratios (Kitt Peak, their own solar\n  removal). A Baker artefact is not in them; a line-list error is.\n\nWhat the profile flags on real data is not Baker's: the features it flags agree\nwith Kitt Peak as well as those it passes (``summary.profile_flags_against_kitt_peak``)\nand their eps takes either sign. It reads a profile that one strength and one width\ndo not describe -- a shape error both instruments see -- so it is reported as a\nshape misfit, beside the strength verdict, not as an artefact.\n\nVerdicts: **fixed part** (the air-mass test: a reduction artefact, not a line);\n**disagrees with Kitt Peak**; **vetted** (Kitt Peak agrees, the air-mass test\npasses); **Baker only** (no solar fit measures it). ``shape_misfit`` is a flag on\nany of them. The correction is the mean of Baker's ratio and the solar fits',\nwhich the analysis's held-out test found predicts a further fit best.\n\nPixels are those the analysis uses (fit mask, Baker's solar model above 0.97 within\n0.1 cm-1, iodine template above 0.98 within 0.03 cm-1, model above 0.02), out from the\nfeature's model minimum to the transmission maxima on either side, at most\n``REACH_CM1``. The pixel noise is ``NOISE_SCALE`` x the quoted uncertainty and\ncorrelated over two pixels (measured on clear pixels at 14300 cm-1). The fit\nweights pixels as independent, so its errors are scaled by ``CORRELATION_INFLATION``,\nwhat that correlation does to a sum (1.59; without it the injected pulls were\n1.3-1.7), and by sqrt(reduced chi2) when it exceeds one.\n\nThe profile fit is calibrated by injection: in every ``--inject-every``-th feature,\nthe spectra's own model with a known rho (eps = 0) and, separately, a known eps\n(rho = 1), with noise of that size and correlation, refitted the same way.\n\nTwo outputs: ``--output``, a JSON of the method, settings, summary and injection\ncalibration -- the numbers the prose quotes -- and ``--table`` beside it, one CSV row\nper feature with every test's result, so a regeneration diffs feature by feature and\nthe strength-table builder reads it with numpy alone.\n\n    UV_CACHE_DIR=.uv-cache uv run python scripts/vet_baker_line_corrections.py \\\n        --output docs/baker_line_corrections.json --table docs/baker_line_corrections.csv\n",
+ "settings": {
+  "fits": "data/corrected/baker2020",
+  "analysis": "docs/baker_telluric_ratios.json",
+  "reach_cm1": 0.25,
+  "tau_range": [
+   0.03,
+   3.0
+  ],
+  "noise_scale": 2.1,
+  "max_profile_correlation": 0.98,
+  "solar_fit_scatter": 0.025,
+  "significant": 3.0,
+  "inject_every": 5
+ },
+ "table": "docs/baker_line_corrections.csv",
+ "summary": {
+  "features": 1908,
+  "verdicts": {
+   "Baker only": 78,
+   "disagrees with Kitt Peak": 232,
+   "fixed part": 22,
+   "vetted": 1576
+  },
+  "profile_fitted": 1885,
+  "profile_used": 1336,
+  "profile_used_by_peak_tau": {
+   "0.1-0.7": 561,
+   "0.7-1.5": 316,
+   "1.5-10.0": 452
+  },
+  "fixed_by_airmass": 22,
+  "shape_misfit": 350,
+  "vetted_without_shape_misfit": 1302,
+  "profile_flags_against_kitt_peak": {
+   "flagged": {
+    "features": 323,
+    "baker_minus_kitt_peak_rms": 0.031419,
+    "disagree": 0.136223
+   },
+   "passed": {
+    "features": 959,
+    "baker_minus_kitt_peak_rms": 0.031435,
+    "disagree": 0.108446
+   }
+  },
+  "deep_line_width": {
+   "features": 768,
+   "median": -0.01102,
+   "rms": 0.131645
+  },
+  "against_kitt_peak": {
+   "0.1-0.7": {
+    "features": 992,
+    "baker_core": 0.805226,
+    "profile_rho": 0.305543
+   },
+   "0.7-1.5": {
+    "features": 300,
+    "baker_core": 0.860897,
+    "profile_rho": 0.354688
+   },
+   "1.5-10.0": {
+    "features": 425,
+    "baker_core": 0.685448,
+    "profile_rho": 0.065077
+   }
+  },
+  "vetted_correction_rms": 0.049323,
+  "injection": {
+   "rho1.05_eps0.0": {
+    "0.1-0.7": {
+     "features": 123,
+     "rho_bias": -3.5e-05,
+     "rho_pull_rms": 0.965462,
+     "eps_bias": -0.001219,
+     "eps_pull_rms": 1.01485,
+     "false_fixed": 0.0,
+     "eps_detected": null
+    },
+    "0.7-1.5": {
+     "features": 64,
+     "rho_bias": -0.001212,
+     "rho_pull_rms": 0.956686,
+     "eps_bias": -0.000312,
+     "eps_pull_rms": 1.085394,
+     "false_fixed": 0.03125,
+     "eps_detected": null
+    },
+    "1.5-10.0": {
+     "features": 88,
+     "rho_bias": -0.000937,
+     "rho_pull_rms": 1.061425,
+     "eps_bias": -0.000548,
+     "eps_pull_rms": 1.075158,
+     "false_fixed": 0.022727,
+     "eps_detected": null
+    }
+   },
+   "rho1.0_eps0.005": {
+    "0.1-0.7": {
+     "features": 123,
+     "rho_bias": -4.7e-05,
+     "rho_pull_rms": 0.88257,
+     "eps_bias": -0.00047,
+     "eps_pull_rms": 0.931921,
+     "false_fixed": null,
+     "eps_detected": 0.02439
+    },
+    "0.7-1.5": {
+     "features": 64,
+     "rho_bias": -0.000676,
+     "rho_pull_rms": 0.807282,
+     "eps_bias": -0.000399,
+     "eps_pull_rms": 0.842813,
+     "false_fixed": null,
+     "eps_detected": 0.28125
+    },
+    "1.5-10.0": {
+     "features": 88,
+     "rho_bias": -0.001625,
+     "rho_pull_rms": 0.99301,
+     "eps_bias": -0.000394,
+     "eps_pull_rms": 0.955875,
+     "false_fixed": null,
+     "eps_detected": 0.761364
+    }
+   }
+  }
+ }
+}

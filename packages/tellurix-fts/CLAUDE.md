@@ -203,7 +203,18 @@ isolated-line stack on Kitt Peak fits; they are one spectrum each (60-160 lines,
 cannot tell a wider instrument from wider lines. The SDV check in the same script puts each
 isolated line's SDV change through the model's own grid and kernel: at Gamma2/Gamma0 0.09-0.13
 it accounts for the whole core-and-shoulder residual (a = 1.03 +- 0.05 at 0.13). HITRAN 2024
-lists no H2O Gamma2 above 6575 cm-1.
+lists no H2O Gamma2 above 6575 cm-1. Refitted with it (`--speed-dependence 0.13`,
+`data/corrected/baker2020_sdv13/`), the stacked core residual halves but the window rms
+improves only 0.6% at the median, and the free `lsf_sigma_kms` takes part of the narrowing
+(0.23 to 0.35 km/s): marginal, so the option stays off (2026-10-22).
+`scripts/vet_baker_line_corrections.py` (`docs/baker_line_corrections.{json,csv}`) decides which
+ratios are line-list strength errors: the air-mass trend (weak lines), a joint fit of the
+profile across spectra in optical depth (deep lines, where -eps/T and tau separate) and the
+Kitt Peak ratios. 1576 of 1908 features are vetted, 22 have a fixed reduction artefact. Two
+traps it found: Baker's quoted uncertainties are 2.1x too small and correlated over two
+pixels, which errors from a pixel-independent fit must carry (x1.59); and the profile's rho,
+with a fixed term and the width free, is a poor strength (0.07-0.35 against Kitt Peak) --
+it detects, it does not correct.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error
