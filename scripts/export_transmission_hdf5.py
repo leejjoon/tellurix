@@ -103,6 +103,9 @@ def main() -> None:
             or root / "data/databases/hitran/h2o_pressure_shift.npz"))
     # Likewise, one without this used AER's widths.
     width_scale = float(physics.get("pressure_width_scale", 1.0))
+    # And one without this used AER's strengths.
+    from tellurix import recorded_line_strength_table
+    strength_table = recorded_line_strength_table(physics, root / "data/line_strength")
     widened = {s.strip().upper() for s in physics.get("pressure_width_species", "").split(",")}
 
     # The atlas fits everything at the zenith and carries one angle in the
@@ -177,7 +180,8 @@ def main() -> None:
                     line_coupling=(verified("aer_line_coupling", line_root.parent / "lncpl_lines")
                                    if coupled else None),
                     pressure_shift_table=shift_table if name == "H2O" else None,
-                    pressure_width_scale=width_scale if name in widened else 1.0)
+                    pressure_width_scale=width_scale if name in widened else 1.0,
+                    line_strength_table=strength_table)
             except ValueError as exc:
                 if not str(exc).startswith(f"no {name} lines found"):
                     raise

@@ -27,6 +27,7 @@ from .download import (
     DataPaths, default_data_directory, download_aer_lines, download_hitran_h2o, download_mt_ckd,
 )
 from .hitran import PressureShiftTable
+from .line_strength import LineStrengthTable, line_strength_provenance, recorded_line_strength_table
 from .io import load_atmosphere_csv, load_mipas_profile
 from .lblrtm import (
     LBLRTMRunConfig, lblrtm_line_shape_optical_depth, run_lblrtm, run_lnfl, write_tape5,
@@ -83,6 +84,7 @@ __all__ = [
     "LBLRTMOpticalDepthCorrection",
     "LBLRTMRunConfig",
     "LBLRTMSpectrum",
+    "LineStrengthTable",
     "LinearizedOpacityBackend",
     "NegativeOpacityError",
     "MTCKDWaterContinuum",
@@ -115,6 +117,8 @@ __all__ = [
     "load_scan",
     "read_scan",
     "save_scan",
+    "line_strength_provenance",
+    "recorded_line_strength_table",
     "load_atmosphere_csv",
     "load_mipas_profile",
     "merge_records",

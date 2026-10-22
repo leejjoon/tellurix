@@ -86,7 +86,7 @@ it covers.
 
 - `packages/tellurix-fts/CLAUDE.md` -- the Arcturus atlas and the NSO solar
   atlases: `fit_arcturus_*`, `fit_fts_*`, `measure_*_ils`, `measure_line_depth_ratios`, `fit_baker_telluric`,
-  `analyse_baker_telluric`, `diagnose_baker_residuals`, `vet_baker_line_corrections`, `rebuild_*`,
+  `analyse_baker_telluric`, `diagnose_baker_residuals`, `vet_baker_line_corrections`, `build_line_strength_table`, `rebuild_*`,
   `export_atlas_*`, `export_photatl_*`, `export_spectra_hdf5`,
   `export_transmission_hdf5`, `scan_*`, `generate_payne_zero_{arcturus,solar}`,
   `build_arcturus_notebook` and `docs/arcturus_walkthrough.ipynb`, the sibling
@@ -169,6 +169,14 @@ The LBLRTM comparisons (`compare_lblrtm_*`, `validate_aer_co`,
 `build_lblrtm_correction`, `attribute_lblrtm_gap`) stay on AER's, because LBLRTM
 reads AER's; so do the synthetic checks (`validate_fts_fit`, `validate_arcturus_fit`),
 which fit their own model back.
+
+**Per-line strength factors are opt-in** (`tellurix.LineStrengthTable`,
+`AERLineDatabase(line_strength_table=...)`, `--line-strength-table`): measured from
+observed spectra by `scripts/build_line_strength_table.py`, because where AER's strengths
+are wrong HITRAN2024 agrees with it (docs/line_intensity_corrections.md). A record
+states the table with its SHA-256; a reader that rebuilds one takes
+`recorded_line_strength_table(physics, checkout / "data/line_strength")`, None for a
+record without the key, and a held-out test builds its table without the fit it scores.
 
 ## Architecture
 

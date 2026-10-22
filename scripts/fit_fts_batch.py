@@ -69,8 +69,8 @@ from types import SimpleNamespace
 import numpy as np
 
 from tellurix import (  # noqa: E402
-    AER_MOLECULE_IDS, ScanIdentity, cached_scan, file_sha256, load_atmosphere_csv,
-    species_above,
+    AER_MOLECULE_IDS, ScanIdentity, cached_scan, file_sha256, line_strength_provenance,
+    load_atmosphere_csv, species_above,
 )
 from tellurix_fts import read_solar_spectrum  # noqa: E402
 from tellurix_fts.flux_atlas import WALLACE2011_REGIONS, read_flux_atlas  # noqa: E402
@@ -217,6 +217,7 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    o2_cia: bool = False, line_coupling: bool = False,
                    stellar_broadening: bool = False, h2o_pressure_shift: str = "aer",
                    pressure_width_scale: float = 1.0, pressure_width_species: str = "H2O,O2",
+                   line_strength_table: Path | None = None,
                    telluric_from_clean_pixels: bool = False,
                    clean_solar_depth: float = 0.01, clean_max_masked: float = 0.6,
                    clean_envelope: str = "max", vsini_kms: float = 0.0, pin=()) -> dict:
@@ -256,6 +257,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         # telluric parameters. Each row says whether the clean-pixel fit was used.
         "pressure_width_scale": float(pressure_width_scale),
         "pressure_width_species": pressure_width_species,
+        # Likewise: without these the strengths were AER's.
+        **line_strength_provenance(None if line_strength_table is None else root / line_strength_table),
         "telluric_from_clean_pixels": bool(telluric_from_clean_pixels),
         # A record without clean_envelope used the running maximum.
         **({"clean_solar_depth": float(clean_solar_depth), "clean_max_masked": float(clean_max_masked),
@@ -278,6 +281,7 @@ def physics_of(root: Path, args) -> dict:
         args.stellar_broadening, args.h2o_pressure_shift,
         pressure_width_scale=args.pressure_width_scale,
         pressure_width_species=args.pressure_width_species,
+        line_strength_table=args.line_strength_table,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
         clean_envelope=args.clean_envelope, vsini_kms=args.vsini_kms, pin=args.pin)
@@ -335,6 +339,7 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         stellar_broadening=args.stellar_broadening, h2o_pressure_shift=args.h2o_pressure_shift,
         pressure_width_scale=args.pressure_width_scale,
         pressure_width_species=args.pressure_width_species,
+        line_strength_table=args.line_strength_table,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
         clean_envelope=args.clean_envelope, vectorize_layers=True, mixed_precision=True,
@@ -549,6 +554,9 @@ def main() -> None:
                              "Kitt Peak's lines are 5-11%% broader than AER's (1.11 for niratl; "
                              "docs/solar_fit_plan.md §4r). 1.0 reproduces earlier records.")
     parser.add_argument("--pressure-width-species", default="H2O,O2")
+    parser.add_argument("--line-strength-table", type=Path, default=None,
+                        help="per-line strength factors (scripts/build_line_strength_table.py), "
+                             "relative to the checkout; without it AER's strengths")
     parser.add_argument("--telluric-from-clean-pixels", action=argparse.BooleanOptionalAction,
                         default=False,
                         help="fit columns, velocity and lsf_sigma_kms on pixels clear of solar "

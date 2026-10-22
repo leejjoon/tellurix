@@ -14,6 +14,16 @@ from __future__ import annotations
 import numpy as np
 from scipy.interpolate import CubicSpline
 
+# The feature catalogue (docs/line_depth_ratios.json): AER H2O and O2 lines above
+# FEATURE_LINE_MIN_S, linked into a cluster when within FEATURE_LINK_CM1 of the next,
+# kept when the strongest reaches FEATURE_MIN_S. A feature's index is its place in
+# that list, which every report keys by, so the rule must not drift between them.
+FEATURE_MOLECULES = ("01_H2O", "07_O2")
+FEATURE_RANGE_CM1 = (8800.0, 17600.0)
+FEATURE_LINK_CM1 = 0.08
+FEATURE_MIN_S = 3e-25
+FEATURE_LINE_MIN_S = 3e-27
+
 CORE_CM1 = 0.05
 # A line's position is in its flanks, which the core cut drops.
 SHIFT_CM1 = 0.1
@@ -21,6 +31,48 @@ SHIFT_CM1 = 0.1
 MAX_SHIFT_CM1 = 0.02
 MIN_PIXELS = 3
 SPEED_OF_LIGHT_MS = 299792458.0
+
+
+def read_feature_lines(line_root) -> dict:
+    """The catalogue's lines from AER's per-molecule files, sorted by wavenumber.
+
+    Arrays ``nu``, ``strength``, ``elower``, ``molecule``, ``isotope``. Read
+    record by record, not through :class:`tellurix.AERLineDatabase`, because the
+    catalogue predates it and its order (wavenumber, then strength) is part of the
+    feature indices.
+    """
+
+    from pathlib import Path
+
+    lines = []
+    for name in FEATURE_MOLECULES:
+        for record in open(Path(line_root) / name / name):
+            try:
+                nu = float(record[3:15]); strength = float(record[15:25].replace("D", "E"))
+                lower = float(record[45:55])
+            except ValueError:
+                continue
+            if FEATURE_RANGE_CM1[0] < nu < FEATURE_RANGE_CM1[1] and strength > FEATURE_LINE_MIN_S:
+                lines.append((nu, strength, lower, int(record[:2]), int(record[2])))
+    nu, strength, lower, molecule, isotope = np.array(sorted(lines)).T
+    return dict(nu=nu, strength=strength, elower=lower, molecule=molecule.astype(int), isotope=isotope.astype(int))
+
+
+def cluster_features(lines: dict) -> list[dict]:
+    """The catalogue's features, each with the indices of its member lines (``members``)."""
+
+    nu, strength = lines["nu"], lines["strength"]
+    out = []
+    for index in np.split(np.arange(nu.size), np.where(np.diff(nu) > FEATURE_LINK_CM1)[0] + 1):
+        weight = strength[index]
+        if weight.max() < FEATURE_MIN_S:
+            continue
+        strongest = index[np.argmax(weight)]
+        out.append(dict(nu=round(float(np.sum(nu[index] * weight) / weight.sum()), 4), lines=int(index.size),
+                        s_max=float(weight.max()), nu_strongest=float(nu[strongest]),
+                        e_lower_strongest=float(lines["elower"][strongest]),
+                        molecule=int(lines["molecule"][strongest]), members=index))
+    return out
 
 
 def feature_measurements(nu, observed, model, solar, mask, centres, *, clean=None,

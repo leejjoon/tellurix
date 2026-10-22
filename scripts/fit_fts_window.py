@@ -68,6 +68,7 @@ def settings_from(args) -> WindowSettings:
         pressure_width_species=args.pressure_width_species,
         speed_dependence=args.speed_dependence,
         speed_dependence_species=args.speed_dependence_species,
+        line_strength_table=args.line_strength_table,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
         clean_envelope=args.clean_envelope)
@@ -143,6 +144,9 @@ def main() -> None:
                         help="Gamma2/Gamma0 of a speed-dependent Voigt for "
                              "--speed-dependence-species; 0 keeps the Voigt")
     parser.add_argument("--speed-dependence-species", default="H2O")
+    parser.add_argument("--line-strength-table", type=Path, default=None,
+                        help="per-line strength factors (scripts/build_line_strength_table.py), "
+                             "relative to the checkout; without it AER's strengths")
     parser.add_argument("--telluric-from-clean-pixels", action=argparse.BooleanOptionalAction,
                         default=False,
                         help="telluric parameters from pixels clear of solar lines; see "

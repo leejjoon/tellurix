@@ -46,7 +46,8 @@ from tellurix import (
     ContinuumSum, ExoJAXOpacityBackend, LBLRTMOpticalDepthCorrection, MTCKDWaterContinuum,
     O2CollisionInducedContinuum, OrderObjective, StellarSpectrum, TelluricModel,
     TelluricParameters, chebyshev_continuum, constant_velocity_grid, fit_order, ils_fingerprint,
-    load_atmosphere_csv, prepare_stellar_source, resample_stellar_continuum, trim_wavenumber_grid,
+    line_strength_provenance, load_atmosphere_csv, prepare_stellar_source, resample_stellar_continuum,
+    trim_wavenumber_grid,
 )
 from tellurix.download import DataPaths
 from tellurix.hitran import pressure_shift_provenance
@@ -139,6 +140,10 @@ class WindowSettings:
     # AER's widths (docs/line_intensity_corrections.md); LBLRTM has none.
     speed_dependence: float = 0.0
     speed_dependence_species: str = "H2O"
+    # A tellurix.LineStrengthTable (scripts/build_line_strength_table.py), relative to
+    # base: per-line strength factors measured from observed spectra. None keeps
+    # AER's strengths (docs/line_intensity_corrections.md).
+    line_strength_table: Path | None = None
     # Fit the telluric parameters (columns, velocity, lsf_sigma_kms) on pixels the
     # solar model calls clean, then everything else with them pinned; see
     # fit_window. A solar line deeper than clean_solar_depth below the model's
@@ -263,6 +268,7 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
     if unknown:
         raise ValueError(f"unknown species: {', '.join(sorted(unknown))}")
     widened = {name.strip().upper() for name in settings.pressure_width_species.split(",")}
+    strength_table = None if settings.line_strength_table is None else Path(base) / settings.line_strength_table
     databases, skipped = {}, []
     for species, molecule_id in sorted(MOLECULE_IDS.items()):
         if species not in wanted:
@@ -273,7 +279,8 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
                 margin_cm1=settings.margin_cm1,
                 line_coupling=paths.line_coupling if settings.line_coupling else None,
                 pressure_shift_table=paths.pressure_shift_table(species, settings.h2o_pressure_shift),
-                pressure_width_scale=(settings.pressure_width_scale if species in widened else 1.0))
+                pressure_width_scale=(settings.pressure_width_scale if species in widened else 1.0),
+                line_strength_table=strength_table)
         except ValueError as exc:
             if not str(exc).startswith(f"no {species} lines found"):
                 raise
@@ -387,6 +394,7 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
         continuum=continuum, mopd_cm=mopd_cm, instrument=instrument, model=model,
         stellar=stellar, source=source, source_path=source_path, zenith=zenith,
         order=order, fit_model=fit_model, parameters=parameters, started=started,
+        strength_table=strength_table,
     )
 
 
@@ -739,6 +747,8 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
             "speed_dependence": {name: settings.speed_dependence
                                  for name, calculator in sorted(prepared.opacity.calculators.items())
                                  if getattr(calculator, "speed_dependence", None) is not None},
+            **line_strength_provenance(prepared.strength_table),
+            "strengths_scaled": {name: db.strengths_scaled for name, db in prepared.databases.items()},
             "pressure_width_scale": settings.pressure_width_scale,
             "pressure_width_species": sorted(name for name, db in prepared.databases.items()
                                              if db.pressure_width_scale != 1.0),

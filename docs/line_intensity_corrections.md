@@ -438,23 +438,31 @@ Baker's and the solar fits' ratios.
 
 ## Plan
 
-1. **A strength-multiplier table in the line database.** Model it on the H2O pressure-shift
-   table (`tellurix.hitran`, `AERLineDatabase(pressure_shift_table=...)`,
-   `DataPaths.pressure_shift_table`):
-   - Key lines by molecule, isotopologue and wavenumber to 1e-6 cm-1. Multiply
-     `logsij0` at read time. The AER index stays a superset, so it is untouched.
-   - Off by default. Every fit setting and driver takes it (`--line-strength-table`), and
-     every record states it with the table's SHA-256. A reader that rebuilds a record takes
-     `.get(..., None)`.
-   - The LBLRTM comparisons and the synthetic checks stay without it.
-   - A blend's factor goes to every line in its cluster. Splitting a blend is not possible
-     from these data.
-   - Build the table from `docs/line_depth_ratios.json`: the mean ratio over the fits that
-     measure a feature. Require at least two fits and |ratio - 1| < 0.5, and leave 1 elsewhere.
-     Or take `correction_ratio` of the features `docs/baker_line_corrections.csv` vets,
-     which adds Baker's 53 spectra and drops the 22 with a fixed part and the 232 that
-     disagree between instruments.
-   - About a day of code and tests. No GPU.
+1. **A strength-multiplier table in the line database. Done (2026-10-22).**
+   `tellurix.LineStrengthTable` (`tellurix/line_strength.py`), applied by
+   `AERLineDatabase(line_strength_table=...)`, which multiplies `line_strength_ref_original`
+   and `logsij0` at read time for the lines it lists, keyed by molecule, isotopologue,
+   wavenumber and lower-state energy as AER prints them; the AER index is untouched.
+   - Built by `scripts/build_line_strength_table.py` into `data/line_strength/`
+     (gitignored): the mean ratio over the solar fits named in `--fits`, with `--baker`
+     also Baker's vetted ratio; at least two measurements within 0.5 of 1, else AER's
+     strength. A feature's factor goes to every member line of its cluster; the
+     clustering now lives in `tellurix_fts.line_depth` (`cluster_features`) and the
+     builder refuses to run if it no longer reproduces the catalogue. From three fits
+     (`j83_2,j83_3,niratl`): 1806 of 3149 features, 3535 lines, factor rms 5.7%. From all
+     four with Baker: 2212 features, 4287 lines, 5.6%.
+   - Off by default. `WindowSettings.line_strength_table`, `--line-strength-table` on
+     `fit_baker_telluric.py`, `fit_fts_window.py` and `fit_fts_batch.py`. A record states
+     the table's name, SHA-256 and what it was built from (`line_strength_provenance`, no key
+     at all without one); `rebuild_fts_window.py`, `export_transmission_hdf5.py` and
+     `export_solar_review.py` find it by name in `data/line_strength/` and refuse one whose
+     hash differs (`recorded_line_strength_table`).
+   - Covers 8800-17600 cm-1 only, where the features were measured, so the IGRINS and
+     Arcturus pipelines do not take it. The LBLRTM comparisons and the synthetic checks
+     stay without it.
+   - First use, Baker window 14300 with factors from Kitt Peak alone: every one of the 53
+     spectra fits better, rms -10% at the median, the residual common to all of them
+     0.31% to 0.23%.
 2. **The honest test: build from three fits, refit the fourth.** Build the table from
    `j83_2`, `j83_3` and `niratl`. Refit Wallace regions 1-2 with it, with the same settings
    as the x1.00 run (the command is in the `fit_fts_batch.py` docstring;

@@ -11,6 +11,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from .hitran import PressureShiftTable
+from .line_strength import LineStrengthTable
 from .types import AtmosphereProfile
 
 
@@ -269,7 +270,10 @@ class AERLineDatabase:
     lines it shares; everything else stays AER's. ``pressure_width_scale``
     multiplies both pressure-broadening widths (``gamma_air``, ``gamma_self``):
     Kitt Peak's water and O2 lines are 5-11% broader than AER's widths, with a
-    Lorentzian shape (docs/solar_fit_plan.md §4r).
+    Lorentzian shape (docs/solar_fit_plan.md §4r). ``line_strength_table`` names a
+    :class:`tellurix.line_strength.LineStrengthTable` whose factors multiply the
+    strengths of the lines it lists (docs/line_intensity_corrections.md); the rest
+    keep AER's.
     """
 
     dbtype = "hitran"
@@ -285,6 +289,7 @@ class AERLineDatabase:
         line_coupling: str | Path | None = None,
         pressure_shift_table: str | Path | None = None,
         pressure_width_scale: float = 1.0,
+        line_strength_table: str | Path | None = None,
     ) -> None:
         molecule = molecule.upper()
         if molecule not in AER_MOLECULE_IDS:
@@ -396,6 +401,14 @@ class AERLineDatabase:
             self.delta_air, replaced = table.replace(self.isoid, self.nu_lines, self.elower,
                                                      self.delta_air)
             self.pressure_shifts_replaced = int(replaced.sum())
+        self.line_strength_table = line_strength_table
+        self.strengths_scaled = 0
+        if line_strength_table is not None:
+            factor, found = LineStrengthTable.load(line_strength_table).factors(
+                self.molecid, self.isoid, self.nu_lines, self.elower)
+            self.line_strength_ref_original = self.line_strength_ref_original * factor
+            self.logsij0 = jnp.log(self.line_strength_ref_original)
+            self.strengths_scaled = int(found.sum())
 
     _LINE_ARRAYS = (
         "isoid", "nu_lines", "line_strength_ref_original", "logsij0", "A",

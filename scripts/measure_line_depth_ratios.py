@@ -34,41 +34,9 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 AER = ROOT / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
-MOLECULES = ("01_H2O", "07_O2")
-RANGE_CM1 = (8800.0, 17600.0)
-LINK_CM1 = 0.08
-MIN_FEATURE_S = 3e-25
-MIN_LINE_S = 3e-27
 # A ratio this far from 1 is a missing line, a solar line the clean cut let through,
 # or a misfit window; it would dominate every rms.
 OUTLIER = 0.5
-
-
-def read_lines():
-    lines = []
-    for molecule in MOLECULES:
-        for record in open(AER / molecule / molecule):
-            try:
-                nu = float(record[3:15]); strength = float(record[15:25].replace("D", "E"))
-                lower = float(record[45:55])
-            except ValueError:
-                continue
-            if RANGE_CM1[0] < nu < RANGE_CM1[1] and strength > MIN_LINE_S:
-                lines.append((nu, strength, lower, int(record[:2])))
-    return np.array(sorted(lines)).T
-
-
-def features(nu, strength, lower, molecule):
-    out = []
-    for index in np.split(np.arange(nu.size), np.where(np.diff(nu) > LINK_CM1)[0] + 1):
-        weight = strength[index]
-        if weight.max() < MIN_FEATURE_S:
-            continue
-        strongest = index[np.argmax(weight)]
-        out.append(dict(nu=round(float(np.sum(nu[index] * weight) / weight.sum()), 4), lines=int(index.size),
-                        s_max=float(weight.max()), nu_strongest=float(nu[strongest]),
-                        e_lower_strongest=float(lower[strongest]), molecule=int(molecule[strongest])))
-    return out
 
 
 def measure(files, centres):
@@ -118,8 +86,10 @@ def main():
     args = parser.parse_args()
     fits = dict(item.split("=", 1) for item in args.fits)
 
-    nu, strength, lower, molecule = read_lines()
-    clusters = features(nu, strength, lower, molecule)
+    from tellurix_fts.line_depth import cluster_features, read_feature_lines
+
+    # The rule lives in tellurix_fts.line_depth, which the strength-table builder shares.
+    clusters = [{k: v for k, v in c.items() if k != "members"} for c in cluster_features(read_feature_lines(AER))]
     centres = np.array([c["nu"] for c in clusters])
     table = {}
     for name, pattern in fits.items():

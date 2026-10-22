@@ -31,7 +31,7 @@ import traceback
 
 import numpy as np
 
-from tellurix import TelluricParameters, read_scan  # noqa: E402
+from tellurix import TelluricParameters, read_scan, recorded_line_strength_table  # noqa: E402
 from tellurix_fts import read_niratl_page, read_photatl_page, read_solar_spectrum  # noqa: E402
 from tellurix_fts.flux_atlas import read_wallace2011_correction  # noqa: E402
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_niratl_page, is_photatl_page  # noqa: E402
@@ -106,6 +106,9 @@ def settings_for(row, spectrum_path: Path, args, blob) -> WindowSettings:
         # And one without these used AER's widths.
         pressure_width_scale=float(blob.get("physics", {}).get("pressure_width_scale", 1.0)),
         pressure_width_species=blob.get("physics", {}).get("pressure_width_species", "H2O,O2"),
+        # And one without this used AER's strengths.
+        line_strength_table=recorded_line_strength_table(
+            blob.get("physics", {}), Path(__file__).resolve().parents[1] / "data/line_strength"),
     )
 
 

@@ -35,6 +35,8 @@ AER's widths unless ``--pressure-width-scale``, and Voigt lines unless
     ... fit_baker_telluric.py --pressure-width-scale 1.06 --output-dir data/corrected/baker2020_w106
     ... fit_baker_telluric.py --speed-dependence 0.13 --output-dir data/corrected/baker2020_sdv13
 
+and AER's strengths unless ``--line-strength-table`` (scripts/build_line_strength_table.py).
+
 A fit is mostly compilation, on the CPU, and the GPU idles: so run several workers
 a GPU with ``XLA_PYTHON_CLIENT_PREALLOCATE=false`` (a fit peaks at 0.5 GB). The
 objective's compilation is shared by every spectrum on a window -- the model's
@@ -103,6 +105,9 @@ def main() -> None:
     parser.add_argument("--pressure-width-scale", type=float, default=1.0,
                         help="multiply H2O's and O2's gamma_air and gamma_self, as the solar fits "
                              "did (x1.06-1.11); write to another --output-dir")
+    parser.add_argument("--line-strength-table", type=Path, default=None,
+                        help="per-line strength factors (scripts/build_line_strength_table.py), "
+                             "relative to the checkout; write to another --output-dir")
     parser.add_argument("--speed-dependence", type=float, default=0.0,
                         help="Gamma2/Gamma0 of a speed-dependent Voigt for H2O; 0 keeps the Voigt. "
                              "Write to another --output-dir")
@@ -150,7 +155,7 @@ def main() -> None:
                 v1=v1, v2=v1 + WIDTH_CM1, fwhm_cm1=IAG_FWHM_CM1, species="H2O,O2",
                 stellar="flat", o2_cia=True, h2o_pressure_shift="hitran", covariance=False,
                 pressure_width_scale=args.pressure_width_scale,
-                speed_dependence=args.speed_dependence)
+                speed_dependence=args.speed_dependence, line_strength_table=args.line_strength_table)
             try:
                 report, arrays = fit_window(settings, paths, stellar_directory=ROOT / "data/stellar",
                                             base=ROOT, spectrum=spectrum)

@@ -25,6 +25,8 @@ def test_settings_are_frozen_and_default_like_the_command_line():
     assert settings.telluric_from_clean_pixels is False
     # And Voigt lines: LBLRTM has no speed dependence.
     assert settings.speed_dependence == 0.0
+    # And AER's strengths: no line-strength table.
+    assert settings.line_strength_table is None
     with pytest.raises(dataclasses.FrozenInstanceError):
         settings.v1 = 1.0
 

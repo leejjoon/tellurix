@@ -26,7 +26,8 @@ import numpy as np
 from tellurix import (
     AER_MOLECULE_IDS, AERLineDatabase, BoxcarFTSInstrumentProfile, ExoJAXOpacityBackend,
     MTCKDWaterContinuum, StellarSpectrum, TelluricModel, TelluricParameters,
-    constant_velocity_grid, load_atmosphere_csv, prepare_stellar_source, trim_wavenumber_grid,
+    constant_velocity_grid, load_atmosphere_csv, prepare_stellar_source, recorded_line_strength_table,
+    trim_wavenumber_grid,
 )
 from tellurix_fts import fts_spectral_order, read_fts_spectrum
 
@@ -82,6 +83,8 @@ def main() -> None:
         if recorded is not None and digest != recorded:
             raise SystemExit(f"{shift_table} is not the table the fit used: "
                              f"{digest[:12]} against {recorded[:12]}")
+    # A report without the key used AER's strengths.
+    strength_table = recorded_line_strength_table(physics, root / "data/line_strength")
     databases = {}
     for species in physics["species"]:
         name = f"{MOLECULE_IDS[species]:02d}_{species}"
@@ -90,7 +93,8 @@ def main() -> None:
             pressure_shift_table=shift_table if species == "H2O" else None,
             # A report without the key used AER's widths.
             pressure_width_scale=(float(physics.get("pressure_width_scale", 1.0))
-                                  if species in physics.get("pressure_width_species", []) else 1.0))
+                                  if species in physics.get("pressure_width_species", []) else 1.0),
+            line_strength_table=strength_table)
         counted = int(databases[species].nu_lines.size)
         if counted != physics["lines_per_species"][species]:
             raise SystemExit(f"{species}: {counted} lines against the report's "
