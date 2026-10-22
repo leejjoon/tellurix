@@ -504,9 +504,22 @@ Baker's and the solar fits' ratios.
      1983 pair, x1.11 niratl, x1.00 Wallace) lift the others' ratios over Wallace's only
      0.2-0.7% at the median (1.8% for `j83_3`'s saturated lines); the held-out factors sit
      +0.6% over Wallace's own ratios and correlate with them at 0.88. So it is the scatter
-     between fits, not a bias: two measurements that disagree make a factor today. Next,
-     before step 3: keep a factor only where its measurements agree (a scatter cut, or three
-     fits), and rescore the windows that got worse.
+     between fits, not a bias: two measurements that disagree make a factor today.
+   - **With an agreement cut** (`--max-scatter 0.025`, one solar fit's own held-out scatter,
+     set before looking at Wallace; 227 features dropped, 1579 kept;
+     `data/corrected/solar/wallace2011_strength_agree/`) the tail comes in: the 90th
+     percentile falls below the x1.00 run's in every bin (region 1 all pixels 1.861% ->
+     1.762%, deep 3.24% -> 3.14%; region 2 authors' 1.088% -> 1.036%) and fewer windows get
+     worse (12 -> 8 and 3 -> 2 on all pixels), for a little of the median gain (region 1
+     authors' 0.573% -> 0.585%, still under 0.610%). The worst windows do not move (10540
+     3.37% -> 3.63%, 16960 2.86% -> 3.27%) and 12010 gets worse (1.18%), where most features
+     fit better but 12021.40 is read 1.045-1.085 by all three building fits and 1.001 by
+     Wallace. **The held-out factors exceed Wallace's ratios by +2.8% per 1000 cm-1 of
+     E''** (-0.7% below 200 cm-1, +1.9% above 1000; 1270 H2O features): each date's
+     temperature profile, which the per-line factors carry from the dates they were
+     measured on to one they were not, and which agreement between those dates cannot
+     catch. Next: take each fit's own trend in E'' and strength out of its ratios before
+     averaging, so the table carries only what is common to every date.
 3. **Iterate.** Re-measure from the refitted runs, rebuild the table from all four, and
    repeat once or twice. The ratios should converge to 1 with the scatter at the noise.
    Then refit every product with the final table. Settle that table's provenance before it

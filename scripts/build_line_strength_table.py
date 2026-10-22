@@ -11,11 +11,20 @@ AER's strength. The factor goes to every member line of the feature's cluster
 blend. The table is keyed by molecule, isotopologue, wavenumber and lower-state
 energy, as AER prints them (``tellurix.LineStrengthTable``).
 
+``--max-scatter`` keeps a factor only where its measurements agree: their sample
+standard deviation at most that. Two fits that disagree otherwise make a factor, and
+in the held-out Wallace test (docs/line_intensity_corrections.md, step 2) those were
+the windows that got worse. 0.025 is one solar fit's own scatter, the rms by which the
+other fits predict it (docs/baker_telluric_ratios.json, ``held_out``); for a pair it
+asks for agreement within 0.035.
+
 Baker's verdicts were made against the mean of *every* solar fit, so a held-out
 test -- build from three fits, refit the fourth -- must leave ``--baker`` off.
 
     UV_CACHE_DIR=.uv-cache uv run python scripts/build_line_strength_table.py \\
         --fits j83_2,j83_3,niratl --output data/line_strength/held_out_wallace.npz
+    UV_CACHE_DIR=.uv-cache uv run python scripts/build_line_strength_table.py \\
+        --fits j83_2,j83_3,niratl --max-scatter 0.025 --output data/line_strength/held_out_wallace_agree.npz
     UV_CACHE_DIR=.uv-cache uv run python scripts/build_line_strength_table.py \\
         --baker --output data/line_strength/all_fits_baker.npz
 """
@@ -46,6 +55,8 @@ def main() -> None:
     parser.add_argument("--baker", action="store_true", help="add Baker et al.'s vetted ratio")
     parser.add_argument("--baker-table", type=Path, default=ROOT / "docs/baker_line_corrections.csv")
     parser.add_argument("--min-measurements", type=int, default=2)
+    parser.add_argument("--max-scatter", type=float, default=None,
+                        help="keep a factor only if its measurements' standard deviation is at most this")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -76,11 +87,15 @@ def main() -> None:
                     measured[int(row["feature"])].append(float(row["baker_ratio"]))
                     baker_used += 1
 
-    factor_of = {}
+    factor_of, rejected = {}, 0
     for index, values in measured.items():
         values = [v for v in values if abs(v - 1) < OUTLIER]
-        if len(values) >= args.min_measurements:
-            factor_of[index] = float(np.mean(values))
+        if len(values) < args.min_measurements:
+            continue
+        if args.max_scatter is not None and np.std(values, ddof=1) > args.max_scatter:
+            rejected += 1
+            continue
+        factor_of[index] = float(np.mean(values))
 
     rows = []
     for index, factor in factor_of.items():
@@ -89,19 +104,21 @@ def main() -> None:
                          lines["elower"][member], factor))
     rows.sort()
     nu, molecule, isotope, elower, factor = (np.array(column) for column in zip(*rows))
-    built_from = dict(fits=fits, baker=args.baker, min_measurements=args.min_measurements, outlier=OUTLIER)
+    built_from = dict(fits=fits, baker=args.baker, min_measurements=args.min_measurements, outlier=OUTLIER,
+                      max_scatter=args.max_scatter)
     provenance = dict(
         built_from=built_from, built=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
         ratios=args.ratios.name, ratios_sha256=sha256(args.ratios),
         baker_table=args.baker_table.name if args.baker else None,
         baker_table_sha256=sha256(args.baker_table) if args.baker else None,
         features=len(factor_of), lines=int(nu.size), baker_ratios_used=baker_used,
+        rejected_for_scatter=rejected,
         factor_rms=float(np.sqrt(np.mean((np.array(list(factor_of.values())) - 1) ** 2))))
     table = LineStrengthTable(molecule_id=molecule.astype(int), isotope=isotope.astype(int),
                               wavenumber_cm1=nu.astype(float), elower_cm1=elower.astype(float),
                               factor=factor.astype(float), provenance=provenance)
     table.save(args.output)
-    print(f"{args.output}: {len(factor_of)} of {len(features)} features, {nu.size} lines, "
+    print(f"{args.output}: {len(factor_of)} of {len(features)} features ({rejected} disagreeing), {nu.size} lines, "
           f"factor rms {provenance['factor_rms']:.3f}; built from {built_from}")
 
 
