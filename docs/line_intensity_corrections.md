@@ -477,6 +477,36 @@ Baker's and the solar fits' ratios.
      whose factor differs most between Wallace, a flux atlas, and the 1983 intensity
      spectra); or the gain shows only in the measured features while unmeasured blends
      get worse.
+   - **Done 2026-10-22: the medians pass, the tail does not quite.** Table
+     `data/line_strength/held_out_wallace.npz` (`j83_2,j83_3,niratl`, 1806 features), run
+     `data/corrected/solar/wallace2011_strength_heldout/` (the x1.00 settings from the
+     record; region 2 with `--v1 13450`, which the x1.00 run used but its record does not
+     state). The same 100 and 91 windows fitted, none newly at a bound. Scores
+     (`docs/wallace2011_strength_heldout_reg{1,2}_{authors,all}.json`, the x1.00 run's
+     pixels; 11680 and 15220, refitted with `--clean-envelope closing` in the x1.00 run
+     only, left out of the window counts):
+
+     | region, pixels | x1.00 | with the table | windows better | worse by >0.05 |
+     |---|---|---|---|---|
+     | 1, authors' | 0.610% | 0.573% | 61% | 6 of 72 |
+     | 2, authors' | 0.604% | 0.547% | 71% | 3 of 59 |
+     | 1, all telluric | 0.940% | 0.839% | 65% | 12 of 72 |
+     | 2, all telluric | 0.688% | 0.631% | 73% | 3 of 60 |
+     | 2, all deep (T < 0.7) | 2.02% | 1.29% | 83% | 2 of 30 |
+
+     Windows at or below the authors' 0.71%: 57 -> 58 of 72 and 38 -> 41 of 59. The 90th
+     percentile falls or holds except region 1 on all pixels (1.861% -> 1.886%), but the
+     worst window grows in both (3.37% -> 3.62%, 2.94% -> 3.19%) and 12010 doubles
+     (0.49% -> 0.98%). Where a window got worse the water column fell (12010 by 3.6%) and
+     `lsf_sigma_kms` rose: the factors there were too strong, and they come from features
+     the building fits disagree on with Wallace -- 12018.63 read 1.104 by `j83_3` and 1.050
+     by `niratl`, 1.002 by Wallace. The width scales the fits were made at (x1.06 for the
+     1983 pair, x1.11 niratl, x1.00 Wallace) lift the others' ratios over Wallace's only
+     0.2-0.7% at the median (1.8% for `j83_3`'s saturated lines); the held-out factors sit
+     +0.6% over Wallace's own ratios and correlate with them at 0.88. So it is the scatter
+     between fits, not a bias: two measurements that disagree make a factor today. Next,
+     before step 3: keep a factor only where its measurements agree (a scatter cut, or three
+     fits), and rescore the windows that got worse.
 3. **Iterate.** Re-measure from the refitted runs, rebuild the table from all four, and
    repeat once or twice. The ratios should converge to 1 with the scatter at the noise.
    Then refit every product with the final table. Settle that table's provenance before it

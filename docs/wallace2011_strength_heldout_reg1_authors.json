@@ -1,0 +1,663 @@
+{
+ "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+ "settings": {
+  "stem": "wallace2011_reg1",
+  "authors": "wallace2011",
+  "wallace2011_region": 1,
+  "relative_transmission": true
+ },
+ "runs": {
+  "w100": "data/corrected/solar/wallace2011",
+  "strength": "data/corrected/solar/wallace2011_strength_heldout"
+ },
+ "summary": {
+  "telluric": {
+   "pages": 72,
+   "median_percent": {
+    "w100": 0.6097392830069496,
+    "strength": 0.5726965946882747,
+    "authors": 0.7104170670878727
+   },
+   "pages_flatter_than_w100": {
+    "strength": 44,
+    "authors": 15
+   },
+   "pages_at_or_below_authors": {
+    "w100": 57,
+    "strength": 58
+   },
+   "pages_worse_than_authors_by_0p2": {
+    "w100": 5,
+    "strength": 3
+   }
+  },
+  "deep": {
+   "pages": 5,
+   "median_percent": {
+    "w100": 1.7843382815772701,
+    "strength": 1.7843470678335749,
+    "authors": 82.00840528396026
+   },
+   "pages_flatter_than_w100": {
+    "strength": 1,
+    "authors": 0
+   },
+   "pages_at_or_below_authors": {
+    "w100": 5,
+    "strength": 5
+   },
+   "pages_worse_than_authors_by_0p2": {
+    "w100": 0,
+    "strength": 0
+   }
+  }
+ },
+ "pages": {
+  "wallace2011_reg1_10000": {
+   "telluric": {
+    "pixels": 55,
+    "w100": 0.6354421745941488,
+    "strength": 0.6689210020682066,
+    "authors": 0.5977748865082307
+   }
+  },
+  "wallace2011_reg1_10060": {
+   "telluric": {
+    "pixels": 163,
+    "w100": 0.46707591763533884,
+    "strength": 0.4887104344864986,
+    "authors": 0.7524975697748174
+   }
+  },
+  "wallace2011_reg1_10090": {
+   "telluric": {
+    "pixels": 205,
+    "w100": 0.4516313603306882,
+    "strength": 0.2764069783827967,
+    "authors": 0.6394825668104777
+   }
+  },
+  "wallace2011_reg1_10120": {
+   "telluric": {
+    "pixels": 379,
+    "w100": 1.138776193832369,
+    "strength": 1.1473633503491754,
+    "authors": 1.4095070907027019
+   }
+  },
+  "wallace2011_reg1_10150": {
+   "telluric": {
+    "pixels": 796,
+    "w100": 0.7749891147085822,
+    "strength": 0.7769144217598115,
+    "authors": 1.1346954302728112
+   }
+  },
+  "wallace2011_reg1_10180": {
+   "telluric": {
+    "pixels": 860,
+    "w100": 0.8013269617659864,
+    "strength": 0.8175329257248617,
+    "authors": 1.0721846306769363
+   }
+  },
+  "wallace2011_reg1_10210": {
+   "telluric": {
+    "pixels": 913,
+    "w100": 0.752291787372447,
+    "strength": 0.600153027783318,
+    "authors": 0.9275192741796892
+   }
+  },
+  "wallace2011_reg1_10240": {
+   "telluric": {
+    "pixels": 1198,
+    "w100": 0.4532730910608288,
+    "strength": 0.38625815343300374,
+    "authors": 0.6723157726570796
+   }
+  },
+  "wallace2011_reg1_10270": {
+   "telluric": {
+    "pixels": 1030,
+    "w100": 0.650245632393274,
+    "strength": 0.46298702392670066,
+    "authors": 0.7784508058719288
+   }
+  },
+  "wallace2011_reg1_10300": {
+   "telluric": {
+    "pixels": 803,
+    "w100": 0.7677621369050601,
+    "strength": 0.6548010167840704,
+    "authors": 1.1549119879232355
+   }
+  },
+  "wallace2011_reg1_10330": {
+   "telluric": {
+    "pixels": 1115,
+    "w100": 0.6537987261802529,
+    "strength": 0.7062625208834025,
+    "authors": 0.7723348714850089
+   }
+  },
+  "wallace2011_reg1_10360": {
+   "telluric": {
+    "pixels": 1228,
+    "w100": 0.6351388270584096,
+    "strength": 0.5743098870700123,
+    "authors": 0.7759515224243434
+   }
+  },
+  "wallace2011_reg1_10390": {
+   "telluric": {
+    "pixels": 1065,
+    "w100": 0.6708853106227001,
+    "strength": 0.6649023497411889,
+    "authors": 0.8274444107978741
+   }
+  },
+  "wallace2011_reg1_10420": {
+   "telluric": {
+    "pixels": 720,
+    "w100": 1.0679865140873823,
+    "strength": 0.9999045791546273,
+    "authors": 1.1332959704159036
+   }
+  },
+  "wallace2011_reg1_10510": {
+   "telluric": {
+    "pixels": 780,
+    "w100": 0.6728947266197778,
+    "strength": 0.6511803436387084,
+    "authors": 0.7753637224545252
+   }
+  },
+  "wallace2011_reg1_10540": {
+   "telluric": {
+    "pixels": 653,
+    "w100": 2.762494707108969,
+    "strength": 2.6704089632964494,
+    "authors": 2.5119784327007224
+   }
+  },
+  "wallace2011_reg1_10570": {
+   "telluric": {
+    "pixels": 446,
+    "w100": 0.6711952340094494,
+    "strength": 0.6255272225971888,
+    "authors": 0.7209825089862958
+   }
+  },
+  "wallace2011_reg1_10720": {
+   "telluric": {
+    "pixels": 768,
+    "w100": 0.8834374283870995,
+    "strength": 0.8073247348491411,
+    "authors": 1.3028910111535108
+   }
+  },
+  "wallace2011_reg1_10750": {
+   "telluric": {
+    "pixels": 1268,
+    "w100": 1.4018066242011837,
+    "strength": 1.2248168177487095,
+    "authors": 1.3833160843306813
+   }
+  },
+  "wallace2011_reg1_10780": {
+   "telluric": {
+    "pixels": 618,
+    "w100": 0.4086560777700228,
+    "strength": 0.5259193689437882,
+    "authors": 0.7133481683164089
+   }
+  },
+  "wallace2011_reg1_10840": {
+   "telluric": {
+    "pixels": 248,
+    "w100": 0.32776308753811295,
+    "strength": 0.27611846478253504,
+    "authors": 0.6109383225392407
+   }
+  },
+  "wallace2011_reg1_10870": {
+   "telluric": {
+    "pixels": 855,
+    "w100": 0.6660855572361919,
+    "strength": 0.6272365017020319,
+    "authors": 0.825245203726669
+   }
+  },
+  "wallace2011_reg1_10900": {
+   "telluric": {
+    "pixels": 813,
+    "w100": 0.9115766404136416,
+    "strength": 0.8402197161340342,
+    "authors": 1.0456983405978184
+   }
+  },
+  "wallace2011_reg1_10930": {
+   "telluric": {
+    "pixels": 1238,
+    "w100": 0.6648890573898035,
+    "strength": 0.6127637368121839,
+    "authors": 0.9585662033925879
+   }
+  },
+  "wallace2011_reg1_10960": {
+   "telluric": {
+    "pixels": 1005,
+    "w100": 1.0410779219301223,
+    "strength": 1.044449437504213,
+    "authors": 1.2536663377375232
+   }
+  },
+  "wallace2011_reg1_10990": {
+   "telluric": {
+    "pixels": 954,
+    "w100": 0.5865014020594002,
+    "strength": 0.5491243966743254,
+    "authors": 0.6935123774073103
+   }
+  },
+  "wallace2011_reg1_11020": {
+   "telluric": {
+    "pixels": 991,
+    "w100": 0.5933395540251334,
+    "strength": 0.5019246943043941,
+    "authors": 0.6204934957363505
+   }
+  },
+  "wallace2011_reg1_11050": {
+   "telluric": {
+    "pixels": 339,
+    "w100": 0.29500033943147724,
+    "strength": 0.3910976652110037,
+    "authors": 0.4461261020716244
+   }
+  },
+  "wallace2011_reg1_11110": {
+   "telluric": {
+    "pixels": 621,
+    "w100": 0.7927057462407954,
+    "strength": 0.7960522550168843,
+    "authors": 0.583701163406744
+   }
+  },
+  "wallace2011_reg1_11140": {
+   "telluric": {
+    "pixels": 1128,
+    "w100": 0.47227843131294317,
+    "strength": 0.49318372462534954,
+    "authors": 2.9668757689666267
+   }
+  },
+  "wallace2011_reg1_11170": {
+   "telluric": {
+    "pixels": 570,
+    "w100": 0.47406199122789633,
+    "strength": 0.571083302306537,
+    "authors": 0.9532392971200893
+   }
+  },
+  "wallace2011_reg1_11200": {
+   "telluric": {
+    "pixels": 168,
+    "w100": 0.8555035813745565,
+    "strength": 0.8418988302593272,
+    "authors": 0.9285663140272351
+   }
+  },
+  "wallace2011_reg1_11230": {
+   "telluric": {
+    "pixels": 142,
+    "w100": 0.1906781985303381,
+    "strength": 0.2077099200259037,
+    "authors": 0.5133158567433275
+   }
+  },
+  "wallace2011_reg1_11320": {
+   "telluric": {
+    "pixels": 50,
+    "w100": 0.23669156426379248,
+    "strength": 0.23669156424337584,
+    "authors": 0.29229869801234903
+   }
+  },
+  "wallace2011_reg1_11830": {
+   "telluric": {
+    "pixels": 107,
+    "w100": 0.3016430990017414,
+    "strength": 0.22072249926980816,
+    "authors": 0.5949678601028447
+   }
+  },
+  "wallace2011_reg1_11860": {
+   "telluric": {
+    "pixels": 79,
+    "w100": 0.4730242378933371,
+    "strength": 0.2826283760242666,
+    "authors": 0.6424125717829134
+   }
+  },
+  "wallace2011_reg1_11890": {
+   "telluric": {
+    "pixels": 124,
+    "w100": 0.33345294018676336,
+    "strength": 0.3550309261846896,
+    "authors": 0.3338654134159974
+   }
+  },
+  "wallace2011_reg1_11920": {
+   "telluric": {
+    "pixels": 280,
+    "w100": 0.5296135385514464,
+    "strength": 0.5168394885422262,
+    "authors": 0.4619060893834327
+   }
+  },
+  "wallace2011_reg1_11950": {
+   "telluric": {
+    "pixels": 239,
+    "w100": 0.5015255458025112,
+    "strength": 0.5031066793878093,
+    "authors": 0.6698263455001809
+   }
+  },
+  "wallace2011_reg1_11980": {
+   "telluric": {
+    "pixels": 80,
+    "w100": 1.568782946416766,
+    "strength": 1.2512916293865242,
+    "authors": 0.49394325269142053
+   }
+  },
+  "wallace2011_reg1_12010": {
+   "telluric": {
+    "pixels": 59,
+    "w100": 0.3705431427288261,
+    "strength": 0.40136113047322663,
+    "authors": 0.6327613772151325
+   }
+  },
+  "wallace2011_reg1_12040": {
+   "telluric": {
+    "pixels": 198,
+    "w100": 2.096476844057727,
+    "strength": 2.106368171677818,
+    "authors": 2.2653004952710902
+   }
+  },
+  "wallace2011_reg1_12070": {
+   "telluric": {
+    "pixels": 421,
+    "w100": 0.48105882464909017,
+    "strength": 0.4793449950432334,
+    "authors": 0.618166244781927
+   }
+  },
+  "wallace2011_reg1_12100": {
+   "telluric": {
+    "pixels": 246,
+    "w100": 0.21596980437504246,
+    "strength": 0.2354005125822816,
+    "authors": 0.4919714657691003
+   }
+  },
+  "wallace2011_reg1_12130": {
+   "telluric": {
+    "pixels": 527,
+    "w100": 0.47892721154387513,
+    "strength": 0.4809066224189489,
+    "authors": 0.5710303241857893
+   }
+  },
+  "wallace2011_reg1_12190": {
+   "telluric": {
+    "pixels": 633,
+    "w100": 0.5932001522690022,
+    "strength": 0.5605520637118727,
+    "authors": 0.5971413245416938
+   }
+  },
+  "wallace2011_reg1_12220": {
+   "telluric": {
+    "pixels": 876,
+    "w100": 0.6053982372462295,
+    "strength": 0.567835098712754,
+    "authors": 0.7050947423979897
+   }
+  },
+  "wallace2011_reg1_12250": {
+   "telluric": {
+    "pixels": 794,
+    "w100": 0.6091403836019589,
+    "strength": 0.7329415011364352,
+    "authors": 0.7864743234286156
+   }
+  },
+  "wallace2011_reg1_12280": {
+   "telluric": {
+    "pixels": 598,
+    "w100": 0.6023959555598779,
+    "strength": 0.5753357738216522,
+    "authors": 0.647641581105621
+   }
+  },
+  "wallace2011_reg1_12310": {
+   "telluric": {
+    "pixels": 477,
+    "w100": 0.6991515537970336,
+    "strength": 0.7159720322403054,
+    "authors": 0.6619270772456298
+   }
+  },
+  "wallace2011_reg1_12340": {
+   "telluric": {
+    "pixels": 185,
+    "w100": 0.5862338718312355,
+    "strength": 0.40896323319489375,
+    "authors": 0.5386183765029974
+   }
+  },
+  "wallace2011_reg1_12370": {
+   "telluric": {
+    "pixels": 182,
+    "w100": 0.9800715459027511,
+    "strength": 0.7503830159841185,
+    "authors": 0.4792115744882353
+   }
+  },
+  "wallace2011_reg1_12400": {
+   "telluric": {
+    "pixels": 143,
+    "w100": 0.6103381824119403,
+    "strength": 0.4028766146933334,
+    "authors": 0.3909441160955847
+   }
+  },
+  "wallace2011_reg1_12430": {
+   "telluric": {
+    "pixels": 476,
+    "w100": 0.5215201416261359,
+    "strength": 0.5519989767736756,
+    "authors": 0.6288603795310284
+   }
+  },
+  "wallace2011_reg1_12460": {
+   "telluric": {
+    "pixels": 426,
+    "w100": 0.9256757101509838,
+    "strength": 0.8135555534260017,
+    "authors": 0.895707177623006
+   }
+  },
+  "wallace2011_reg1_12490": {
+   "telluric": {
+    "pixels": 159,
+    "w100": 0.879963806181497,
+    "strength": 0.8185160760631015,
+    "authors": 0.7253816288852999
+   }
+  },
+  "wallace2011_reg1_12520": {
+   "telluric": {
+    "pixels": 325,
+    "w100": 0.4400284940671061,
+    "strength": 0.3807861653790126,
+    "authors": 0.47113148444424363
+   }
+  },
+  "wallace2011_reg1_12550": {
+   "telluric": {
+    "pixels": 351,
+    "w100": 0.3901382108575999,
+    "strength": 0.42211968336905864,
+    "authors": 0.5683128121762284
+   }
+  },
+  "wallace2011_reg1_12580": {
+   "telluric": {
+    "pixels": 90,
+    "w100": 0.6803886346906,
+    "strength": 0.6687538905671988,
+    "authors": 0.7074859658593365
+   }
+  },
+  "wallace2011_reg1_12610": {
+   "telluric": {
+    "pixels": 124,
+    "w100": 0.5528352908872491,
+    "strength": 0.5063265475535397,
+    "authors": 0.7314045118121064
+   }
+  },
+  "wallace2011_reg1_12640": {
+   "telluric": {
+    "pixels": 253,
+    "w100": 0.3965797466360824,
+    "strength": 0.5198653159619951,
+    "authors": 0.48795709957113326
+   }
+  },
+  "wallace2011_reg1_12670": {
+   "telluric": {
+    "pixels": 103,
+    "w100": 0.6656189259970113,
+    "strength": 0.6260569499981483,
+    "authors": 0.46655263663310076
+   }
+  },
+  "wallace2011_reg1_12700": {
+   "telluric": {
+    "pixels": 188,
+    "w100": 0.7909825887989776,
+    "strength": 0.7089588893825638,
+    "authors": 0.6483817945095943
+   }
+  },
+  "wallace2011_reg1_12910": {
+   "telluric": {
+    "pixels": 34,
+    "w100": 0.31446890650977943,
+    "strength": 0.3144689065098047,
+    "authors": 0.26233733751234334
+   }
+  },
+  "wallace2011_reg1_12940": {
+   "telluric": {
+    "pixels": 82,
+    "w100": 0.3248493402990724,
+    "strength": 0.3248493403914468,
+    "authors": 0.7756535627138255
+   }
+  },
+  "wallace2011_reg1_12970": {
+   "telluric": {
+    "pixels": 107,
+    "w100": 0.4236672326165686,
+    "strength": 0.4236669208134456,
+    "authors": 3.070690297014811
+   },
+   "deep": {
+    "pixels": 5,
+    "w100": 0.817560477772754,
+    "strength": 0.817561326046664,
+    "authors": 8.82110831777212
+   }
+  },
+  "wallace2011_reg1_13000": {
+   "telluric": {
+    "pixels": 249,
+    "w100": 0.7873714964243701,
+    "strength": 0.7873702395978401,
+    "authors": 10.235209122145761
+   }
+  },
+  "wallace2011_reg1_13030": {
+   "telluric": {
+    "pixels": 584,
+    "w100": 0.3963901029598416,
+    "strength": 0.3963909079174351,
+    "authors": 11.126091723265965
+   },
+   "deep": {
+    "pixels": 9,
+    "w100": 1.2853577856684146,
+    "strength": 1.2853722260136276,
+    "authors": 89.4187200222321
+   }
+  },
+  "wallace2011_reg1_13060": {
+   "telluric": {
+    "pixels": 1027,
+    "w100": 0.9520716167092418,
+    "strength": 0.9520715948886913,
+    "authors": 11.187258434834336
+   },
+   "deep": {
+    "pixels": 19,
+    "w100": 3.3369427765477577,
+    "strength": 3.3369432856701167,
+    "authors": 82.00840528396026
+   }
+  },
+  "wallace2011_reg1_13120": {
+   "telluric": {
+    "pixels": 32,
+    "w100": 1.9299518472529558,
+    "strength": 1.9299545284433137,
+    "authors": 78.84656800964991
+   },
+   "deep": {
+    "pixels": 24,
+    "w100": 1.7843382815772701,
+    "strength": 1.7843470678335749,
+    "authors": 91.038761745261
+   }
+  },
+  "wallace2011_reg1_13150": {
+   "telluric": {
+    "pixels": 161,
+    "w100": 3.2610230532295605,
+    "strength": 3.2610185081328686,
+    "authors": 18.00173814440544
+   },
+   "deep": {
+    "pixels": 8,
+    "w100": 11.920057898690285,
+    "strength": 11.920032357826482,
+    "authors": 80.73152758203281
+   }
+  },
+  "wallace2011_reg1_13480": {
+   "telluric": {
+    "pixels": 55,
+    "w100": 0.338833750183744,
+    "strength": 0.29966780252163067,
+    "authors": 0.3609872381512323
+   }
+  }
+ }
+}
