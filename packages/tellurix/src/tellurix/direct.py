@@ -111,6 +111,93 @@ def _dispersion(imag, offset, gamma, scale):
     return jnp.where(jnp.abs(offset) <= _COUPLING_CUTOFF_CM1, imag - pedestal, 0.0)
 
 
+# A speed-dependent Voigt (the quadratic SDV: HTP with eta = nu_VC = 0) is
+# Re[w(iZ1) - w(iZ2)] / (sqrt(pi) nu_D) with Z1 = c / D, Z2 = Z1 + nu_D / Gamma2,
+# c = Gamma0 - 3 Gamma2 / 2 - i offset, D = sqrt(c Gamma2 + nu_D^2 / 4) + nu_D / 2
+# (Tran et al. 2013, JQSRT 129, 199). Written through c and D rather than the
+# usual X and Y it stays finite as Gamma2 -> 0, where it is ExoJAX's Voigt.
+# Below |Z1|^2 = 36 both w go through Algorithm 916. Above it the difference is
+# summed as one asymptotic series in u = 1/Z: u1^n - u2^n = (u1 - u2) h_{n-1}
+# with u1 - u2 = nu_D / c exactly, so wings far beyond Gamma2 do not cancel. Nine
+# terms leave ~3e-8 relative there, ExoJAX's own Voigt's 4 terms at 111 ~4e-8.
+_SD_SERIES_RADIUS2 = 36.0
+_SD_SERIES_TERMS = 9
+_SD_BLOCK = 64
+
+
+def _sd_coordinates(offsets, nu_d, gamma0, gamma2):
+    c = (gamma0 - 1.5 * gamma2) - 1j * offsets
+    return c, jnp.sqrt(c * gamma2 + 0.25 * nu_d * nu_d) + 0.5 * nu_d
+
+
+def _multiply(a, b):
+    return a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]
+
+
+def _sd_asymptotic(offsets, nu_d, gamma0, gamma2):
+    """Re[w(iZ1) - w(iZ2)] where |Z1|^2 >= 36, without cancellation.
+
+    In real arithmetic: XLA keeps every complex intermediate of a (line, grid)
+    wing, 34 GB on one Baker et al. window against 18 GB real; the blocks in
+    ``_sparse_speed_dependent`` do the rest.
+    """
+    cr, ci = gamma0 - 1.5 * gamma2, -offsets
+    ar, ai = cr * gamma2 + 0.25 * nu_d * nu_d, ci * gamma2
+    # ar > 0, so neither part of the principal root cancels.
+    sr = jnp.sqrt(0.5 * (jnp.hypot(ar, ai) + ar))
+    rr, ri = sr + 0.5 * nu_d, ai / (2.0 * sr)
+    cc, rr2 = cr * cr + ci * ci, rr * rr + ri * ri
+    u1 = ((rr * cr + ri * ci) / cc, (ri * cr - rr * ci) / cc)
+    u2 = (gamma2 * rr / rr2, -gamma2 * ri / rr2)
+    s, q = (u1[0] + u2[0], u1[1] + u2[1]), _multiply(u1, u2)
+    # h_n = sum_j u1^j u2^(n-j); w(iZ) ~ sum_k (2k-1)!! (-1/2)^k u^(2k+1) / sqrt(pi).
+    def advance(previous, current):
+        step, back = _multiply(s, current), _multiply(q, previous)
+        return current, (step[0] - back[0], step[1] - back[1])
+
+    previous, current = (1.0, 0.0), s
+    total, coefficient = (1.0, 0.0), 1.0
+    for k in range(1, _SD_SERIES_TERMS):
+        previous, current = advance(previous, current)  # h_2k
+        coefficient *= -(2 * k - 1) / 2
+        total = (total[0] + coefficient * current[0], total[1] + coefficient * current[1])
+        previous, current = advance(previous, current)  # h_2k+1
+    # Re[(nu_D / c) total]
+    return nu_d * (cr * total[0] + ci * total[1]) / (cc * jnp.sqrt(jnp.pi))
+
+
+def _sd_single_asymptotic(u):
+    """Re w(iZ) from the same series, for Z2 alone when Z1 is near the core."""
+    total, coefficient, power = u, 1.0, u
+    for k in range(1, _SD_SERIES_TERMS):
+        coefficient *= -(2 * k - 1) / 2
+        power = power * u * u
+        total = total + coefficient * power
+    return jnp.real(total) / jnp.sqrt(jnp.pi)
+
+
+def _speed_dependent(offsets, nu_d, gamma0, gamma2):
+    """Re[w(iZ1) - w(iZ2)], the SDV in hjert's units, for arrays of one shape."""
+    shape = offsets.shape
+    offsets, nu_d, gamma0, gamma2 = (jnp.ravel(jnp.broadcast_to(v, shape))
+                                     for v in (offsets, nu_d, gamma0, gamma2))
+    c, root = _sd_coordinates(offsets, nu_d, gamma0, gamma2)
+    z1 = c / root
+    near = jnp.abs(z1) ** 2 < _SD_SERIES_RADIUS2
+    u2 = gamma2 / root
+    # |Z2| >= |Z1| because Re Z1 > 0 and Z2 - Z1 is real and positive.
+    second_near = near & (jnp.abs(u2) ** 2 > 1.0 / _SD_SERIES_RADIUS2)
+    # w(iZ) = w(x + ia) with x = -Im Z, a = Re Z >= 0. Excluded pairs get safe
+    # coordinates so neither branch sees a singular point.
+    x = jnp.where(near, -jnp.imag(z1), 0.0)
+    a = jnp.where(near, jnp.real(z1), 1.0)
+    a2 = jnp.where(second_near, a + nu_d / jnp.where(second_near, gamma2, 1.0), 1.0)
+    first = jax.vmap(hjert)(x, a)
+    second = jnp.where(second_near, jax.vmap(hjert)(x, a2), _sd_single_asymptotic(u2))
+    far = _sd_asymptotic(jnp.where(near, 100.0 * nu_d, offsets), nu_d, gamma0, gamma2)
+    return jnp.where(near, first - second, far).reshape(shape)
+
+
 class SparseCoreDirect(OpaDirect):
     """ExoJAX Direct with identical branch selection and a compact core list.
 
@@ -134,6 +221,21 @@ class SparseCoreDirect(OpaDirect):
     offset in Voigt widths, which is exact in the Lorentz limit; Im w is exact
     everywhere (docs/lblrtm_corrected_mode.md). Off by default, so earlier
     results reproduce.
+
+    ``speed_dependence`` (a ratio Gamma2/Gamma0, one number or one per line)
+    replaces each line's Voigt by a quadratic speed-dependent Voigt with
+    Gamma(v) = Gamma0 (1 + r ((v/v_p)^2 - 3/2)), Gamma0 the database's own width
+    and Gamma2 = r Gamma0 sharing its temperature exponent. Baker et al.'s
+    isolated water lines want r = 0.09-0.13 at AER's widths
+    (docs/line_intensity_corrections.md). The series region of an SDV reaches
+    36 Gamma2 from the line, so the core list is bounded by
+    ``maximum_pressure_bar``, outside which the full calculation is used, and by
+    ``maximum_self_pressure_bar``, which is not checked: the precompute passes
+    the self pressure as an operand, where a check would make ``vmap`` evaluate
+    the dense fallback on every call. Past it the series is summed a little
+    inside |Z1|^2 = 36 and degrades smoothly, ~2e-7 at 2.5 times the bound.
+    LBLRTM applies no speed dependence.
+    None (the default) leaves the kernel exactly what it was.
     """
 
     def __init__(
@@ -146,6 +248,8 @@ class SparseCoreDirect(OpaDirect):
         pressure_shift=False,
         maximum_pressure_bar=2.0,
         line_coupling=False,
+        speed_dependence=None,
+        maximum_self_pressure_bar=0.1,
     ):
         if mdb.dbtype != "hitran":
             raise ValueError("SparseCoreDirect requires a HITRAN-style database")
@@ -159,6 +263,17 @@ class SparseCoreDirect(OpaDirect):
             raise ValueError("pressure_shift requires HITRAN delta_air coefficients")
         if line_coupling and not hasattr(mdb, "coupling"):
             raise ValueError("line_coupling requires a database with coupling coefficients")
+        if speed_dependence is not None:
+            ratio = np.broadcast_to(np.asarray(speed_dependence, dtype=float),
+                                    np.shape(mdb.nu_lines))
+            # At r = 2/3 a molecule at rest has zero width.
+            if np.any(~np.isfinite(ratio)) or np.any(ratio < 0) or np.any(ratio >= 2 / 3):
+                raise ValueError("speed_dependence must be finite and in [0, 2/3)")
+            if mixed_precision or line_coupling:
+                raise ValueError("speed_dependence is implemented without mixed_precision "
+                                 "or line_coupling")
+            if not np.isfinite(maximum_self_pressure_bar) or maximum_self_pressure_bar < 0:
+                raise ValueError("maximum self pressure must be finite and nonnegative")
         super().__init__(mdb, nu_grid)
         self.minimum_temperature_k = float(minimum_temperature_k)
         self.maximum_temperature_k = float(maximum_temperature_k)
@@ -169,6 +284,8 @@ class SparseCoreDirect(OpaDirect):
         # and leaving it out keeps the kernel exactly what it was.
         self.line_coupling = bool(line_coupling) and bool(mdb.has_line_coupling)
         self.delta_air = jnp.asarray(mdb.delta_air) if pressure_shift else None
+        self.maximum_self_pressure_bar = float(maximum_self_pressure_bar)
+        self.speed_dependence = None if speed_dependence is None else jnp.asarray(ratio)
         line_center = np.asarray(mdb.nu_lines, dtype=float)
         grid = np.asarray(nu_grid, dtype=float)
         sigma = np.asarray(doppler_sigma(mdb.nu_lines, maximum_temperature_k, mdb.molmass))
@@ -181,6 +298,19 @@ class SparseCoreDirect(OpaDirect):
         # branch. Keeping it one-dimensional is what lets the core test be
         # recomputed inside the kernel instead of read back from a matrix.
         core_half_width = np.sqrt(222.0) * sigma + shift_margin
+        if speed_dependence is not None:
+            # |Z1|^2 >= R wherever |offset| >= sqrt(R) nu_D + R Gamma2, at the
+            # largest nu_D and Gamma2 the bounds allow (solve |Z1| = sqrt(R)
+            # with |c| >= |offset|).
+            exponent = np.asarray(mdb.n_air, dtype=float)
+            temperature_factor = np.maximum((Tref_original / minimum_temperature_k) ** exponent,
+                                            (Tref_original / maximum_temperature_k) ** exponent)
+            gamma_air = np.asarray(mdb.gamma_air, dtype=float)
+            extra_self = np.maximum(np.asarray(mdb.gamma_self, dtype=float) - gamma_air, 0.0)
+            gamma2 = ratio * temperature_factor * (
+                gamma_air * maximum_pressure_bar + extra_self * maximum_self_pressure_bar) / 1.01325
+            core_half_width = (np.sqrt(_SD_SERIES_RADIUS2) * np.sqrt(2.0) * sigma
+                               + _SD_SERIES_RADIUS2 * gamma2 + shift_margin)
         # Both arrays are sorted, so each line's core region is one contiguous
         # run of grid samples. Binary search finds it in O(log N) instead of
         # scanning a dense (line, grid) boolean, which was the last place a
@@ -209,7 +339,7 @@ class SparseCoreDirect(OpaDirect):
     def xsvector(self, T, P, Pself=0.0):
         within_pressure_range = (
             (P >= 0.0) & (P <= self.maximum_pressure_bar)
-            if self.pressure_shift else True
+            if self.pressure_shift or self.speed_dependence is not None else True
         )
         return jax.lax.cond(
             (T >= self.minimum_temperature_k) & (T <= self.maximum_temperature_k)
@@ -240,6 +370,12 @@ class SparseCoreDirect(OpaDirect):
                                  mdb.qr_interp(mdb.isotope, T, Tref_original), Tref_original)
         return sigma, gamma, strength
 
+    def _gamma2(self, T, P, Pself):
+        """Gamma2 per line: the ratio times the pressure (not natural) width."""
+        mdb = self.mdb
+        return self.speed_dependence * gamma_hitran(P, T, Pself, mdb.n_air, mdb.gamma_air,
+                                                    mdb.gamma_self)
+
     def _coupling(self, T, P, strength):
         """Coupling coefficient Y*p per line, and the strength with G applied."""
         mixing, factor = self.mdb.coupling(T, P)
@@ -250,6 +386,11 @@ class SparseCoreDirect(OpaDirect):
         # parameters, except that the offset matrix is rebuilt here rather
         # than held on the device for a branch that is almost never taken.
         sigma, gamma, strength = self._line_parameters(T, P, Pself)
+        if self.speed_dependence is not None:
+            nu_d = jnp.sqrt(2.0) * sigma
+            profile = _speed_dependent(self._dense_offsets(T, P), nu_d[:, None], gamma[:, None],
+                                       self._gamma2(T, P, Pself)[:, None])
+            return jnp.sum(profile * (strength / (jnp.sqrt(jnp.pi) * nu_d))[:, None], axis=0)
         if not self.line_coupling:
             return lpf_xsvector(self._dense_offsets(T, P), sigma, gamma, strength)
         mixing, strength = self._coupling(T, P, strength)
@@ -265,6 +406,9 @@ class SparseCoreDirect(OpaDirect):
 
     def _sparse_xsvector(self, T, P, Pself):
         sigma, gamma, strength = self._line_parameters(T, P, Pself)
+        if self.speed_dependence is not None:
+            return self._sparse_speed_dependent(
+                T, P, Pself, sigma, gamma, strength / (jnp.sqrt(2.0 * jnp.pi) * sigma))
         if self.line_coupling:
             mixing, strength = self._coupling(T, P, strength)
         scale = 1 / (jnp.sqrt(2.0) * sigma)
@@ -299,4 +443,34 @@ class SparseCoreDirect(OpaDirect):
         if self.line_coupling:
             cores = cores + mixing[core_line] * _dispersion(
                 jax.vmap(_core_imag)(core_x, core_a), core_offsets, gamma[core_line], scale[core_line])
+        return spectrum.at[core_grid].add(cores * weights[core_line])
+
+    def _sparse_speed_dependent(self, T, P, Pself, sigma, gamma, weights):
+        nu_d, gamma2 = jnp.sqrt(2.0) * sigma, self._gamma2(T, P, Pself)
+        shift = self._line_shift(T, P)
+        shift = jnp.zeros_like(nu_d) if shift is None else shift
+        grid = self._nu_grid
+
+        # The wing is summed _SD_BLOCK lines at a time: even in real arithmetic
+        # XLA keeps the series' intermediates, which over all (line, grid,
+        # layer) were 18 GB on one Baker et al. window, against 1 GB blocked.
+        # Padding lines carry zero weight and harmless parameters.
+        pad = (-nu_d.size) % _SD_BLOCK
+        def blocks(values, fill):
+            return jnp.concatenate([values, jnp.full(pad, fill, values.dtype)]).reshape(-1, _SD_BLOCK)
+        def add_block(spectrum, block):
+            centres, half_width, line_shift, doppler, width0, width2, weight = block
+            unshifted = grid[None, :] - centres[:, None]
+            wing_mask = jnp.abs(unshifted) > half_width[:, None]
+            # Every wing pair is in the series region by construction of the core list.
+            offsets = jnp.where(wing_mask, unshifted - line_shift[:, None], half_width[:, None])
+            wings = _sd_asymptotic(offsets, doppler[:, None], width0[:, None], width2[:, None])
+            return spectrum + jnp.sum(jnp.where(wing_mask, wings, 0.0) * weight[:, None], axis=0), None
+        spectrum, _ = jax.lax.scan(add_block, jnp.zeros_like(grid), (
+            blocks(self._nu_lines, 0.0), blocks(self._core_half_width, 0.0), blocks(shift, 0.0),
+            blocks(nu_d, 1.0), blocks(gamma, 1.0), blocks(gamma2, 0.0), blocks(weights, 0.0)))
+
+        core_line, core_grid = self._core_line, self._core_grid
+        core_offsets = grid[core_grid] - self._nu_lines[core_line] - shift[core_line]
+        cores = _speed_dependent(core_offsets, nu_d[core_line], gamma[core_line], gamma2[core_line])
         return spectrum.at[core_grid].add(cores * weights[core_line])

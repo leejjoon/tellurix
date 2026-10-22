@@ -66,6 +66,8 @@ def settings_from(args) -> WindowSettings:
         line_coupling=args.line_coupling, h2o_pressure_shift=args.h2o_pressure_shift,
         pressure_width_scale=args.pressure_width_scale,
         pressure_width_species=args.pressure_width_species,
+        speed_dependence=args.speed_dependence,
+        speed_dependence_species=args.speed_dependence_species,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
         clean_envelope=args.clean_envelope)
@@ -137,6 +139,10 @@ def main() -> None:
     parser.add_argument("--pressure-width-scale", type=float, default=1.0,
                         help="multiply gamma_air and gamma_self of --pressure-width-species")
     parser.add_argument("--pressure-width-species", default="H2O,O2")
+    parser.add_argument("--speed-dependence", type=float, default=0.0,
+                        help="Gamma2/Gamma0 of a speed-dependent Voigt for "
+                             "--speed-dependence-species; 0 keeps the Voigt")
+    parser.add_argument("--speed-dependence-species", default="H2O")
     parser.add_argument("--telluric-from-clean-pixels", action=argparse.BooleanOptionalAction,
                         default=False,
                         help="telluric parameters from pixels clear of solar lines; see "

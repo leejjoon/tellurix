@@ -335,6 +335,15 @@ differentiating Algorithm 916's series directly stores every term.
 `pressure_shift=True` adds HITRAN `delta_air` shifts scaled like LBLRTM's
 RHORAT (`delta_air * P/1 atm * 296 K/T`); ExoJAX 2.5 omits these, so it is
 opt-in to keep the default numerically identical to ExoJAX.
+`speed_dependence=r` (`WindowSettings.speed_dependence`, `--speed-dependence`)
+gives a species' lines a quadratic speed-dependent Voigt, Gamma2 = r Gamma0, exact
+via two Faddeeva evaluations and a cancellation-free asymptotic series for their
+difference; off by default, and LBLRTM has none. Two traps it hit: XLA keeps every
+intermediate of a complex (or long real) series over (line, grid, layer) -- 34 GB
+on one Baker window -- so its wing is real arithmetic summed in blocks of lines
+under `lax.scan` (2 GB); and a fallback `lax.cond` on anything the precompute passes
+as an operand (the self pressure) becomes a select under `vmap` that evaluates the
+dense branch every call, so the self-pressure bound is not checked.
 
 ## Conventions
 

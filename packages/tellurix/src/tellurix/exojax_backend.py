@@ -35,6 +35,8 @@ class ExoJAXOpacityBackend:
         pressure_shift: bool = False,
         layer_chunk_size: int | None = None,
         line_coupling: bool = False,
+        speed_dependence: Mapping[str, float] | None = None,
+        maximum_self_pressure_bar: float = 0.1,
     ) -> "ExoJAXOpacityBackend":
         """Construct Direct, sparse-core Direct, or PreMODIT calculators.
 
@@ -64,11 +66,19 @@ class ExoJAXOpacityBackend:
         ``direct_sparse`` calculators to every line its database carries
         coupling coefficients for (``AERLineDatabase(line_coupling=...)``);
         LBLRTM applies AER's to about half the CO2 lines near 2 um.
+        ``speed_dependence`` maps species to a ratio Gamma2/Gamma0 and gives
+        their lines a quadratic speed-dependent Voigt in ``direct_sparse``
+        (``SparseCoreDirect``), in float64 whatever ``mixed_precision`` says; its core list grows with the maximum pressure and
+        self pressure, so supply both from the profile.
         """
 
         from exojax.opacity import OpaDirect, OpaPremodit
 
         calculators = {}
+        ratios = {name.upper(): float(value) for name, value in (speed_dependence or {}).items()}
+        unknown = set(ratios) - {name.upper() for name in databases}
+        if unknown:
+            raise ValueError(f"speed_dependence names species with no database: {sorted(unknown)}")
         for species, database in databases.items():
             if line_coupling and (methods.get(species, methods.get(species.upper(), "direct"))
                                   if isinstance(methods, Mapping) else methods) != "direct_sparse":
@@ -78,6 +88,9 @@ class ExoJAXOpacityBackend:
                 if isinstance(methods, Mapping)
                 else methods
             )
+            ratio = ratios.get(species.upper())
+            if ratio is not None and method != "direct_sparse":
+                raise ValueError("speed_dependence is implemented only in direct_sparse")
             if method == "direct":
                 calculators[species] = OpaDirect(database, nu_grid=wavenumber_cm1)
             elif method == "direct_sparse":
@@ -89,10 +102,13 @@ class ExoJAXOpacityBackend:
                 calculators[species] = SparseCoreDirect(
                     database,
                     wavenumber_cm1,
-                    mixed_precision=mixed_precision,
+                    # The SDV's wing series is its own and stays in float64.
+                    mixed_precision=mixed_precision and ratio is None,
                     pressure_shift=pressure_shift,
                     maximum_pressure_bar=maximum_pressure_bar,
                     line_coupling=line_coupling,
+                    speed_dependence=ratio,
+                    maximum_self_pressure_bar=maximum_self_pressure_bar,
                     **sparse_bounds,
                 )
             elif method == "premodit":

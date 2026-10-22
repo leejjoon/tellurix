@@ -23,6 +23,8 @@ def test_settings_are_frozen_and_default_like_the_command_line():
     # either option existed.
     assert settings.pressure_width_scale == 1.0
     assert settings.telluric_from_clean_pixels is False
+    # And Voigt lines: LBLRTM has no speed dependence.
+    assert settings.speed_dependence == 0.0
     with pytest.raises(dataclasses.FrozenInstanceError):
         settings.v1 = 1.0
 

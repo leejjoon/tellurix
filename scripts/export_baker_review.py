@@ -15,7 +15,15 @@ analysis's mean ratio and offset, and the solar fits' ratios.
 Arrays are uint16 with a per-array scale (1.6e-5 of the continuum against
 1e-3 of pixel noise); code 65535 is a masked pixel.
 
+``--compare`` names another run of the same spectra and windows (the Voigt fits
+beside a speed-dependent refit, for ``baker2020_sdv.html``): each spectrum then also
+carries that run's model, over its own continuum, and its rms, LSF and columns. The
+observed spectrum is the same file, so the two runs' observed must agree.
+
     UV_CACHE_DIR=.uv-cache uv run python scripts/export_baker_review.py
+    UV_CACHE_DIR=.uv-cache uv run python scripts/export_baker_review.py \
+        --fits data/corrected/baker2020_sdv13 --compare data/corrected/baker2020 \
+        --output data/review_baker2020_sdv13
 """
 from __future__ import annotations
 
@@ -82,6 +90,8 @@ def main() -> None:
     parser.add_argument("--analysis", type=Path, default=ROOT / "docs/baker_telluric_ratios.json")
     parser.add_argument("--atlas", type=Path, default=ATLAS)
     parser.add_argument("--output", type=Path, default=ROOT / "data/review_baker2020")
+    parser.add_argument("--compare", type=Path, default=None,
+                        help="another run of the same fits, shipped beside each spectrum")
     args = parser.parse_args()
 
     from astropy.io import fits as pyfits
@@ -124,10 +134,26 @@ def main() -> None:
             with np.load(npz) as data:
                 nu = np.asarray(data["wavenumber_cm1"]); order = np.argsort(nu); nu = nu[order]
                 continuum = np.asarray(data["continuum"])[order]
-                observed = np.asarray(data["flux"])[order] / continuum
+                flux = np.asarray(data["flux"])[order]
+                observed = flux / continuum
                 model = np.asarray(data["model_flux"])[order] / continuum
                 mask = np.asarray(data["mask"])[order].astype(bool)
                 sigma = float(np.median(np.asarray(data["uncertainty"])[order] / continuum))
+            compare = None
+            if args.compare is not None:
+                other = args.compare / npz.name
+                with np.load(other) as data:
+                    if not np.array_equal(np.asarray(data["flux"])[order], flux):
+                        raise SystemExit(f"{other}: not the same observed spectrum")
+                    other_continuum = np.asarray(data["continuum"])[order]
+                    other_model = np.asarray(data["model_flux"])[order] / other_continuum
+                    other_mask = np.asarray(data["mask"])[order].astype(bool)
+                other_report = json.loads(other.with_suffix(".json").read_text())["report"]
+                other_residual = (flux / other_continuum - other_model)[other_mask]
+                # The page draws it against this run's observed, which is over this
+                # run's continuum: rescale so the two models share one flux axis.
+                compare = (other_model * other_continuum / continuum, other_report,
+                           float(np.sqrt(np.mean(other_residual ** 2))) if other_residual.size else None)
             if axis is None:
                 axis = nu
             elif nu.size != axis.size or np.abs(nu - axis).max() > 1e-9:
@@ -146,6 +172,14 @@ def main() -> None:
                 "velocity_kms": float(parameters["velocity_kms"]),
                 "lsf_sigma_kms": float(parameters["lsf_sigma_kms"]),
                 "converged": bool(report.get("all_stages_converged", True)),
+                **({} if compare is None else {"compare": {
+                    "model": chunk.array(np.where(mask, compare[0], np.nan)), "rms": compare[2],
+                    "columns": {k: float(compare[1]["parameters"][k]) for k in ("H2O", "O2")
+                                if k in compare[1]["parameters"]},
+                    "velocity_kms": float(compare[1]["parameters"]["velocity_kms"]),
+                    "lsf_sigma_kms": float(compare[1]["parameters"]["lsf_sigma_kms"]),
+                    "speed_dependence": compare[1]["physics"].get("speed_dependence", {})}}),
+                "speed_dependence": report["physics"].get("speed_dependence", {}),
             })
         start = int(np.argmin(np.abs(grid - axis[0])))
         if np.abs(grid[start:start + axis.size] - axis).max() > 1e-6:
@@ -167,6 +201,8 @@ def main() -> None:
             "spectra": spectra, "groups": groups, "iodine": window_iodine,
             "median_rms": float(np.median(rms)) if rms else None,
             "worst_rms": float(np.max(rms)) if rms else None,
+            **({} if args.compare is None else {"compare_median_rms": float(np.median(
+                [s["compare"]["rms"] for s in spectra if s["compare"]["rms"] is not None]))}),
             "features": [{k: f[k] for k in ("nu", "spectra", "ratio", "ratio_std", "offset_ms",
                                             "offset_std_ms", "inverse_airmass_slope", "inverse_airmass_slope_error",
                                             "solar")}
@@ -178,6 +214,8 @@ def main() -> None:
         "source": "Baker, Blake & Reiners 2020 telluric spectra (Zenodo 10.5281/zenodo.3598136), "
                   "fitted by scripts/fit_baker_telluric.py",
         "summary": {k: analysis[k] for k in ("repeatability", "airmass", "solar_fits", "positions")},
+        "fits": str(args.fits.resolve().relative_to(ROOT)),
+        "compare": None if args.compare is None else str(args.compare.resolve().relative_to(ROOT)),
         "windows": windows,
     }), separators=(",", ":"), allow_nan=False) + "\n")
     print(f"wrote {len(windows)} windows, {total / 1e6:.1f} MB of chunks, to {args.output}")

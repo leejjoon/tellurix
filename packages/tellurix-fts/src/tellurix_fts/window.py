@@ -134,6 +134,11 @@ class WindowSettings:
     # (docs/solar_fit_plan.md §4r).
     pressure_width_scale: float = 1.0
     pressure_width_species: str = "H2O,O2"
+    # Gamma2/Gamma0 of a quadratic speed-dependent Voigt for these species' lines;
+    # 0 keeps the Voigt. Baker et al.'s isolated water lines want 0.09-0.13 at
+    # AER's widths (docs/line_intensity_corrections.md); LBLRTM has none.
+    speed_dependence: float = 0.0
+    speed_dependence_species: str = "H2O"
     # Fit the telluric parameters (columns, velocity, lsf_sigma_kms) on pixels the
     # solar model calls clean, then everything else with them pinned; see
     # fit_window. A solar line deeper than clean_solar_depth below the model's
@@ -278,6 +283,12 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
             f"none of {sorted(wanted)} has lines in {settings.v1}-{settings.v2} cm-1")
     lines_per_species = {name: int(db.nu_lines.size) for name, db in databases.items()}
 
+    speed_dependent = ({name.strip().upper() for name in settings.speed_dependence_species.split(",")}
+              & set(databases) if settings.speed_dependence else set())
+    # The SDV's core list reaches 36 Gamma2 from each line, so it is bounded by
+    # the self pressure too: the largest the column bounds allow (log scale <= 2).
+    self_pressure_bar = max((float(np.max(np.asarray(profile.vmr[name]) * profile.pressure_layer_bar))
+                             for name in speed_dependent if name in profile.vmr), default=0.0)
     opacity = ExoJAXOpacityBackend.prepare(
         databases, grid, methods="direct_sparse",
         temperature_range_k=(float(np.min(profile.temperature_k)), float(np.max(profile.temperature_k))),
@@ -287,6 +298,8 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
         pressure_shift=True,
         layer_chunk_size=settings.layer_chunk_size or None,
         line_coupling=settings.line_coupling,
+        speed_dependence={name: settings.speed_dependence for name in speed_dependent},
+        maximum_self_pressure_bar=float(np.exp(2.0)) * self_pressure_bar,
     )
     # The two modes are exclusive by construction: lblrtm_corrected carries the
     # continua inside its template and TelluricModel rejects a separate one.
@@ -722,6 +735,10 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
                 settings.h2o_pressure_shift,
                 getattr(prepared.databases.get("H2O"), "pressure_shift_table", None)),
             "line_coupling": settings.line_coupling,
+            # Ratio Gamma2/Gamma0 per species; absent in records made before it.
+            "speed_dependence": {name: settings.speed_dependence
+                                 for name, calculator in sorted(prepared.opacity.calculators.items())
+                                 if getattr(calculator, "speed_dependence", None) is not None},
             "pressure_width_scale": settings.pressure_width_scale,
             "pressure_width_species": sorted(name for name, db in prepared.databases.items()
                                              if db.pressure_width_scale != 1.0),

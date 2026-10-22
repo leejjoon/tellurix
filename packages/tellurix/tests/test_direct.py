@@ -240,3 +240,131 @@ def test_imaginary_faddeeva_derivative_is_analytic_and_continuous():
         # ExoJAX's asymptotic branch (|z|^2 > 111) is good to ~1e-6, and the
         # analytic derivative is built from it.
         np.testing.assert_allclose(gradient, numerical, rtol=1e-4, atol=1e-6)
+
+
+def _water_database():
+    return SimpleNamespace(
+        dbtype="hitran", isotope=1, molmass=18.0,
+        nu_lines=np.array([5000.0, 5000.1, 5001.0]),
+        logsij0=jnp.log(jnp.array([1e-22, 2e-23, 1e-24])),
+        elower=np.array([100., 300., 50.]), n_air=np.array([0.7, 0.6, 0.8]),
+        gamma_air=np.array([0.07, 0.08, 0.09]), gamma_self=np.array([0.3, 0.4, 0.2]),
+        A=np.array([0.1, 0.2, 0.3]), delta_air=np.array([-0.01, 0.005, -0.02]),
+        qr_interp=lambda isotope, temperature, reference: (temperature / reference) ** 1.5,
+    )
+
+
+def _closed_form_sdv(database, grid, temperature, pressure, self_pressure, ratio, shift=False):
+    """The quadratic SDV in numpy and scipy's wofz, line by line (Tran et al. 2013)."""
+    from scipy.special import wofz
+    from exojax.database.core.broadening import gamma_natural
+    from exojax.database.core.line_strength import line_strength
+
+    nu_d = np.sqrt(2.0) * 3.0415595e-07 * np.sqrt(temperature / database.molmass) * database.nu_lines
+    pressure_width = (296.0 / temperature) ** database.n_air * (
+        database.gamma_air * (pressure - self_pressure) + database.gamma_self * self_pressure) / 1.01325
+    gamma0 = pressure_width + np.asarray(gamma_natural(database.A))
+    gamma2 = ratio * pressure_width
+    strength = np.asarray(line_strength(temperature, database.logsij0, database.nu_lines, database.elower,
+                                        database.qr_interp(1, temperature, 296.0), 296.0))
+    total = np.zeros_like(grid)
+    for line in range(database.nu_lines.size):
+        offset = grid - database.nu_lines[line]
+        if shift:
+            offset = offset - database.delta_air[line] * pressure / 1.01325 * 296.0 / temperature
+        c = gamma0[line] - 1.5 * gamma2[line] - 1j * offset
+        z1 = c / (np.sqrt(c * gamma2[line] + nu_d[line] ** 2 / 4) + nu_d[line] / 2)
+        w = wofz(1j * z1) - (wofz(1j * (z1 + nu_d[line] / gamma2[line])) if gamma2[line] > 0 else 0.0)
+        total += strength[line] * w.real / (np.sqrt(np.pi) * nu_d[line])
+    return total
+
+
+def test_speed_dependent_voigt_is_the_maxwell_average_of_lorentz_lines():
+    """The closed form against its definition: Gamma(v) = Gamma0 (1 + r ((v/v_p)^2 - 3/2))
+    over Maxwell speeds and directions, Doppler-shifted Lorentzians."""
+    from scipy.integrate import dblquad
+    from tellurix.direct import _speed_dependent
+
+    nu_d, gamma0, ratio = 0.017, 0.08, 0.13
+    def definition(offset):
+        def integrand(cosine, speed):
+            width = gamma0 * (1 + ratio * (speed * speed - 1.5))
+            weight = 2 / np.sqrt(np.pi) * speed * speed * np.exp(-speed * speed)
+            return weight * width / np.pi / ((offset - nu_d * speed * cosine) ** 2 + width ** 2)
+        return dblquad(integrand, 0.0, 6.0, -1.0, 1.0, epsabs=1e-12)[0]
+    offsets = np.array([0.0, 0.05, 0.2, 0.5])
+    profile = np.asarray(_speed_dependent(jnp.asarray(offsets), nu_d, gamma0, ratio * gamma0))
+    expected = [definition(offset) for offset in offsets]
+    np.testing.assert_allclose(profile / (np.sqrt(np.pi) * nu_d), expected, rtol=1e-7)
+    # Narrower than the Voigt at the same Gamma0: that is the whole effect.
+    from exojax.opacity.lpf.lpf import hjert
+    assert profile[0] > float(hjert(0.0, gamma0 / nu_d))
+
+
+@pytest.mark.parametrize("temperature, pressure, self_pressure",
+                         [(180.0, 0.001, 1e-5), (275.0, 0.7, 0.014), (300.0, 1.0, 0.03)])
+def test_speed_dependent_kernel_matches_scipy_and_its_dense_fallback(temperature, pressure, self_pressure):
+    database, grid = _water_database(), np.linspace(4990.0, 5010.0, 8001)
+    for ratio in (0.0, 0.13, 0.3):
+        calculator = SparseCoreDirect(database, grid, speed_dependence=ratio, pressure_shift=True)
+        actual = np.asarray(calculator.xsvector(temperature, pressure, self_pressure))
+        expected = _closed_form_sdv(database, grid, temperature, pressure, self_pressure, ratio, shift=True)
+        # The asymptotic series is good to ~3e-8 of the line; ExoJAX's Voigt to ~4e-8.
+        np.testing.assert_allclose(actual, expected, rtol=0, atol=1e-7 * expected.max())
+        np.testing.assert_allclose(actual, calculator._full_xsvector(temperature, pressure, self_pressure),
+                                   rtol=0, atol=1e-14 * expected.max())
+    # Off is ExoJAX's Voigt; r = 0 is the same line through the SDV's own branches.
+    plain = np.asarray(OpaDirect(database, grid).xsvector(temperature, pressure, self_pressure))
+    zero = SparseCoreDirect(database, grid, speed_dependence=0.0).xsvector(temperature, pressure, self_pressure)
+    np.testing.assert_allclose(zero, plain, rtol=0, atol=1e-7 * plain.max())
+
+
+def test_speed_dependent_kernel_holds_outside_its_pressure_bounds():
+    """Past maximum_pressure_bar the dense fallback; past maximum_self_pressure_bar,
+    which is not checked, the wing series a little inside its radius."""
+    database, grid = _water_database(), np.linspace(4990.0, 5010.0, 8001)
+    calculator = SparseCoreDirect(database, grid, speed_dependence=0.13, maximum_pressure_bar=0.8,
+                                  maximum_self_pressure_bar=0.02)
+    for pressure, self_pressure in ((1.2, 0.01), (0.7, 0.05)):
+        expected = _closed_form_sdv(database, grid, 275.0, pressure, self_pressure, 0.13)
+        np.testing.assert_allclose(calculator.xsvector(275.0, pressure, self_pressure), expected,
+                                   rtol=0, atol=1e-7 * expected.max())
+    stored = [value for value in vars(calculator).values()
+              if hasattr(value, "ndim") and hasattr(value, "shape") and value.ndim == 2]
+    assert stored == []
+
+
+def test_speed_dependent_kernel_derivatives_are_finite_differences():
+    database, grid = _water_database(), np.linspace(4990.0, 5010.0, 4001)
+    calculator = SparseCoreDirect(database, grid, speed_dependence=0.13)
+    weights = jnp.linspace(0.3, 1.2, grid.size)
+    def statistic(point):
+        return jnp.sum(weights * calculator.xsvector(*point)) * 1e22
+    point = jnp.array([275.0, 0.7, 0.014])
+    gradient = np.asarray(jax.grad(statistic)(point))
+    steps = (1e-3, 1e-6, 1e-6)
+    numerical = [(statistic(point.at[i].add(h)) - statistic(point.at[i].add(-h))) / (2 * h)
+                 for i, h in enumerate(steps)]
+    np.testing.assert_allclose(gradient, numerical, rtol=1e-6)
+
+
+def test_speed_dependence_refuses_what_it_does_not_implement():
+    database, grid = _water_database(), np.linspace(4990.0, 5010.0, 401)
+    with pytest.raises(ValueError, match="2/3"):
+        SparseCoreDirect(database, grid, speed_dependence=0.7)
+    with pytest.raises(ValueError, match="mixed_precision"):
+        SparseCoreDirect(database, grid, speed_dependence=0.1, mixed_precision=True)
+    with pytest.raises(ValueError, match="no database"):
+        ExoJAXOpacityBackend.prepare({"H2O": database}, grid, methods="direct_sparse",
+                                     speed_dependence={"O2": 0.1})
+    with pytest.raises(ValueError, match="direct_sparse"):
+        ExoJAXOpacityBackend.prepare({"H2O": database}, grid, speed_dependence={"H2O": 0.1})
+    # Mixed precision is the wings' and the SDV's wings are its own, so the species
+    # that carries one runs in float64 and the rest as asked.
+    backend = ExoJAXOpacityBackend.prepare({"H2O": database, "O2": _water_database()}, grid,
+                                           methods="direct_sparse", mixed_precision=True,
+                                           speed_dependence={"h2o": 0.1})
+    assert backend.calculators["H2O"].speed_dependence is not None
+    assert not backend.calculators["H2O"].mixed_precision
+    assert backend.calculators["O2"].speed_dependence is None
+    assert backend.calculators["O2"].mixed_precision

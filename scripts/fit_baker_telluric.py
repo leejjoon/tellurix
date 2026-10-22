@@ -29,9 +29,11 @@ group's solar model). And the 30 cm-1 windows over 9020-17600 cm-1 holding at
 least three features the solar fits measured (docs/line_depth_ratios.json): 146.
 H2O and O2 only, the instrument the IAG atlas's 0.0145 cm-1 sinc, MT_CKD and O2
 CIA on, HITRAN's H2O pressure shifts, no covariance (``WindowSettings.covariance``),
-AER's widths unless ``--pressure-width-scale``:
+AER's widths unless ``--pressure-width-scale``, and Voigt lines unless
+``--speed-dependence`` (Gamma2/Gamma0 of H2O's speed-dependent Voigt):
 
     ... fit_baker_telluric.py --pressure-width-scale 1.06 --output-dir data/corrected/baker2020_w106
+    ... fit_baker_telluric.py --speed-dependence 0.13 --output-dir data/corrected/baker2020_sdv13
 
 A fit is mostly compilation, on the CPU, and the GPU idles: so run several workers
 a GPU with ``XLA_PYTHON_CLIENT_PREALLOCATE=false`` (a fit peaks at 0.5 GB). The
@@ -101,6 +103,9 @@ def main() -> None:
     parser.add_argument("--pressure-width-scale", type=float, default=1.0,
                         help="multiply H2O's and O2's gamma_air and gamma_self, as the solar fits "
                              "did (x1.06-1.11); write to another --output-dir")
+    parser.add_argument("--speed-dependence", type=float, default=0.0,
+                        help="Gamma2/Gamma0 of a speed-dependent Voigt for H2O; 0 keeps the Voigt. "
+                             "Write to another --output-dir")
     parser.add_argument("--list-hours", action="store_true",
                         help="print the ERA5 hours the chosen spectra need, and stop")
     args = parser.parse_args()
@@ -144,7 +149,8 @@ def main() -> None:
                 spectrum=spectrum.path, profile=profile_for(args.profiles, observation),
                 v1=v1, v2=v1 + WIDTH_CM1, fwhm_cm1=IAG_FWHM_CM1, species="H2O,O2",
                 stellar="flat", o2_cia=True, h2o_pressure_shift="hitran", covariance=False,
-                pressure_width_scale=args.pressure_width_scale)
+                pressure_width_scale=args.pressure_width_scale,
+                speed_dependence=args.speed_dependence)
             try:
                 report, arrays = fit_window(settings, paths, stellar_directory=ROOT / "data/stellar",
                                             base=ROOT, spectrum=spectrum)
