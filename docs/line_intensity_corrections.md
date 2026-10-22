@@ -520,6 +520,28 @@ Baker's and the solar fits' ratios.
      measured on to one they were not, and which agreement between those dates cannot
      catch. Next: take each fit's own trend in E'' and strength out of its ratios before
      averaging, so the table carries only what is common to every date.
+   - **Detrended** (`--detrend --max-scatter 0.025`, `held_out_wallace_detrended.npz`, 1599
+     features; run `data/corrected/solar/wallace2011_strength_detrended/`). Each building
+     fit's trend is +2.6% to +4.0% per 1000 cm-1 of E'' and +0.4% to +1.2% per decade of S;
+     with them divided out, the factors sit a uniform 0.9-1.5% below Wallace's raw ratios at
+     every E'', which the fitted column takes. It is the best of the three tables
+     (`docs/wallace2011_strength_heldout_reg{1,2}_{authors,all}.json` carry all four runs):
+
+     | region, pixels | median, x1.00 -> detrended | 90th percentile | windows better | worse by >0.05 |
+     |---|---|---|---|---|
+     | 1, authors' | 0.610% -> 0.578% | 1.065% -> 1.026% | 65% | 5 of 72 |
+     | 1, all telluric | 0.940% -> 0.888% | 1.861% -> 1.659% | 69% | 6 of 72 |
+     | 1, all deep | 2.13% -> 1.88% | 3.24% -> 3.09% | 74% | 7 of 50 |
+     | 2, authors' | 0.604% -> 0.556% | 1.088% -> 1.034% | 78% | 2 of 59 |
+     | 2, all telluric | 0.688% -> 0.639% | 1.562% -> 1.356% | 77% | 2 of 60 |
+     | 2, all deep | 2.02% -> 1.23% | 3.39% -> 2.27% | 87% | 1 of 30 |
+
+     Windows at or below the authors' 0.71%: 57 -> 57 of 72 and 38 -> 42 of 59. The worst
+     window holds on the authors' pixels (3.26%), nearly on region 1's all (3.37% ->
+     3.43%), improves on region 2's deep (5.43% -> 4.68%). Two windows stay worse: 16960
+     (2.86% -> 3.22%) and 12010 (0.49% -> 0.93%, from 1.18% with the cut alone). Step 2 is
+     met but for those two; build the step-3 table the same way (`--detrend
+     --max-scatter 0.025`).
 3. **Iterate.** Re-measure from the refitted runs, rebuild the table from all four, and
    repeat once or twice. The ratios should converge to 1 with the scatter at the noise.
    Then refit every product with the final table. Settle that table's provenance before it
