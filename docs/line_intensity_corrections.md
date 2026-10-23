@@ -542,6 +542,19 @@ Baker's and the solar fits' ratios.
      (2.86% -> 3.22%) and 12010 (0.49% -> 0.93%, from 1.18% with the cut alone). Step 2 is
      met but for those two; build the step-3 table the same way (`--detrend
      --max-scatter 0.025`).
+   - **Why those two (2026-10-23).** Neither is a bias. The detrended factors sit -0.4% to
+     -1.2% under Wallace's ratios at every peak tau from < 0.3 to > 3, so saturation does not
+     skew them; they scatter about Wallace's own ratios by 1.9% rms. In 12010 one deep line,
+     12021.40 (factor 1.039, Wallace 1.001), moves the water column down 2.1%, and the
+     window's unscaled lines (12013.5, 12014.0, 12018.66, 12038.6) take the error: the
+     window rms is unchanged (1.197% -> 1.194%), the absorption redistributed. In 16960 the
+     factor at 16984.84 (1.03) comes from `j83_2` and `j83_3` alone, which agree (1.044,
+     1.041) because they are one day, 1983-06-26; Wallace reads 0.981. Factors from one date
+     scatter 2.6% rms about Wallace, from two dates 1.9% (512 and 772 features), and two
+     thirds of the one-date ones are in region 2, beyond niratl. For step 3: count a date
+     once (the 1983 pair is one), require two of them, and add the dates Wallace and Baker
+     bring -- which this held-out test cannot try in region 2, where without Wallace only
+     1983 is left.
 3. **Iterate.** Re-measure from the refitted runs, rebuild the table from all four, and
    repeat once or twice. The ratios should converge to 1 with the scatter at the noise.
    Then refit every product with the final table. Settle that table's provenance before it
