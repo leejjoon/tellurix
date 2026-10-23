@@ -560,6 +560,41 @@ Baker's and the solar fits' ratios.
    Then refit every product with the final table. Settle that table's provenance before it
    reaches the sibling project, because the factors are derived from the same spectra they
    correct. The held-out result in step 2 is the evidence that this does not overfit.
+   - **Done 2026-10-23: one round does it; a second is noise.** Tables built with
+     `--detrend --max-scatter 0.025 --min-dates 2`, from all four solar fits and Baker
+     et al.'s vetted features detrended one spectrum at a time (`analyse_baker_telluric.py
+     --per-spectrum`). The dates' own E'' trends: the 1983 pair +2.6% and +3.6% per
+     1000 cm-1, niratl +4.0%, Wallace -0.4%, Baker's spectra +0.9% at the median (+0.2% to
+     +1.7%). Iteration 1, `data/line_strength/step3_iter1.npz`: 1771 features, 3465 lines,
+     factor rms 4.5%, 311 features dropped for disagreeing dates. Iteration 2, measured on
+     the iteration-1 refits and multiplied onto it (`--previous-table`): this round's change
+     1.8% rms, table 5.9%. Every product in 8800-17600 cm-1 refitted with each, with its
+     record's settings (`data/corrected/solar/step3_iter{1,2}/`,
+     `data/corrected/baker2020_step3_iter{1,2}/`; the 1983 file 3 needs `--airmass 3.085`,
+     which its record states but its file does not). Scores against production
+     (`docs/line_strength_step3_*.json`; median flatness, telluric pixels unless deep):
+
+     | product | production | iteration 1 | iteration 2 | windows better (iter. 1) |
+     |---|---|---|---|---|
+     | Wallace reg 1, authors' | 0.610% | 0.575% | 0.573% | 75% |
+     | Wallace reg 1, all / deep | 0.940% / 2.13% | 0.870% / 1.72% | 0.847% / 1.63% | 79% / 76% |
+     | Wallace reg 2, authors' | 0.604% | 0.548% | 0.548% | 76% |
+     | Wallace reg 2, all / deep | 0.688% / 2.02% | 0.625% / 1.06% | 0.609% / 0.99% | 73% / 80% |
+     | niratl / deep | 0.577% / 1.49% | 0.501% / 1.22% | 0.491% / 1.29% | 73% / 77% |
+     | 1983 file 2 / deep | 1.033% / 2.72% | 0.943% / 2.19% | 0.955% / 2.09% | 71% / 81% |
+     | 1983 file 3 / deep | 1.031% / 2.66% | 0.833% / 2.03% | 0.855% / 2.00% | 77% / 75% |
+
+     niratl pages at or below the authors' correction: 43 -> 52 of 67; Wallace windows
+     57 -> 60 of 72 and 38 -> 41 of 59. Baker et al.'s windows: rms -0.70% at the median,
+     69% better, 8.5% worse by more than 2% (iteration 2: -0.63%, 66%, 11.8%). These
+     products' own ratios built the table, so this is not a held-out test; step 2 is.
+     Iteration 2 moves the medians by 0.01-0.07 points either way, and the residual ratios
+     barely move (3.7-4.4% rms per fit after one round, 3.5-4.2% after two) though the fits
+     still agree on them (r 0.58-0.82): what is left is in features the cuts exclude --
+     dates that disagree, or one date only (all of 13600-17600 but Wallace's and Baker's).
+     **Iteration 1 is the table to keep**: as good where iteration 2 is better, better on
+     Baker, one round of fitting to the data instead of two. Not promoted: the production
+     runs and the results archive are unchanged.
 4. **What this cannot reach.** Features under solar lines or saturated in every fit,
    10511.5 among them, have no measured factor. They need the factors as free parameters
    in the joint solar fit ("Fit the solar spectra jointly" in `solar_fit_plan.md`, Also
