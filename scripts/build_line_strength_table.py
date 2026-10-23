@@ -27,6 +27,18 @@ term is each fit's width scale (a wider line reads a saturated core shallower). 
 is left is what every date has in common: the line list's. The trend coefficients go
 in the provenance.
 
+``--min-dates`` averages within an observing date first and asks for that many
+dates (``DATE``): `j83_2` and `j83_3` are one morning at two air masses, and a factor
+they agree on can be that morning's error -- one-date factors scattered 2.6% rms about
+Wallace 2011's own ratios, two-date ones 1.9%. The agreement cut then applies to the
+date means. ``--baker-spectra`` (``analyse_baker_telluric.py --per-spectrum``) takes
+Baker et al.'s ratios spectrum by spectrum, detrended one spectrum at a time with
+``--detrend``, and their mean over spectra as the measurement of one more date.
+
+``--previous-table`` iterates: the ratios were measured on fits that used that table,
+so each line's factor is the previous one times the new feature's; a line whose
+feature fails the cuts this time keeps the previous factor.
+
 Baker's verdicts were made against the mean of *every* solar fit, so a held-out
 test -- build from three fits, refit the fourth -- must leave ``--baker`` off.
 
@@ -54,6 +66,11 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 AER = ROOT / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule"
 OUTLIER = 0.5
+# Which observing date each measurement belongs to. Wallace 2011 regions 1-2 are two
+# scans of one morning (1989/10/13 #8, #7), measured as one fit.
+DATE = {"wallace": "1989-10-13", "j83_2": "1983-06-26", "j83_3": "1983-06-26", "niratl": "niratl",
+        "baker": "baker2020"}
+MIN_BAKER_SPECTRA = 3
 
 
 def sha256(path: Path) -> str:
@@ -69,6 +86,12 @@ def main() -> None:
     parser.add_argument("--min-measurements", type=int, default=2)
     parser.add_argument("--detrend", action="store_true",
                         help="divide each fit's ratios by its own trend in E'' and log S first")
+    parser.add_argument("--min-dates", type=int, default=None,
+                        help="average within an observing date first, and require this many dates")
+    parser.add_argument("--baker-spectra", type=Path, default=None,
+                        help="per-spectrum Baker ratios (analyse_baker_telluric.py --per-spectrum); with --baker")
+    parser.add_argument("--previous-table", type=Path, default=None,
+                        help="the table the measured fits used: factors multiply onto it")
     parser.add_argument("--max-scatter", type=float, default=None,
                         help="keep a factor only if its measurements' standard deviation is at most this")
     parser.add_argument("--output", type=Path, required=True)
@@ -102,51 +125,99 @@ def main() -> None:
         return dict(zip(index.tolist(), (value / (1 + x @ coef)).tolist()))
 
     trends = {}
-    measured = {i: [] for i in range(len(features))}
+    measured = {i: [] for i in range(len(features))}   # (date, ratio)
     for name in fits:
         ratios = {int(i): r for i, (r, _) in report["ratio_and_peak_tau"][name].items()}
         if args.detrend:
             ratios = detrended(name, ratios)
         for index, ratio in ratios.items():
-            measured[index].append(ratio)
+            measured[index].append((DATE[name], ratio))
     baker_used = 0
     if args.baker:
         with args.baker_table.open() as handle:
-            baker = {int(row["feature"]): float(row["baker_ratio"])
-                     for row in csv.DictReader(handle) if row["verdict"] == "vetted"}
-        if args.detrend:
-            baker = detrended("baker", baker)
+            vetted = {int(row["feature"]): float(row["baker_ratio"])
+                      for row in csv.DictReader(handle) if row["verdict"] == "vetted"}
+        if args.baker_spectra is not None:
+            data = np.load(args.baker_spectra)
+            per = {}
+            for spectrum in np.unique(data["spectrum"]):
+                take = data["spectrum"] == spectrum
+                ratios = dict(zip(data["feature"][take].tolist(), data["ratio"][take].tolist()))
+                if args.detrend:
+                    ratios = detrended(f"baker {spectrum}", ratios)
+                for index, ratio in ratios.items():
+                    if index in vetted and abs(ratio - 1) < OUTLIER:
+                        per.setdefault(index, []).append(ratio)
+            baker = {i: float(np.mean(v)) for i, v in per.items() if len(v) >= MIN_BAKER_SPECTRA}
+        else:
+            baker = detrended("baker", vetted) if args.detrend else vetted
         for index, ratio in baker.items():
-            measured[index].append(ratio)
+            measured[index].append((DATE["baker"], ratio))
         baker_used = len(baker)
 
     factor_of, rejected = {}, 0
     for index, values in measured.items():
-        values = [v for v in values if abs(v - 1) < OUTLIER]
-        if len(values) < args.min_measurements:
-            continue
-        if args.max_scatter is not None and np.std(values, ddof=1) > args.max_scatter:
+        values = [(date, v) for date, v in values if abs(v - 1) < OUTLIER]
+        if args.min_dates is not None:
+            dates = {}
+            for date, v in values:
+                dates.setdefault(date, []).append(v)
+            estimates = [float(np.mean(v)) for v in dates.values()]
+            if len(estimates) < args.min_dates:
+                continue
+        else:
+            estimates = [v for _, v in values]
+            if len(estimates) < args.min_measurements:
+                continue
+        if (args.max_scatter is not None and len(estimates) > 1
+                and np.std(estimates, ddof=1) > args.max_scatter):
             rejected += 1
             continue
-        factor_of[index] = float(np.mean(values))
+        factor_of[index] = float(np.mean(estimates))
+
+    previous = None if args.previous_table is None else LineStrengthTable.load(args.previous_table)
+
+    def earlier(members):
+        if previous is None:
+            return np.ones(len(members))
+        factor = np.ones(len(members))
+        for molecule in np.unique(lines["molecule"][members]):
+            take = lines["molecule"][members] == molecule
+            factor[take] = previous.factors(int(molecule), lines["isotope"][members][take],
+                                            lines["nu"][members][take], lines["elower"][members][take])[0]
+        return factor
 
     rows = []
-    for index, factor in factor_of.items():
-        for member in features[index]["members"]:
+    covered = set()
+    for index in range(len(features)):
+        members = features[index]["members"]
+        before = earlier(members)
+        if index not in factor_of and not np.any(before != 1.0):
+            continue
+        new = factor_of.get(index, 1.0)
+        for member, old in zip(members, before):
             rows.append((lines["nu"][member], lines["molecule"][member], lines["isotope"][member],
-                         lines["elower"][member], factor))
+                         lines["elower"][member], old * new))
+        covered.add(index)
     rows.sort()
     nu, molecule, isotope, elower, factor = (np.array(column) for column in zip(*rows))
     built_from = dict(fits=fits, baker=args.baker, min_measurements=args.min_measurements, outlier=OUTLIER,
-                      max_scatter=args.max_scatter, detrend=args.detrend)
+                      max_scatter=args.max_scatter, detrend=args.detrend, min_dates=args.min_dates,
+                      baker_spectra=args.baker_spectra is not None,
+                      previous_table=None if previous is None else args.previous_table.name)
     provenance = dict(
         built_from=built_from, built=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
         ratios=args.ratios.name, ratios_sha256=sha256(args.ratios),
         baker_table=args.baker_table.name if args.baker else None,
         baker_table_sha256=sha256(args.baker_table) if args.baker else None,
-        features=len(factor_of), lines=int(nu.size), baker_ratios_used=baker_used,
+        baker_spectra_sha256=sha256(args.baker_spectra) if args.baker and args.baker_spectra else None,
+        previous_table_sha256=None if previous is None else sha256(args.previous_table),
+        previous_built_from=None if previous is None else previous.provenance.get("built_from"),
+        features=len(factor_of), features_in_table=len(covered), lines=int(nu.size), baker_ratios_used=baker_used,
         rejected_for_scatter=rejected, trends=trends,
-        factor_rms=float(np.sqrt(np.mean((np.array(list(factor_of.values())) - 1) ** 2))))
+        # This round's change, and the table's total.
+        factor_rms=float(np.sqrt(np.mean((np.array(list(factor_of.values())) - 1) ** 2))),
+        table_factor_rms=float(np.sqrt(np.mean((factor - 1) ** 2))))
     table = LineStrengthTable(molecule_id=molecule.astype(int), isotope=isotope.astype(int),
                               wavenumber_cm1=nu.astype(float), elower_cm1=elower.astype(float),
                               factor=factor.astype(float), provenance=provenance)

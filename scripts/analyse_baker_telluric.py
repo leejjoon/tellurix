@@ -26,6 +26,10 @@ What it reports, each a test of "the error is the line list's":
   alone, and by both -- whether these spectra could build a correction table.
 
     uv run python scripts/analyse_baker_telluric.py --output docs/baker_telluric_ratios.json
+
+``--per-spectrum`` also writes every spectrum's ratio of every feature (npz: feature,
+spectrum, airmass, ratio), which ``build_line_strength_table.py --baker-spectra``
+detrends spectrum by spectrum: one trend for 53 dates would leave each date's own.
 """
 from __future__ import annotations
 
@@ -86,6 +90,8 @@ def main() -> None:
     parser.add_argument("--features-from", type=Path, default=ROOT / "docs/line_depth_ratios.json")
     parser.add_argument("--atlas", type=Path, default=ATLAS)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--per-spectrum", type=Path, default=None,
+                        help="also write each spectrum's ratio per feature (npz)")
     parser.add_argument("--keep-iodine", action="store_true",
                         help="do not cut pixels under the iodine template's lines (the analysis before 2026-10-21)")
     args = parser.parse_args()
@@ -122,6 +128,13 @@ def main() -> None:
         for i, (ratio, _, offset) in found.items():
             rows.setdefault(i, []).append((spectrum, meta["airmass"], ratio, offset - median))
 
+    if args.per_spectrum is not None:
+        flat = [(i, name, airmass, ratio) for i, values in rows.items() for name, airmass, ratio, _ in values]
+        feature, name, airmass, ratio = zip(*flat)
+        args.per_spectrum.parent.mkdir(parents=True, exist_ok=True)
+        with args.per_spectrum.open("wb") as stream:
+            np.savez_compressed(stream, feature=np.array(feature), spectrum=np.array(name),
+                                airmass=np.array(airmass), ratio=np.array(ratio))
     half = {s: k % 2 for k, s in enumerate(spectra)}
     table = []
     for i, values in sorted(rows.items()):
