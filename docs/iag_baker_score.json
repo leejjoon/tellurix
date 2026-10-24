@@ -1,0 +1,7135 @@
+{
+ "method": "The flatness score (`score_telluric_correction.py`) judges a correction against a running mean of nearby clean pixels, which assumes the Sun is flat under a telluric line. Baker et al.'s atlas is the Sun itself, from the same instrument and the same quantity (disc-integrated flux) but other spectra (2015-16, through an iodine cell), with the atmosphere removed by a joint fit over air mass: the corrected 2014 atlas divided by it should be 1 wherever the correction is right, under solar lines too.",
+ "atlas": "/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/iag_telfree/iag_telfree_solaratlas.fits",
+ "runs": {
+  "coadd": "data/corrected/solar/iag"
+ },
+ "summary": {
+  "reference": {
+   "windows": 253,
+   "median_percent": {
+    "coadd": 0.23653977460367462
+   },
+   "windows_better_than_coadd": {},
+   "baker_err_median_percent": 0.40306132286787033
+  },
+  "telluric": {
+   "windows": 163,
+   "median_percent": {
+    "coadd": 1.0965304440300805
+   },
+   "windows_better_than_coadd": {},
+   "baker_err_median_percent": 0.3515897085890174
+  },
+  "deep": {
+   "windows": 71,
+   "median_percent": {
+    "coadd": 2.8433571438277
+   },
+   "windows_better_than_coadd": {},
+   "baker_err_median_percent": 0.1539616787340492
+  },
+  "clear": {
+   "windows": 130,
+   "median_percent": {
+    "coadd": 0.853088788348265
+   },
+   "windows_better_than_coadd": {},
+   "baker_err_median_percent": 0.3344540193211287
+  },
+  "solar_line": {
+   "windows": 147,
+   "median_percent": {
+    "coadd": 1.3907265135114624
+   },
+   "windows_better_than_coadd": {},
+   "baker_err_median_percent": 0.348473503254354
+  }
+ },
+ "windows": {
+  "10000": {
+   "v1": 10000.0023509,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1531,
+    "telluric": 82,
+    "deep": 0,
+    "clear": 49,
+    "solar_line": 33
+   },
+   "baker_err_percent": {
+    "reference": 0.46549406833946705,
+    "telluric": 0.4668990848585963,
+    "deep": null,
+    "clear": 0.473337946459651,
+    "solar_line": 0.4574543796479702
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03632277419309758,
+     "reference": 0.13429333975356345,
+     "telluric": 0.5649756916664462,
+     "deep": null,
+     "clear": 0.6199991196025028,
+     "solar_line": 0.47157541031262773
+    }
+   }
+  },
+  "10030": {
+   "v1": 10030.0027979,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1434,
+    "telluric": 54,
+    "deep": 0,
+    "clear": 34,
+    "solar_line": 20
+   },
+   "baker_err_percent": {
+    "reference": 0.4492031875997782,
+    "telluric": 0.5191503092646599,
+    "deep": null,
+    "clear": 0.5368140060454607,
+    "solar_line": 0.49858270213007927
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.030857395323895927,
+     "reference": 0.09516624812171516,
+     "telluric": 0.9433499000654852,
+     "deep": null,
+     "clear": 1.0183594887233833,
+     "solar_line": null
+    }
+   }
+  },
+  "10060": {
+   "v1": 10060.003245,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1055,
+    "telluric": 239,
+    "deep": 4,
+    "clear": 182,
+    "solar_line": 57
+   },
+   "baker_err_percent": {
+    "reference": 0.436613941565156,
+    "telluric": 0.47128512524068356,
+    "deep": 0.12359669199213386,
+    "clear": 0.47147804871201515,
+    "solar_line": 0.4678292665630579
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.014542738141214071,
+     "reference": 0.17495257180280932,
+     "telluric": 1.0674126294268549,
+     "deep": null,
+     "clear": 0.88501083152411,
+     "solar_line": 1.5087983143350654
+    }
+   }
+  },
+  "10090": {
+   "v1": 10090.003692,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 781,
+    "telluric": 338,
+    "deep": 5,
+    "clear": 183,
+    "solar_line": 155
+   },
+   "baker_err_percent": {
+    "reference": 0.42408290319144726,
+    "telluric": 0.49578677862882614,
+    "deep": 0.8146724663674831,
+    "clear": 0.5454687401652336,
+    "solar_line": 0.4850812256336212
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03203161966733151,
+     "reference": 0.13588999260143309,
+     "telluric": 1.1194139817023168,
+     "deep": null,
+     "clear": 0.6243312497106407,
+     "solar_line": 1.5074270959479772
+    }
+   }
+  },
+  "10120": {
+   "v1": 10120.0003725,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 580,
+    "telluric": 449,
+    "deep": 26,
+    "clear": 295,
+    "solar_line": 154
+   },
+   "baker_err_percent": {
+    "reference": 0.4170816857367754,
+    "telluric": 0.4443105775862932,
+    "deep": 0.29315900756046176,
+    "clear": 0.4941888153553009,
+    "solar_line": 0.41067185811698437
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.029636100162218924,
+     "reference": 0.10767160384890356,
+     "telluric": 0.7099579413215106,
+     "deep": null,
+     "clear": 0.4463535006719327,
+     "solar_line": 1.043037547079779
+    }
+   }
+  },
+  "10150": {
+   "v1": 10150.0008196,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 348,
+    "telluric": 809,
+    "deep": 120,
+    "clear": 615,
+    "solar_line": 194
+   },
+   "baker_err_percent": {
+    "reference": 0.4390898859128356,
+    "telluric": 0.39156172424554825,
+    "deep": 0.001991599128814414,
+    "clear": 0.388870551250875,
+    "solar_line": 0.4019525134935975
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0006948777440173316,
+     "reference": 0.13566662136666394,
+     "telluric": 1.2397243991580102,
+     "deep": 2.293222840985287,
+     "clear": 1.0756159972553925,
+     "solar_line": 1.6557326332308775
+    }
+   }
+  },
+  "10180": {
+   "v1": 10180.0012666,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 194,
+    "telluric": 1088,
+    "deep": 197,
+    "clear": 709,
+    "solar_line": 379
+   },
+   "baker_err_percent": {
+    "reference": 0.45728967525064945,
+    "telluric": 0.374861725140363,
+    "deep": 0.025002172333188355,
+    "clear": 0.36467076279222965,
+    "solar_line": 0.3986000083386898
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.026019996062993777,
+     "reference": 0.1008454662639766,
+     "telluric": 0.9370949846698347,
+     "deep": 1.7341382814066157,
+     "clear": 0.8592155275166897,
+     "solar_line": 1.0674654514180042
+    }
+   }
+  },
+  "10210": {
+   "v1": 10210.0017136,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 87,
+    "telluric": 1213,
+    "deep": 187,
+    "clear": 796,
+    "solar_line": 417
+   },
+   "baker_err_percent": {
+    "reference": 0.45523298904299736,
+    "telluric": 0.33836113288998604,
+    "deep": 0.014225636550690979,
+    "clear": 0.3234109841287136,
+    "solar_line": 0.3605080768465996
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.048718385764847126,
+     "reference": 0.08629951472316043,
+     "telluric": 1.0958569576357757,
+     "deep": 2.0207369139193974,
+     "clear": 0.9838100140805068,
+     "solar_line": 1.2828318738143831
+    }
+   }
+  },
+  "10270": {
+   "v1": 10270.0026077,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 107,
+    "telluric": 1090,
+    "deep": 165,
+    "clear": 793,
+    "solar_line": 297
+   },
+   "baker_err_percent": {
+    "reference": 0.4313274286687374,
+    "telluric": 0.36432051565498114,
+    "deep": 0.18249547574669123,
+    "clear": 0.36621035542339087,
+    "solar_line": 0.36098137497901917
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.05748164711908428,
+     "reference": 0.062203365401935724,
+     "telluric": 1.3286182055810516,
+     "deep": 2.870148339835138,
+     "clear": 1.3267713421927543,
+     "solar_line": 1.3335639129605952
+    }
+   }
+  },
+  "10300": {
+   "v1": 10300.0030547,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 120,
+    "telluric": 1168,
+    "deep": 255,
+    "clear": 678,
+    "solar_line": 490
+   },
+   "baker_err_percent": {
+    "reference": 0.4679896170273423,
+    "telluric": 0.35380658227950335,
+    "deep": 0.0660519814118743,
+    "clear": 0.33219198230654,
+    "solar_line": 0.3760266350582242
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.34298673964701326,
+     "reference": 0.14736291974123697,
+     "telluric": 1.4378092300132987,
+     "deep": 2.4785901637877044,
+     "clear": 1.2608241453505338,
+     "solar_line": 1.6522385678745852
+    }
+   }
+  },
+  "10330": {
+   "v1": 10330.0035018,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 126,
+    "telluric": 1440,
+    "deep": 505,
+    "clear": 878,
+    "solar_line": 562
+   },
+   "baker_err_percent": {
+    "reference": 0.40003370959311724,
+    "telluric": 0.3274656250141561,
+    "deep": 0.11660129530355334,
+    "clear": 0.30024825828149915,
+    "solar_line": 0.36026110174134374
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0395048214707435,
+     "reference": 0.1328822035962891,
+     "telluric": 1.691494538479595,
+     "deep": 2.5352780055626285,
+     "clear": 1.6543683494835024,
+     "solar_line": 1.7478906217074264
+    }
+   }
+  },
+  "10780": {
+   "v1": 10780.0026743,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 153,
+    "telluric": 1332,
+    "deep": 223,
+    "clear": 478,
+    "solar_line": 854
+   },
+   "baker_err_percent": {
+    "reference": 0.4494746681302786,
+    "telluric": 0.3081581904552877,
+    "deep": 0.2586372662335634,
+    "clear": 0.303969974629581,
+    "solar_line": 0.31090789707377553
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.023147705196992642,
+     "reference": 0.17329624424560292,
+     "telluric": 1.527876722384135,
+     "deep": 2.8794184259390456,
+     "clear": 1.1201673961977405,
+     "solar_line": 1.713894320396958
+    }
+   }
+  },
+  "10810": {
+   "v1": 10810.0031213,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 160,
+    "telluric": 1304,
+    "deep": 273,
+    "clear": 0,
+    "solar_line": 1304
+   },
+   "baker_err_percent": {
+    "reference": 0.3249174798838794,
+    "telluric": 0.32232459634542465,
+    "deep": 0.2966641215607524,
+    "clear": null,
+    "solar_line": 0.32232459634542465
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.0161453791364373,
+     "reference": 0.6947860605204226,
+     "telluric": 1.7525166097807712,
+     "deep": 2.7664316807169125,
+     "clear": null,
+     "solar_line": 1.7525166097807712
+    }
+   }
+  },
+  "10840": {
+   "v1": 10840.0035684,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 137,
+    "telluric": 1037,
+    "deep": 172,
+    "clear": 231,
+    "solar_line": 806
+   },
+   "baker_err_percent": {
+    "reference": 0.2648417139425874,
+    "telluric": 0.31477254815399647,
+    "deep": 0.26866961270570755,
+    "clear": 0.30377490911632776,
+    "solar_line": 0.31837288988754153
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04549620637180579,
+     "reference": 0.06183787119643914,
+     "telluric": 1.8724105770810628,
+     "deep": 3.730436269981272,
+     "clear": 0.7302043618336851,
+     "solar_line": 2.0878131165430838
+    }
+   }
+  },
+  "10870": {
+   "v1": 10870.0002489,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 70,
+    "telluric": 1402,
+    "deep": 405,
+    "clear": 799,
+    "solar_line": 603
+   },
+   "baker_err_percent": {
+    "reference": 0.3703937167301774,
+    "telluric": 0.257522810716182,
+    "deep": 0.12327556032687426,
+    "clear": 0.24366884026676416,
+    "solar_line": 0.27695426251739264
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.06769010982790007,
+     "reference": 0.04305375920302181,
+     "telluric": 2.6532273139003535,
+     "deep": 4.666536082983447,
+     "clear": 1.2082412347640483,
+     "solar_line": 3.802723631209309
+    }
+   }
+  },
+  "10900": {
+   "v1": 10900.0006959,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 65,
+    "telluric": 1378,
+    "deep": 399,
+    "clear": 764,
+    "solar_line": 614
+   },
+   "baker_err_percent": {
+    "reference": 0.441430089995265,
+    "telluric": 0.21683111554011703,
+    "deep": 0.008837613859213889,
+    "clear": 0.15331842587329447,
+    "solar_line": 0.2467627520672977
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -1.0,
+     "reference": 0.10535948998741303,
+     "telluric": 2.0736782805780636,
+     "deep": 3.273236838628442,
+     "clear": 2.0900772787699813,
+     "solar_line": 2.0535988508914103
+    }
+   }
+  },
+  "10930": {
+   "v1": 10930.0011429,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 81,
+    "telluric": 1378,
+    "deep": 424,
+    "clear": 1092,
+    "solar_line": 286
+   },
+   "baker_err_percent": {
+    "reference": 0.3027961356565356,
+    "telluric": 0.1949890225660056,
+    "deep": 0.05238634767010808,
+    "clear": 0.17280110623687506,
+    "solar_line": 0.2573619829490781
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.10670746984135639,
+     "reference": 0.051282973152382436,
+     "telluric": 3.4217079414421425,
+     "deep": 3.584240181588569,
+     "clear": 3.211880387051364,
+     "solar_line": 4.126927311002837
+    }
+   }
+  },
+  "10960": {
+   "v1": 10960.00159,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 112,
+    "telluric": 1233,
+    "deep": 418,
+    "clear": 856,
+    "solar_line": 377
+   },
+   "baker_err_percent": {
+    "reference": 0.3617175854742527,
+    "telluric": 0.24974902626127005,
+    "deep": 0.09854343952611089,
+    "clear": 0.23504311684519053,
+    "solar_line": 0.29153567738831043
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.039359819677582834,
+     "reference": 0.15246393721226725,
+     "telluric": 1.7873758453231283,
+     "deep": 2.491090175363725,
+     "clear": 1.66989056762036,
+     "solar_line": 2.030317256627543
+    }
+   }
+  },
+  "10990": {
+   "v1": 10990.002037,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 115,
+    "telluric": 1223,
+    "deep": 376,
+    "clear": 695,
+    "solar_line": 528
+   },
+   "baker_err_percent": {
+    "reference": 0.3041143761947751,
+    "telluric": 0.21191549021750689,
+    "deep": 0.06494867848232388,
+    "clear": 0.1745394547469914,
+    "solar_line": 0.25898682652041316
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.016391839607853828,
+     "reference": 0.06673449464853683,
+     "telluric": 1.5297348132319375,
+     "deep": 2.5377651336569595,
+     "clear": 1.1846072789016022,
+     "solar_line": 1.8885526948219982
+    }
+   }
+  },
+  "11020": {
+   "v1": 11020.002484,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 192,
+    "telluric": 1075,
+    "deep": 192,
+    "clear": 723,
+    "solar_line": 352
+   },
+   "baker_err_percent": {
+    "reference": 0.2969439490698278,
+    "telluric": 0.2503771334886551,
+    "deep": 0.1958374457899481,
+    "clear": 0.24638394825160503,
+    "solar_line": 0.2631175913847983
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.06641984186456941,
+     "reference": 0.0678214944937256,
+     "telluric": 1.292716511293689,
+     "deep": 2.1261850393639574,
+     "clear": 1.2243815708876211,
+     "solar_line": 1.4235275579655668
+    }
+   }
+  },
+  "11050": {
+   "v1": 11050.0029311,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 366,
+    "telluric": 1004,
+    "deep": 191,
+    "clear": 328,
+    "solar_line": 676
+   },
+   "baker_err_percent": {
+    "reference": 0.27630350086838007,
+    "telluric": 0.2617007470689714,
+    "deep": 0.14281582552939653,
+    "clear": 0.2546200412325561,
+    "solar_line": 0.2638447447679937
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.034326576101824685,
+     "reference": 0.08325232607826565,
+     "telluric": 0.8833532438695048,
+     "deep": 1.7624781968956837,
+     "clear": 0.8458056322692075,
+     "solar_line": 0.9009271354412476
+    }
+   }
+  },
+  "11110": {
+   "v1": 11110.0000586,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 211,
+    "telluric": 931,
+    "deep": 346,
+    "clear": 588,
+    "solar_line": 343
+   },
+   "baker_err_percent": {
+    "reference": 0.3238108940422535,
+    "telluric": 0.18668248085305095,
+    "deep": 0.019645564316306263,
+    "clear": 0.16708903713151813,
+    "solar_line": 0.21084581967443228
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.07582508920436568,
+     "reference": 0.09948186886285022,
+     "telluric": 2.1743067990602754,
+     "deep": 3.463241630605554,
+     "clear": 1.4536865292445762,
+     "solar_line": 3.0343473726989387
+    }
+   }
+  },
+  "11140": {
+   "v1": 11140.0005057,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 112,
+    "telluric": 1112,
+    "deep": 274,
+    "clear": 937,
+    "solar_line": 175
+   },
+   "baker_err_percent": {
+    "reference": 0.3774838987737894,
+    "telluric": 0.21897328551858664,
+    "deep": 0.00396603463741485,
+    "clear": 0.2124448772519827,
+    "solar_line": 0.24235215969383717
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.10933600193404143,
+     "reference": 0.09976881813089375,
+     "telluric": 1.4916181820001273,
+     "deep": 2.629301504251866,
+     "clear": 1.4491233967525827,
+     "solar_line": 1.7003449865516786
+    }
+   }
+  },
+  "11170": {
+   "v1": 11170.0009527,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 412,
+    "telluric": 726,
+    "deep": 145,
+    "clear": 498,
+    "solar_line": 228
+   },
+   "baker_err_percent": {
+    "reference": 0.3167394548654556,
+    "telluric": 0.3526334185153246,
+    "deep": 0.3372160252183676,
+    "clear": 0.331598415505141,
+    "solar_line": 0.383319309912622
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.044147307418313846,
+     "reference": 0.1788723936540136,
+     "telluric": 2.667142470419547,
+     "deep": 5.760357142072345,
+     "clear": 1.2211466200747672,
+     "solar_line": 4.410029797253314
+    }
+   }
+  },
+  "11200": {
+   "v1": 11200.0013997,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1324,
+    "telluric": 180,
+    "deep": 7,
+    "clear": 149,
+    "solar_line": 31
+   },
+   "baker_err_percent": {
+    "reference": 0.25491630658507347,
+    "telluric": 0.5934266606345773,
+    "deep": 0.16980435466393828,
+    "clear": 0.6613798905164003,
+    "solar_line": 0.3840018529444933
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0389352950151806,
+     "reference": 0.08161940906843314,
+     "telluric": 0.5916597528567529,
+     "deep": null,
+     "clear": 0.44565199361349267,
+     "solar_line": 1.038279876413964
+    }
+   }
+  },
+  "11230": {
+   "v1": 11230.0018468,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1408,
+    "telluric": 139,
+    "deep": 8,
+    "clear": 110,
+    "solar_line": 29
+   },
+   "baker_err_percent": {
+    "reference": 0.2569174743257463,
+    "telluric": 0.3299100324511528,
+    "deep": 0.09424406744074076,
+    "clear": 0.37711632903665304,
+    "solar_line": 0.3127486212179065
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02882650075866149,
+     "reference": 0.08386657579852404,
+     "telluric": 0.4288698874878777,
+     "deep": null,
+     "clear": 0.3995547303197053,
+     "solar_line": null
+    }
+   }
+  },
+  "11260": {
+   "v1": 11260.0022938,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1498,
+    "telluric": 123,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 123
+   },
+   "baker_err_percent": {
+    "reference": 0.26860188227146864,
+    "telluric": 0.2886291593313217,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.2886291593313217
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04698885570147703,
+     "reference": 0.5380284635757738,
+     "telluric": 0.4801368588463692,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.4801368588463692
+    }
+   }
+  },
+  "11290": {
+   "v1": 11290.0027409,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1644,
+    "telluric": 47,
+    "deep": 0,
+    "clear": 7,
+    "solar_line": 40
+   },
+   "baker_err_percent": {
+    "reference": 0.2637529862113297,
+    "telluric": 0.32782009802758694,
+    "deep": null,
+    "clear": 0.5659820046275854,
+    "solar_line": 0.3120777430012822
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03839421180159133,
+     "reference": 0.08953024378249774,
+     "telluric": 0.6974999728268113,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.7461395058626541
+    }
+   }
+  },
+  "11320": {
+   "v1": 11320.0031879,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1641,
+    "telluric": 49,
+    "deep": 0,
+    "clear": 38,
+    "solar_line": 11
+   },
+   "baker_err_percent": {
+    "reference": 0.2687436528503895,
+    "telluric": 0.6368012633174658,
+    "deep": null,
+    "clear": 0.696429843083024,
+    "solar_line": 0.35675521939992905
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04255799049389551,
+     "reference": 0.3027760433027317,
+     "telluric": 0.2798430624329736,
+     "deep": null,
+     "clear": 0.27528533469717514,
+     "solar_line": null
+    }
+   }
+  },
+  "11350": {
+   "v1": 11350.0036349,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1712,
+    "telluric": 26,
+    "deep": 0,
+    "clear": 11,
+    "solar_line": 15
+   },
+   "baker_err_percent": {
+    "reference": 0.27679825434461236,
+    "telluric": 0.32394928857684135,
+    "deep": null,
+    "clear": 0.6261044181883335,
+    "solar_line": 0.3171573393046856
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03547756400694552,
+     "reference": 0.20511347266865537,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "11380": {
+   "v1": 11380.0003154,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1792,
+    "telluric": 9,
+    "deep": 0,
+    "clear": 3,
+    "solar_line": 6
+   },
+   "baker_err_percent": {
+    "reference": 0.26510562747716904,
+    "telluric": 0.32677906565368176,
+    "deep": null,
+    "clear": 0.3239130135625601,
+    "solar_line": 0.32977318624034524
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.033923715498569616,
+     "reference": 0.12388911838175005,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "11410": {
+   "v1": 11410.0007625,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1848,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.26885869447141886,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03401136626932279,
+     "reference": 0.5715163758992704,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "11440": {
+   "v1": 11440.0012095,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1870,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.2741390373557806,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02904475952710851,
+     "reference": 0.25725568545726213,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "11470": {
+   "v1": 11470.0016565,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1872,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.2829435863532126,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03276677727414304,
+     "reference": 0.13809003306867615,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "11530": {
+   "v1": 11530.0025506,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1876,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.27546450728550553,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.023567299044244868,
+     "reference": 0.41852606918671087,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "11560": {
+   "v1": 11560.0029977,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1854,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.27971487725153565,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.028339132513924056,
+     "reference": 0.13253486456754301,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "11590": {
+   "v1": 11590.0034447,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1794,
+    "telluric": 5,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 5
+   },
+   "baker_err_percent": {
+    "reference": 0.2966761705465615,
+    "telluric": 0.41900998912751675,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.41900998912751675
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03626581430954299,
+     "reference": 0.15643872347504162,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "11620": {
+   "v1": 11620.0001252,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1752,
+    "telluric": 15,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 15
+   },
+   "baker_err_percent": {
+    "reference": 0.297151377890259,
+    "telluric": 0.31892540864646435,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.31892540864646435
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04038527780274401,
+     "reference": 0.11499321990315617,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "11650": {
+   "v1": 11650.0005722,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1605,
+    "telluric": 47,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 47
+   },
+   "baker_err_percent": {
+    "reference": 0.29719434678554535,
+    "telluric": 0.3515897085890174,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.3515897085890174
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.045067102059490355,
+     "reference": 0.08125163829373336,
+     "telluric": 0.2904777352463069,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.2904777352463069
+    }
+   }
+  },
+  "11680": {
+   "v1": 11680.0010193,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1492,
+    "telluric": 79,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 79
+   },
+   "baker_err_percent": {
+    "reference": 0.3009179374203086,
+    "telluric": 0.32280751038342714,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.32280751038342714
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.011821804308784673,
+     "reference": 0.30196677726116405,
+     "telluric": 1.8612363874846494,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.8612363874846494
+    }
+   }
+  },
+  "11710": {
+   "v1": 11710.0014663,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1444,
+    "telluric": 100,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 100
+   },
+   "baker_err_percent": {
+    "reference": 0.29875223990529776,
+    "telluric": 0.3442432847805321,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.3442432847805321
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04321167721129878,
+     "reference": 0.12439212981551734,
+     "telluric": 1.0986662389254047,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.0986662389254047
+    }
+   }
+  },
+  "11740": {
+   "v1": 11740.0019134,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1437,
+    "telluric": 142,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 142
+   },
+   "baker_err_percent": {
+    "reference": 0.30789219308644533,
+    "telluric": 0.3266114741563797,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.3266114741563797
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03472152973281209,
+     "reference": 0.22675911423769043,
+     "telluric": 0.49589059612192454,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.49589059612192454
+    }
+   }
+  },
+  "11770": {
+   "v1": 11770.0023604,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1459,
+    "telluric": 105,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 105
+   },
+   "baker_err_percent": {
+    "reference": 0.2979452256113291,
+    "telluric": 0.3231434850022197,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.3231434850022197
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02393627160075739,
+     "reference": 0.3968506714293444,
+     "telluric": 0.7625095776350499,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.7625095776350499
+    }
+   }
+  },
+  "11800": {
+   "v1": 11800.0028074,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1502,
+    "telluric": 56,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 56
+   },
+   "baker_err_percent": {
+    "reference": 0.30015642987564206,
+    "telluric": 0.34620160004124045,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.34620160004124045
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.039118329200604186,
+     "reference": 0.09166815470008982,
+     "telluric": 0.3853500162810065,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.3853500162810065
+    }
+   }
+  },
+  "11830": {
+   "v1": 11830.0032545,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1088,
+    "telluric": 196,
+    "deep": 3,
+    "clear": 85,
+    "solar_line": 111
+   },
+   "baker_err_percent": {
+    "reference": 0.3101751208305359,
+    "telluric": 0.33232036512345076,
+    "deep": 0.27278822381049395,
+    "clear": 0.3094622865319252,
+    "solar_line": 0.3435893915593624
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.033575293263225926,
+     "reference": 0.16516194227149103,
+     "telluric": 0.5705861896718898,
+     "deep": null,
+     "clear": 0.6134407798654863,
+     "solar_line": 0.5354557744148088
+    }
+   }
+  },
+  "11860": {
+   "v1": 11860.0037015,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1045,
+    "telluric": 221,
+    "deep": 5,
+    "clear": 71,
+    "solar_line": 150
+   },
+   "baker_err_percent": {
+    "reference": 0.30792304314672947,
+    "telluric": 0.3309875261038542,
+    "deep": 0.14299694448709488,
+    "clear": 0.321326544508338,
+    "solar_line": 0.33369045704603195
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03589645820755588,
+     "reference": 0.12036614054698504,
+     "telluric": 0.7643797552929189,
+     "deep": null,
+     "clear": 0.5800240838044368,
+     "solar_line": 0.8376105025342504
+    }
+   }
+  },
+  "11890": {
+   "v1": 11890.000382,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 946,
+    "telluric": 293,
+    "deep": 3,
+    "clear": 114,
+    "solar_line": 179
+   },
+   "baker_err_percent": {
+    "reference": 0.30153353000059724,
+    "telluric": 0.3753709839656949,
+    "deep": 0.2721860073506832,
+    "clear": 0.3797316225245595,
+    "solar_line": 0.36900246050208807
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.038362763367898976,
+     "reference": 0.23768079369205414,
+     "telluric": 1.0427517760992278,
+     "deep": null,
+     "clear": 0.6916725805360487,
+     "solar_line": 1.2145514651627003
+    }
+   }
+  },
+  "11920": {
+   "v1": 11920.0008291,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 505,
+    "telluric": 550,
+    "deep": 37,
+    "clear": 230,
+    "solar_line": 320
+   },
+   "baker_err_percent": {
+    "reference": 0.32571726478636265,
+    "telluric": 0.34106498351320624,
+    "deep": 0.18145523499697447,
+    "clear": 0.34527613315731287,
+    "solar_line": 0.33572509419173
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04007187849420058,
+     "reference": 0.09315119013713155,
+     "telluric": 1.009333910233886,
+     "deep": 2.513291815062454,
+     "clear": 0.7455907769050137,
+     "solar_line": 1.1625093128283903
+    }
+   }
+  },
+  "11950": {
+   "v1": 11950.0012761,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 674,
+    "telluric": 513,
+    "deep": 79,
+    "clear": 204,
+    "solar_line": 309
+   },
+   "baker_err_percent": {
+    "reference": 0.3352850559167564,
+    "telluric": 0.347205507569015,
+    "deep": 0.14052550541236997,
+    "clear": 0.3343509742990136,
+    "solar_line": 0.35384700167924166
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.06308140525268707,
+     "reference": 0.6551146777351465,
+     "telluric": 1.6398901434522932,
+     "deep": 3.1457658864706626,
+     "clear": 1.25868753573495,
+     "solar_line": 1.8489776037789456
+    }
+   }
+  },
+  "11980": {
+   "v1": 11980.0017231,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 369,
+    "telluric": 786,
+    "deep": 102,
+    "clear": 73,
+    "solar_line": 713
+   },
+   "baker_err_percent": {
+    "reference": 0.3613772103562951,
+    "telluric": 0.3440406988374889,
+    "deep": 0.04998855583835393,
+    "clear": 0.3249699482694268,
+    "solar_line": 0.34640547819435596
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0020147693328690388,
+     "reference": 0.18041291546989627,
+     "telluric": 2.376908436723106,
+     "deep": 5.442915301832591,
+     "clear": 0.8409715023002744,
+     "solar_line": 2.4810731648785977
+    }
+   }
+  },
+  "12010": {
+   "v1": 12010.0021702,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 175,
+    "telluric": 827,
+    "deep": 184,
+    "clear": 77,
+    "solar_line": 750
+   },
+   "baker_err_percent": {
+    "reference": 0.3720711451023817,
+    "telluric": 0.29228231869637966,
+    "deep": 0.06356628728099167,
+    "clear": 0.32378481701016426,
+    "solar_line": 0.28911452973261476
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.07716341371260564,
+     "reference": 0.07867358855673125,
+     "telluric": 2.0277149177819687,
+     "deep": 4.056653189333119,
+     "clear": 1.1029626465892561,
+     "solar_line": 2.0998226145873895
+    }
+   }
+  },
+  "12040": {
+   "v1": 12040.0026172,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 234,
+    "telluric": 762,
+    "deep": 154,
+    "clear": 239,
+    "solar_line": 523
+   },
+   "baker_err_percent": {
+    "reference": 0.34698646049946547,
+    "telluric": 0.28793630190193653,
+    "deep": 0.06894452380947769,
+    "clear": 0.2799466485157609,
+    "solar_line": 0.28948585968464613
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.05074440026686561,
+     "reference": 0.13061472525751666,
+     "telluric": 1.5504863467152956,
+     "deep": 3.239687095368108,
+     "clear": 2.3884289013031847,
+     "solar_line": 0.9448918780764864
+    }
+   }
+  },
+  "12070": {
+   "v1": 12070.0030642,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 234,
+    "telluric": 1069,
+    "deep": 166,
+    "clear": 415,
+    "solar_line": 654
+   },
+   "baker_err_percent": {
+    "reference": 0.3277314710430801,
+    "telluric": 0.2993967616930604,
+    "deep": 0.2548463409766555,
+    "clear": 0.28316755779087543,
+    "solar_line": 0.30875232769176364
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.028763978166633543,
+     "reference": 0.1473952478648735,
+     "telluric": 2.040958006199389,
+     "deep": 3.4787928574478197,
+     "clear": 2.0832243123679395,
+     "solar_line": 2.01367761033494
+    }
+   }
+  },
+  "12100": {
+   "v1": 12100.0035113,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 328,
+    "telluric": 742,
+    "deep": 130,
+    "clear": 290,
+    "solar_line": 452
+   },
+   "baker_err_percent": {
+    "reference": 0.3175669815391302,
+    "telluric": 0.30966156627982855,
+    "deep": 0.3873791662044823,
+    "clear": 0.3115394967608154,
+    "solar_line": 0.3086339682340622
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03462587841075418,
+     "reference": 0.07800248305597302,
+     "telluric": 1.3444667421230299,
+     "deep": 2.5928117315311296,
+     "clear": 1.022090757641401,
+     "solar_line": 1.5159686871374043
+    }
+   }
+  },
+  "12130": {
+   "v1": 12130.0001918,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 126,
+    "telluric": 1213,
+    "deep": 332,
+    "clear": 456,
+    "solar_line": 757
+   },
+   "baker_err_percent": {
+    "reference": 0.3723224508576095,
+    "telluric": 0.27473922818899155,
+    "deep": 0.16116579063236713,
+    "clear": 0.2800971968099475,
+    "solar_line": 0.2701402176171541
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.054737768093846624,
+     "reference": 0.1296989530828652,
+     "telluric": 1.7463718970446205,
+     "deep": 3.0852398498185796,
+     "clear": 0.8466869876836005,
+     "solar_line": 2.1104256971395317
+    }
+   }
+  },
+  "12160": {
+   "v1": 12160.0006388,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 450,
+    "telluric": 584,
+    "deep": 74,
+    "clear": 25,
+    "solar_line": 559
+   },
+   "baker_err_percent": {
+    "reference": 0.30909167835488915,
+    "telluric": 0.31726977322250605,
+    "deep": 0.45884258579462767,
+    "clear": 0.3409174270927906,
+    "solar_line": 0.3159324638545513
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.043264855366254504,
+     "reference": 0.2302124868994279,
+     "telluric": 1.2145211467932615,
+     "deep": 3.0193378126564325,
+     "clear": null,
+     "solar_line": 1.238471311626369
+    }
+   }
+  },
+  "12190": {
+   "v1": 12190.0010859,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 221,
+    "telluric": 1163,
+    "deep": 227,
+    "clear": 528,
+    "solar_line": 635
+   },
+   "baker_err_percent": {
+    "reference": 0.3571079345420003,
+    "telluric": 0.2709327731281519,
+    "deep": 0.23950778413563967,
+    "clear": 0.24579220917075872,
+    "solar_line": 0.2852551406249404
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.031163064049238996,
+     "reference": 0.2359337567036701,
+     "telluric": 1.3707296127428084,
+     "deep": 2.8766676518524847,
+     "clear": 1.1653294075376768,
+     "solar_line": 1.520266917611879
+    }
+   }
+  },
+  "12220": {
+   "v1": 12220.0015329,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 74,
+    "telluric": 1190,
+    "deep": 378,
+    "clear": 723,
+    "solar_line": 467
+   },
+   "baker_err_percent": {
+    "reference": 0.3508698078803718,
+    "telluric": 0.23694420233368874,
+    "deep": 0.1539616787340492,
+    "clear": 0.22772715892642736,
+    "solar_line": 0.2522749127820134
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.05043784042059579,
+     "reference": 0.05017850268931435,
+     "telluric": 1.2038990384744712,
+     "deep": 1.8957302667595717,
+     "clear": 1.040151382657634,
+     "solar_line": 1.4216716243822332
+    }
+   }
+  },
+  "12250": {
+   "v1": 12250.0019799,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 147,
+    "telluric": 1172,
+    "deep": 290,
+    "clear": 664,
+    "solar_line": 508
+   },
+   "baker_err_percent": {
+    "reference": 0.4239471163600683,
+    "telluric": 0.26272126706317067,
+    "deep": 0.034801305446308106,
+    "clear": 0.25410145753994584,
+    "solar_line": 0.2754855784587562
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0446460201525976,
+     "reference": 0.11059479006366472,
+     "telluric": 1.914027835644473,
+     "deep": 3.672114514018739,
+     "clear": 1.2338008637042008,
+     "solar_line": 2.5464678733953505
+    }
+   }
+  },
+  "12280": {
+   "v1": 12280.002427,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 268,
+    "telluric": 1024,
+    "deep": 181,
+    "clear": 541,
+    "solar_line": 483
+   },
+   "baker_err_percent": {
+    "reference": 0.3574372152797878,
+    "telluric": 0.3162203240208328,
+    "deep": 0.013616116484627128,
+    "clear": 0.30634254217147827,
+    "solar_line": 0.32458570785820484
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.06171332290925474,
+     "reference": 0.09266639969949914,
+     "telluric": 1.5271003094063378,
+     "deep": 3.157811293131167,
+     "clear": 1.4604484375725897,
+     "solar_line": 1.5984594608102742
+    }
+   }
+  },
+  "12310": {
+   "v1": 12310.002874,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 406,
+    "telluric": 642,
+    "deep": 45,
+    "clear": 368,
+    "solar_line": 274
+   },
+   "baker_err_percent": {
+    "reference": 0.3215162199921906,
+    "telluric": 0.3228855784982443,
+    "deep": 0.08511797641403973,
+    "clear": 0.3068853169679642,
+    "solar_line": 0.3383777220733464
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03635785310669834,
+     "reference": 0.11306508881445472,
+     "telluric": 1.1008949879319563,
+     "deep": 2.156881603262846,
+     "clear": 0.9802130270659277,
+     "solar_line": 1.244702242611961
+    }
+   }
+  },
+  "12340": {
+   "v1": 12340.003321,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 669,
+    "telluric": 474,
+    "deep": 3,
+    "clear": 181,
+    "solar_line": 293
+   },
+   "baker_err_percent": {
+    "reference": 0.32700118608772755,
+    "telluric": 0.37817194825038314,
+    "deep": 0.349916098639369,
+    "clear": 0.3595155430957675,
+    "solar_line": 0.4002234432846308
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04192712782861362,
+     "reference": 0.42445700137768005,
+     "telluric": 0.7315954958912158,
+     "deep": null,
+     "clear": 0.635310752169195,
+     "solar_line": 0.7851974785075395
+    }
+   }
+  },
+  "12370": {
+   "v1": 12370.0000015,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 915,
+    "telluric": 254,
+    "deep": 0,
+    "clear": 140,
+    "solar_line": 114
+   },
+   "baker_err_percent": {
+    "reference": 0.3153995145112276,
+    "telluric": 0.3416254068724811,
+    "deep": null,
+    "clear": 0.3471659729257226,
+    "solar_line": 0.33873855136334896
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03933699831735508,
+     "reference": 0.13793994116705594,
+     "telluric": 1.1965496208505306,
+     "deep": null,
+     "clear": 1.302995058435676,
+     "solar_line": 1.0511823570532657
+    }
+   }
+  },
+  "12400": {
+   "v1": 12400.0004486,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1009,
+    "telluric": 281,
+    "deep": 4,
+    "clear": 106,
+    "solar_line": 175
+   },
+   "baker_err_percent": {
+    "reference": 0.31411871314048767,
+    "telluric": 0.34178486093878746,
+    "deep": 0.48261447809636593,
+    "clear": 0.33455706434324384,
+    "solar_line": 0.3441917011514306
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03696269897513619,
+     "reference": 0.18188109910241607,
+     "telluric": 1.2741970680452195,
+     "deep": null,
+     "clear": 1.0646606175310382,
+     "solar_line": 1.3857936948769782
+    }
+   }
+  },
+  "12430": {
+   "v1": 12430.0008956,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 657,
+    "telluric": 469,
+    "deep": 14,
+    "clear": 338,
+    "solar_line": 131
+   },
+   "baker_err_percent": {
+    "reference": 0.32907607965171337,
+    "telluric": 0.3297194140031934,
+    "deep": 0.16688714968040586,
+    "clear": 0.3270607558079064,
+    "solar_line": 0.3460297593846917
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.061500103223741553,
+     "reference": 0.07685207420390514,
+     "telluric": 0.6670829124745288,
+     "deep": null,
+     "clear": 0.5459362771697719,
+     "solar_line": 0.9078332923241793
+    }
+   }
+  },
+  "12460": {
+   "v1": 12460.0013427,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 767,
+    "telluric": 500,
+    "deep": 27,
+    "clear": 304,
+    "solar_line": 196
+   },
+   "baker_err_percent": {
+    "reference": 0.34342948347330093,
+    "telluric": 0.3197834128513932,
+    "deep": 0.1320703304372728,
+    "clear": 0.3205448854714632,
+    "solar_line": 0.31624764669686556
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02221706303673517,
+     "reference": 0.08336337771943347,
+     "telluric": 1.8175061562444255,
+     "deep": null,
+     "clear": 0.70399424353069,
+     "solar_line": 2.767338213046741
+    }
+   }
+  },
+  "12490": {
+   "v1": 12490.0017897,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 761,
+    "telluric": 326,
+    "deep": 11,
+    "clear": 161,
+    "solar_line": 165
+   },
+   "baker_err_percent": {
+    "reference": 0.3109819255769253,
+    "telluric": 0.3166118636727333,
+    "deep": 0.7699031382799149,
+    "clear": 0.32256252598017454,
+    "solar_line": 0.31238498631864786
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.027436032556867874,
+     "reference": 0.5157280611109283,
+     "telluric": 1.5083375086126305,
+     "deep": null,
+     "clear": 0.8871112064670614,
+     "solar_line": 1.930575627596454
+    }
+   }
+  },
+  "12520": {
+   "v1": 12520.0022367,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 911,
+    "telluric": 337,
+    "deep": 18,
+    "clear": 287,
+    "solar_line": 50
+   },
+   "baker_err_percent": {
+    "reference": 0.29297119472175837,
+    "telluric": 0.31666590366512537,
+    "deep": 0.1375910360366106,
+    "clear": 0.3166444133967161,
+    "solar_line": 0.31906975200399756
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.06135704380305243,
+     "reference": 0.13983929000020845,
+     "telluric": 0.49400764209872206,
+     "deep": null,
+     "clear": 0.5038493558735097,
+     "solar_line": 0.4332126206019907
+    }
+   }
+  },
+  "12550": {
+   "v1": 12550.0026838,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 736,
+    "telluric": 471,
+    "deep": 36,
+    "clear": 272,
+    "solar_line": 199
+   },
+   "baker_err_percent": {
+    "reference": 0.2941479324363172,
+    "telluric": 0.2980988472700119,
+    "deep": 0.22927426034584641,
+    "clear": 0.2835640334524214,
+    "solar_line": 0.31732027418911457
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03052718660171869,
+     "reference": 0.16060038237926755,
+     "telluric": 0.595129554502007,
+     "deep": 0.9840503586329388,
+     "clear": 0.598128633043487,
+     "solar_line": 0.5910056948385498
+    }
+   }
+  },
+  "12580": {
+   "v1": 12580.0031308,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1398,
+    "telluric": 168,
+    "deep": 14,
+    "clear": 84,
+    "solar_line": 84
+   },
+   "baker_err_percent": {
+    "reference": 0.3081034985370934,
+    "telluric": 0.32083772821351886,
+    "deep": 0.36173738772049546,
+    "clear": 0.31867572106420994,
+    "solar_line": 0.32312715193256736
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.028824952523428763,
+     "reference": 0.5558343914104623,
+     "telluric": 1.0505476507991989,
+     "deep": null,
+     "clear": 1.138811244034071,
+     "solar_line": 0.9541539098389751
+    }
+   }
+  },
+  "12610": {
+   "v1": 12610.0035778,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1076,
+    "telluric": 270,
+    "deep": 31,
+    "clear": 120,
+    "solar_line": 150
+   },
+   "baker_err_percent": {
+    "reference": 0.3151725046336651,
+    "telluric": 0.3204186214134097,
+    "deep": 0.2117573283612728,
+    "clear": 0.31273544300347567,
+    "solar_line": 0.3325123223476112
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03217886113211135,
+     "reference": 0.1452775716659579,
+     "telluric": 0.9711684788418589,
+     "deep": 1.6662373048858476,
+     "clear": 0.7378116117474395,
+     "solar_line": 1.1234811997489476
+    }
+   }
+  },
+  "12640": {
+   "v1": 12640.0002584,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 757,
+    "telluric": 432,
+    "deep": 57,
+    "clear": 221,
+    "solar_line": 211
+   },
+   "baker_err_percent": {
+    "reference": 0.3097895998507738,
+    "telluric": 0.30993438558652997,
+    "deep": 0.21100258454680443,
+    "clear": 0.30849254690110683,
+    "solar_line": 0.31202174723148346
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.049738267253066785,
+     "reference": 0.11968208940158216,
+     "telluric": 0.9722289304629135,
+     "deep": 2.0745579306966335,
+     "clear": 0.7463823211204519,
+     "solar_line": 1.1626551498440365
+    }
+   }
+  },
+  "12670": {
+   "v1": 12670.0007054,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1097,
+    "telluric": 300,
+    "deep": 4,
+    "clear": 79,
+    "solar_line": 221
+   },
+   "baker_err_percent": {
+    "reference": 0.2938136691227555,
+    "telluric": 0.3195528872311115,
+    "deep": 0.1277012110222131,
+    "clear": 0.31382921151816845,
+    "solar_line": 0.3213126212358475
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.0049797603898551574,
+     "reference": 0.5852517850933129,
+     "telluric": 1.3574248675790248,
+     "deep": null,
+     "clear": 0.7630349547997414,
+     "solar_line": 1.514313482281817
+    }
+   }
+  },
+  "12700": {
+   "v1": 12700.0011524,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1287,
+    "telluric": 165,
+    "deep": 0,
+    "clear": 159,
+    "solar_line": 6
+   },
+   "baker_err_percent": {
+    "reference": 0.291128852404654,
+    "telluric": 0.32869004644453526,
+    "deep": null,
+    "clear": 0.32869004644453526,
+    "solar_line": 0.34321676939725876
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.012854302017077768,
+     "reference": 0.07298390244774304,
+     "telluric": 0.7324652645972615,
+     "deep": null,
+     "clear": 0.7372484528199478,
+     "solar_line": null
+    }
+   }
+  },
+  "12730": {
+   "v1": 12730.0015995,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1666,
+    "telluric": 19,
+    "deep": 0,
+    "clear": 16,
+    "solar_line": 3
+   },
+   "baker_err_percent": {
+    "reference": 0.286364508792758,
+    "telluric": 0.31948965042829514,
+    "deep": null,
+    "clear": 0.3208970185369253,
+    "solar_line": 0.31487185042351484
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.05986385698395661,
+     "reference": 0.3260024542669877,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "12760": {
+   "v1": 12760.0020465,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1808,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.2872265875339508,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03359284191794384,
+     "reference": 0.2519356377982744,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "12790": {
+   "v1": 12790.0024935,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1869,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.2819499000906944,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.030997969664641387,
+     "reference": 0.18739867548409828,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "12880": {
+   "v1": 12880.0000681,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1843,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.2867662813514471,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03059997458685829,
+     "reference": 0.10414350334064491,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "12910": {
+   "v1": 12910.0005152,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1783,
+    "telluric": 25,
+    "deep": 0,
+    "clear": 23,
+    "solar_line": 2
+   },
+   "baker_err_percent": {
+    "reference": 0.28981391806155443,
+    "telluric": 1.0004635900259018,
+    "deep": null,
+    "clear": 0.9621478617191315,
+    "solar_line": 1.1153367813676596
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.024612650248383904,
+     "reference": 0.14499371806490427,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "12940": {
+   "v1": 12940.0009622,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1656,
+    "telluric": 66,
+    "deep": 0,
+    "clear": 56,
+    "solar_line": 10
+   },
+   "baker_err_percent": {
+    "reference": 0.30246832175180316,
+    "telluric": 0.90723498724401,
+    "deep": null,
+    "clear": 0.9184712544083595,
+    "solar_line": 0.8513529784977436
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.036577401592571744,
+     "reference": 0.15885064999936913,
+     "telluric": 0.4732706947407569,
+     "deep": null,
+     "clear": 0.43075094522639923,
+     "solar_line": null
+    }
+   }
+  },
+  "12970": {
+   "v1": 12970.0014092,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1415,
+    "telluric": 148,
+    "deep": 23,
+    "clear": 78,
+    "solar_line": 70
+   },
+   "baker_err_percent": {
+    "reference": 0.338212912902236,
+    "telluric": 0.9760123211890459,
+    "deep": 1.869889348745346,
+    "clear": 0.9537250269204378,
+    "solar_line": 1.012892834842205
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03188427611961471,
+     "reference": 0.30829488969472085,
+     "telluric": 3.101776820266363,
+     "deep": null,
+     "clear": 1.0714056900915572,
+     "solar_line": 4.3660604760068615
+    }
+   }
+  },
+  "13000": {
+   "v1": 13000.0018563,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 840,
+    "telluric": 375,
+    "deep": 60,
+    "clear": 207,
+    "solar_line": 168
+   },
+   "baker_err_percent": {
+    "reference": 0.33386964350938797,
+    "telluric": 0.35536903887987137,
+    "deep": 0.013401502656051889,
+    "clear": 0.3671281971037388,
+    "solar_line": 0.35238503478467464
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.021118230914791813,
+     "reference": 0.1828820254406193,
+     "telluric": 1.303820632908375,
+     "deep": 2.734936086423879,
+     "clear": 1.0919391252976163,
+     "solar_line": 1.5251592585384433
+    }
+   }
+  },
+  "13030": {
+   "v1": 13030.0023033,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 150,
+    "telluric": 1132,
+    "deep": 228,
+    "clear": 456,
+    "solar_line": 676
+   },
+   "baker_err_percent": {
+    "reference": 0.34325922606512904,
+    "telluric": 0.42650955729186535,
+    "deep": 0.6506452802568674,
+    "clear": 0.3618097282014787,
+    "solar_line": 0.45715298037976027
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.0046745644299639845,
+     "reference": 0.041425320898496376,
+     "telluric": 2.012760176857673,
+     "deep": 4.299808265477349,
+     "clear": 1.779338259910658,
+     "solar_line": 2.154674174970299
+    }
+   }
+  },
+  "13150": {
+   "v1": 13150.0003249,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 322,
+    "telluric": 639,
+    "deep": 496,
+    "clear": 438,
+    "solar_line": 201
+   },
+   "baker_err_percent": {
+    "reference": 0.3500186023302376,
+    "telluric": 0.7153815124183893,
+    "deep": 0.9550017304718494,
+    "clear": 0.6336975609883666,
+    "solar_line": 1.0131161659955978
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.012130532115574202,
+     "reference": 0.1326253971235691,
+     "telluric": 3.8679067466577974,
+     "deep": 4.285524024357663,
+     "clear": 3.718415801685081,
+     "solar_line": 4.172460514240388
+    }
+   }
+  },
+  "13360": {
+   "v1": 13360.0034542,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1823,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.29659802094101906,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.015833855018052127,
+     "reference": 0.21801695106160457,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "13390": {
+   "v1": 13390.0001347,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1771,
+    "telluric": 4,
+    "deep": 0,
+    "clear": 4,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.30222260393202305,
+    "telluric": 0.43135054875165224,
+    "deep": null,
+    "clear": 0.43135054875165224,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.01863085683431252,
+     "reference": 0.3555668401753373,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "13420": {
+   "v1": 13420.0005817,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1671,
+    "telluric": 19,
+    "deep": 0,
+    "clear": 3,
+    "solar_line": 16
+   },
+   "baker_err_percent": {
+    "reference": 0.3017726354300976,
+    "telluric": 0.4437267780303955,
+    "deep": null,
+    "clear": 0.34298086538910866,
+    "solar_line": 0.45169652439653873
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.012918478366393333,
+     "reference": 0.12266742788924724,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "13450": {
+   "v1": 13450.0010288,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1443,
+    "telluric": 68,
+    "deep": 0,
+    "clear": 29,
+    "solar_line": 39
+   },
+   "baker_err_percent": {
+    "reference": 0.3015296533703804,
+    "telluric": 0.40250991005450487,
+    "deep": null,
+    "clear": 0.3972311969846487,
+    "solar_line": 0.4036345984786749
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.017454294609438013,
+     "reference": 0.21187847682931077,
+     "telluric": 0.8906225182544162,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.9227681659714543
+    }
+   }
+  },
+  "13480": {
+   "v1": 13480.0014758,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1217,
+    "telluric": 150,
+    "deep": 0,
+    "clear": 55,
+    "solar_line": 95
+   },
+   "baker_err_percent": {
+    "reference": 0.29178604017943144,
+    "telluric": 0.3827881650067866,
+    "deep": null,
+    "clear": 0.3608105704188347,
+    "solar_line": 0.3906839992851019
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04251344585978208,
+     "reference": 0.44872607531048353,
+     "telluric": 0.9114061674971936,
+     "deep": null,
+     "clear": 0.44867686327565126,
+     "solar_line": 1.0931705664699893
+    }
+   }
+  },
+  "13510": {
+   "v1": 13510.0019228,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 857,
+    "telluric": 265,
+    "deep": 14,
+    "clear": 175,
+    "solar_line": 90
+   },
+   "baker_err_percent": {
+    "reference": 0.3055190434679389,
+    "telluric": 0.3110361285507679,
+    "deep": 0.09275027841795236,
+    "clear": 0.31021549366414547,
+    "solar_line": 0.3138369647786021
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.009128264453457057,
+     "reference": 0.46936053099138253,
+     "telluric": 1.1512685996406464,
+     "deep": null,
+     "clear": 0.7704580944336512,
+     "solar_line": 1.6578270409173284
+    }
+   }
+  },
+  "13540": {
+   "v1": 13540.0023699,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 549,
+    "telluric": 503,
+    "deep": 26,
+    "clear": 336,
+    "solar_line": 167
+   },
+   "baker_err_percent": {
+    "reference": 0.32718118745833635,
+    "telluric": 0.32724756747484207,
+    "deep": 0.12328388402238488,
+    "clear": 0.32110767206177115,
+    "solar_line": 0.33305766992270947
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.0019188096363265538,
+     "reference": 0.13174568612646387,
+     "telluric": 0.6355235845277794,
+     "deep": null,
+     "clear": 0.5269261293523985,
+     "solar_line": 0.8110981649358581
+    }
+   }
+  },
+  "13570": {
+   "v1": 13570.0028169,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 357,
+    "telluric": 606,
+    "deep": 33,
+    "clear": 320,
+    "solar_line": 286
+   },
+   "baker_err_percent": {
+    "reference": 0.32973354682326317,
+    "telluric": 0.32304597552865744,
+    "deep": 0.09864522144198418,
+    "clear": 0.31095206504687667,
+    "solar_line": 0.3367594094015658
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.010530111203554932,
+     "reference": 0.35339839415574437,
+     "telluric": 1.0827880733727497,
+     "deep": 1.6717962931855683,
+     "clear": 0.774125575790597,
+     "solar_line": 1.346746996170024
+    }
+   }
+  },
+  "13600": {
+   "v1": 13600.003264,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 658,
+    "telluric": 552,
+    "deep": 63,
+    "clear": 299,
+    "solar_line": 253
+   },
+   "baker_err_percent": {
+    "reference": 0.3062586416490376,
+    "telluric": 0.35115156788378954,
+    "deep": 0.1414491212926805,
+    "clear": 0.35197800025343895,
+    "solar_line": 0.348473503254354
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03052927310741847,
+     "reference": 0.08754193137564105,
+     "telluric": 1.3576478274549209,
+     "deep": 3.124185464958313,
+     "clear": 0.8756579191300697,
+     "solar_line": 1.7650363033628298
+    }
+   }
+  },
+  "13630": {
+   "v1": 13630.003711,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 530,
+    "telluric": 579,
+    "deep": 87,
+    "clear": 245,
+    "solar_line": 334
+   },
+   "baker_err_percent": {
+    "reference": 0.31722947023808956,
+    "telluric": 0.3379496280103922,
+    "deep": 0.6170033477246761,
+    "clear": 0.3227252047508955,
+    "solar_line": 0.34451374085620046
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.024478476021090722,
+     "reference": 0.11971275976734405,
+     "telluric": 2.0321174329512295,
+     "deep": 4.764389639143004,
+     "clear": 0.6216668914808517,
+     "solar_line": 2.6220484677895524
+    }
+   }
+  },
+  "13660": {
+   "v1": 13660.0003915,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 112,
+    "telluric": 1244,
+    "deep": 207,
+    "clear": 701,
+    "solar_line": 543
+   },
+   "baker_err_percent": {
+    "reference": 0.36699501797556877,
+    "telluric": 0.2852436271496117,
+    "deep": 0.05785105749964714,
+    "clear": 0.28601258527487516,
+    "solar_line": 0.2846226096153259
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03340991590410658,
+     "reference": 0.13288007073828065,
+     "telluric": 1.0557467646327399,
+     "deep": 2.0585089906244693,
+     "clear": 0.8182803132431631,
+     "solar_line": 1.2990267229904198
+    }
+   }
+  },
+  "13690": {
+   "v1": 13690.0008385,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 148,
+    "telluric": 1218,
+    "deep": 252,
+    "clear": 541,
+    "solar_line": 677
+   },
+   "baker_err_percent": {
+    "reference": 0.37683380069211125,
+    "telluric": 0.29337580781430006,
+    "deep": 0.12957120779901743,
+    "clear": 0.26716215070337057,
+    "solar_line": 0.31431529205292463
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03702487755745475,
+     "reference": 0.09207208563718998,
+     "telluric": 1.8452583403208762,
+     "deep": 3.4368629027257596,
+     "clear": 1.5939953773854962,
+     "solar_line": 2.0234282011049642
+    }
+   }
+  },
+  "13720": {
+   "v1": 13720.0012856,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 185,
+    "telluric": 1130,
+    "deep": 237,
+    "clear": 511,
+    "solar_line": 619
+   },
+   "baker_err_percent": {
+    "reference": 0.322063104249537,
+    "telluric": 0.27592600090429187,
+    "deep": 0.15050802612677217,
+    "clear": 0.24546561762690544,
+    "solar_line": 0.2935908967629075
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.013628960839313012,
+     "reference": 0.15672008797570414,
+     "telluric": 1.7090070885771869,
+     "deep": 2.391353806418654,
+     "clear": 1.6850376778057803,
+     "solar_line": 1.7285059877022217
+    }
+   }
+  },
+  "13750": {
+   "v1": 13750.0017326,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 230,
+    "telluric": 1182,
+    "deep": 231,
+    "clear": 747,
+    "solar_line": 435
+   },
+   "baker_err_percent": {
+    "reference": 0.3371047438122332,
+    "telluric": 0.27482727309688926,
+    "deep": 0.07139018853195012,
+    "clear": 0.24164225906133652,
+    "solar_line": 0.3054498229175806
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.023161856290298422,
+     "reference": 0.15859216090722192,
+     "telluric": 1.6690333071827446,
+     "deep": 3.441354319572576,
+     "clear": 1.6275687515796,
+     "solar_line": 1.7378410006757474
+    }
+   }
+  },
+  "13780": {
+   "v1": 13780.0021796,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 59,
+    "telluric": 1203,
+    "deep": 314,
+    "clear": 717,
+    "solar_line": 486
+   },
+   "baker_err_percent": {
+    "reference": 0.3852724563330412,
+    "telluric": 0.2475713612511754,
+    "deep": 0.06593267316929996,
+    "clear": 0.21366800647228956,
+    "solar_line": 0.28692728374153376
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.051234738342765575,
+     "reference": 0.053982205469100784,
+     "telluric": 2.0041197302415883,
+     "deep": 2.5502272398861874,
+     "clear": 1.7905243233907155,
+     "solar_line": 2.283752931698568
+    }
+   }
+  },
+  "13810": {
+   "v1": 13810.0026267,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 235,
+    "telluric": 960,
+    "deep": 181,
+    "clear": 696,
+    "solar_line": 264
+   },
+   "baker_err_percent": {
+    "reference": 0.325445388443768,
+    "telluric": 0.2709970809519291,
+    "deep": 0.16251268098130822,
+    "clear": 0.2738493378274143,
+    "solar_line": 0.2667096327058971
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.010884945975513557,
+     "reference": 0.1579520720190236,
+     "telluric": 2.1002936515397073,
+     "deep": 3.2056702674447055,
+     "clear": 2.073539006143199,
+     "solar_line": 2.1693097521329228
+    }
+   }
+  },
+  "13840": {
+   "v1": 13840.0030737,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 407,
+    "telluric": 687,
+    "deep": 70,
+    "clear": 356,
+    "solar_line": 331
+   },
+   "baker_err_percent": {
+    "reference": 0.3102990332990885,
+    "telluric": 0.3282034769654274,
+    "deep": 1.1211835779249668,
+    "clear": 0.320427177939564,
+    "solar_line": 0.33978461287915707
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.027174743363464003,
+     "reference": 0.1444119439709602,
+     "telluric": 1.6303141185855439,
+     "deep": 4.748032265799105,
+     "clear": 1.2806816563604848,
+     "solar_line": 1.9372163499500779
+    }
+   }
+  },
+  "13900": {
+   "v1": 13900.0002013,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 145,
+    "telluric": 1185,
+    "deep": 343,
+    "clear": 572,
+    "solar_line": 613
+   },
+   "baker_err_percent": {
+    "reference": 0.3812858136370778,
+    "telluric": 0.279153254814446,
+    "deep": 0.15560176689177752,
+    "clear": 0.26933372719213367,
+    "solar_line": 0.29180110432207584
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0401084789820025,
+     "reference": 0.08475853147775957,
+     "telluric": 3.202494021142149,
+     "deep": 5.723569325332102,
+     "clear": 2.0756101555847497,
+     "solar_line": 3.9791027951294904
+    }
+   }
+  },
+  "13930": {
+   "v1": 13930.0006483,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 77,
+    "telluric": 1303,
+    "deep": 265,
+    "clear": 815,
+    "solar_line": 488
+   },
+   "baker_err_percent": {
+    "reference": 0.43169246055185795,
+    "telluric": 0.31234752386808395,
+    "deep": 0.014817911142017692,
+    "clear": 0.2883470384404063,
+    "solar_line": 0.3452818258665502
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03940185017159643,
+     "reference": 0.060573742474895255,
+     "telluric": 2.8060556810068813,
+     "deep": 4.662473940556593,
+     "clear": 2.7349462338423955,
+     "solar_line": 2.9209570597461725
+    }
+   }
+  },
+  "13960": {
+   "v1": 13960.0010953,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 522,
+    "telluric": 441,
+    "deep": 13,
+    "clear": 256,
+    "solar_line": 185
+   },
+   "baker_err_percent": {
+    "reference": 0.3033847315236926,
+    "telluric": 0.3260206198319793,
+    "deep": 0.14342190697789192,
+    "clear": 0.3408429794944823,
+    "solar_line": 0.3162548178806901
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.019634066460812564,
+     "reference": 0.07965617780919071,
+     "telluric": 0.717708633598262,
+     "deep": null,
+     "clear": 0.823745828414638,
+     "solar_line": 0.5375166395532873
+    }
+   }
+  },
+  "13990": {
+   "v1": 13990.0015424,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 920,
+    "telluric": 202,
+    "deep": 0,
+    "clear": 123,
+    "solar_line": 79
+   },
+   "baker_err_percent": {
+    "reference": 0.2916518715210259,
+    "telluric": 0.31413143733516335,
+    "deep": null,
+    "clear": 0.317592266947031,
+    "solar_line": 0.3109041368588805
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.031070348346028617,
+     "reference": 0.23213204855719025,
+     "telluric": 0.743959467973229,
+     "deep": null,
+     "clear": 0.8220320594024595,
+     "solar_line": 0.6025943327073032
+    }
+   }
+  },
+  "14020": {
+   "v1": 14020.0019894,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 995,
+    "telluric": 216,
+    "deep": 0,
+    "clear": 99,
+    "solar_line": 117
+   },
+   "baker_err_percent": {
+    "reference": 0.2969625638797879,
+    "telluric": 0.32359680626541376,
+    "deep": null,
+    "clear": 0.317461509257555,
+    "solar_line": 0.32811909914016724
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.023846045659964527,
+     "reference": 0.13073390716194858,
+     "telluric": 0.6505524648628186,
+     "deep": null,
+     "clear": 0.705250953790988,
+     "solar_line": 0.6003893764039909
+    }
+   }
+  },
+  "14050": {
+   "v1": 14050.0024365,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 814,
+    "telluric": 238,
+    "deep": 0,
+    "clear": 129,
+    "solar_line": 109
+   },
+   "baker_err_percent": {
+    "reference": 0.2924530650489032,
+    "telluric": 0.3203913220204413,
+    "deep": null,
+    "clear": 0.31526884995400906,
+    "solar_line": 0.3347619902342558
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.022195881224309776,
+     "reference": 0.14634282997834597,
+     "telluric": 0.4186571693675227,
+     "deep": null,
+     "clear": 0.29195005658665635,
+     "solar_line": 0.5308801474595718
+    }
+   }
+  },
+  "14080": {
+   "v1": 14080.0028835,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 761,
+    "telluric": 262,
+    "deep": 0,
+    "clear": 168,
+    "solar_line": 94
+   },
+   "baker_err_percent": {
+    "reference": 0.30051989015191793,
+    "telluric": 0.33408014569431543,
+    "deep": null,
+    "clear": 0.32576221274212,
+    "solar_line": 0.34107755636796355
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.030037720094412,
+     "reference": 0.2153998479833145,
+     "telluric": 0.9604881934984815,
+     "deep": null,
+     "clear": 0.7804988659700217,
+     "solar_line": 1.2176138974098702
+    }
+   }
+  },
+  "14110": {
+   "v1": 14110.0033305,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 773,
+    "telluric": 364,
+    "deep": 0,
+    "clear": 302,
+    "solar_line": 62
+   },
+   "baker_err_percent": {
+    "reference": 0.2957238582894206,
+    "telluric": 0.3306288388557732,
+    "deep": null,
+    "clear": 0.32583794090896845,
+    "solar_line": 0.34629672300070524
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.026886454967911068,
+     "reference": 0.29482123101608204,
+     "telluric": 0.48455912573794424,
+     "deep": null,
+     "clear": 0.47083323218223455,
+     "solar_line": 0.5465103257748619
+    }
+   }
+  },
+  "14140": {
+   "v1": 14140.000011,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 692,
+    "telluric": 360,
+    "deep": 10,
+    "clear": 169,
+    "solar_line": 191
+   },
+   "baker_err_percent": {
+    "reference": 0.32059611985459924,
+    "telluric": 0.348507147282362,
+    "deep": 0.25069809053093195,
+    "clear": 0.3473252058029175,
+    "solar_line": 0.34869443625211716
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0033632448893567467,
+     "reference": 0.9141184645274967,
+     "telluric": 1.334247776641977,
+     "deep": null,
+     "clear": 0.8326101905776423,
+     "solar_line": 1.655896417096107
+    }
+   }
+  },
+  "14170": {
+   "v1": 14170.0004581,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 695,
+    "telluric": 415,
+    "deep": 19,
+    "clear": 276,
+    "solar_line": 139
+   },
+   "baker_err_percent": {
+    "reference": 0.31597884371876717,
+    "telluric": 0.3159700892865658,
+    "deep": 0.052944308845326304,
+    "clear": 0.32288164366036654,
+    "solar_line": 0.29877303168177605
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.18416366886434257,
+     "reference": 0.27971173066875954,
+     "telluric": 0.9904522574167111,
+     "deep": null,
+     "clear": 0.6446288640311177,
+     "solar_line": 1.4504338374442838
+    }
+   }
+  },
+  "14200": {
+   "v1": 14200.0009051,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 812,
+    "telluric": 488,
+    "deep": 63,
+    "clear": 246,
+    "solar_line": 242
+   },
+   "baker_err_percent": {
+    "reference": 0.33110229996964335,
+    "telluric": 0.3130664234049618,
+    "deep": 0.16007941449061036,
+    "clear": 0.31064184149727225,
+    "solar_line": 0.314781884662807
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.014270114436042211,
+     "reference": 0.24238563850651648,
+     "telluric": 1.7086647310054652,
+     "deep": 3.1381135694490006,
+     "clear": 1.3242443371395083,
+     "solar_line": 2.026010497473759
+    }
+   }
+  },
+  "14230": {
+   "v1": 14230.0013521,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 537,
+    "telluric": 597,
+    "deep": 52,
+    "clear": 237,
+    "solar_line": 360
+   },
+   "baker_err_percent": {
+    "reference": 0.31345910392701626,
+    "telluric": 0.32822589855641127,
+    "deep": 0.9449252858757973,
+    "clear": 0.3348390804603696,
+    "solar_line": 0.3277539974078536
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.05992066660874834,
+     "reference": 0.36226726215299176,
+     "telluric": 1.7508628994852917,
+     "deep": 4.377360364780946,
+     "clear": 1.145482509306726,
+     "solar_line": 2.054224049600667
+    }
+   }
+  },
+  "14260": {
+   "v1": 14260.0017992,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 505,
+    "telluric": 632,
+    "deep": 48,
+    "clear": 338,
+    "solar_line": 294
+   },
+   "baker_err_percent": {
+    "reference": 0.32863542437553406,
+    "telluric": 0.3061185241676867,
+    "deep": 0.6577519001439214,
+    "clear": 0.31169133726507425,
+    "solar_line": 0.3013352514244616
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.025761534985203137,
+     "reference": 0.4175322260962862,
+     "telluric": 1.0535528693958203,
+     "deep": 3.239889020816104,
+     "clear": 0.6269867752445499,
+     "solar_line": 1.3907265135114624
+    }
+   }
+  },
+  "14290": {
+   "v1": 14290.0022462,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 371,
+    "telluric": 608,
+    "deep": 77,
+    "clear": 414,
+    "solar_line": 194
+   },
+   "baker_err_percent": {
+    "reference": 0.30013173818588257,
+    "telluric": 0.30888059409335256,
+    "deep": 0.337533256970346,
+    "clear": 0.30888059409335256,
+    "solar_line": 0.30899696284905076
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.17079688032363916,
+     "reference": 0.2479213048225654,
+     "telluric": 0.7931017481920039,
+     "deep": 1.531020767981744,
+     "clear": 0.770482353209647,
+     "solar_line": 0.839336039199157
+    }
+   }
+  },
+  "14320": {
+   "v1": 14320.0026933,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1098,
+    "telluric": 191,
+    "deep": 8,
+    "clear": 67,
+    "solar_line": 124
+   },
+   "baker_err_percent": {
+    "reference": 0.32491690944880247,
+    "telluric": 0.36312725860625505,
+    "deep": 0.9759916458278894,
+    "clear": 0.35329668316990137,
+    "solar_line": 0.37097297608852386
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02844019331809226,
+     "reference": 0.3735174882527685,
+     "telluric": 0.7340601459551592,
+     "deep": null,
+     "clear": 0.5311150778652367,
+     "solar_line": 0.8231513244122632
+    }
+   }
+  },
+  "14350": {
+   "v1": 14350.0031403,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 432,
+    "telluric": 526,
+    "deep": 96,
+    "clear": 408,
+    "solar_line": 118
+   },
+   "baker_err_percent": {
+    "reference": 0.3098784596659243,
+    "telluric": 0.34496834268793464,
+    "deep": 0.4075419856235385,
+    "clear": 0.3441813285462558,
+    "solar_line": 0.34758741967380047
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.10899464370189627,
+     "reference": 0.38657000709960787,
+     "telluric": 1.0962495200285975,
+     "deep": 2.155223417144965,
+     "clear": 1.0699021567572398,
+     "solar_line": 1.1826302771493624
+    }
+   }
+  },
+  "14380": {
+   "v1": 14380.0035873,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 286,
+    "telluric": 735,
+    "deep": 167,
+    "clear": 455,
+    "solar_line": 280
+   },
+   "baker_err_percent": {
+    "reference": 0.3550672670826316,
+    "telluric": 0.33506739418953657,
+    "deep": 0.2949628746137023,
+    "clear": 0.33401751425117254,
+    "solar_line": 0.3357896930538118
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04138463511696153,
+     "reference": 0.13725940256087904,
+     "telluric": 1.0976872178518524,
+     "deep": 2.036761107444549,
+     "clear": 0.8890507282851314,
+     "solar_line": 1.3705799970225176
+    }
+   }
+  },
+  "14410": {
+   "v1": 14410.0002678,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 454,
+    "telluric": 756,
+    "deep": 78,
+    "clear": 508,
+    "solar_line": 248
+   },
+   "baker_err_percent": {
+    "reference": 0.34982141805812716,
+    "telluric": 0.36000930704176426,
+    "deep": 0.4844789393246174,
+    "clear": 0.35299399169161916,
+    "solar_line": 0.3723083413206041
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04178049719819159,
+     "reference": 0.12482857213486172,
+     "telluric": 1.4282514021705233,
+     "deep": 3.8963784776453307,
+     "clear": 1.0543567245153425,
+     "solar_line": 1.9853126668919179
+    }
+   }
+  },
+  "14440": {
+   "v1": 14440.0007149,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 607,
+    "telluric": 603,
+    "deep": 66,
+    "clear": 478,
+    "solar_line": 125
+   },
+   "baker_err_percent": {
+    "reference": 0.32133711501955986,
+    "telluric": 0.3550334367901087,
+    "deep": 0.005267120650387369,
+    "clear": 0.35594432847574353,
+    "solar_line": 0.3504004096612334
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04449919858745301,
+     "reference": 0.19692318258186645,
+     "telluric": 0.8597815701837122,
+     "deep": 1.6078522920319167,
+     "clear": 0.6936415555901982,
+     "solar_line": 1.3160630364104504
+    }
+   }
+  },
+  "14470": {
+   "v1": 14470.0011619,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 366,
+    "telluric": 834,
+    "deep": 145,
+    "clear": 656,
+    "solar_line": 178
+   },
+   "baker_err_percent": {
+    "reference": 0.3263233113102615,
+    "telluric": 0.30893050134181976,
+    "deep": 5.237822328640895e-10,
+    "clear": 0.28010245878249407,
+    "solar_line": 0.36990640219300985
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.004584432811127565,
+     "reference": 0.6463224338136531,
+     "telluric": 1.47639864402482,
+     "deep": 1.8532545996407122,
+     "clear": 1.4651897927860997,
+     "solar_line": 1.5168706720639489
+    }
+   }
+  },
+  "14500": {
+   "v1": 14500.001609,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 259,
+    "telluric": 955,
+    "deep": 170,
+    "clear": 833,
+    "solar_line": 122
+   },
+   "baker_err_percent": {
+    "reference": 0.35731319803744555,
+    "telluric": 0.27771792374551296,
+    "deep": 0.03747959708562121,
+    "clear": 0.27939961291849613,
+    "solar_line": 0.26654007378965616
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04562189866163749,
+     "reference": 0.07385828799323892,
+     "telluric": 1.5035727181149823,
+     "deep": 2.8433571438277,
+     "clear": 1.0629757806710023,
+     "solar_line": 3.1579277390758955
+    }
+   }
+  },
+  "14530": {
+   "v1": 14530.002056,
+   "reference_above": 0.98,
+   "pixels": {
+    "reference": 57,
+    "telluric": 1452,
+    "deep": 450,
+    "clear": 1104,
+    "solar_line": 348
+   },
+   "baker_err_percent": {
+    "reference": 0.4710964858531952,
+    "telluric": 0.22022387711331248,
+    "deep": 0.024247144028777257,
+    "clear": 0.2045977977104485,
+    "solar_line": 0.2672556322067976
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.3332537583435234,
+     "reference": 0.17343735056515733,
+     "telluric": 1.8687454928671732,
+     "deep": 3.0639767977855223,
+     "clear": 1.736580069096228,
+     "solar_line": 2.2379329995199515
+    }
+   }
+  },
+  "14560": {
+   "v1": 14560.002503,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1457,
+    "telluric": 6,
+    "deep": 0,
+    "clear": 6,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.32049366272985935,
+    "telluric": 0.3245163126848638,
+    "deep": null,
+    "clear": 0.3245163126848638,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03493938408302493,
+     "reference": 0.23653977460367462,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "14590": {
+   "v1": 14590.0029501,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1709,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.31693519558757544,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.034418493239967284,
+     "reference": 0.5113840597136291,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "14620": {
+   "v1": 14620.0033971,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1801,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.31162998639047146,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04369141904907081,
+     "reference": 0.18898792893537256,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "14650": {
+   "v1": 14650.0000776,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1822,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.3126082010567188,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.041791141134688146,
+     "reference": 0.2315291459800969,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "14680": {
+   "v1": 14680.0005246,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1836,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.3147921059280634,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.060383051136324896,
+     "reference": 0.7801694723626091,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "14710": {
+   "v1": 14710.0009717,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1860,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.3226251108571887,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02125798347335137,
+     "reference": 0.5856336741559642,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "14950": {
+   "v1": 14950.0007814,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1871,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.33169551752507687,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.029528534126956153,
+     "reference": 0.10802597527409799,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "14980": {
+   "v1": 14980.0012285,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1823,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.33169989474117756,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03214808096411906,
+     "reference": 0.18444403970056114,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15010": {
+   "v1": 15010.0016755,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1847,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.33637438900768757,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03800318321942082,
+     "reference": 0.1010364298100249,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15040": {
+   "v1": 15040.0021226,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1760,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.3503643092699349,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03343669393296879,
+     "reference": 0.2898915443327118,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15070": {
+   "v1": 15070.0025696,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1736,
+    "telluric": 4,
+    "deep": 0,
+    "clear": 4,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.3720121458172798,
+    "telluric": 0.49844752065837383,
+    "deep": null,
+    "clear": 0.49844752065837383,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02693791665474198,
+     "reference": 0.15480574234049493,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15100": {
+   "v1": 15100.0030166,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1696,
+    "telluric": 16,
+    "deep": 0,
+    "clear": 16,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.38592038908973336,
+    "telluric": 0.7120988564565778,
+    "deep": null,
+    "clear": 0.7120988564565778,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03224750660603262,
+     "reference": 0.13946237253933405,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15130": {
+   "v1": 15130.0034637,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1567,
+    "telluric": 46,
+    "deep": 0,
+    "clear": 37,
+    "solar_line": 9
+   },
+   "baker_err_percent": {
+    "reference": 0.38816267624497414,
+    "telluric": 0.4740581614896655,
+    "deep": null,
+    "clear": 0.46624280512332916,
+    "solar_line": 0.47975750640034676
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02541282758529976,
+     "reference": 0.18926545774656664,
+     "telluric": 0.7575761637843818,
+     "deep": null,
+     "clear": 0.6467893594669594,
+     "solar_line": null
+    }
+   }
+  },
+  "15160": {
+   "v1": 15160.0001442,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1363,
+    "telluric": 110,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 110
+   },
+   "baker_err_percent": {
+    "reference": 0.4097437486052513,
+    "telluric": 0.43591714929789305,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.43591714929789305
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04541825336766914,
+     "reference": 1.500087220989083,
+     "telluric": 1.8943405342762967,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.8943405342762967
+    }
+   }
+  },
+  "15190": {
+   "v1": 15190.0005912,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1209,
+    "telluric": 136,
+    "deep": 10,
+    "clear": 0,
+    "solar_line": 136
+   },
+   "baker_err_percent": {
+    "reference": 0.40794648230075836,
+    "telluric": 0.4142290214076638,
+    "deep": 0.2109394990839064,
+    "clear": null,
+    "solar_line": 0.4142290214076638
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.041078107018568434,
+     "reference": 0.13196040593457806,
+     "telluric": 1.1278510245642417,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.1278510245642417
+    }
+   }
+  },
+  "15220": {
+   "v1": 15220.0010383,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1087,
+    "telluric": 195,
+    "deep": 3,
+    "clear": 0,
+    "solar_line": 195
+   },
+   "baker_err_percent": {
+    "reference": 0.40964395739138126,
+    "telluric": 0.4536647815257311,
+    "deep": 0.5817967932671309,
+    "clear": null,
+    "solar_line": 0.4536647815257311
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.04597829395363043,
+     "reference": 1.4348318576218242,
+     "telluric": 1.6124374313354308,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.6124374313354308
+    }
+   }
+  },
+  "15250": {
+   "v1": 15250.0014853,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 916,
+    "telluric": 261,
+    "deep": 30,
+    "clear": 0,
+    "solar_line": 261
+   },
+   "baker_err_percent": {
+    "reference": 0.41465782560408115,
+    "telluric": 0.3852852853015065,
+    "deep": 0.17468546284362674,
+    "clear": null,
+    "solar_line": 0.3852852853015065
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.030864218116511084,
+     "reference": 0.46804847873845434,
+     "telluric": 0.7650761527183371,
+     "deep": 1.782131961810731,
+     "clear": null,
+     "solar_line": 0.7650761527183371
+    }
+   }
+  },
+  "15280": {
+   "v1": 15280.0019323,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1217,
+    "telluric": 188,
+    "deep": 6,
+    "clear": 3,
+    "solar_line": 185
+   },
+   "baker_err_percent": {
+    "reference": 0.40306132286787033,
+    "telluric": 0.43773530051112175,
+    "deep": 0.32414639135822654,
+    "clear": 0.4182128235697746,
+    "solar_line": 0.43794275261461735
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03436685143725934,
+     "reference": 0.3097759808982705,
+     "telluric": 0.6127581401809848,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.6163940093567308
+    }
+   }
+  },
+  "15310": {
+   "v1": 15310.0023794,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1125,
+    "telluric": 221,
+    "deep": 5,
+    "clear": 84,
+    "solar_line": 137
+   },
+   "baker_err_percent": {
+    "reference": 0.372635037638247,
+    "telluric": 0.3958675544708967,
+    "deep": 0.39786994457244873,
+    "clear": 0.41658771224319935,
+    "solar_line": 0.3831104375422001
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.040364702959490475,
+     "reference": 0.1816538992330703,
+     "telluric": 0.7393044475325721,
+     "deep": null,
+     "clear": 0.720499359102315,
+     "solar_line": 0.7506016185284597
+    }
+   }
+  },
+  "15340": {
+   "v1": 15340.0028264,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1056,
+    "telluric": 311,
+    "deep": 37,
+    "clear": 214,
+    "solar_line": 97
+   },
+   "baker_err_percent": {
+    "reference": 0.3977222368121147,
+    "telluric": 0.38114842027425766,
+    "deep": 0.10068385163322091,
+    "clear": 0.3863499383442104,
+    "solar_line": 0.35914131440222263
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.02166040274292517,
+     "reference": 0.2198744927056347,
+     "telluric": 0.8698082821855907,
+     "deep": 1.1699617343250124,
+     "clear": 0.846696385669104,
+     "solar_line": 0.9187434526246432
+    }
+   }
+  },
+  "15370": {
+   "v1": 15370.0032734,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1064,
+    "telluric": 239,
+    "deep": 19,
+    "clear": 85,
+    "solar_line": 154
+   },
+   "baker_err_percent": {
+    "reference": 0.40912553668022156,
+    "telluric": 0.46483082696795464,
+    "deep": 0.7897425442934036,
+    "clear": 0.41801477782428265,
+    "solar_line": 0.4988105967640877
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03530316523694179,
+     "reference": 0.24984964322715716,
+     "telluric": 0.6807136481230418,
+     "deep": null,
+     "clear": 0.7403143255579664,
+     "solar_line": 0.6454643720179388
+    }
+   }
+  },
+  "15400": {
+   "v1": 15400.0037205,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 736,
+    "telluric": 455,
+    "deep": 31,
+    "clear": 375,
+    "solar_line": 80
+   },
+   "baker_err_percent": {
+    "reference": 0.42866719886660576,
+    "telluric": 0.40028002113103867,
+    "deep": 0.09268386056646705,
+    "clear": 0.4015035927295685,
+    "solar_line": 0.38913245080038905
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04012435914621113,
+     "reference": 0.12951249586669214,
+     "telluric": 0.8520762341925102,
+     "deep": 2.1883325923164,
+     "clear": 0.8638505188825317,
+     "solar_line": 0.7945618597954744
+    }
+   }
+  },
+  "15430": {
+   "v1": 15430.000401,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 681,
+    "telluric": 436,
+    "deep": 24,
+    "clear": 363,
+    "solar_line": 73
+   },
+   "baker_err_percent": {
+    "reference": 0.3970627672970295,
+    "telluric": 0.40536103770136833,
+    "deep": 0.14503507991321385,
+    "clear": 0.3997381776571274,
+    "solar_line": 0.4370748531073332
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02619777021394199,
+     "reference": 0.14744566800803216,
+     "telluric": 0.6824329140100839,
+     "deep": null,
+     "clear": 0.681897876644208,
+     "solar_line": 0.68508723733871
+    }
+   }
+  },
+  "15460": {
+   "v1": 15460.000848,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1045,
+    "telluric": 196,
+    "deep": 0,
+    "clear": 122,
+    "solar_line": 74
+   },
+   "baker_err_percent": {
+    "reference": 0.37241787649691105,
+    "telluric": 0.41529538575559855,
+    "deep": null,
+    "clear": 0.43402088340371847,
+    "solar_line": 0.399255845695734
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.036979273630106155,
+     "reference": 0.7494301962831987,
+     "telluric": 1.5072346698905847,
+     "deep": null,
+     "clear": 1.2964623530780766,
+     "solar_line": 1.8016691187798557
+    }
+   }
+  },
+  "15490": {
+   "v1": 15490.0012951,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1548,
+    "telluric": 17,
+    "deep": 0,
+    "clear": 16,
+    "solar_line": 1
+   },
+   "baker_err_percent": {
+    "reference": 0.3820833517238498,
+    "telluric": 0.4191276151686907,
+    "deep": null,
+    "clear": 0.41865429375320673,
+    "solar_line": 0.4861337598413229
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03377789277486377,
+     "reference": 0.2866673652459445,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15520": {
+   "v1": 15520.0017421,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1638,
+    "telluric": 23,
+    "deep": 0,
+    "clear": 23,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.41238886769860983,
+    "telluric": 0.4276425112038851,
+    "deep": null,
+    "clear": 0.4276425112038851,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03764957140051303,
+     "reference": 0.35190743726638574,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15550": {
+   "v1": 15550.0021891,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1751,
+    "telluric": 7,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 7
+   },
+   "baker_err_percent": {
+    "reference": 0.4073339980095625,
+    "telluric": 0.48858150839805603,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.48858150839805603
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04509593609176344,
+     "reference": 0.17320549420636946,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15580": {
+   "v1": 15580.0026362,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1595,
+    "telluric": 8,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 8
+   },
+   "baker_err_percent": {
+    "reference": 0.4190891981124878,
+    "telluric": 0.5721331806853414,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.5721331806853414
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04152010164293895,
+     "reference": 0.32274306057958096,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15610": {
+   "v1": 15610.0030832,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1766,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.43168209958821535,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.033626160089574184,
+     "reference": 0.26717348217136416,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15640": {
+   "v1": 15640.0035302,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1695,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.4222332965582609,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.033259210946001164,
+     "reference": 0.14232270777731132,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15670": {
+   "v1": 15670.0002107,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1548,
+    "telluric": 29,
+    "deep": 0,
+    "clear": 7,
+    "solar_line": 22
+   },
+   "baker_err_percent": {
+    "reference": 0.43841663282364607,
+    "telluric": 0.5048078950494528,
+    "deep": null,
+    "clear": 0.5025710910558701,
+    "solar_line": 0.5058556562289596
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02751263833470672,
+     "reference": 0.5654899829044578,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15700": {
+   "v1": 15700.0006578,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1738,
+    "telluric": 6,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 6
+   },
+   "baker_err_percent": {
+    "reference": 0.4583420464769006,
+    "telluric": 0.4975240444764495,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.4975240444764495
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04039785413581754,
+     "reference": 0.34101883690299706,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15730": {
+   "v1": 15730.0011048,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1557,
+    "telluric": 55,
+    "deep": 0,
+    "clear": 18,
+    "solar_line": 37
+   },
+   "baker_err_percent": {
+    "reference": 0.47285943292081356,
+    "telluric": 0.5674315150827169,
+    "deep": null,
+    "clear": 0.5075765307992697,
+    "solar_line": 0.5877577234059572
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.046697475615520116,
+     "reference": 0.8043129815610752,
+     "telluric": 1.3449006522709532,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.5756987219299075
+    }
+   }
+  },
+  "15760": {
+   "v1": 15760.0015519,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1023,
+    "telluric": 17,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 17
+   },
+   "baker_err_percent": {
+    "reference": 0.4912338685244322,
+    "telluric": 0.6004635710269213,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.6004635710269213
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04670216131499949,
+     "reference": 0.2600559410311663,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15790": {
+   "v1": 15810.0022969,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 394,
+    "telluric": 43,
+    "deep": 0,
+    "clear": 2,
+    "solar_line": 41
+   },
+   "baker_err_percent": {
+    "reference": 0.5228349473327398,
+    "telluric": 0.5598273128271103,
+    "deep": null,
+    "clear": 0.4916699370369315,
+    "solar_line": 0.5599393509328365
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04484369552724105,
+     "reference": 0.17407213907968638,
+     "telluric": 0.36218127539958095,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.35634080407734264
+    }
+   }
+  },
+  "15820": {
+   "v1": 15820.0024459,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1424,
+    "telluric": 130,
+    "deep": 14,
+    "clear": 35,
+    "solar_line": 95
+   },
+   "baker_err_percent": {
+    "reference": 0.5162134068086743,
+    "telluric": 0.5735287442803383,
+    "deep": 0.4023040644824505,
+    "clear": 0.5209001246839762,
+    "solar_line": 0.599701888859272
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04337427142739732,
+     "reference": 0.38768652564323175,
+     "telluric": 0.9047068120776802,
+     "deep": null,
+     "clear": 0.9170095491394827,
+     "solar_line": 0.9001318388472106
+    }
+   }
+  },
+  "15850": {
+   "v1": 15850.002893,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1325,
+    "telluric": 211,
+    "deep": 48,
+    "clear": 100,
+    "solar_line": 111
+   },
+   "baker_err_percent": {
+    "reference": 0.5318982060998678,
+    "telluric": 0.5193787161260843,
+    "deep": 0.49996601883322,
+    "clear": 0.5312283290550113,
+    "solar_line": 0.5097266286611557
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03515764637158496,
+     "reference": 0.8746551235474983,
+     "telluric": 1.6959269544634434,
+     "deep": 2.9870867011581392,
+     "clear": 1.4728720094946954,
+     "solar_line": 1.8742837717293983
+    }
+   }
+  },
+  "15880": {
+   "v1": 15880.00334,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1148,
+    "telluric": 249,
+    "deep": 34,
+    "clear": 200,
+    "solar_line": 49
+   },
+   "baker_err_percent": {
+    "reference": 0.5591896362602711,
+    "telluric": 0.5556627176702023,
+    "deep": 0.4629339789971709,
+    "clear": 0.5414811661466956,
+    "solar_line": 0.6031813099980354
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04341372847647121,
+     "reference": 0.326191828870003,
+     "telluric": 1.0965304440300805,
+     "deep": 2.558205065376428,
+     "clear": 1.0412936051513741,
+     "solar_line": 1.29783100241532
+    }
+   }
+  },
+  "15910": {
+   "v1": 15910.0000205,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 616,
+    "telluric": 579,
+    "deep": 114,
+    "clear": 372,
+    "solar_line": 207
+   },
+   "baker_err_percent": {
+    "reference": 0.44149335008114576,
+    "telluric": 0.516127236187458,
+    "deep": 0.6880732486024499,
+    "clear": 0.4928452195599675,
+    "solar_line": 0.5475651938468218
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.01153752887805035,
+     "reference": 0.20151370283410286,
+     "telluric": 1.8860454264191135,
+     "deep": 3.88212628359937,
+     "clear": 1.5957361327222586,
+     "solar_line": 2.318116885661152
+    }
+   }
+  },
+  "15940": {
+   "v1": 15940.0004676,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1580,
+    "telluric": 24,
+    "deep": 0,
+    "clear": 2,
+    "solar_line": 22
+   },
+   "baker_err_percent": {
+    "reference": 0.46208323910832405,
+    "telluric": 0.5427465541288257,
+    "deep": null,
+    "clear": 0.5167833995074034,
+    "solar_line": 0.5554091185331345
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03403382551594647,
+     "reference": 0.2618479604271207,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "15970": {
+   "v1": 15970.0009146,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1885,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.4863134119659662,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03709180449225764,
+     "reference": 0.2910375673020162,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "16570": {
+   "v1": 16570.0023223,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1877,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.4919582512229681,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.021849444448529265,
+     "reference": 0.38494786766116446,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "16600": {
+   "v1": 16600.0027693,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1686,
+    "telluric": 23,
+    "deep": 0,
+    "clear": 23,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.5164176924154162,
+    "telluric": 0.5884165409952402,
+    "deep": null,
+    "clear": 0.5884165409952402,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.011304932191118007,
+     "reference": 0.5237640578232631,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "16630": {
+   "v1": 16630.0032164,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1557,
+    "telluric": 26,
+    "deep": 0,
+    "clear": 17,
+    "solar_line": 9
+   },
+   "baker_err_percent": {
+    "reference": 0.5333344452083111,
+    "telluric": 0.5916663445532322,
+    "deep": null,
+    "clear": 0.5613422021269798,
+    "solar_line": 0.6655939389020205
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.013873826445337887,
+     "reference": 0.6223704391999143,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "16660": {
+   "v1": 16660.0036634,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1168,
+    "telluric": 180,
+    "deep": 0,
+    "clear": 108,
+    "solar_line": 72
+   },
+   "baker_err_percent": {
+    "reference": 0.5442361580207944,
+    "telluric": 0.5647760350257158,
+    "deep": null,
+    "clear": 0.564863090403378,
+    "solar_line": 0.5627675447613001
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.005734608336331413,
+     "reference": 0.3731464986722722,
+     "telluric": 0.8419321116070277,
+     "deep": null,
+     "clear": 0.8403502363848615,
+     "solar_line": 0.8442993673452165
+    }
+   }
+  },
+  "16690": {
+   "v1": 16690.0003439,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1124,
+    "telluric": 117,
+    "deep": 0,
+    "clear": 33,
+    "solar_line": 84
+   },
+   "baker_err_percent": {
+    "reference": 0.5210341885685921,
+    "telluric": 0.5518103949725628,
+    "deep": null,
+    "clear": 0.5342397838830948,
+    "solar_line": 0.5576977273449302
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.015532086025953032,
+     "reference": 0.463316627493427,
+     "telluric": 1.6535494710834338,
+     "deep": null,
+     "clear": 1.6794336780704342,
+     "solar_line": 1.6432691285761831
+    }
+   }
+  },
+  "16720": {
+   "v1": 16720.0007909,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1023,
+    "telluric": 282,
+    "deep": 0,
+    "clear": 225,
+    "solar_line": 57
+   },
+   "baker_err_percent": {
+    "reference": 0.5309190135449171,
+    "telluric": 0.5335620371624827,
+    "deep": null,
+    "clear": 0.5221488419920206,
+    "solar_line": 0.6192921660840511
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02398776523632329,
+     "reference": 0.3315938585394568,
+     "telluric": 0.6342771611836969,
+     "deep": null,
+     "clear": 0.5779131157373069,
+     "solar_line": 0.8197605207472201
+    }
+   }
+  },
+  "16750": {
+   "v1": 16750.001238,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 899,
+    "telluric": 325,
+    "deep": 0,
+    "clear": 239,
+    "solar_line": 86
+   },
+   "baker_err_percent": {
+    "reference": 0.557433906942606,
+    "telluric": 0.5679561290889978,
+    "deep": null,
+    "clear": 0.5565991159528494,
+    "solar_line": 0.6103596184402704
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.008269748101112091,
+     "reference": 0.27966784411535456,
+     "telluric": 1.0663362553639957,
+     "deep": null,
+     "clear": 0.9079363456232318,
+     "solar_line": 1.416388539879328
+    }
+   }
+  },
+  "16780": {
+   "v1": 16780.001685,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 773,
+    "telluric": 318,
+    "deep": 7,
+    "clear": 198,
+    "solar_line": 120
+   },
+   "baker_err_percent": {
+    "reference": 0.5462275352329016,
+    "telluric": 0.5624580197036266,
+    "deep": 0.11725634103640914,
+    "clear": 0.5545249674469233,
+    "solar_line": 0.5686301970854402
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0153642769663495,
+     "reference": 0.35892514084158905,
+     "telluric": 0.916655039117613,
+     "deep": null,
+     "clear": 0.8469620491798403,
+     "solar_line": 1.0213035028439048
+    }
+   }
+  },
+  "16810": {
+   "v1": 16810.002132,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 528,
+    "telluric": 580,
+    "deep": 41,
+    "clear": 412,
+    "solar_line": 168
+   },
+   "baker_err_percent": {
+    "reference": 0.554434023797512,
+    "telluric": 0.5018838448449969,
+    "deep": 0.37642884999513626,
+    "clear": 0.49630338326096535,
+    "solar_line": 0.5105472402647138
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.025416290746603103,
+     "reference": 0.1612023807604875,
+     "telluric": 0.8156710879777681,
+     "deep": 2.3171391524944096,
+     "clear": 0.7130001169705834,
+     "solar_line": 1.0248028586862619
+    }
+   }
+  },
+  "16840": {
+   "v1": 16840.0025791,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 936,
+    "telluric": 234,
+    "deep": 8,
+    "clear": 153,
+    "solar_line": 81
+   },
+   "baker_err_percent": {
+    "reference": 0.5621973890811205,
+    "telluric": 0.5956188542768359,
+    "deep": 0.4202366806566715,
+    "clear": 0.6053823512047529,
+    "solar_line": 0.571295851841569
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.023313383727018,
+     "reference": 0.36381223819723696,
+     "telluric": 0.9305860089481751,
+     "deep": null,
+     "clear": 0.7309711021998162,
+     "solar_line": 1.2216714203196182
+    }
+   }
+  },
+  "16870": {
+   "v1": 16870.0030261,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 362,
+    "telluric": 591,
+    "deep": 34,
+    "clear": 312,
+    "solar_line": 279
+   },
+   "baker_err_percent": {
+    "reference": 0.5863952217623591,
+    "telluric": 0.5776387639343739,
+    "deep": 0.5607131402939558,
+    "clear": 0.5647528916597366,
+    "solar_line": 0.5896381102502346
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.003337637658627266,
+     "reference": 0.7777324538467397,
+     "telluric": 1.1534360230992338,
+     "deep": 1.3013893208504868,
+     "clear": 0.9126217652629254,
+     "solar_line": 1.373608094354779
+    }
+   }
+  },
+  "16900": {
+   "v1": 16900.0034732,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 590,
+    "telluric": 451,
+    "deep": 0,
+    "clear": 317,
+    "solar_line": 134
+   },
+   "baker_err_percent": {
+    "reference": 0.6116501754149795,
+    "telluric": 0.589979812502861,
+    "deep": null,
+    "clear": 0.5878043826669455,
+    "solar_line": 0.5998370237648487
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.01854727492848523,
+     "reference": 0.24915691685669356,
+     "telluric": 1.0434319670741596,
+     "deep": null,
+     "clear": 1.0335066989990709,
+     "solar_line": 1.0665442487225676
+    }
+   }
+  },
+  "16930": {
+   "v1": 16930.0001537,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 394,
+    "telluric": 621,
+    "deep": 28,
+    "clear": 222,
+    "solar_line": 399
+   },
+   "baker_err_percent": {
+    "reference": 0.6130238296464086,
+    "telluric": 0.5824885331094265,
+    "deep": 0.6621235050261021,
+    "clear": 0.563463312573731,
+    "solar_line": 0.5925227422267199
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.00847252163409039,
+     "reference": 0.4933086028480738,
+     "telluric": 1.464487210318345,
+     "deep": null,
+     "clear": 1.4072829017002426,
+     "solar_line": 1.4953679737263617
+    }
+   }
+  },
+  "16960": {
+   "v1": 16960.0006007,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 385,
+    "telluric": 641,
+    "deep": 32,
+    "clear": 77,
+    "solar_line": 564
+   },
+   "baker_err_percent": {
+    "reference": 0.6993792951107025,
+    "telluric": 0.6078718695789576,
+    "deep": 0.2588842296972871,
+    "clear": 0.6349415984004736,
+    "solar_line": 0.6019889144226909
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.3567224735736687,
+     "reference": 0.36598822175616896,
+     "telluric": 3.6151788563845813,
+     "deep": 2.7148619407582855,
+     "clear": 0.8725719914053822,
+     "solar_line": 3.8405578094147366
+    }
+   }
+  },
+  "16990": {
+   "v1": 16990.0010477,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 765,
+    "telluric": 390,
+    "deep": 3,
+    "clear": 244,
+    "solar_line": 146
+   },
+   "baker_err_percent": {
+    "reference": 0.550181046128273,
+    "telluric": 0.6407479755580425,
+    "deep": 1.0190230794250965,
+    "clear": 0.6231663981452584,
+    "solar_line": 0.6683810381218791
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.016073040488970392,
+     "reference": 0.278993891125614,
+     "telluric": 0.8895007747775229,
+     "deep": null,
+     "clear": 0.8223670163750859,
+     "solar_line": 0.991603042473181
+    }
+   }
+  },
+  "17020": {
+   "v1": 17020.0014948,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1433,
+    "telluric": 38,
+    "deep": 0,
+    "clear": 15,
+    "solar_line": 23
+   },
+   "baker_err_percent": {
+    "reference": 0.5488484166562557,
+    "telluric": 0.6105450913310051,
+    "deep": null,
+    "clear": 0.5436039064079523,
+    "solar_line": 0.7852416485548019
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02308439881321389,
+     "reference": 0.2622219924955945,
+     "telluric": 1.065389461427391,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17050": {
+   "v1": 17050.0019418,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1712,
+    "telluric": 22,
+    "deep": 0,
+    "clear": 4,
+    "solar_line": 18
+   },
+   "baker_err_percent": {
+    "reference": 0.6028281757608056,
+    "telluric": 0.7028697989881039,
+    "deep": null,
+    "clear": 0.6247094832360744,
+    "solar_line": 0.723765417933464
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.018688211592541932,
+     "reference": 0.4250867221942144,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17080": {
+   "v1": 17080.0023888,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1733,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.5747290328145027,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.00603721893008849,
+     "reference": 0.5567384195854826,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17110": {
+   "v1": 17110.0028359,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1558,
+    "telluric": 33,
+    "deep": 0,
+    "clear": 1,
+    "solar_line": 32
+   },
+   "baker_err_percent": {
+    "reference": 0.5464910296723247,
+    "telluric": 0.5861318670213223,
+    "deep": null,
+    "clear": 0.4909724462777376,
+    "solar_line": 0.5867812316864729
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02012198973685078,
+     "reference": 0.3209040436223882,
+     "telluric": 1.2455132762061465,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.2581665872791632
+    }
+   }
+  },
+  "17140": {
+   "v1": 17140.0032829,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1825,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.5796553567051888,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.04755303429015983,
+     "reference": 0.31960806619243676,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17170": {
+   "v1": 17170.00373,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1829,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.6427445448935032,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03913152216868569,
+     "reference": 0.5165505594926937,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17230": {
+   "v1": 17230.0008575,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1100,
+    "telluric": 79,
+    "deep": 0,
+    "clear": 23,
+    "solar_line": 56
+   },
+   "baker_err_percent": {
+    "reference": 0.6210025865584612,
+    "telluric": 0.6513538770377636,
+    "deep": null,
+    "clear": 0.6322074681520462,
+    "solar_line": 0.6574988830834627
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.06501053888384904,
+     "reference": 0.8446776644681627,
+     "telluric": 0.823193572581357,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.955947733909625
+    }
+   }
+  },
+  "17260": {
+   "v1": 17260.0013045,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1833,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.7253266405314207,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.021293305431357188,
+     "reference": 0.9183841340615753,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17290": {
+   "v1": 17290.0017516,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1713,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.6977129727602005,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.019354328385648538,
+     "reference": 0.4403079151901675,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17320": {
+   "v1": 17320.0021986,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1576,
+    "telluric": 17,
+    "deep": 0,
+    "clear": 7,
+    "solar_line": 10
+   },
+   "baker_err_percent": {
+    "reference": 0.6118018412962556,
+    "telluric": 0.7678267545998096,
+    "deep": null,
+    "clear": 0.9381045587360859,
+    "solar_line": 0.7274386938661337
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.020552413240351897,
+     "reference": 0.33593263242235977,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17350": {
+   "v1": 17350.0026457,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1548,
+    "telluric": 28,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 28
+   },
+   "baker_err_percent": {
+    "reference": 0.6461274810135365,
+    "telluric": 0.7450439734384418,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.7450439734384418
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0192128168027714,
+     "reference": 0.3710524223137155,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17380": {
+   "v1": 17380.0030927,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1485,
+    "telluric": 38,
+    "deep": 0,
+    "clear": 9,
+    "solar_line": 29
+   },
+   "baker_err_percent": {
+    "reference": 0.653476919978857,
+    "telluric": 0.7513290736824274,
+    "deep": null,
+    "clear": 0.7141833659261465,
+    "solar_line": 0.7514058612287045
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.001828612084268498,
+     "reference": 0.42235553933210723,
+     "telluric": 1.0106393914619431,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17410": {
+   "v1": 17410.0035397,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1583,
+    "telluric": 39,
+    "deep": 0,
+    "clear": 27,
+    "solar_line": 12
+   },
+   "baker_err_percent": {
+    "reference": 0.6174205802381039,
+    "telluric": 0.6806180346757174,
+    "deep": null,
+    "clear": 0.6806180346757174,
+    "solar_line": 0.6947399582713842
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.01655180282118141,
+     "reference": 0.2924543737962532,
+     "telluric": 0.4451567354923498,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17440": {
+   "v1": 17440.0002202,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1539,
+    "telluric": 74,
+    "deep": 0,
+    "clear": 65,
+    "solar_line": 9
+   },
+   "baker_err_percent": {
+    "reference": 0.6258825305849314,
+    "telluric": 0.7262709550559521,
+    "deep": null,
+    "clear": 0.7306960411369801,
+    "solar_line": 0.7072214502841234
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.012256766458864548,
+     "reference": 0.34423426572797505,
+     "telluric": 0.3177664243690076,
+     "deep": null,
+     "clear": 0.3082809166467317,
+     "solar_line": null
+    }
+   }
+  },
+  "17470": {
+   "v1": 17470.0006673,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1443,
+    "telluric": 78,
+    "deep": 0,
+    "clear": 41,
+    "solar_line": 37
+   },
+   "baker_err_percent": {
+    "reference": 0.6848490331321955,
+    "telluric": 0.7281024241819978,
+    "deep": null,
+    "clear": 0.7049386855214834,
+    "solar_line": 0.7353329099714756
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.01422993130138155,
+     "reference": 0.6937823589931883,
+     "telluric": 0.6980476254590635,
+     "deep": null,
+     "clear": 0.6560932517478306,
+     "solar_line": 0.7417711722509475
+    }
+   }
+  },
+  "17500": {
+   "v1": 17500.0011143,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1730,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.6936282617971301,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.01361764873422865,
+     "reference": 0.5734526291809638,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17530": {
+   "v1": 17530.0015613,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1360,
+    "telluric": 94,
+    "deep": 0,
+    "clear": 76,
+    "solar_line": 18
+   },
+   "baker_err_percent": {
+    "reference": 0.6678511621430516,
+    "telluric": 0.7668690057471395,
+    "deep": null,
+    "clear": 0.7685845019295812,
+    "solar_line": 0.760022597387433
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.005410477248413076,
+     "reference": 0.8236175746413277,
+     "telluric": 0.8094793872232834,
+     "deep": null,
+     "clear": 0.8079107115533932,
+     "solar_line": null
+    }
+   }
+  },
+  "17560": {
+   "v1": 17560.0020084,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1185,
+    "telluric": 166,
+    "deep": 0,
+    "clear": 136,
+    "solar_line": 30
+   },
+   "baker_err_percent": {
+    "reference": 0.732295960187912,
+    "telluric": 0.740165333263576,
+    "deep": null,
+    "clear": 0.7306447485461831,
+    "solar_line": 0.8612814359366894
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0008346348539182788,
+     "reference": 0.38060955412654635,
+     "telluric": 0.7048139445234175,
+     "deep": null,
+     "clear": 0.6519155085310528,
+     "solar_line": 0.9067055142235994
+    }
+   }
+  },
+  "17590": {
+   "v1": 17590.0024554,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1649,
+    "telluric": 11,
+    "deep": 0,
+    "clear": 11,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.6766905542463064,
+    "telluric": 0.7879370823502541,
+    "deep": null,
+    "clear": 0.7879370823502541,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.009302488549206307,
+     "reference": 0.32644461431904653,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "17620": {
+   "v1": 17620.0029025,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1818,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.6542088463902473,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02407944570885458,
+     "reference": 0.3413104573145302,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18130": {
+   "v1": 18130.002969,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1807,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.8822535164654255,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.013215486098962245,
+     "reference": 0.6244410537056831,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18160": {
+   "v1": 18160.0034161,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1725,
+    "telluric": 3,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 3
+   },
+   "baker_err_percent": {
+    "reference": 0.8210026659071445,
+    "telluric": 0.8385716006159782,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.8385716006159782
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.008037032174485636,
+     "reference": 0.6391292611650773,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18190": {
+   "v1": 18190.0000966,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1750,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.8005748968571424,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.005086580499648953,
+     "reference": 0.45810042723480315,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18220": {
+   "v1": 18220.0005436,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1789,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.875078234821558,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.010687227367820762,
+     "reference": 0.5836324025423603,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18250": {
+   "v1": 18250.0009906,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1689,
+    "telluric": 26,
+    "deep": 0,
+    "clear": 9,
+    "solar_line": 17
+   },
+   "baker_err_percent": {
+    "reference": 0.8324934169650078,
+    "telluric": 0.7991665508598089,
+    "deep": null,
+    "clear": 0.8502923883497715,
+    "solar_line": 0.780906155705452
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.002267798868179859,
+     "reference": 0.6608115538398275,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18280": {
+   "v1": 18280.0014377,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1560,
+    "telluric": 12,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 12
+   },
+   "baker_err_percent": {
+    "reference": 0.8637177292257547,
+    "telluric": 0.986371235921979,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.986371235921979
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.007333701071634866,
+     "reference": 0.5803390776755306,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18310": {
+   "v1": 18310.0018847,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1440,
+    "telluric": 57,
+    "deep": 0,
+    "clear": 6,
+    "solar_line": 51
+   },
+   "baker_err_percent": {
+    "reference": 0.8926194626837969,
+    "telluric": 0.999814085662365,
+    "deep": null,
+    "clear": 0.996773224323988,
+    "solar_line": 1.0217000730335712
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.00843280404102747,
+     "reference": 0.6209758502440169,
+     "telluric": 1.5677683264255318,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.6442441278210225
+    }
+   }
+  },
+  "18340": {
+   "v1": 18340.0023318,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1615,
+    "telluric": 11,
+    "deep": 0,
+    "clear": 3,
+    "solar_line": 8
+   },
+   "baker_err_percent": {
+    "reference": 0.8382841944694519,
+    "telluric": 0.9514489211142063,
+    "deep": null,
+    "clear": 0.8477499708533287,
+    "solar_line": 0.986180966719985
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0014537992937890315,
+     "reference": 0.8690734787380963,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18370": {
+   "v1": 18370.0027788,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1458,
+    "telluric": 29,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 29
+   },
+   "baker_err_percent": {
+    "reference": 0.9742426685988903,
+    "telluric": 1.1309195309877396,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.1309195309877396
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.0047666280503226265,
+     "reference": 0.6328029971219374,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18400": {
+   "v1": 18400.0032258,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1694,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.8333355654031038,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0032856787257726297,
+     "reference": 0.7093363214369428,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18430": {
+   "v1": 18430.0036729,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1581,
+    "telluric": 28,
+    "deep": 0,
+    "clear": 6,
+    "solar_line": 22
+   },
+   "baker_err_percent": {
+    "reference": 0.8595866151154041,
+    "telluric": 1.024808594956994,
+    "deep": null,
+    "clear": 0.9596988093107939,
+    "solar_line": 1.0415269527584314
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.003372570544167359,
+     "reference": 0.815126236552401,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18460": {
+   "v1": 18460.0003534,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1437,
+    "telluric": 28,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 28
+   },
+   "baker_err_percent": {
+    "reference": 0.9379182010889053,
+    "telluric": 1.014212379232049,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.014212379232049
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.005234522529401182,
+     "reference": 0.851369237943677,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18490": {
+   "v1": 18490.0008004,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1819,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.8827228099107742,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0018339588525108786,
+     "reference": 0.9396123544064584,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18520": {
+   "v1": 18520.0012474,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1855,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.9324516169726849,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.003219422050892426,
+     "reference": 0.8994288878695802,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18550": {
+   "v1": 18550.0016945,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1838,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.8636014070361853,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.004647758934143987,
+     "reference": 0.5830388757702412,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18880": {
+   "v1": 18880.0028454,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1842,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.9893911890685558,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.005007166172231928,
+     "reference": 0.499548111481715,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18910": {
+   "v1": 18910.0032924,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1857,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 1.004458498209715,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.005728706640391583,
+     "reference": 0.6905549037711148,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "18970": {
+   "v1": 18970.0004199,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1874,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 1.0227959137409925,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.003928218590520353,
+     "reference": 1.3744761631305695,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "19030": {
+   "v1": 19030.001314,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1860,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 1.0057846084237099,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.013969979939113988,
+     "reference": 1.0485406399775208,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "19060": {
+   "v1": 19060.0017611,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1452,
+    "telluric": 44,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 44
+   },
+   "baker_err_percent": {
+    "reference": 1.0143796913325787,
+    "telluric": 1.1350578628480434,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.1350578628480434
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.009747904094447483,
+     "reference": 0.5827680474573498,
+     "telluric": 1.9910313391288206,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.9910313391288206
+    }
+   }
+  },
+  "19540": {
+   "v1": 19540.0013806,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1741,
+    "telluric": 1,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 1
+   },
+   "baker_err_percent": {
+    "reference": 1.1568686924874783,
+    "telluric": 1.5864508226513863,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.5864508226513863
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.003925980535279747,
+     "reference": 0.9009638516019214,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "19570": {
+   "v1": 19570.0018276,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 905,
+    "telluric": 25,
+    "deep": 0,
+    "clear": 9,
+    "solar_line": 16
+   },
+   "baker_err_percent": {
+    "reference": 1.21030667796731,
+    "telluric": 1.3667474500834942,
+    "deep": null,
+    "clear": 1.3115372508764267,
+    "solar_line": 1.4170048758387566
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0041241086461419035,
+     "reference": 0.7935785777424669,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "19600": {
+   "v1": 19600.0022747,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 622,
+    "telluric": 26,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 26
+   },
+   "baker_err_percent": {
+    "reference": 1.249060919508338,
+    "telluric": 1.5899376943707466,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.5899376943707466
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.00029768198073617565,
+     "reference": 0.7308958591978929,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "19630": {
+   "v1": 19630.0027217,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 516,
+    "telluric": 99,
+    "deep": 0,
+    "clear": 14,
+    "solar_line": 85
+   },
+   "baker_err_percent": {
+    "reference": 1.2562959920614958,
+    "telluric": 1.4160824008286,
+    "deep": null,
+    "clear": 1.372182508930564,
+    "solar_line": 1.4500828459858894
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.006192373615629484,
+     "reference": 0.561761072002698,
+     "telluric": 1.9239417603004338,
+     "deep": null,
+     "clear": null,
+     "solar_line": 2.023457555607392
+    }
+   }
+  },
+  "19660": {
+   "v1": 19660.0031688,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 621,
+    "telluric": 74,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 74
+   },
+   "baker_err_percent": {
+    "reference": 1.3564055785536766,
+    "telluric": 1.4872740488499403,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.4872740488499403
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.00891597314483922,
+     "reference": 0.696256751325079,
+     "telluric": 2.2767501932231613,
+     "deep": null,
+     "clear": null,
+     "solar_line": 2.2767501932231613
+    }
+   }
+  },
+  "19690": {
+   "v1": 19690.0036158,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 799,
+    "telluric": 33,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 33
+   },
+   "baker_err_percent": {
+    "reference": 1.2998701073229313,
+    "telluric": 1.3230780139565468,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.3230780139565468
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.007788554642382624,
+     "reference": 1.0254618344805269,
+     "telluric": 5.720723809582757,
+     "deep": null,
+     "clear": null,
+     "solar_line": 5.720723809582757
+    }
+   }
+  },
+  "19720": {
+   "v1": 19720.0002963,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 856,
+    "telluric": 18,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 18
+   },
+   "baker_err_percent": {
+    "reference": 1.2998571153730154,
+    "telluric": 1.5199099201709032,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.5199099201709032
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.004102087300232797,
+     "reference": 0.49692314752028366,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "19750": {
+   "v1": 19750.0007433,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 564,
+    "telluric": 48,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 48
+   },
+   "baker_err_percent": {
+    "reference": 1.3033473398536444,
+    "telluric": 1.4231465756893158,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.4231465756893158
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.07878699565235928,
+     "reference": 0.6746776277089575,
+     "telluric": 3.524103098574314,
+     "deep": null,
+     "clear": null,
+     "solar_line": 3.524103098574314
+    }
+   }
+  },
+  "19780": {
+   "v1": 19780.0011904,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 722,
+    "telluric": 13,
+    "deep": 0,
+    "clear": 10,
+    "solar_line": 3
+   },
+   "baker_err_percent": {
+    "reference": 1.3360430020838976,
+    "telluric": 1.318715326488018,
+    "deep": null,
+    "clear": 1.3244866859167814,
+    "solar_line": 1.278669387102127
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0025196719722598428,
+     "reference": 0.5661788869231286,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "19810": {
+   "v1": 19810.0016374,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 488,
+    "telluric": 110,
+    "deep": 0,
+    "clear": 18,
+    "solar_line": 92
+   },
+   "baker_err_percent": {
+    "reference": 1.2848869431763887,
+    "telluric": 1.392088271677494,
+    "deep": null,
+    "clear": 1.378438575193286,
+    "solar_line": 1.392088271677494
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.004173036624794224,
+     "reference": 1.5873056169776527,
+     "telluric": 1.7960963928693983,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.7677178854549582
+    }
+   }
+  },
+  "19840": {
+   "v1": 19840.0020844,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 265,
+    "telluric": 190,
+    "deep": 0,
+    "clear": 9,
+    "solar_line": 181
+   },
+   "baker_err_percent": {
+    "reference": 1.326355617493391,
+    "telluric": 1.3896476477384567,
+    "deep": null,
+    "clear": 1.5100698918104172,
+    "solar_line": 1.3831204734742641
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.04351816045007271,
+     "reference": 0.40947658014000643,
+     "telluric": 3.8903143737246753,
+     "deep": null,
+     "clear": null,
+     "solar_line": 3.8484290780612143
+    }
+   }
+  },
+  "19870": {
+   "v1": 19870.0025315,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 508,
+    "telluric": 20,
+    "deep": 0,
+    "clear": 5,
+    "solar_line": 15
+   },
+   "baker_err_percent": {
+    "reference": 1.3626277446746826,
+    "telluric": 1.5104714315384626,
+    "deep": null,
+    "clear": 1.2210864573717117,
+    "solar_line": 1.5240118838846684
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.00023551413614346682,
+     "reference": 0.5849241114660629,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "19900": {
+   "v1": 19900.0029785,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1806,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 1.390940137207508,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.004603765573107813,
+     "reference": 1.7698848176245623,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "19930": {
+   "v1": 19930.0034255,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1301,
+    "telluric": 54,
+    "deep": 0,
+    "clear": 10,
+    "solar_line": 44
+   },
+   "baker_err_percent": {
+    "reference": 1.4299340546131134,
+    "telluric": 1.3810952194035053,
+    "deep": null,
+    "clear": 1.4386842958629131,
+    "solar_line": 1.3444779440760612
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0025425119753389775,
+     "reference": 0.9632580394424571,
+     "telluric": 1.6984520473929028,
+     "deep": null,
+     "clear": null,
+     "solar_line": 1.757750084780533
+    }
+   }
+  },
+  "9400": {
+   "v1": 9400.00094322,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1638,
+    "telluric": 13,
+    "deep": 0,
+    "clear": 13,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 1.2479975819587708,
+    "telluric": 1.2848377227783203,
+    "deep": null,
+    "clear": 1.2848377227783203,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.010768308521439942,
+     "reference": 0.2695861468836967,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9430": {
+   "v1": 9430.00139026,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1072,
+    "telluric": 3,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 3
+   },
+   "baker_err_percent": {
+    "reference": 1.1902263388037682,
+    "telluric": 1.1389757506549358,
+    "deep": null,
+    "clear": null,
+    "solar_line": 1.1389757506549358
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.01180008216678861,
+     "reference": 0.17895177939864726,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9460": {
+   "v1": 9460.0018373,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1545,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 1.1035672388970852,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.038514274837410496,
+     "reference": 0.18588363997730134,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9490": {
+   "v1": 9490.00228433,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1725,
+    "telluric": 5,
+    "deep": 0,
+    "clear": 5,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 1.0506854392588139,
+    "telluric": 1.1181963607668877,
+    "deep": null,
+    "clear": 1.1181963607668877,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.05114400652671072,
+     "reference": 0.19539100363524095,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9520": {
+   "v1": 9520.00273137,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1776,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.9926922619342804,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0282590218668628,
+     "reference": 0.1708491098406364,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9550": {
+   "v1": 9550.00317841,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1768,
+    "telluric": 10,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 10
+   },
+   "baker_err_percent": {
+    "reference": 0.9431774262338877,
+    "telluric": 0.8778006304055452,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.8778006304055452
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.028025237208878784,
+     "reference": 0.29342836845780534,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9580": {
+   "v1": 9580.00362545,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1862,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.8989289868623018,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.036791165021913916,
+     "reference": 0.15009657522523034,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9610": {
+   "v1": 9610.00030595,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1862,
+    "telluric": 0,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.8642260916531086,
+    "telluric": null,
+    "deep": null,
+    "clear": null,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03811856841537257,
+     "reference": 0.24364570628784285,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9640": {
+   "v1": 9640.00075299,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1861,
+    "telluric": 3,
+    "deep": 0,
+    "clear": 3,
+    "solar_line": 0
+   },
+   "baker_err_percent": {
+    "reference": 0.8260933682322502,
+    "telluric": 1.9130559638142586,
+    "deep": null,
+    "clear": 1.9130559638142586,
+    "solar_line": null
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03520432643849113,
+     "reference": 0.2063330021977694,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9670": {
+   "v1": 9670.00120003,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1685,
+    "telluric": 15,
+    "deep": 0,
+    "clear": 10,
+    "solar_line": 5
+   },
+   "baker_err_percent": {
+    "reference": 0.752440607175231,
+    "telluric": 0.8075359277427197,
+    "deep": null,
+    "clear": 0.7927576545625925,
+    "solar_line": 0.944102369248867
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.030307199002153243,
+     "reference": 0.23327267231787147,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9700": {
+   "v1": 9700.00164706,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1746,
+    "telluric": 27,
+    "deep": 0,
+    "clear": 25,
+    "solar_line": 2
+   },
+   "baker_err_percent": {
+    "reference": 0.6990265334025025,
+    "telluric": 0.7712302263826132,
+    "deep": null,
+    "clear": 0.7721721660345793,
+    "solar_line": 0.7552065886557102
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02773349949333906,
+     "reference": 0.1691769645551438,
+     "telluric": null,
+     "deep": null,
+     "clear": null,
+     "solar_line": null
+    }
+   }
+  },
+  "9730": {
+   "v1": 9730.0020941,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1635,
+    "telluric": 69,
+    "deep": 0,
+    "clear": 64,
+    "solar_line": 5
+   },
+   "baker_err_percent": {
+    "reference": 0.6744070909917355,
+    "telluric": 0.7337406743317842,
+    "deep": null,
+    "clear": 0.7289313711225986,
+    "solar_line": 0.7687117904424667
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.05324748424927466,
+     "reference": 0.17525506278809147,
+     "telluric": 0.5378591262861718,
+     "deep": null,
+     "clear": 0.5249159061823008,
+     "solar_line": null
+    }
+   }
+  },
+  "9760": {
+   "v1": 9760.00254114,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1460,
+    "telluric": 145,
+    "deep": 0,
+    "clear": 110,
+    "solar_line": 35
+   },
+   "baker_err_percent": {
+    "reference": 0.6522656884044409,
+    "telluric": 0.7104239892214537,
+    "deep": null,
+    "clear": 0.7142845774069428,
+    "solar_line": 0.7051696535199881
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.02613566383393254,
+     "reference": 0.129928285718223,
+     "telluric": 0.4441810152323197,
+     "deep": null,
+     "clear": 0.4560726371142121,
+     "solar_line": 0.40453799880794455
+    }
+   }
+  },
+  "9790": {
+   "v1": 9790.00298818,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1625,
+    "telluric": 96,
+    "deep": 0,
+    "clear": 94,
+    "solar_line": 2
+   },
+   "baker_err_percent": {
+    "reference": 0.6197190843522549,
+    "telluric": 0.7320704869925976,
+    "deep": null,
+    "clear": 0.7328734965994954,
+    "solar_line": 0.7210551528260112
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.025607327811095874,
+     "reference": 0.09821515610163453,
+     "telluric": 0.3403186063333401,
+     "deep": null,
+     "clear": 0.34344918857172135,
+     "solar_line": null
+    }
+   }
+  },
+  "9820": {
+   "v1": 9820.00343521,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1614,
+    "telluric": 67,
+    "deep": 0,
+    "clear": 50,
+    "solar_line": 17
+   },
+   "baker_err_percent": {
+    "reference": 0.5879755597561598,
+    "telluric": 0.6238573230803013,
+    "deep": null,
+    "clear": 0.63582977745682,
+    "solar_line": 0.6177392788231373
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.03272499765816533,
+     "reference": 0.12678135841116378,
+     "telluric": 0.36747889537240863,
+     "deep": null,
+     "clear": 0.30793903812684775,
+     "solar_line": null
+    }
+   }
+  },
+  "9850": {
+   "v1": 9850.00011572,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1645,
+    "telluric": 50,
+    "deep": 0,
+    "clear": 42,
+    "solar_line": 8
+   },
+   "baker_err_percent": {
+    "reference": 0.5589797161519527,
+    "telluric": 0.6484617246314883,
+    "deep": null,
+    "clear": 0.6404726300388575,
+    "solar_line": 0.9156519081443548
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.031036684715818243,
+     "reference": 0.14540853880916738,
+     "telluric": 0.37516581361428974,
+     "deep": null,
+     "clear": 0.24310587046204785,
+     "solar_line": null
+    }
+   }
+  },
+  "9880": {
+   "v1": 9880.00056276,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1279,
+    "telluric": 146,
+    "deep": 1,
+    "clear": 120,
+    "solar_line": 26
+   },
+   "baker_err_percent": {
+    "reference": 0.5341274198144674,
+    "telluric": 0.5669701844453812,
+    "deep": 0.5458985920995474,
+    "clear": 0.5801347550004721,
+    "solar_line": 0.5431483034044504
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03189335979649776,
+     "reference": 0.08724831441197571,
+     "telluric": 0.3740783619096725,
+     "deep": null,
+     "clear": 0.3242693295676263,
+     "solar_line": null
+    }
+   }
+  },
+  "9910": {
+   "v1": 9910.00100979,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1498,
+    "telluric": 109,
+    "deep": 0,
+    "clear": 68,
+    "solar_line": 41
+   },
+   "baker_err_percent": {
+    "reference": 0.5253556650131941,
+    "telluric": 0.6326409056782722,
+    "deep": null,
+    "clear": 0.5895422073081136,
+    "solar_line": 0.6711611989885569
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.0271445778888015,
+     "reference": 0.22920545143185958,
+     "telluric": 0.5168315123982192,
+     "deep": null,
+     "clear": 0.5051563261104621,
+     "solar_line": 0.5356344856657977
+    }
+   }
+  },
+  "9940": {
+   "v1": 9940.00145683,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1478,
+    "telluric": 90,
+    "deep": 0,
+    "clear": 0,
+    "solar_line": 90
+   },
+   "baker_err_percent": {
+    "reference": 0.5097812507301569,
+    "telluric": 0.8564203046262264,
+    "deep": null,
+    "clear": null,
+    "solar_line": 0.8564203046262264
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": -0.019493626370101703,
+     "reference": 0.5021361013510407,
+     "telluric": 0.5069419775876706,
+     "deep": null,
+     "clear": null,
+     "solar_line": 0.5069419775876706
+    }
+   }
+  },
+  "9970": {
+   "v1": 9970.00190387,
+   "reference_above": 0.995,
+   "pixels": {
+    "reference": 1146,
+    "telluric": 195,
+    "deep": 4,
+    "clear": 138,
+    "solar_line": 57
+   },
+   "baker_err_percent": {
+    "reference": 0.487860688008368,
+    "telluric": 0.5706282798200846,
+    "deep": 0.7386320736259222,
+    "clear": 0.5869833752512932,
+    "solar_line": 0.5283715203404427
+   },
+   "runs": {
+    "coadd": {
+     "velocity_kms": 0.03173566810068634,
+     "reference": 0.11036822908038908,
+     "telluric": 0.8911874663923381,
+     "deep": null,
+     "clear": 0.8238177926577158,
+     "solar_line": 1.03631169776553
+    }
+   }
+  }
+ }
+}

@@ -92,7 +92,8 @@ it covers.
   `build_arcturus_notebook` and `docs/arcturus_walkthrough.ipynb`, the sibling
   project and the solar products it is asking for, rerunning and promoting a solar
   run (`merge_fts_shards`, `compare_fts_runs`), and the O2 checks (`compare_o2_*`,
-  `o2_*`, `fit_atlas_o2` for the IAG and Wallace 2011 flux atlases).
+  `o2_*`, `fit_atlas_o2` for the IAG and Wallace 2011 flux atlases), and the IAG
+  co-add fit (`fit_fts_batch --iag --coadd`, `make_iag_coadd`, `score_iag_against_baker`).
 - `packages/tellurix-igrins/CLAUDE.md` -- IGRINS: `*igrins*`,
   `download_rrisa_standard`, `era5_site_profile`, `generate_payne_zero_{a0v,star}`,
   the night calibrations under `data/calibration/`.
@@ -276,6 +277,16 @@ the default is the built-in Gaussian, and `BoxcarFTSInstrumentProfile` applies a
 unapodized FTS sinc by FFT (a truncated kernel is invalid for a sinc at any width).
 `pixel_integration="point"` turns off Simpson pixel averaging, which is wrong for
 point-sampled FTS data.
+
+A spectrum averaged over several observations (the IAG solar atlas: nine days, each shifted
+into the solar frame) is `CoaddedTelluricModel` (`coadd.py`). It is a `TelluricModel`
+whose `transmission` is the weighted mean over components (one per profile) and their
+`CoaddNode`s, each node with its own zenith angle and velocity. Each node is moved by a
+Fourier phase ramp, which is exact where a cubic shift is not for a line under three samples
+wide. `predict`, `OrderObjective` and `precompute_opacity` work on it unchanged. It
+**ignores the zenith angle it is given**, and it has no single `vertical_optical_depth`
+(that raises). Code that rebuilds a single `TelluricModel` from a record will silently
+fit the wrong thing for a co-add run (`physics["coadd"]` set).
 
 Line data reaches ExoJAX through `AERLineDatabase` (`aer.py`), a minimal
 HITRAN-shaped adapter over AER 100-character per-molecule line files (it

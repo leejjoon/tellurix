@@ -48,7 +48,7 @@ TELFREE = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlase
 C_KMS = 299792.458
 EDGE_SAMPLES = 50
 MIN_TRANSMISSION = 0.15
-VELOCITIES_KMS = np.arange(-3.0, 3.0001, 0.05)
+VELOCITIES_KMS = np.arange(-1.0, 1.0001, 0.05)  # every window but one aligns within +-0.6
 REFERENCE_CEILINGS = (0.995, 0.98, 0.95)
 
 
@@ -60,11 +60,15 @@ def corrected(path: Path):
         order = np.argsort(nu)
         take = lambda key: np.asarray(data[key])[order]
         flat = take("flux") / (take("model_flux") / take("stellar_only_pixels")) / take("continuum")
+        # Blank what the products blank, so a misalignment cannot pull a
+        # saturated core's flux/T into the ratio.
+        flat[take("transmission_pixels") < MIN_TRANSMISSION] = np.nan
         return (nu[order], flat, take("stellar_only_pixels") / take("continuum"),
                 take("transmission_pixels"), take("mask").astype(bool))
 
 
 def detrended(v, ratio, where):
+    where = where & np.isfinite(ratio)
     coeffs = np.polyfit(v[where] - v.mean(), ratio[where], 1)
     return ratio / np.polyval(coeffs, v - v.mean())
 
@@ -74,7 +78,8 @@ def align(v, nu, flat, s, where):
 
     def cost(velocity):
         ours = np.interp(v * (1.0 + velocity / C_KMS), nu, flat)
-        return float(np.std(detrended(v, ours / s, where)[where]))
+        ratio = detrended(v, ours / s, where)[where]
+        return float(np.nanstd(ratio)) if np.isfinite(ratio).mean() > 0.9 else np.inf
 
     costs = np.array([cost(u) for u in VELOCITIES_KMS])
     best = int(np.argmin(costs))
@@ -88,7 +93,7 @@ def align(v, nu, flat, s, where):
 
 
 def rms(values) -> float:
-    return float(100.0 * np.sqrt(np.mean((values - 1.0) ** 2)))
+    return float(100.0 * np.sqrt(np.nanmean((values - 1.0) ** 2)))
 
 
 def main() -> None:
@@ -144,7 +149,7 @@ def main() -> None:
             velocity = align(v, r_nu, r_flat, s, reference)
             ratio = detrended(v, np.interp(v * (1.0 + velocity / C_KMS), r_nu, r_flat) / s, reference)
             row["runs"][name] = {"velocity_kms": velocity,
-                                 **{k: (rms(ratio[m]) if m.sum() >= args.minimum_pixels else None)
+                                 **{k: (rms(ratio[m]) if (m & np.isfinite(ratio)).sum() >= args.minimum_pixels else None)
                                     for k, m in bins.items()}}
         windows[path.stem.rsplit("_", 1)[1]] = row
         print(f"{path.stem}: " + "  ".join(

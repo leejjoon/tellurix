@@ -1,0 +1,1465 @@
+{
+ "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+ "settings": {
+  "stem": "iag_vis",
+  "authors": "none",
+  "relative_transmission": true
+ },
+ "runs": {
+  "coadd": "data/corrected/solar/iag"
+ },
+ "summary": {
+  "telluric": {
+   "pages": 170,
+   "median_percent": {
+    "coadd": 0.8855214519394219
+   },
+   "pages_flatter_than_coadd": {}
+  },
+  "deep": {
+   "pages": 104,
+   "median_percent": {
+    "coadd": 1.9714378698313566
+   },
+   "pages_flatter_than_coadd": {}
+  }
+ },
+ "pages": {
+  "iag_vis_10000": {
+   "telluric": {
+    "pixels": 189,
+    "coadd": 0.6753660408760535
+   }
+  },
+  "iag_vis_10030": {
+   "telluric": {
+    "pixels": 136,
+    "coadd": 0.5439460496976596
+   }
+  },
+  "iag_vis_10060": {
+   "telluric": {
+    "pixels": 802,
+    "coadd": 0.775313009187154
+   },
+   "deep": {
+    "pixels": 19,
+    "coadd": 2.045148641961996
+   }
+  },
+  "iag_vis_10090": {
+   "telluric": {
+    "pixels": 730,
+    "coadd": 0.48314286167778836
+   }
+  },
+  "iag_vis_10120": {
+   "telluric": {
+    "pixels": 1292,
+    "coadd": 0.9154898155056286
+   },
+   "deep": {
+    "pixels": 26,
+    "coadd": 1.498162990050559
+   }
+  },
+  "iag_vis_10150": {
+   "telluric": {
+    "pixels": 2529,
+    "coadd": 1.0811562065698097
+   },
+   "deep": {
+    "pixels": 371,
+    "coadd": 1.9302301803939517
+   }
+  },
+  "iag_vis_10180": {
+   "telluric": {
+    "pixels": 2979,
+    "coadd": 1.0372327597238615
+   },
+   "deep": {
+    "pixels": 559,
+    "coadd": 1.531794436920655
+   }
+  },
+  "iag_vis_10210": {
+   "telluric": {
+    "pixels": 3288,
+    "coadd": 1.1374844792233183
+   },
+   "deep": {
+    "pixels": 684,
+    "coadd": 1.9540327967144178
+   }
+  },
+  "iag_vis_10240": {
+   "telluric": {
+    "pixels": 3315,
+    "coadd": 1.0163330998699927
+   },
+   "deep": {
+    "pixels": 735,
+    "coadd": 1.8112318542351353
+   }
+  },
+  "iag_vis_10270": {
+   "telluric": {
+    "pixels": 3309,
+    "coadd": 1.329202349014562
+   },
+   "deep": {
+    "pixels": 402,
+    "coadd": 3.2951492544534853
+   }
+  },
+  "iag_vis_10300": {
+   "telluric": {
+    "pixels": 2741,
+    "coadd": 1.4669694377687632
+   },
+   "deep": {
+    "pixels": 669,
+    "coadd": 2.4174697116298116
+   }
+  },
+  "iag_vis_10330": {
+   "telluric": {
+    "pixels": 3625,
+    "coadd": 1.6050821058154436
+   },
+   "deep": {
+    "pixels": 1376,
+    "coadd": 2.378803226794581
+   }
+  },
+  "iag_vis_10360": {
+   "telluric": {
+    "pixels": 3676,
+    "coadd": 1.7795689377325705
+   },
+   "deep": {
+    "pixels": 1079,
+    "coadd": 3.0368735219875105
+   }
+  },
+  "iag_vis_10390": {
+   "telluric": {
+    "pixels": 3663,
+    "coadd": 1.8736132448262401
+   },
+   "deep": {
+    "pixels": 1473,
+    "coadd": 2.784574702065524
+   }
+  },
+  "iag_vis_10420": {
+   "telluric": {
+    "pixels": 3362,
+    "coadd": 1.951967456228961
+   },
+   "deep": {
+    "pixels": 1650,
+    "coadd": 2.4874522028876758
+   }
+  },
+  "iag_vis_10510": {
+   "telluric": {
+    "pixels": 3251,
+    "coadd": 1.6983709734449959
+   },
+   "deep": {
+    "pixels": 1483,
+    "coadd": 2.2198148793396824
+   }
+  },
+  "iag_vis_10540": {
+   "telluric": {
+    "pixels": 3030,
+    "coadd": 3.2943758725423664
+   },
+   "deep": {
+    "pixels": 1422,
+    "coadd": 3.555502353254377
+   }
+  },
+  "iag_vis_10570": {
+   "telluric": {
+    "pixels": 2009,
+    "coadd": 1.6670219937163115
+   },
+   "deep": {
+    "pixels": 828,
+    "coadd": 2.109674643389427
+   }
+  },
+  "iag_vis_10630": {
+   "telluric": {
+    "pixels": 2848,
+    "coadd": 1.868365337312847
+   },
+   "deep": {
+    "pixels": 1500,
+    "coadd": 2.3668105264705828
+   }
+  },
+  "iag_vis_10660": {
+   "telluric": {
+    "pixels": 2895,
+    "coadd": 3.3874175513584306
+   },
+   "deep": {
+    "pixels": 1703,
+    "coadd": 4.143541669747488
+   }
+  },
+  "iag_vis_10690": {
+   "telluric": {
+    "pixels": 3792,
+    "coadd": 2.669788088404597
+   },
+   "deep": {
+    "pixels": 2426,
+    "coadd": 3.2805147184542722
+   }
+  },
+  "iag_vis_10720": {
+   "telluric": {
+    "pixels": 3270,
+    "coadd": 2.6379959779628277
+   },
+   "deep": {
+    "pixels": 1658,
+    "coadd": 3.4662650519810483
+   }
+  },
+  "iag_vis_10750": {
+   "telluric": {
+    "pixels": 4205,
+    "coadd": 3.1213727567848615
+   },
+   "deep": {
+    "pixels": 1425,
+    "coadd": 4.858069330138842
+   }
+  },
+  "iag_vis_10780": {
+   "telluric": {
+    "pixels": 2001,
+    "coadd": 1.1372156008212981
+   },
+   "deep": {
+    "pixels": 428,
+    "coadd": 2.028552480240425
+   }
+  },
+  "iag_vis_10840": {
+   "telluric": {
+    "pixels": 971,
+    "coadd": 0.6639622336051674
+   },
+   "deep": {
+    "pixels": 124,
+    "coadd": 1.3413990996607212
+   }
+  },
+  "iag_vis_10870": {
+   "telluric": {
+    "pixels": 3279,
+    "coadd": 1.2590404917059712
+   },
+   "deep": {
+    "pixels": 829,
+    "coadd": 1.7816985234218972
+   }
+  },
+  "iag_vis_10900": {
+   "telluric": {
+    "pixels": 3147,
+    "coadd": 2.0822966712042166
+   },
+   "deep": {
+    "pixels": 1150,
+    "coadd": 3.2095970183302494
+   }
+  },
+  "iag_vis_10930": {
+   "telluric": {
+    "pixels": 4367,
+    "coadd": 1.39123548135959
+   },
+   "deep": {
+    "pixels": 1336,
+    "coadd": 2.218086955832073
+   }
+  },
+  "iag_vis_10960": {
+   "telluric": {
+    "pixels": 3467,
+    "coadd": 2.058516879405507
+   },
+   "deep": {
+    "pixels": 990,
+    "coadd": 2.1417739718932407
+   }
+  },
+  "iag_vis_10990": {
+   "telluric": {
+    "pixels": 2923,
+    "coadd": 1.2487792123288097
+   },
+   "deep": {
+    "pixels": 922,
+    "coadd": 1.9821508403099826
+   }
+  },
+  "iag_vis_11020": {
+   "telluric": {
+    "pixels": 3164,
+    "coadd": 1.0457287960188968
+   },
+   "deep": {
+    "pixels": 472,
+    "coadd": 1.9900639306728707
+   }
+  },
+  "iag_vis_11050": {
+   "telluric": {
+    "pixels": 1327,
+    "coadd": 0.9586136146144811
+   },
+   "deep": {
+    "pixels": 295,
+    "coadd": 1.809555731684961
+   }
+  },
+  "iag_vis_11110": {
+   "telluric": {
+    "pixels": 2478,
+    "coadd": 1.5153649112386895
+   },
+   "deep": {
+    "pixels": 996,
+    "coadd": 2.161331143790553
+   }
+  },
+  "iag_vis_11140": {
+   "telluric": {
+    "pixels": 3962,
+    "coadd": 1.4475445796649526
+   },
+   "deep": {
+    "pixels": 896,
+    "coadd": 2.6918919712326703
+   }
+  },
+  "iag_vis_11170": {
+   "telluric": {
+    "pixels": 2004,
+    "coadd": 1.2516591354841133
+   },
+   "deep": {
+    "pixels": 292,
+    "coadd": 2.813989866221517
+   }
+  },
+  "iag_vis_11200": {
+   "telluric": {
+    "pixels": 601,
+    "coadd": 0.3918778653780804
+   },
+   "deep": {
+    "pixels": 28,
+    "coadd": 0.7430297176269799
+   }
+  },
+  "iag_vis_11230": {
+   "telluric": {
+    "pixels": 490,
+    "coadd": 0.3440197238971431
+   },
+   "deep": {
+    "pixels": 31,
+    "coadd": 0.5739133622144169
+   }
+  },
+  "iag_vis_11320": {
+   "telluric": {
+    "pixels": 220,
+    "coadd": 0.35550271550946905
+   }
+  },
+  "iag_vis_11350": {
+   "telluric": {
+    "pixels": 44,
+    "coadd": 0.7640223191211793
+   }
+  },
+  "iag_vis_11830": {
+   "telluric": {
+    "pixels": 398,
+    "coadd": 0.4983443002475297
+   },
+   "deep": {
+    "pixels": 12,
+    "coadd": 1.2341638018221919
+   }
+  },
+  "iag_vis_11860": {
+   "telluric": {
+    "pixels": 283,
+    "coadd": 0.460175442674192
+   }
+  },
+  "iag_vis_11890": {
+   "telluric": {
+    "pixels": 449,
+    "coadd": 0.4074877296726732
+   }
+  },
+  "iag_vis_11920": {
+   "telluric": {
+    "pixels": 923,
+    "coadd": 0.781211733813811
+   },
+   "deep": {
+    "pixels": 25,
+    "coadd": 3.3929472095671813
+   }
+  },
+  "iag_vis_11950": {
+   "telluric": {
+    "pixels": 812,
+    "coadd": 0.9063906232150596
+   },
+   "deep": {
+    "pixels": 103,
+    "coadd": 1.8013819529960204
+   }
+  },
+  "iag_vis_11980": {
+   "telluric": {
+    "pixels": 295,
+    "coadd": 0.9771650718174134
+   },
+   "deep": {
+    "pixels": 40,
+    "coadd": 1.7304069977358838
+   }
+  },
+  "iag_vis_12010": {
+   "telluric": {
+    "pixels": 306,
+    "coadd": 1.1289216771262662
+   },
+   "deep": {
+    "pixels": 34,
+    "coadd": 2.8615982498012547
+   }
+  },
+  "iag_vis_12040": {
+   "telluric": {
+    "pixels": 1069,
+    "coadd": 2.6234042084738127
+   },
+   "deep": {
+    "pixels": 290,
+    "coadd": 4.4565487029270265
+   }
+  },
+  "iag_vis_12070": {
+   "telluric": {
+    "pixels": 1727,
+    "coadd": 0.9843739628815638
+   },
+   "deep": {
+    "pixels": 254,
+    "coadd": 2.2520094374012816
+   }
+  },
+  "iag_vis_12100": {
+   "telluric": {
+    "pixels": 1161,
+    "coadd": 0.9072017133746026
+   },
+   "deep": {
+    "pixels": 203,
+    "coadd": 1.6283717817097014
+   }
+  },
+  "iag_vis_12130": {
+   "telluric": {
+    "pixels": 1870,
+    "coadd": 0.8010949301596848
+   },
+   "deep": {
+    "pixels": 436,
+    "coadd": 1.2834328934222
+   }
+  },
+  "iag_vis_12160": {
+   "telluric": {
+    "pixels": 99,
+    "coadd": 0.4374538026070811
+   }
+  },
+  "iag_vis_12190": {
+   "telluric": {
+    "pixels": 2215,
+    "coadd": 1.2990231199271955
+   },
+   "deep": {
+    "pixels": 575,
+    "coadd": 2.2631237050329824
+   }
+  },
+  "iag_vis_12220": {
+   "telluric": {
+    "pixels": 2905,
+    "coadd": 1.090690667179036
+   },
+   "deep": {
+    "pixels": 585,
+    "coadd": 1.917144163122354
+   }
+  },
+  "iag_vis_12250": {
+   "telluric": {
+    "pixels": 2817,
+    "coadd": 1.9505854400424305
+   },
+   "deep": {
+    "pixels": 504,
+    "coadd": 2.972660843279723
+   }
+  },
+  "iag_vis_12280": {
+   "telluric": {
+    "pixels": 2308,
+    "coadd": 1.538173892012671
+   },
+   "deep": {
+    "pixels": 510,
+    "coadd": 2.8647364267012634
+   }
+  },
+  "iag_vis_12310": {
+   "telluric": {
+    "pixels": 1576,
+    "coadd": 0.9150199084910438
+   },
+   "deep": {
+    "pixels": 138,
+    "coadd": 1.4256354215189777
+   }
+  },
+  "iag_vis_12340": {
+   "telluric": {
+    "pixels": 871,
+    "coadd": 0.4882732304886745
+   }
+  },
+  "iag_vis_12370": {
+   "telluric": {
+    "pixels": 586,
+    "coadd": 1.3443155833493674
+   }
+  },
+  "iag_vis_12400": {
+   "telluric": {
+    "pixels": 562,
+    "coadd": 0.6291679855121756
+   },
+   "deep": {
+    "pixels": 5,
+    "coadd": 2.3352331172455476
+   }
+  },
+  "iag_vis_12430": {
+   "telluric": {
+    "pixels": 1527,
+    "coadd": 0.8103002716304964
+   },
+   "deep": {
+    "pixels": 22,
+    "coadd": 0.33822898959288467
+   }
+  },
+  "iag_vis_12460": {
+   "telluric": {
+    "pixels": 1431,
+    "coadd": 0.8769527185653773
+   },
+   "deep": {
+    "pixels": 9,
+    "coadd": 1.4963755301849289
+   }
+  },
+  "iag_vis_12490": {
+   "telluric": {
+    "pixels": 648,
+    "coadd": 0.8137846115178791
+   }
+  },
+  "iag_vis_12520": {
+   "telluric": {
+    "pixels": 1148,
+    "coadd": 0.38478568389824885
+   },
+   "deep": {
+    "pixels": 74,
+    "coadd": 0.4040697498446026
+   }
+  },
+  "iag_vis_12550": {
+   "telluric": {
+    "pixels": 1092,
+    "coadd": 0.5344087864336312
+   },
+   "deep": {
+    "pixels": 96,
+    "coadd": 1.120462028657445
+   }
+  },
+  "iag_vis_12580": {
+   "telluric": {
+    "pixels": 365,
+    "coadd": 1.067274544466883
+   },
+   "deep": {
+    "pixels": 33,
+    "coadd": 2.292597795384817
+   }
+  },
+  "iag_vis_12610": {
+   "telluric": {
+    "pixels": 482,
+    "coadd": 0.611637291413985
+   },
+   "deep": {
+    "pixels": 58,
+    "coadd": 0.9713749038509636
+   }
+  },
+  "iag_vis_12640": {
+   "telluric": {
+    "pixels": 937,
+    "coadd": 0.7751946608175974
+   },
+   "deep": {
+    "pixels": 94,
+    "coadd": 1.6972391517931111
+   }
+  },
+  "iag_vis_12670": {
+   "telluric": {
+    "pixels": 329,
+    "coadd": 0.8542457289961286
+   }
+  },
+  "iag_vis_12700": {
+   "telluric": {
+    "pixels": 661,
+    "coadd": 0.8258921376611621
+   }
+  },
+  "iag_vis_12730": {
+   "telluric": {
+    "pixels": 65,
+    "coadd": 0.23812021480575837
+   }
+  },
+  "iag_vis_12910": {
+   "telluric": {
+    "pixels": 91,
+    "coadd": 0.3413177308127635
+   }
+  },
+  "iag_vis_12940": {
+   "telluric": {
+    "pixels": 230,
+    "coadd": 0.45661573375000875
+   }
+  },
+  "iag_vis_12970": {
+   "telluric": {
+    "pixels": 311,
+    "coadd": 0.7923492973158265
+   },
+   "deep": {
+    "pixels": 31,
+    "coadd": 2.1079098946796995
+   }
+  },
+  "iag_vis_13000": {
+   "telluric": {
+    "pixels": 839,
+    "coadd": 1.00402487352049
+   },
+   "deep": {
+    "pixels": 118,
+    "coadd": 2.3422318271591833
+   }
+  },
+  "iag_vis_13030": {
+   "telluric": {
+    "pixels": 1881,
+    "coadd": 0.6796942071033021
+   },
+   "deep": {
+    "pixels": 395,
+    "coadd": 1.3124954473937287
+   }
+  },
+  "iag_vis_13060": {
+   "telluric": {
+    "pixels": 3982,
+    "coadd": 1.2269064547695192
+   },
+   "deep": {
+    "pixels": 1595,
+    "coadd": 1.6435522144602224
+   }
+  },
+  "iag_vis_13120": {
+   "telluric": {
+    "pixels": 1673,
+    "coadd": 1.852093091389431
+   },
+   "deep": {
+    "pixels": 1476,
+    "coadd": 1.8338628222653726
+   }
+  },
+  "iag_vis_13150": {
+   "telluric": {
+    "pixels": 1752,
+    "coadd": 3.842441829217079
+   },
+   "deep": {
+    "pixels": 1338,
+    "coadd": 4.139394245729702
+   }
+  },
+  "iag_vis_13450": {
+   "telluric": {
+    "pixels": 118,
+    "coadd": 0.9976995953758983
+   }
+  },
+  "iag_vis_13480": {
+   "telluric": {
+    "pixels": 219,
+    "coadd": 0.322001695887615
+   }
+  },
+  "iag_vis_13510": {
+   "telluric": {
+    "pixels": 870,
+    "coadd": 0.7823116640728961
+   },
+   "deep": {
+    "pixels": 89,
+    "coadd": 1.3463749991036955
+   }
+  },
+  "iag_vis_13540": {
+   "telluric": {
+    "pixels": 1418,
+    "coadd": 0.5638434928699471
+   },
+   "deep": {
+    "pixels": 50,
+    "coadd": 0.7369227850604412
+   }
+  },
+  "iag_vis_13570": {
+   "telluric": {
+    "pixels": 1275,
+    "coadd": 0.8437484452502879
+   },
+   "deep": {
+    "pixels": 126,
+    "coadd": 1.2229136300179002
+   }
+  },
+  "iag_vis_13600": {
+   "telluric": {
+    "pixels": 1213,
+    "coadd": 1.0825658012752621
+   },
+   "deep": {
+    "pixels": 100,
+    "coadd": 1.8331059167844173
+   }
+  },
+  "iag_vis_13630": {
+   "telluric": {
+    "pixels": 1048,
+    "coadd": 0.7253571899197312
+   },
+   "deep": {
+    "pixels": 64,
+    "coadd": 1.2409782764595767
+   }
+  },
+  "iag_vis_13660": {
+   "telluric": {
+    "pixels": 2845,
+    "coadd": 0.9187406467868537
+   },
+   "deep": {
+    "pixels": 321,
+    "coadd": 2.180594856420971
+   }
+  },
+  "iag_vis_13690": {
+   "telluric": {
+    "pixels": 2322,
+    "coadd": 1.4579083967603594
+   },
+   "deep": {
+    "pixels": 451,
+    "coadd": 2.65090156113781
+   }
+  },
+  "iag_vis_13720": {
+   "telluric": {
+    "pixels": 2098,
+    "coadd": 1.0455530047050476
+   },
+   "deep": {
+    "pixels": 507,
+    "coadd": 1.2650612733062687
+   }
+  },
+  "iag_vis_13750": {
+   "telluric": {
+    "pixels": 3033,
+    "coadd": 2.2715822648050206
+   },
+   "deep": {
+    "pixels": 687,
+    "coadd": 3.135210907059753
+   }
+  },
+  "iag_vis_13780": {
+   "telluric": {
+    "pixels": 2925,
+    "coadd": 1.355715470613511
+   },
+   "deep": {
+    "pixels": 722,
+    "coadd": 1.6896716068866768
+   }
+  },
+  "iag_vis_13810": {
+   "telluric": {
+    "pixels": 2781,
+    "coadd": 1.5281021406974964
+   },
+   "deep": {
+    "pixels": 599,
+    "coadd": 2.8495147723911054
+   }
+  },
+  "iag_vis_13840": {
+   "telluric": {
+    "pixels": 1591,
+    "coadd": 0.7763698577165025
+   },
+   "deep": {
+    "pixels": 163,
+    "coadd": 1.2057415330204488
+   }
+  },
+  "iag_vis_13900": {
+   "telluric": {
+    "pixels": 2341,
+    "coadd": 2.5687902792434785
+   },
+   "deep": {
+    "pixels": 526,
+    "coadd": 4.867195413895499
+   }
+  },
+  "iag_vis_13930": {
+   "telluric": {
+    "pixels": 3395,
+    "coadd": 2.2903227476444163
+   },
+   "deep": {
+    "pixels": 654,
+    "coadd": 4.3683572040821534
+   }
+  },
+  "iag_vis_13960": {
+   "telluric": {
+    "pixels": 1073,
+    "coadd": 0.7408125710797943
+   },
+   "deep": {
+    "pixels": 22,
+    "coadd": 0.9166298262717587
+   }
+  },
+  "iag_vis_13990": {
+   "telluric": {
+    "pixels": 490,
+    "coadd": 0.6001495718399161
+   }
+  },
+  "iag_vis_14020": {
+   "telluric": {
+    "pixels": 426,
+    "coadd": 0.40319769240546544
+   }
+  },
+  "iag_vis_14050": {
+   "telluric": {
+    "pixels": 542,
+    "coadd": 0.480385075503252
+   }
+  },
+  "iag_vis_14080": {
+   "telluric": {
+    "pixels": 668,
+    "coadd": 0.5207167405393384
+   }
+  },
+  "iag_vis_14110": {
+   "telluric": {
+    "pixels": 1227,
+    "coadd": 0.5158457511813554
+   }
+  },
+  "iag_vis_14140": {
+   "telluric": {
+    "pixels": 678,
+    "coadd": 1.6658578248643516
+   },
+   "deep": {
+    "pixels": 19,
+    "coadd": 1.8926820113988971
+   }
+  },
+  "iag_vis_14170": {
+   "telluric": {
+    "pixels": 1112,
+    "coadd": 0.9210678402045922
+   },
+   "deep": {
+    "pixels": 40,
+    "coadd": 1.1586668979230446
+   }
+  },
+  "iag_vis_14200": {
+   "telluric": {
+    "pixels": 1029,
+    "coadd": 0.9875727608881701
+   },
+   "deep": {
+    "pixels": 109,
+    "coadd": 1.9772116929525616
+   }
+  },
+  "iag_vis_14230": {
+   "telluric": {
+    "pixels": 935,
+    "coadd": 0.8900247654760272
+   },
+   "deep": {
+    "pixels": 11,
+    "coadd": 3.6961907351762733
+   }
+  },
+  "iag_vis_14260": {
+   "telluric": {
+    "pixels": 1339,
+    "coadd": 0.643214112378204
+   },
+   "deep": {
+    "pixels": 50,
+    "coadd": 0.8647627350958538
+   }
+  },
+  "iag_vis_14290": {
+   "telluric": {
+    "pixels": 1696,
+    "coadd": 0.6772126807181296
+   },
+   "deep": {
+    "pixels": 202,
+    "coadd": 1.3963090353584724
+   }
+  },
+  "iag_vis_14320": {
+   "telluric": {
+    "pixels": 275,
+    "coadd": 0.5228331154108824
+   }
+  },
+  "iag_vis_14350": {
+   "telluric": {
+    "pixels": 1636,
+    "coadd": 1.130399437756293
+   },
+   "deep": {
+    "pixels": 281,
+    "coadd": 2.155522917166384
+   }
+  },
+  "iag_vis_14380": {
+   "telluric": {
+    "pixels": 1835,
+    "coadd": 0.9636447573795232
+   },
+   "deep": {
+    "pixels": 415,
+    "coadd": 1.72878542460301
+   }
+  },
+  "iag_vis_14410": {
+   "telluric": {
+    "pixels": 2143,
+    "coadd": 0.9952274910378702
+   },
+   "deep": {
+    "pixels": 259,
+    "coadd": 1.9550387199326107
+   }
+  },
+  "iag_vis_14440": {
+   "telluric": {
+    "pixels": 2194,
+    "coadd": 1.0707275589028609
+   },
+   "deep": {
+    "pixels": 202,
+    "coadd": 1.4120987385360566
+   }
+  },
+  "iag_vis_14470": {
+   "telluric": {
+    "pixels": 2672,
+    "coadd": 0.9704569409054756
+   },
+   "deep": {
+    "pixels": 527,
+    "coadd": 0.9133693100850221
+   }
+  },
+  "iag_vis_14500": {
+   "telluric": {
+    "pixels": 3334,
+    "coadd": 0.7695683954234244
+   },
+   "deep": {
+    "pixels": 521,
+    "coadd": 1.2084931873045524
+   }
+  },
+  "iag_vis_14530": {
+   "telluric": {
+    "pixels": 4460,
+    "coadd": 2.228905921481604
+   },
+   "deep": {
+    "pixels": 1234,
+    "coadd": 3.706947135813447
+   }
+  },
+  "iag_vis_15100": {
+   "telluric": {
+    "pixels": 62,
+    "coadd": 1.707851060037745
+   }
+  },
+  "iag_vis_15130": {
+   "telluric": {
+    "pixels": 148,
+    "coadd": 0.3630326278275821
+   }
+  },
+  "iag_vis_15310": {
+   "telluric": {
+    "pixels": 346,
+    "coadd": 0.383420835239188
+   }
+  },
+  "iag_vis_15340": {
+   "telluric": {
+    "pixels": 902,
+    "coadd": 0.6030404185212856
+   },
+   "deep": {
+    "pixels": 100,
+    "coadd": 1.0253635132361398
+   }
+  },
+  "iag_vis_15370": {
+   "telluric": {
+    "pixels": 340,
+    "coadd": 2.3841845347114887
+   },
+   "deep": {
+    "pixels": 32,
+    "coadd": 1.7154561576838159
+   }
+  },
+  "iag_vis_15400": {
+   "telluric": {
+    "pixels": 1587,
+    "coadd": 0.781891333761091
+   },
+   "deep": {
+    "pixels": 122,
+    "coadd": 1.9656640467101516
+   }
+  },
+  "iag_vis_15430": {
+   "telluric": {
+    "pixels": 1507,
+    "coadd": 0.6201562516985002
+   },
+   "deep": {
+    "pixels": 99,
+    "coadd": 0.7531048720909965
+   }
+  },
+  "iag_vis_15460": {
+   "telluric": {
+    "pixels": 651,
+    "coadd": 0.8331675890699098
+   }
+  },
+  "iag_vis_15490": {
+   "telluric": {
+    "pixels": 65,
+    "coadd": 0.3417046022924341
+   }
+  },
+  "iag_vis_15520": {
+   "telluric": {
+    "pixels": 98,
+    "coadd": 0.3553802536086964
+   }
+  },
+  "iag_vis_15730": {
+   "telluric": {
+    "pixels": 74,
+    "coadd": 0.6840590633819468
+   }
+  },
+  "iag_vis_15820": {
+   "telluric": {
+    "pixels": 136,
+    "coadd": 0.9006134723983021
+   },
+   "deep": {
+    "pixels": 29,
+    "coadd": 1.6205785718838457
+   }
+  },
+  "iag_vis_15850": {
+   "telluric": {
+    "pixels": 397,
+    "coadd": 1.0189725976129242
+   },
+   "deep": {
+    "pixels": 54,
+    "coadd": 2.3784331820165003
+   }
+  },
+  "iag_vis_15880": {
+   "telluric": {
+    "pixels": 916,
+    "coadd": 1.071118741089595
+   },
+   "deep": {
+    "pixels": 138,
+    "coadd": 2.383644200754819
+   }
+  },
+  "iag_vis_15910": {
+   "telluric": {
+    "pixels": 1487,
+    "coadd": 2.0166550221625967
+   },
+   "deep": {
+    "pixels": 214,
+    "coadd": 3.8495429851114933
+   }
+  },
+  "iag_vis_16600": {
+   "telluric": {
+    "pixels": 90,
+    "coadd": 0.9876010519395282
+   }
+  },
+  "iag_vis_16630": {
+   "telluric": {
+    "pixels": 63,
+    "coadd": 0.37699198607899426
+   }
+  },
+  "iag_vis_16660": {
+   "telluric": {
+    "pixels": 430,
+    "coadd": 1.4416342119754668
+   }
+  },
+  "iag_vis_16690": {
+   "telluric": {
+    "pixels": 133,
+    "coadd": 0.8810181384028167
+   }
+  },
+  "iag_vis_16720": {
+   "telluric": {
+    "pixels": 895,
+    "coadd": 0.6145862757549337
+   }
+  },
+  "iag_vis_16750": {
+   "telluric": {
+    "pixels": 1115,
+    "coadd": 1.5974962895430191
+   }
+  },
+  "iag_vis_16780": {
+   "telluric": {
+    "pixels": 786,
+    "coadd": 0.3865516783924725
+   },
+   "deep": {
+    "pixels": 28,
+    "coadd": 0.8309092562600336
+   }
+  },
+  "iag_vis_16810": {
+   "telluric": {
+    "pixels": 1816,
+    "coadd": 0.8984754123855657
+   },
+   "deep": {
+    "pixels": 130,
+    "coadd": 2.1303661552504494
+   }
+  },
+  "iag_vis_16840": {
+   "telluric": {
+    "pixels": 608,
+    "coadd": 0.6116160152741313
+   }
+  },
+  "iag_vis_16870": {
+   "telluric": {
+    "pixels": 1251,
+    "coadd": 0.7961372354185913
+   },
+   "deep": {
+    "pixels": 74,
+    "coadd": 0.880409367868839
+   }
+  },
+  "iag_vis_16900": {
+   "telluric": {
+    "pixels": 1377,
+    "coadd": 1.3822895846368721
+   }
+  },
+  "iag_vis_16930": {
+   "telluric": {
+    "pixels": 897,
+    "coadd": 4.08469434384601
+   },
+   "deep": {
+    "pixels": 47,
+    "coadd": 2.651925095756202
+   }
+  },
+  "iag_vis_16960": {
+   "telluric": {
+    "pixels": 304,
+    "coadd": 3.5277586262902423
+   },
+   "deep": {
+    "pixels": 32,
+    "coadd": 2.8530371539854142
+   }
+  },
+  "iag_vis_16990": {
+   "telluric": {
+    "pixels": 974,
+    "coadd": 0.8572894843281547
+   }
+  },
+  "iag_vis_17020": {
+   "telluric": {
+    "pixels": 96,
+    "coadd": 0.7106944682924731
+   }
+  },
+  "iag_vis_17230": {
+   "telluric": {
+    "pixels": 94,
+    "coadd": 1.0488157302357575
+   }
+  },
+  "iag_vis_17380": {
+   "telluric": {
+    "pixels": 36,
+    "coadd": 0.44647082688421885
+   }
+  },
+  "iag_vis_17410": {
+   "telluric": {
+    "pixels": 119,
+    "coadd": 0.5115728095869094
+   }
+  },
+  "iag_vis_17440": {
+   "telluric": {
+    "pixels": 262,
+    "coadd": 0.40297976551505665
+   }
+  },
+  "iag_vis_17470": {
+   "telluric": {
+    "pixels": 167,
+    "coadd": 0.32262037585502545
+   }
+  },
+  "iag_vis_17530": {
+   "telluric": {
+    "pixels": 308,
+    "coadd": 0.9588842106719148
+   }
+  },
+  "iag_vis_17560": {
+   "telluric": {
+    "pixels": 547,
+    "coadd": 0.6385006371403841
+   }
+  },
+  "iag_vis_17590": {
+   "telluric": {
+    "pixels": 47,
+    "coadd": 0.8616663706801889
+   }
+  },
+  "iag_vis_18250": {
+   "telluric": {
+    "pixels": 36,
+    "coadd": 0.08659478411836392
+   }
+  },
+  "iag_vis_19570": {
+   "telluric": {
+    "pixels": 35,
+    "coadd": 0.18026356174139208
+   }
+  },
+  "iag_vis_19630": {
+   "telluric": {
+    "pixels": 56,
+    "coadd": 1.1216998888668508
+   }
+  },
+  "iag_vis_19780": {
+   "telluric": {
+    "pixels": 42,
+    "coadd": 2.131970270643511
+   }
+  },
+  "iag_vis_19810": {
+   "telluric": {
+    "pixels": 72,
+    "coadd": 1.9217781727147287
+   }
+  },
+  "iag_vis_19840": {
+   "telluric": {
+    "pixels": 64,
+    "coadd": 0.5138933838958432
+   }
+  },
+  "iag_vis_19930": {
+   "telluric": {
+    "pixels": 42,
+    "coadd": 0.841908889098837
+   }
+  },
+  "iag_vis_9400": {
+   "telluric": {
+    "pixels": 50,
+    "coadd": 0.46074453234413537
+   }
+  },
+  "iag_vis_9670": {
+   "telluric": {
+    "pixels": 40,
+    "coadd": 0.5020649623620675
+   }
+  },
+  "iag_vis_9700": {
+   "telluric": {
+    "pixels": 102,
+    "coadd": 0.3773070479603285
+   }
+  },
+  "iag_vis_9730": {
+   "telluric": {
+    "pixels": 261,
+    "coadd": 0.6222860133280603
+   }
+  },
+  "iag_vis_9760": {
+   "telluric": {
+    "pixels": 434,
+    "coadd": 0.5387236186649769
+   }
+  },
+  "iag_vis_9790": {
+   "telluric": {
+    "pixels": 370,
+    "coadd": 0.26213193186307154
+   }
+  },
+  "iag_vis_9820": {
+   "telluric": {
+    "pixels": 199,
+    "coadd": 0.3434168041673509
+   }
+  },
+  "iag_vis_9850": {
+   "telluric": {
+    "pixels": 249,
+    "coadd": 0.46800654965080923
+   }
+  },
+  "iag_vis_9880": {
+   "telluric": {
+    "pixels": 484,
+    "coadd": 0.2601510820554304
+   }
+  },
+  "iag_vis_9910": {
+   "telluric": {
+    "pixels": 273,
+    "coadd": 0.2618068746582013
+   }
+  },
+  "iag_vis_9970": {
+   "telluric": {
+    "pixels": 567,
+    "coadd": 0.5154804526944489
+   },
+   "deep": {
+    "pixels": 18,
+    "coadd": 0.3921466083610142
+   }
+  }
+ }
+}

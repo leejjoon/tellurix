@@ -219,6 +219,20 @@ traps it found: Baker's quoted uncertainties are 2.1x too small and correlated o
 pixels, which errors from a pixel-independent fit must carry (x1.59); and the profile's rho,
 with a fixed term and the width free, is a poor strength (0.07-0.35 against Kitt Peak) --
 it detects, it does not correct.
+**The IAG VIS flux atlas is fitted as a co-add** (`docs/solar_fit_plan.md` §4s,
+`data/corrected/solar/iag/iag_vis.h5`, 2026-10-24). It averages nine days of 2014, each
+package shifted into the solar frame, so its telluric lines are a mean of atmospheres
+0.6 km/s apart. `fit_fts_batch.py --iag --coadd data/profiles/iag2014/coadd_vis.json`
+builds a `tellurix.CoaddedTelluricModel`, one ERA5 profile a day with hour-long nodes
+about transit (`scripts/make_iag_coadd.py`), and fits at zenith 0. A co-add ignores the
+zenith it is given. Pass `--scan-column-ratio`, or the cached Kitt Peak scans (a fifth of
+IAG's water) drop water from ~50 windows. `--iag` defaults to 2.2 samples per resolution,
+because Payne Zero's visible grid cannot go finer. Baker et al.'s telluric-free IAG atlas
+is the yardstick (`scripts/score_iag_against_baker.py`): on the 15 pilot windows the
+co-add takes telluric pixels from 1.94% to 1.55% and deep ones from 3.70% to 2.94%; the
+full run is 1.10% and 2.84% at the median. Not yet supported by
+a co-add: `rebuild_fts_window`, `export_transmission_hdf5` and the review exporter, which
+build a single model from the record.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

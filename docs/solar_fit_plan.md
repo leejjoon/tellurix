@@ -1615,6 +1615,96 @@ to 40%. HITRAN2024's full parameters halve those two and take 11190.05, identica
 lists, from +0.9% to +6.5% by moving the column: per-line errors, the kind the flux atlases
 share (packages/tellurix-fts/CLAUDE.md), not a list to swap. ph10075's weak lines sit in solar-line wings.
 
+### 4s. The IAG flux atlas is nine days' atmospheres, and is fitted as their mean
+
+The IAG VIS atlas (`spvis`, Reiners et al. 2016, A&A 587, A65) co-adds 1190 scans from
+nine days of 2014, March to July. Each 10-scan package (~15 min) was shifted by the
+Sun-observer radial velocity into the solar frame before averaging, so each package's
+telluric lines sit at -v_r: -0.3 to -0.7 km/s in March-April, ~0 in July. The days also
+differ in water (7.5-13 mm against 20-25 mm in ERA5) and temperature (279-287 K against 296
+K). Fitted as one atmosphere at one velocity, the corrected atlas was 1.94% from Baker,
+Blake & Reiners 2020's telluric-free IAG atlas at telluric pixels, against ~0.3% for the
+same fit of one of their spectra. The pilot residuals were the smeared line shapes.
+
+`tellurix.CoaddedTelluricModel` (`coadd.py`) is that mean: one `TelluricModel` per day on
+that day's ERA5 profile (`data/profiles/iag2014/goettingen_<date>T1100.csv`), each with
+hour-long nodes (`CoaddNode`: weight, zenith angle, velocity). Each node's transmission
+exp(-tau/mu) is moved to its velocity with a Fourier phase ramp (`fourier_shift`; a cubic
+interpolation leaves ~0.2% of a line whose Doppler sigma is under three samples). The
+weighted mean is taken before the source and the instrument. All days share the fitted
+parameters, so a column scale keeps ERA5's day-to-day ratios. `fit_fts_batch.py --coadd
+data/profiles/iag2014/coadd_vis.json` (written by `scripts/make_iag_coadd.py`) fits the
+order at zenith 0. The paper gives scans per day but not when they were taken, so each
+day's packages are placed back to back about transit. Shifting that schedule two hours
+either way scores worse (below). The noon schedule still leaves the fitted telluric
+velocity at +0.17 km/s and log O2 at +0.15 (median), which suggests the real schedule is
+somewhat different; ±2 h trades one offset for the other.
+
+Two settings are particular to this atlas:
+
+- **2.2 samples per resolution element** (`--samples-per-resolution`, the `--iag`
+  default). Payne Zero's visible grid is 0.146 km/s, and a model grid more than 1.5x finer
+  than the source was refused above 15000 cm-1 at 3.0. Fits at 2.2 and 3.0 agree.
+- **`--scan-column-ratio`**. The species scans are the cached Kitt Peak 1983 file-3 scans
+  (3.49 mm), and IAG's co-added path carries 5.2x their water and ~2x their O2, CO2 and CH4.
+  An air-mass scaling of the cut alone wrongly dropped water from ~50 windows, 45 of them
+  then treated as having nothing to fit. Each species' cut is now multiplied by its own
+  node-weighted column ratio (`tellurix.species_above(..., column_ratio=)`, recorded per
+  row as `scan_column_ratio`).
+
+Baker's atlas (`tellurix_fts.baker.read_baker_solar_atlas`) fits each telluric line
+empirically. It absorbs line-list errors that ours keeps, and it flags essentially every
+telluric pixel, so its flags choose only the reference pixels.
+`scripts/score_iag_against_baker.py` samples our corrected spectrum on Baker's grid, aligns
+it by velocity (within +-1 km/s) where nothing absorbs, divides out a line, and scores the
+rms of the ratio minus 1 by transmission bin (pixels below T 0.15, which the products
+blank, are left out).
+
+Pilot, 15 windows (`docs/iag_pilot_baker_score.json`, `docs/iag_pilot_correction_score.json`):
+
+| | Baker, telluric (10 win.) | Baker, deep (7) | flatness, telluric (12) | flatness, deep (10) |
+|---|---|---|---|---|
+| one atmosphere, 2014-04-17 | 1.94% | 3.70% | 1.59% | 2.76% |
+| co-add, about transit | **1.55%** (10 better) | **2.94%** | **1.24%** (10 flatter) | **2.15%** |
+| co-add, 2 h earlier | 1.59% | 3.34% | 1.41% | 2.29% |
+| co-add, 2 h later | 1.60% | 3.29% | 1.37% | 2.45% |
+| one atmosphere, no strength table | 2.06% | 3.71% | | |
+
+Residual structure that remains in the pilot is line-list error that the vetting had
+already measured. 13701.89 is 13-20% too weak and is left out of the table because the
+sources disagree; 13704.54 is 90 m/s off. A 0.010 cm-1 sinc changed nothing. The fitted
+`lsf_sigma_kms` sits on its 0.05 km/s floor in half the windows (Baker's single spectra:
+29%), consistent with a co-add whose spread the nodes already carry.
+
+**Full run, 2026-10-24** (`data/corrected/solar/iag/iag_vis.h5`, 9400-20000 cm-1, 30 cm-1
+windows): 352 of 353 succeeded, 273 fitted, 79 with no species above the cut. The one
+failure is 19960, which passes the end of the MT_CKD table. The command:
+
+    fit_fts_batch.py --iag --vsini-kms 1.9 --profile data/profiles/goettingen_20140417_era5.csv \
+        --scan-profile data/profiles/kitt_peak_19830626_file3.csv --scan-fwhm-cm1 0.04167 --o2-cia \
+        --telluric-from-clean-pixels --line-strength-table data/line_strength/step3_iter1.npz \
+        --coadd data/profiles/iag2014/coadd_vis.json --scan-column-ratio
+
+8 shards, 4 per GPU, 71 min. On the pilot's windows it reproduces the pilot co-add exactly.
+Scores (`docs/iag_baker_score.json`, `docs/iag_correction_score.json`):
+
+| bin | Baker, median % | windows | Baker's own err | flatness, median % | windows |
+|---|---|---|---|---|---|
+| reference (no absorption) | 0.24 | 253 | 0.40 | | |
+| telluric, T < 0.97 | 1.10 | 163 | 0.35 | 0.89 | 170 |
+| deep, T < 0.7 | 2.84 | 71 | 0.15 | 1.97 | 104 |
+| telluric, flat Sun | 0.85 | 130 | | | |
+| telluric, in solar lines | 1.39 | 147 | | | |
+
+By range, Baker at telluric pixels: 1.09% at 9400-11000, 0.87% at 11000-12000, 1.24-1.27% at
+12000-15000, 0.90% at 15000-17600 and 1.99% above 17600, where water is weak and the solar
+model's error is larger. Water railed at a +-2 bound in 9 windows, all with median
+transmission above 0.98 (9550, 15970, 17230, 17260, 18910, 18970, 19030, 19060, 19900). O2 is
+fitted in 29 windows. The deep-pixel gap to Baker is still the largest (2.8% against their
+0.15%). It is where our line list's per-line errors and the unknown schedule both show,
+and where Baker's empirical per-line fit has nothing to get wrong. Window 10900 aligns at
+the -1 km/s limit (only 65 reference pixels), so its score is not meaningful.
+
 ## Open work (as of 2026-10-02)
 
 ### Done 2026-10-05: every solar product regenerated with the O2 collision-induced continuum
