@@ -291,7 +291,8 @@ def cached_scan(cache_dir: Path, identity: ScanIdentity, profile, line_root: Pat
     return report
 
 
-def species_above(report: Mapping, threshold: float, *, airmass: float = 1.0) -> list[str]:
+def species_above(report: Mapping, threshold: float, *, airmass: float = 1.0,
+                  column_ratio: Mapping[str, float] | None = None) -> list[str]:
     """The species a fit should free, re-thresholded for this observation.
 
     A scan ranks the **vertical** column, but what a spectrum can measure is the
@@ -304,16 +305,25 @@ def species_above(report: Mapping, threshold: float, *, airmass: float = 1.0) ->
     only irreversible cut a scan makes, so `identity.threshold` must be set
     below anything any consumer will ask for -- a species rejected on its bound
     is not in `rejected` and cannot be recovered by lowering the cut here.
+
+    ``column_ratio`` is for a scan made on another site's profile: each species'
+    column in the atmosphere fitted over its column in the scan's, multiplying
+    the air mass for that species alone. Göttingen holds 2.6-5.9 times the water
+    of the Kitt Peak profile whose scans the IAG fit reuses, and only 1.26 times
+    the O2, so one air mass cannot stand for both.
     """
     floor = float(report["identity"]["threshold"])
+    ratio = dict(column_ratio or {})
+    largest = airmass * max([1.0, *ratio.values()])
     # The cut is on the slant column and the scan's floor is on the vertical
     # one, so the comparison has to be made in the same place.
-    if threshold / airmass < floor:
+    if threshold / largest < floor:
         raise ValueError(
             f"this scan evaluated down to {floor:.2e} vertical; a cut at {threshold:.2e} "
-            f"at air mass {airmass:.2f} asks about {threshold / airmass:.2e} vertical and "
+            f"at air mass {largest:.2f} asks about {threshold / largest:.2e} vertical and "
             "would silently miss whatever was rejected on its bound. Re-scan with a lower "
             "--threshold.")
     ranked = [*report.get("fit", []), *report.get("rejected", [])]
-    above = [row for row in ranked if row["peak_optical_depth"] * airmass >= threshold]
+    above = [row for row in ranked
+             if row["peak_optical_depth"] * airmass * ratio.get(row["species"], 1.0) >= threshold]
     return [row["species"] for row in sorted(above, key=lambda r: -r["peak_optical_depth"])]

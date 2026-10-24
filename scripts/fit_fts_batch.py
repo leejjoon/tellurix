@@ -307,6 +307,34 @@ def physics_of(root: Path, args) -> dict:
         coadd=args.coadd)
 
 
+def scan_column_ratios(root: Path, args, scan_profile) -> dict:
+    """Per species, the fitted atmosphere's column over the scan profile's.
+
+    For a co-add the fitted column is the node-weighted mean of each day's
+    column times that node's air mass, and the cut's own air mass is then 1
+    (the driver sets it so); otherwise the fit profile's vertical column.
+    """
+
+    def columns(profile):
+        return {name: float(np.sum(profile.air_column_cm2 * np.asarray(vmr)))
+                for name, vmr in profile.vmr.items()}
+
+    scan = columns(scan_profile)
+    if args.coadd:
+        spec = json.loads((root / args.coadd).read_text())
+        total = sum(node["weight"] for item in spec["components"] for node in item["nodes"])
+        fitted = {}
+        for item in spec["components"]:
+            day = columns(load_atmosphere_csv(root / item["profile"]))
+            for node in item["nodes"]:
+                share = node["weight"] / total / np.cos(np.radians(node["zenith_angle_deg"]))
+                for name, value in day.items():
+                    fitted[name] = fitted.get(name, 0.0) + share * value
+    else:
+        fitted = columns(load_atmosphere_csv(root / args.profile))
+    return {name: fitted[name] / scan[name] for name in scan if name in fitted and scan[name] > 0.0}
+
+
 def scan_species(entry, args, root, profile, airmass: float) -> dict:
     """The window's species list, from the cache when it is already there.
 
@@ -325,9 +353,10 @@ def scan_species(entry, args, root, profile, airmass: float) -> dict:
         args.scan_cache, identity, profile, root / LINE_ROOT,
         layer_chunk_size=args.layer_chunk_size,
         progress=(lambda line: print(line, flush=True)) if args.verbose_scan else None)
-    species = species_above(cached, args.species_threshold, airmass=airmass)
+    ratio = getattr(args, "scan_column_ratios", None)
+    species = species_above(cached, args.species_threshold, airmass=airmass, column_ratio=ratio)
     return {"species": species, "scan": identity.path(args.scan_cache).name,
-            "scan_airmass": airmass,
+            "scan_airmass": airmass, **({"scan_column_ratio": ratio} if ratio else {}),
             "scan_below_cut": [row["species"] for row in [*cached["fit"], *cached["rejected"]]
                                if row["species"] not in species],
             "scan_headroom": cached["headroom"]}
@@ -612,6 +641,11 @@ def main() -> None:
                              "Another date at the same site ranks the same molecules, so its "
                              "scans can serve (Wallace 2011 reuses the 1983 pair's), while the "
                              "fit still uses --profile.")
+    parser.add_argument("--scan-column-ratio", action="store_true",
+                        help="with --scan-profile from another site: scale each species' cut by "
+                             "its column in the fitted atmosphere over the scan profile's "
+                             "(species_above's column_ratio), not by air mass alone. Off by "
+                             "default so a rerun cuts as its record did.")
     parser.add_argument("--verbose-scan", action="store_true")
     parser.add_argument("--stride", type=int, default=1, help="take every Nth window")
     parser.add_argument("--shard", default=None, metavar="I/N",
@@ -685,6 +719,11 @@ def main() -> None:
             raise SystemExit("--airmass must be at least 1")
         args.zenith_angle_deg = float(np.degrees(np.arccos(1.0 / args.airmass)))
     profile = load_atmosphere_csv(root / (args.scan_profile or args.profile))
+    args.scan_column_ratios = (scan_column_ratios(root, args, profile)
+                               if args.scan_column_ratio else None)
+    if args.scan_column_ratios:
+        print("species cut scaled by column ratio: " + ", ".join(
+            f"{k} {v:.2f}" for k, v in sorted(args.scan_column_ratios.items())))
     if args.spectrum.is_dir():
         jobs, spectra = atlas_pages(args.spectrum, args.v1, args.v2, args.minimum_snr,
                                       names=args.pages.split(",") if args.pages else None)
@@ -715,6 +754,9 @@ def main() -> None:
                             args.window_cm1, args.minimum_snr)
     airmass = (1.0 / np.cos(np.radians(args.zenith_angle_deg))
                if args.zenith_angle_deg is not None else float(spectrum.airmass_mean))
+    if args.coadd and args.scan_column_ratios:
+        # The ratios already hold each node's air mass.
+        airmass = 1.0
     jobs = jobs[:: args.stride]
     if args.shard:
         index, _, count = args.shard.partition("/")

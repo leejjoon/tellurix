@@ -121,6 +121,20 @@ def test_a_slant_path_promotes_a_species_the_vertical_column_rejects(tmp_path):
     assert species_above(report, 7.0e-4, airmass=4.73) == ["H2O", "CO2", "OCS", "NO2"]
 
 
+def test_a_column_ratio_scales_one_species_cut_alone(tmp_path):
+    """A scan made on another site's profile: Göttingen holds five times the water
+    of Kitt Peak along the IAG path but twice the dry gases."""
+    from tellurix import species_above
+
+    report = _report(tmp_path)
+    # OCS at 4e-4: 2x is 8e-4, under the 1e-3 cut; 3x is 1.2e-3, over it.
+    assert species_above(report, 1e-3, column_ratio={"OCS": 2.0}) == ["H2O", "CO2"]
+    assert species_above(report, 1e-3, column_ratio={"OCS": 3.0}) == ["H2O", "CO2", "OCS"]
+    # The floor is checked against the largest multiplier: 1e-3 / 20 = 5e-5 vertical.
+    with pytest.raises(ValueError, match="rejected on its bound"):
+        species_above(report, 1e-3, column_ratio={"H2O": 20.0})
+
+
 def test_species_are_returned_strongest_first(tmp_path):
     from tellurix import species_above
 
