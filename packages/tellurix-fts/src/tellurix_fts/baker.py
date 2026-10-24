@@ -115,6 +115,23 @@ def read_baker_table(directory: str | Path, group: int, columns) -> tuple[np.nda
         return grid, {name: np.asarray(table[name], dtype=float) for name in columns}
 
 
+def read_baker_solar_atlas(path: str | Path) -> dict[str, np.ndarray]:
+    """Their telluric-free solar atlas (``iag_telfree_solaratlas.fits``), as float64.
+
+    ``v`` (cm-1, the exact grid), ``s`` (normalised flux, solar rest frame),
+    ``err`` (the spread of the 11 groups' solar spectra) and ``flags`` (0 where
+    the correction is trustworthy, up to 3). It is not a correction of the 2014
+    CDS atlas: other spectra, 2015-16, through the iodine cell.
+    """
+
+    from astropy.io import fits
+
+    with fits.open(path, memmap=True) as handle:
+        table = handle[1].data
+        return {"v": baker_wavenumber_grid(table["v"]),
+                **{name: np.asarray(table[name], dtype=float) for name in ("s", "err", "flags")}}
+
+
 def read_baker_telluric(directory: str | Path, observation: BakerObservation) -> FTSSpectrum:
     """One ``telluric_NNNN`` as an :class:`FTSSpectrum` at its air mass.
 

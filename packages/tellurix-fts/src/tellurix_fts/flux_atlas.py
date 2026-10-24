@@ -7,8 +7,8 @@ what a fit needs from the header -- air mass, resolution -- is carried here.
 
 - ``iag``: the IAG solar flux atlas, VIS setting (Reiners et al. 2016, A&A 587,
   A65; CDS J/A+A/587/A65), Göttingen 2014. Columns: vacuum wavenumber,
-  normalized flux, uncertainty. It co-adds 1190 scans over nine days, so it has
-  no one air mass.
+  normalized flux, raw flux (the CDS ReadMe; there is no uncertainty). It
+  co-adds 1190 scans over nine days, so it has no one air mass.
 - ``wallace2011``: Kitt Peak flux atlas #2 (Wallace, Hinkle, Livingston & Davis
   2011, ApJS 195, 6), ``sptr.regN``. Regions 1-3 carry vacuum wavenumber, the
   telluric-corrected flux, the transmission used for it, and the observed flux.
@@ -50,6 +50,13 @@ WALLACE2011_REGIONS = {
 # Reiners et al. (Table 1) put the optics limit at R ~ 1e6, 0.0145 cm-1
 # at the B-band; the FTS was scanned finer than its optics resolve.
 IAG_FWHM_CM1 = 0.0145
+# The co-add has no air mass, and only its product with the column is measured.
+# This one makes the A-band's O2 scale ~1 on the 2014-04-17 Göttingen profile
+# (exp(0.55) = 1.73 at zenith 0, `fit_atlas_o2.py iag`), so the species cut,
+# which is made along the path, sees about the optical depth the atlas holds.
+IAG_EFFECTIVE_AIRMASS = 1.7
+IAG_VIS = {"file": "spvis.dat.gz", "spectrum": "VIS setting, 2014, 1190 scans on nine days",
+           "airmass": IAG_EFFECTIVE_AIRMASS, "fwhm_cm1": IAG_FWHM_CM1}
 
 
 def _read_columns(atlas: str, path: Path) -> tuple[np.ndarray, np.ndarray]:

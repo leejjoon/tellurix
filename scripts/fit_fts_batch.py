@@ -52,6 +52,16 @@ fitted with the values its 571 nm band measured held fixed:
         --scan-profile data/profiles/kitt_peak_19830626_file3.csv --scan-fwhm-cm1 0.04167 --o2-cia \\
         --pin H2O=0.035 --pin velocity_kms=-0.36 --pin lsf_sigma_kms=0.43 --v1 17410
 
+**IAG** (Reiners et al. 2016, VIS setting) is flux too, but a co-add of nine days with
+no air mass: ``--iag`` fits it at the effective air mass ``IAG_EFFECTIVE_AIRMASS``,
+from 9400 cm-1 (the 1983 pair's tiling, whose scans it reuses) to MT_CKD's 20000, with
+the grid at 2.2 samples per 0.0145 cm-1, as fine as Payne Zero's sampling allows at 20000.
+
+    UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py --iag --vsini-kms 1.9 \\
+        --profile data/profiles/goettingen_20140417_era5.csv \\
+        --scan-profile data/profiles/kitt_peak_19830626_file3.csv --scan-fwhm-cm1 0.04167 --o2-cia \\
+        --telluric-from-clean-pixels --line-strength-table data/line_strength/step3_iter1.npz
+
     UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
         --spectrum .../nso/photatl --airmass 2.0
 """
@@ -73,13 +83,14 @@ from tellurix import (  # noqa: E402
     load_atmosphere_csv, species_above,
 )
 from tellurix_fts import read_solar_spectrum  # noqa: E402
-from tellurix_fts.flux_atlas import WALLACE2011_REGIONS, read_flux_atlas  # noqa: E402
+from tellurix_fts.flux_atlas import IAG_VIS, WALLACE2011_REGIONS, read_flux_atlas  # noqa: E402
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_atlas_page, window_continuum_snr  # noqa: E402
 
 from tellurix.download import DataPaths  # noqa: E402
 from tellurix_fts.window import WindowSettings, fit_window  # noqa: E402
 
 WALLACE2011 = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso/wallace2011_flux")
+IAG = Path("data/databases/iag")
 LINE_ROOT = Path("data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
 
 # Everything about the fit that is the same for every window. Named here and
@@ -189,6 +200,11 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
         "aer_line_root": str(line_root), "aer_version": "3.9",
         "scan_cache": str(args.scan_cache),
     }
+    if getattr(args, "coadd", None):
+        entries["coadd"] = str(root / args.coadd)
+        entries["coadd_sha256"] = file_sha256(root / args.coadd)
+        for item in json.loads((root / args.coadd).read_text())["components"]:
+            entries[f"coadd_profile_{item['label']}_sha256"] = file_sha256(root / item["profile"])
     if getattr(args, "scan_profile", None):
         entries["scan_profile"] = str(root / args.scan_profile)
         entries["scan_profile_sha256"] = file_sha256(root / args.scan_profile)
@@ -220,7 +236,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    line_strength_table: Path | None = None,
                    telluric_from_clean_pixels: bool = False,
                    clean_solar_depth: float = 0.01, clean_max_masked: float = 0.6,
-                   clean_envelope: str = "max", vsini_kms: float = 0.0, pin=()) -> dict:
+                   clean_envelope: str = "max", vsini_kms: float = 0.0, pin=(),
+                   coadd: Path | None = None) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -267,6 +284,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         # A record without pin fitted every window's telluric parameters itself.
         # One string: a record's physics are HDF5 attributes, which hold no dict.
         **({"pin": ",".join(sorted(pin))} if pin else {}),
+        # A record without coadd fitted one atmosphere at the stated zenith angle.
+        **({"coadd": str(coadd), "coadd_sha256": file_sha256(root / coadd)} if coadd else {}),
         "driver": driver.name,
         "driver_sha256": hashlib.sha256(driver.read_bytes()).hexdigest(),
         "fitter": f"{fitter.parent.name}/{fitter.name}",
@@ -284,7 +303,8 @@ def physics_of(root: Path, args) -> dict:
         line_strength_table=args.line_strength_table,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
-        clean_envelope=args.clean_envelope, vsini_kms=args.vsini_kms, pin=args.pin)
+        clean_envelope=args.clean_envelope, vsini_kms=args.vsini_kms, pin=args.pin,
+        coadd=args.coadd)
 
 
 def scan_species(entry, args, root, profile, airmass: float) -> dict:
@@ -333,7 +353,8 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         macroturbulence_kms=PHYSICS["macroturbulence_kms"],
         source_continuum=False, normalize_source=False,
         continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=tuple(args.pin),
-        zenith_angle_deg=args.zenith_angle_deg,
+        # A co-add's nodes carry the geometry; --airmass then sets only the species cut.
+        zenith_angle_deg=None if args.coadd else args.zenith_angle_deg,
         accuracy_mode=args.accuracy_mode, correction=None, gaussian_ils=False,
         o2_cia=args.o2_cia, line_coupling=args.line_coupling,
         stellar_broadening=args.stellar_broadening, h2o_pressure_shift=args.h2o_pressure_shift,
@@ -344,7 +365,7 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
         clean_envelope=args.clean_envelope, vectorize_layers=True, mixed_precision=True,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
-        layer_chunk_size=args.layer_chunk_size,
+        layer_chunk_size=args.layer_chunk_size, coadd=args.coadd,
     )
     report, arrays = fit_window(settings, DataPaths.bootstrapped(root),
                                 stellar_directory=root / "data/stellar", base=root,
@@ -488,6 +509,8 @@ def main() -> None:
                         default=None,
                         help="fit this region of the Wallace 2011 flux atlas instead of --spectrum; "
                              "its air mass and sinc FWHM are the defaults")
+    parser.add_argument("--iag", action="store_true",
+                        help="fit the IAG flux atlas's VIS setting instead of --spectrum")
     parser.add_argument("--vsini-kms", type=float, default=0.0,
                         help="rotational broadening of the solar source: 0 for disc centre, "
                              "1.9 for a flux atlas")
@@ -571,6 +594,10 @@ def main() -> None:
                         help="hold a parameter fixed in every window (WindowSettings.pin), for a "
                              "spectrum whose telluric lines are too weak to set it window by "
                              "window; measure it from the windows that can. Repeatable.")
+    parser.add_argument("--coadd", type=Path, default=None,
+                        help="a co-add description (scripts/make_iag_coadd.py), relative to the "
+                             "checkout: fit the spectrum as a mean over several atmospheres "
+                             "(tellurix.CoaddedTelluricModel); --airmass then sets only the species cut")
     parser.add_argument("--accuracy-mode", choices=("mt_ckd", "fast"), default="mt_ckd",
                         help="'fast' drops the water continuum: only for windows past the end "
                              "of the MT_CKD table at 20000 cm-1, and as its own run with its "
@@ -620,8 +647,26 @@ def main() -> None:
             args.airmass = region["airmass"]
         if args.fwhm_cm1 == MEASURED_FWHM_CM1:
             args.fwhm_cm1 = region["fwhm_cm1"]
+    elif args.iag:
+        if args.spectrum is not None:
+            raise SystemExit("pass --spectrum or --iag, not both")
+        region = IAG_VIS
+        args.spectrum = IAG / region["file"]
+        args.window_stem = "iag_vis"
+        if args.airmass is None and args.zenith_angle_deg is None:
+            args.airmass = region["airmass"]
+        if args.fwhm_cm1 == MEASURED_FWHM_CM1:
+            args.fwhm_cm1 = region["fwhm_cm1"]
+        # Payne Zero's visible band is sampled at 0.146 km/s, and the source may be at
+        # most 1.5x coarser than the grid (`resample_stellar_source`): 2.2 per 0.0145
+        # cm-1 is 0.099 km/s at 20000 cm-1. The sinc needs a step under 0.012 cm-1
+        # (its boxcar inside the grid's Nyquist), which 0.0066 is.
+        if args.samples_per_resolution == 4.0:
+            args.samples_per_resolution = 2.2
+        args.v1 = 9400.0 if args.v1 is None else args.v1
+        args.v2 = 20000.0 if args.v2 is None else args.v2
     elif args.spectrum is None:
-        raise SystemExit("pass --spectrum or --wallace2011-region")
+        raise SystemExit("pass --spectrum, --wallace2011-region or --iag")
 
     stem = args.window_stem or args.spectrum.stem
     args.summary = args.summary or args.output_dir / f"{stem}_summary.json"
@@ -650,10 +695,13 @@ def main() -> None:
         if region is not None:
             # The whole file: the atlas's region edges are where its good data
             # ends, and the S/N test below drops anything past them.
+            atlas = "iag" if args.iag else "wallace2011"
             spectrum = read_flux_atlas(
-                "wallace2011", args.spectrum, (0.0, 1.0e6), cache_directory=root / "data/databases/wallace2011",
+                atlas, root / args.spectrum if args.iag else args.spectrum, (0.0, 1.0e6),
+                cache_directory=root / f"data/databases/{atlas}",
                 airmass=args.airmass, fwhm_cm1=args.fwhm_cm1,
-                source_name=f"Kitt Peak flux atlas #2, {region['spectrum']}, observed flux")
+                source_name=(f"IAG solar flux atlas, {region['spectrum']}, normalised flux" if args.iag else
+                             f"Kitt Peak flux atlas #2, {region['spectrum']}, observed flux"))
         else:
             spectrum = read_solar_spectrum(args.spectrum)
         spectra = {str(args.spectrum): spectrum}

@@ -61,6 +61,7 @@ from .model import (
     constant_velocity_grid,
     trim_wavenumber_grid,
 )
+from .coadd import CoaddNode, CoaddedTelluricModel, fourier_shift
 from .site_profile import (
     LAYERINGS, afgl_dry_vmr, build_site_profile, load_afgl, weighted_layers, write_profile_csv,
 )
@@ -79,6 +80,8 @@ __all__ = [
     "ArrayOpacityBackend",
     "AtmosphereProfile",
     "BoxcarFTSInstrumentProfile",
+    "CoaddNode",
+    "CoaddedTelluricModel",
     "ExoJAXOpacityBackend",
     "FitResult",
     "LBLRTMOpticalDepthCorrection",
@@ -98,6 +101,7 @@ __all__ = [
     "TelluricParameters",
     "ValidationMetrics",
     "broaden_stellar_source",
+    "fourier_shift",
     "build_lblrtm_correction",
     "chebyshev_continuum",
     "compare_transmission",

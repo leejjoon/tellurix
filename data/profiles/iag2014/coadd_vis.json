@@ -1,0 +1,318 @@
+{
+ "about": "Reiners et al. 2016 (A&A 587, A65; Table 2 and Sect. 3) co-add 1190 VIS scans from nine days of 2014, in packages of 10 scans taking ~15 min, each package shifted by the Sun-observer radial velocity (JPL Horizons) into the solar frame before averaging. So each package's telluric lines sit at -v_r in the atlas, and v_r moves by 0.6 km/s between April and July and by +-0.2 km/s within a day. The paper gives the scans per day but not when they were taken. Each day's packages are put back to back, centred on the Sun's transit at G\u00f6ttingen, and that stretch is cut into hour-long nodes (at least one), each weighted by its share of the day's scans, with its own air mass and v_r at its midpoint. Each day gets the ERA5 profile at 11 UTC (transit is at ~11:20 UTC on these dates):",
+ "source": "Reiners et al. 2016, A&A 587, A65, Table 2 (VIS)",
+ "components": [
+  {
+   "label": "2014-03-07",
+   "scans": 220,
+   "transit_utc_hour": 11.533,
+   "profile": "data/profiles/iag2014/goettingen_20140307T1100.csv",
+   "nodes": [
+    {
+     "utc_hour": 9.242,
+     "weight": 36.666666666666664,
+     "zenith_angle_deg": 63.8655,
+     "airmass": 2.2702,
+     "sun_radial_velocity_kms": 0.2722,
+     "velocity_kms": -0.2722
+    },
+    {
+     "utc_hour": 10.158,
+     "weight": 36.666666666666664,
+     "zenith_angle_deg": 59.4205,
+     "airmass": 1.9657,
+     "sun_radial_velocity_kms": 0.3336,
+     "velocity_kms": -0.3336
+    },
+    {
+     "utc_hour": 11.075,
+     "weight": 36.666666666666664,
+     "zenith_angle_deg": 57.0624,
+     "airmass": 1.8392,
+     "sun_radial_velocity_kms": 0.4007,
+     "velocity_kms": -0.4007
+    },
+    {
+     "utc_hour": 11.992,
+     "weight": 36.666666666666664,
+     "zenith_angle_deg": 57.0804,
+     "airmass": 1.8401,
+     "sun_radial_velocity_kms": 0.4697,
+     "velocity_kms": -0.4697
+    },
+    {
+     "utc_hour": 12.908,
+     "weight": 36.666666666666664,
+     "zenith_angle_deg": 59.4716,
+     "airmass": 1.9686,
+     "sun_radial_velocity_kms": 0.5367,
+     "velocity_kms": -0.5367
+    },
+    {
+     "utc_hour": 13.825,
+     "weight": 36.666666666666664,
+     "zenith_angle_deg": 63.9419,
+     "airmass": 2.2764,
+     "sun_radial_velocity_kms": 0.5979,
+     "velocity_kms": -0.5979
+    }
+   ]
+  },
+  {
+   "label": "2014-03-10",
+   "scans": 170,
+   "transit_utc_hour": 11.517,
+   "profile": "data/profiles/iag2014/goettingen_20140310T1100.csv",
+   "nodes": [
+    {
+     "utc_hour": 9.923,
+     "weight": 42.5,
+     "zenith_angle_deg": 59.2044,
+     "airmass": 1.9532,
+     "sun_radial_velocity_kms": 0.3292,
+     "velocity_kms": -0.3292
+    },
+    {
+     "utc_hour": 10.985,
+     "weight": 42.5,
+     "zenith_angle_deg": 56.006,
+     "airmass": 1.7886,
+     "sun_radial_velocity_kms": 0.4063,
+     "velocity_kms": -0.4063
+    },
+    {
+     "utc_hour": 12.048,
+     "weight": 42.5,
+     "zenith_angle_deg": 56.0141,
+     "airmass": 1.7889,
+     "sun_radial_velocity_kms": 0.4864,
+     "velocity_kms": -0.4864
+    },
+    {
+     "utc_hour": 13.11,
+     "weight": 42.5,
+     "zenith_angle_deg": 59.2262,
+     "airmass": 1.9545,
+     "sun_radial_velocity_kms": 0.5634,
+     "velocity_kms": -0.5634
+    }
+   ]
+  },
+  {
+   "label": "2014-04-16",
+   "scans": 50,
+   "transit_utc_hour": 11.333,
+   "profile": "data/profiles/iag2014/goettingen_20140416T1100.csv",
+   "nodes": [
+    {
+     "utc_hour": 11.333,
+     "weight": 50.0,
+     "zenith_angle_deg": 41.3783,
+     "airmass": 1.3327,
+     "sun_radial_velocity_kms": 0.4866,
+     "velocity_kms": -0.4866
+    }
+   ]
+  },
+  {
+   "label": "2014-04-17",
+   "scans": 280,
+   "transit_utc_hour": 11.333,
+   "profile": "data/profiles/iag2014/goettingen_20140417T1100.csv",
+   "nodes": [
+    {
+     "utc_hour": 8.333,
+     "weight": 40.0,
+     "zenith_angle_deg": 54.8879,
+     "airmass": 1.7386,
+     "sun_radial_velocity_kms": 0.2861,
+     "velocity_kms": -0.2861
+    },
+    {
+     "utc_hour": 9.333,
+     "weight": 40.0,
+     "zenith_angle_deg": 47.7458,
+     "airmass": 1.4872,
+     "sun_radial_velocity_kms": 0.3451,
+     "velocity_kms": -0.3451
+    },
+    {
+     "utc_hour": 10.333,
+     "weight": 40.0,
+     "zenith_angle_deg": 42.8151,
+     "airmass": 1.3632,
+     "sun_radial_velocity_kms": 0.4136,
+     "velocity_kms": -0.4136
+    },
+    {
+     "utc_hour": 11.333,
+     "weight": 40.0,
+     "zenith_angle_deg": 41.0256,
+     "airmass": 1.3255,
+     "sun_radial_velocity_kms": 0.4872,
+     "velocity_kms": -0.4872
+    },
+    {
+     "utc_hour": 12.333,
+     "weight": 40.0,
+     "zenith_angle_deg": 42.8099,
+     "airmass": 1.3631,
+     "sun_radial_velocity_kms": 0.5608,
+     "velocity_kms": -0.5608
+    },
+    {
+     "utc_hour": 13.333,
+     "weight": 40.0,
+     "zenith_angle_deg": 47.7339,
+     "airmass": 1.4868,
+     "sun_radial_velocity_kms": 0.6293,
+     "velocity_kms": -0.6293
+    },
+    {
+     "utc_hour": 14.333,
+     "weight": 40.0,
+     "zenith_angle_deg": 54.8667,
+     "airmass": 1.7377,
+     "sun_radial_velocity_kms": 0.6881,
+     "velocity_kms": -0.6881
+    }
+   ]
+  },
+  {
+   "label": "2014-04-20",
+   "scans": 190,
+   "transit_utc_hour": 11.317,
+   "profile": "data/profiles/iag2014/goettingen_20140420T1100.csv",
+   "nodes": [
+    {
+     "utc_hour": 9.417,
+     "weight": 38.0,
+     "zenith_angle_deg": 46.2204,
+     "airmass": 1.4453,
+     "sun_radial_velocity_kms": 0.3502,
+     "velocity_kms": -0.3502
+    },
+    {
+     "utc_hour": 10.367,
+     "weight": 38.0,
+     "zenith_angle_deg": 41.6501,
+     "airmass": 1.3383,
+     "sun_radial_velocity_kms": 0.4156,
+     "velocity_kms": -0.4156
+    },
+    {
+     "utc_hour": 11.317,
+     "weight": 38.0,
+     "zenith_angle_deg": 39.9854,
+     "airmass": 1.3051,
+     "sun_radial_velocity_kms": 0.4852,
+     "velocity_kms": -0.4852
+    },
+    {
+     "utc_hour": 12.267,
+     "weight": 38.0,
+     "zenith_angle_deg": 41.608,
+     "airmass": 1.3374,
+     "sun_radial_velocity_kms": 0.5549,
+     "velocity_kms": -0.5549
+    },
+    {
+     "utc_hour": 13.217,
+     "weight": 38.0,
+     "zenith_angle_deg": 46.1428,
+     "airmass": 1.4433,
+     "sun_radial_velocity_kms": 0.6202,
+     "velocity_kms": -0.6202
+    }
+   ]
+  },
+  {
+   "label": "2014-07-11",
+   "scans": 100,
+   "transit_utc_hour": 11.433,
+   "profile": "data/profiles/iag2014/goettingen_20140711T1100.csv",
+   "nodes": [
+    {
+     "utc_hour": 10.808,
+     "weight": 50.0,
+     "zenith_angle_deg": 30.354,
+     "airmass": 1.1589,
+     "sun_radial_velocity_kms": -0.0967,
+     "velocity_kms": 0.0967
+    },
+    {
+     "utc_hour": 12.058,
+     "weight": 50.0,
+     "zenith_angle_deg": 30.3852,
+     "airmass": 1.1592,
+     "sun_radial_velocity_kms": -0.0097,
+     "velocity_kms": 0.0097
+    }
+   ]
+  },
+  {
+   "label": "2014-07-17",
+   "scans": 60,
+   "transit_utc_hour": 11.433,
+   "profile": "data/profiles/iag2014/goettingen_20140717T1100.csv",
+   "nodes": [
+    {
+     "utc_hour": 11.058,
+     "weight": 30.0,
+     "zenith_angle_deg": 30.7235,
+     "airmass": 1.1633,
+     "sun_radial_velocity_kms": -0.1158,
+     "velocity_kms": 0.1158
+    },
+    {
+     "utc_hour": 11.808,
+     "weight": 30.0,
+     "zenith_angle_deg": 30.7075,
+     "airmass": 1.1631,
+     "sun_radial_velocity_kms": -0.0632,
+     "velocity_kms": 0.0632
+    }
+   ]
+  },
+  {
+   "label": "2014-07-22",
+   "scans": 50,
+   "transit_utc_hour": 11.45,
+   "profile": "data/profiles/iag2014/goettingen_20140722T1100.csv",
+   "nodes": [
+    {
+     "utc_hour": 11.45,
+     "weight": 50.0,
+     "zenith_angle_deg": 31.3285,
+     "airmass": 1.1707,
+     "sun_radial_velocity_kms": -0.1308,
+     "velocity_kms": 0.1308
+    }
+   ]
+  },
+  {
+   "label": "2014-07-23",
+   "scans": 70,
+   "transit_utc_hour": 11.45,
+   "profile": "data/profiles/iag2014/goettingen_20140723T1100.csv",
+   "nodes": [
+    {
+     "utc_hour": 11.012,
+     "weight": 35.0,
+     "zenith_angle_deg": 31.9356,
+     "airmass": 1.1784,
+     "sun_radial_velocity_kms": -0.1713,
+     "velocity_kms": 0.1713
+    },
+    {
+     "utc_hour": 11.887,
+     "weight": 35.0,
+     "zenith_angle_deg": 31.9606,
+     "airmass": 1.1787,
+     "sun_radial_velocity_kms": -0.1096,
+     "velocity_kms": 0.1096
+    }
+   ]
+  }
+ ]
+}

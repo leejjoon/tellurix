@@ -32,6 +32,7 @@ zero.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+import hashlib
 import json
 from pathlib import Path
 import time
@@ -43,7 +44,7 @@ import numpy as np
 from tellurix import (
     NegativeOpacityError,
     AER_MOLECULE_IDS, AERLineDatabase, ArrayOpacityBackend, BoxcarFTSInstrumentProfile,
-    ContinuumSum, ExoJAXOpacityBackend, LBLRTMOpticalDepthCorrection, MTCKDWaterContinuum,
+    CoaddNode, CoaddedTelluricModel, ContinuumSum, ExoJAXOpacityBackend, LBLRTMOpticalDepthCorrection, MTCKDWaterContinuum,
     O2CollisionInducedContinuum, OrderObjective, StellarSpectrum, TelluricModel,
     TelluricParameters, chebyshev_continuum, constant_velocity_grid, fit_order, ils_fingerprint,
     line_strength_provenance, load_atmosphere_csv, prepare_stellar_source, resample_stellar_continuum,
@@ -166,6 +167,13 @@ class WindowSettings:
     # sigma, correlation or at_bound; only a fit read for its residuals wants that.
     covariance: bool = True
     layer_chunk_size: int = 0
+    # A co-add description (scripts/make_iag_coadd.py), relative to base: the
+    # spectrum is a mean over observations through several atmospheres, each
+    # with its own profile, air masses and telluric velocities
+    # (tellurix.CoaddedTelluricModel). The order is then fitted at zenith 0,
+    # since the nodes carry the geometry, and ``profile`` serves only the
+    # source-alone model.
+    coadd: Path | None = None
 
 
 def solar_source_for(v1_cm1: float, v2_cm1: float, directory: Path) -> Path:
@@ -187,6 +195,22 @@ def solar_source_for(v1_cm1: float, v2_cm1: float, directory: Path) -> Path:
         f"no solar source covers {wanted[0]:.1f}-{wanted[1]:.1f} nm; have "
         + ", ".join(f"{name} {lo:.0f}-{hi:.0f}" for name, (lo, hi) in available)
     )
+
+
+def load_coadd(path: Path, base: Path = Path(".")):
+    """The components of a co-add description: ``[(profile, nodes, label)]``, and its provenance."""
+
+    path = Path(base) / path
+    text = path.read_bytes()
+    spec = json.loads(text)
+    components = [(load_atmosphere_csv(Path(base) / item["profile"]),
+                   [CoaddNode(node["weight"], node["zenith_angle_deg"], node["velocity_kms"])
+                    for node in item["nodes"]], item.get("label", item["profile"]))
+                  for item in spec["components"]]
+    provenance = {"coadd": path.name, "coadd_sha256": hashlib.sha256(text).hexdigest(),
+                  "coadd_components": len(components),
+                  "coadd_nodes": sum(len(nodes) for _, nodes, _ in components)}
+    return components, provenance
 
 
 def build_bounds(species, continuum_degree, free, initial, include_stellar, pinned=(),
@@ -296,10 +320,16 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
     # the self pressure too: the largest the column bounds allow (log scale <= 2).
     self_pressure_bar = max((float(np.max(np.asarray(profile.vmr[name]) * profile.pressure_layer_bar))
                              for name in speed_dependent if name in profile.vmr), default=0.0)
+    coadd, coadd_provenance = ((None, {}) if settings.coadd is None
+                               else load_coadd(settings.coadd, base))
+    # One opacity serves every component: its bounds only decide where the
+    # sparse kernel is valid, so they must cover every profile it will see.
+    profiles = [profile, *(component for component, _, _ in coadd or ())]
     opacity = ExoJAXOpacityBackend.prepare(
         databases, grid, methods="direct_sparse",
-        temperature_range_k=(float(np.min(profile.temperature_k)), float(np.max(profile.temperature_k))),
-        maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
+        temperature_range_k=(min(float(np.min(p.temperature_k)) for p in profiles),
+                             max(float(np.max(p.temperature_k)) for p in profiles)),
+        maximum_pressure_bar=max(float(np.max(p.pressure_layer_bar)) for p in profiles),
         vectorize_layers=settings.vectorize_layers,
         mixed_precision=settings.mixed_precision,
         pressure_shift=True,
@@ -330,15 +360,19 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
     mopd_cm = None if settings.gaussian_ils else 1.20671 / (2.0 * settings.fwhm_cm1)
     instrument = None if settings.gaussian_ils else BoxcarFTSInstrumentProfile(
         mopd_cm=mopd_cm, wavenumber_center_cm1=centre, max_residual_sigma_kms=4.0)
-    model = TelluricModel(
-        profile, grid, opacity, continuum=continuum, correction=correction,
-        accuracy_mode=settings.accuracy_mode,
-        max_lsf_sigma_kms=4.0,
-        # The FTS point-samples; it does not integrate over a pixel the way a
-        # grating spectrograph's detector does.
-        pixel_integration="point",
-        instrument=instrument,
-    )
+    def single(atmosphere):
+        return TelluricModel(
+            atmosphere, grid, opacity, continuum=continuum, correction=correction,
+            accuracy_mode=settings.accuracy_mode,
+            max_lsf_sigma_kms=4.0,
+            # The FTS point-samples; it does not integrate over a pixel the way a
+            # grating spectrograph's detector does.
+            pixel_integration="point",
+            instrument=instrument,
+        )
+
+    model = (single(profile) if coadd is None
+             else CoaddedTelluricModel([(single(component), nodes) for component, nodes, _ in coadd]))
 
     if settings.stellar == "flat":
         source_path, stellar = None, StellarSpectrum.flat(grid)
@@ -362,7 +396,11 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
             macroturbulence_kms=settings.macroturbulence_kms, normalize=normalize)
 
     zenith = settings.zenith_angle_deg
-    if zenith is None:
+    if coadd is not None:
+        if zenith not in (None, 0.0):
+            raise ValueError("a co-add's nodes carry its geometry; leave zenith_angle_deg unset or 0")
+        zenith = 0.0
+    elif zenith is None:
         if spectrum.airmass_mean is None:
             raise ValueError(f"{Path(settings.spectrum).name} has no air mass; "
                              "give zenith_angle_deg")
@@ -394,7 +432,7 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
         continuum=continuum, mopd_cm=mopd_cm, instrument=instrument, model=model,
         stellar=stellar, source=source, source_path=source_path, zenith=zenith,
         order=order, fit_model=fit_model, parameters=parameters, started=started,
-        strength_table=strength_table,
+        strength_table=strength_table, coadd_provenance=coadd_provenance,
     )
 
 
@@ -771,6 +809,7 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
             "species_without_lines": skipped,
             "zenith_angle_deg": order.zenith_angle_deg,
             "airmass_used": float(1.0 / np.cos(np.radians(order.zenith_angle_deg))),
+            **prepared.coadd_provenance,
         },
         "stellar": {
             "source": "flat" if source_path is None else str(source_path),

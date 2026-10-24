@@ -580,6 +580,12 @@ class TelluricModel:
         return precomputed
 
     def transmission(self, parameters: TelluricParameters, zenith_angle_deg: float = 0.0) -> jnp.ndarray:
+        mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
+        return jnp.exp(-self.vertical_optical_depth(parameters) / mu)
+
+    def vertical_optical_depth(self, parameters: TelluricParameters) -> jnp.ndarray:
+        """The whole column's optical depth at zenith, summed over layers."""
+
         pressure = jnp.asarray(self.profile.pressure_layer_bar)
         vmr_scaled = {
             species: jnp.asarray(vmr)
@@ -602,8 +608,7 @@ class TelluricModel:
                 tau = tau + self.correction.optical_depth(self.profile, vmr_scaled)
         for species in self.opacity.species:
             tau = tau + xs[species] * (air_column * vmr_scaled[species])[:, None]
-        mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
-        return jnp.exp(-jnp.sum(tau, axis=0) / mu)
+        return jnp.sum(tau, axis=0)
 
     def species_transmission(
         self, parameters: TelluricParameters, zenith_angle_deg: float = 0.0
@@ -622,6 +627,13 @@ class TelluricModel:
         in this package's residuals.
         """
 
+        mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
+        return {name: jnp.exp(-tau / mu)
+                for name, tau in self.species_vertical_optical_depth(parameters).items()}
+
+    def species_vertical_optical_depth(self, parameters: TelluricParameters) -> dict[str, jnp.ndarray]:
+        """Each absorber's, and the continuum's, zenith optical depth, summed over layers."""
+
         pressure = jnp.asarray(self.profile.pressure_layer_bar)
         vmr_scaled = {
             species: jnp.asarray(vmr)
@@ -634,10 +646,9 @@ class TelluricModel:
         xs = _nonnegative(self.opacity.cross_sections(
             jnp.asarray(self.profile.temperature_k), pressure, partial_pressure))
         air_column = jnp.asarray(self.profile.air_column_cm2)
-        mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
 
         def collapse(tau: jnp.ndarray) -> jnp.ndarray:
-            return jnp.exp(-jnp.sum(tau, axis=0) / mu)
+            return jnp.sum(tau, axis=0)
 
         pieces = {
             species: collapse(xs[species] * (air_column * vmr_scaled[species])[:, None])
