@@ -593,8 +593,9 @@ Baker's and the solar fits' ratios.
      still agree on them (r 0.58-0.82): what is left is in features the cuts exclude --
      dates that disagree, or one date only (all of 13600-17600 but Wallace's and Baker's).
      **Iteration 1 is the table to keep**: as good where iteration 2 is better, better on
-     Baker, one round of fitting to the data instead of two. Not promoted: the production
-     runs and the results archive are unchanged.
+     Baker, one round of fitting to the data instead of two. **Promoted 2026-10-24**
+     (`docs/solar_fit_plan.md`, "Done 2026-10-24"): Wallace 2011 regions 1-2, niratl and the
+     June 1983 pair; Baker et al.'s fits stay the Voigt measurements.
 4. **What this cannot reach.** Features under solar lines or saturated in every fit,
    10511.5 among them, have no measured factor. They need the factors as free parameters
    in the joint solar fit ("Fit the solar spectra jointly" in `solar_fit_plan.md`, Also

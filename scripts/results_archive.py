@@ -17,7 +17,8 @@ file, and a result that changed locally is visible against the published one.
         --mirror <zenodo file URL> --output dist/tellurix-results-2026-10-03.tar.gz
 
 ``pack`` takes the files the manifest lists, or with ``--from-git`` the files
-git tracks under those directories, which is how the first archive was made.
+git tracks under those directories, which is how the first archive was made;
+``--add`` brings a file into the list (the first time a product is archived).
 The tarball is deterministic -- sorted entries, zero mtimes, no owners -- so
 packing the same files twice gives the same sha256.
 """
@@ -37,7 +38,9 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "data/results_manifest.json"
-DIRECTORIES = ("data/corrected", "data/calibration", "data/scans")
+# data/line_strength: the per-line strength table a record names, and what it was
+# built from that no other file in the archive carries, so a fetched record rebuilds.
+DIRECTORIES = ("data/corrected", "data/calibration", "data/scans", "data/line_strength")
 REPOSITORY = "https://github.com/leejjoon/tellurix"
 
 
@@ -179,6 +182,8 @@ def main() -> None:
     pack_parser.add_argument("--url", default="", help="where the archive will be downloaded from")
     pack_parser.add_argument("--mirror", action="append", default=[],
                              help="another download location, tried if the first fails; repeatable")
+    pack_parser.add_argument("--add", action="append", default=[], metavar="PATH",
+                             help="also pack this file (relative to the checkout); repeatable")
     args = parser.parse_args()
 
     if args.command == "pack":
@@ -186,6 +191,10 @@ def main() -> None:
             files = _tracked_files()
         else:
             files = sorted(json.loads(MANIFEST.read_text())["files"])
+        outside = [name for name in args.add if not name.startswith(tuple(f"{d}/" for d in DIRECTORIES))]
+        if outside:
+            raise SystemExit(f"--add takes files under {', '.join(DIRECTORIES)}, not {outside}")
+        files = sorted(set(files) | set(args.add))
         url = args.url or (f"{REPOSITORY}/releases/download/{args.release}/{args.output.name}"
                            if args.release else "")
         manifest = pack(args.output, files, url, args.release, args.mirror)

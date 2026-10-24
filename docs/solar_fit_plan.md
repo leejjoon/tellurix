@@ -1806,6 +1806,39 @@ the refit, 0.55% after (0.59 -> 0.48% net of the 0.22% pixel noise), better in 8
 An error identical in both cancels, so this is a lower bound on the correction error. Promoted: the old records, window files, transmission files and review bundle are
 in `data/corrected/superseded_pre_widthscale/`.
 
+### Done 2026-10-24: every product in 8800-17600 cm-1 refitted with per-line strength factors
+
+The table is `data/line_strength/step3_iter1.npz` (`build_line_strength_table.py --fits
+wallace,j83_2,j83_3,niratl --baker --baker-spectra data/line_strength/baker2020_ratios_per_spectrum.npz
+--detrend --max-scatter 0.025 --min-dates 2`; 1771 features, 3465 lines, factor rms 4.5%):
+each fit's and each Baker spectrum's own trend in E'' and strength divided out, a factor
+kept only where at least two observing dates agree within 0.025. Held out from Wallace 2011
+the same recipe made its corrected spectrum flatter in 65-87% of windows
+(`docs/line_intensity_corrections.md`, Plan step 2); a second round changed nothing beyond
+noise (step 3). Promoted: Wallace 2011 regions 1-2, niratl and the June 1983 pair, each
+refitted with its record's settings. The pair's refit covers 8770-17650 cm-1 and its other
+windows -- whose 25 cm-1 line margins never reach a scaled line -- are the old fits, spliced;
+Wallace's 11680 and 15220 were refitted with the table and `--clean-envelope closing`, as
+before. `compare_fts_runs.py` against the old runs: the same windows fitted, water moved
+0.06-0.32% at the median (up to 4%), residual rms unchanged at the median, nothing newly at a
+column bound (the solar broadening at its 0.05 km/s floor in five windows of the pair).
+
+| product | median flatness, telluric pixels | authors' correction |
+|---|---|---|
+| Wallace reg 1, authors' pixels | 0.610% -> 0.576% | 0.705%; at or below it 57 -> 61 of 72 |
+| Wallace reg 2, authors' pixels | 0.604% -> 0.548% | 0.706%; 38 -> 41 of 59 |
+| niratl | 0.577% -> 0.501% | 0.628%; 43 -> 52 of 67 |
+| `830626_2` | 1.033% -> 0.943% (deep 2.72% -> 2.19%) | |
+| `830626_3` | 1.031% -> 0.833% (deep 2.66% -> 2.03%) | |
+
+The old records, products and npz are in `data/corrected/superseded_pre_strength_table/`.
+Products re-exported under their usual names: `niratl_corrected.h5` reproduces each fit's own
+corrected spectrum to 3.0e-16. The table and Baker's per-spectrum ratios, which nothing else
+in the archive carries, are archived under `data/line_strength/` with the records that name
+them. Baker et al.'s own fits (`data/corrected/baker2020/`) stay the Voigt fits: they are
+measurements, and the committed Baker reports are made on them. Region 3, the 1990 files and
+photatl are outside the table's range and unchanged.
+
 ### Also open
 
 - **The O2 excess: closed 2026-10-05, cause inside the 1983 pair not identified** (§4n):
@@ -1864,12 +1897,8 @@ in `data/corrected/superseded_pre_widthscale/`.
   - **What to measure first**: on the 1983 trio over one band, whether a joint fit lowers
     the pair disagreement (`check_fts_pair_consistency.py`) and niratl's flatness against
     the authors', and how far the recovered solar lines move from Payne Zero's.
-- **Per-line intensity corrections** (proposed 2026-10-20, `docs/line_intensity_corrections.md`):
-  per-feature observed/model optical depth repeats across Wallace 2011, the June 1983 pair
-  and niratl (r = 0.82-0.92; same-day air-mass slope 0.96, so the line list and not the
-  Sun), and the other fits' mean predicts each one's to halve its 5-6% scatter. Plan: a
-  strength-multiplier table in `AERLineDatabase`, tested by refitting Wallace with a table
-  built without it. Measured by `measure_line_depth_ratios.py` -> `docs/line_depth_ratios.json`.
+- **Per-line intensity corrections: done and promoted 2026-10-24** (above, and
+  `docs/line_intensity_corrections.md`, Plan steps 1-3).
 - **Atlases not started**: `fluxatl` (disc-integrated, so the one atlas where Payne Zero's
   quantity is right -- a measure of how much of the floor is the flux/intensity mismatch;
   needs an air-wavelength, uneven-grid reader), `spot1atl` (waits on the solar model),

@@ -152,7 +152,11 @@ maximum; `--clean-envelope closing` follows the wing instead. It is opt-in and u
 in Wallace 2011's 11680 (Ca II 8542, 66% -> 19% masked) and 15220 (H-alpha, 83% -> 21%),
 spliced into the x1.00 runs 2026-10-20 (the rows before are in
 `data/corrected/superseded_wallace2011_trials/pre_closing_splice/`); it would also rescue 17 of the
-June 1983 pair's 30 refused windows, not tried. **Wallace 2011 regions 1-2 at x1.00 were
+June 1983 pair's 30 refused windows, not tried. **Since 2026-10-24 Wallace 2011 regions 1-2, niratl
+and the June 1983 pair are fitted with per-line strength factors** (`--line-strength-table
+data/line_strength/step3_iter1.npz`, `docs/solar_fit_plan.md`, "Done 2026-10-24"; old runs in
+`data/corrected/superseded_pre_strength_table/`); a rerun of any of them must pass it, and the 1983
+file 3 `--airmass 3.085`, which its record states and its file does not. **Wallace 2011 regions 1-2 at x1.00 were
 promoted 2026-10-20** to `data/corrected/solar/wallace2011/` (records, npz and scores; median
 flatness 0.61% and 0.60% on the authors' pixels against their 0.71%); the x1.05 trial and
 the closing refits are in `data/corrected/superseded_wallace2011_trials/`. **Region 3**
