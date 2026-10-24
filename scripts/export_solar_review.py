@@ -40,7 +40,8 @@ from tellurix.download import DataPaths  # noqa: E402
 from tellurix.io import load_atmosphere_csv  # noqa: E402
 from tellurix.mt_ckd import MTCKDWaterContinuum  # noqa: E402
 from tellurix.o2_cia import O2CollisionInducedContinuum  # noqa: E402
-from tellurix_fts.window import WindowSettings, prepare_window  # noqa: E402
+from tellurix_fts.baker import read_baker_solar_atlas  # noqa: E402
+from tellurix_fts.window import WindowSettings, load_coadd, prepare_window  # noqa: E402
 
 # Everything the page can offer as a row, whether or not any window fits it.
 from tellurix import AER_MOLECULE_IDS  # noqa: E402
@@ -156,6 +157,46 @@ def authors_columns(path: Path, nu: np.ndarray) -> dict:
     return {"authors_atmospheric": atmospheric, "authors_solar": solar}
 
 
+def baker_columns(nu: np.ndarray, observed: np.ndarray, corrected: np.ndarray,
+                  transmission: np.ndarray, mask: np.ndarray, atlas: dict,
+                  velocity_kms: float) -> dict:
+    """Baker et al. 2020's telluric-free IAG Sun, as the authors' columns of an IAG window.
+
+    The atlas has no authors' correction of its own; Baker, Blake & Reiners 2020's
+    telluric-free atlas is the same instrument's Sun with the atmosphere removed, and
+    `score_iag_against_baker.py` scores ours against it. Here it is drawn: its
+    spectrum, moved by the velocity that score aligned the two with, as the
+    authors' corrected spectrum, and observed / it as the transmission it implies.
+    Each is put on our scale by a straight line fitted where nothing absorbs, as in
+    the score. Theirs is sampled at about one point per resolution element, so the
+    cubic interpolation onto our pixels is for display, not a score: the score
+    samples ours on their grid instead.
+    """
+    from scipy.interpolate import CubicSpline
+
+    v = atlas["v"]
+    inside = (v > nu[0] - 1.0) & (v < nu[-1] + 1.0)
+    if inside.sum() < 8:
+        return {}
+    at = nu / (1.0 + velocity_kms / 299792.458)
+    theirs = CubicSpline(v[inside], atlas["s"][inside])(at)
+    clean = np.interp(at, v[inside], (atlas["flags"][inside] == 0).astype(float)) > 0.999
+    relative = transmission / np.percentile(transmission[mask], 99)
+    for ceiling in (0.995, 0.98, 0.95):
+        reference = mask & clean & (relative > ceiling) & np.isfinite(corrected)
+        if reference.sum() >= 50:
+            break
+    else:
+        return {}
+
+    def matched(ours):
+        x = nu - nu.mean()
+        return np.polyval(np.polyfit(x[reference], (ours / theirs)[reference], 1), x)
+
+    return {"authors_atmospheric": observed / (theirs * matched(observed)),
+            "authors_solar": theirs * matched(corrected)}
+
+
 def file_row0(path: Path, nu: np.ndarray, cache: dict) -> int | None:
     """Row of ``nu[0]`` in a Wallace 2011 region file, if the pixels are consecutive rows there."""
     if not path.name.startswith("sptr.reg"):
@@ -168,23 +209,28 @@ def file_row0(path: Path, nu: np.ndarray, cache: dict) -> int | None:
     return int(at[0]) if np.all(np.diff(at) == 1) else None
 
 
-def scan_rows(scan_name: str, root: Path, airmass: float, fitted) -> list[dict]:
+def scan_rows(scan_name: str, root: Path, airmass: float, fitted,
+              column_ratio: dict | None = None) -> list[dict]:
     """Every molecule the scan considered, and why it is or is not fitted.
 
     The page greys out what was not fitted, and a greyed row that cannot say
     *why* is the display that let OCS and O3 hide: 'not in the list' and
     'measured and too weak' look identical, and only one of them is a reason.
+    A run with ``--scan-column-ratio`` cut each species at its own column ratio
+    to the scanned atmosphere, so the depths shown are scaled the same way.
     """
+    ratio = column_ratio or {}
     report = read_scan(root / "data/scans" / scan_name)
     rows = []
     for entry in report["fit"] + report["rejected"]:
-        depth = entry["peak_optical_depth"] * airmass
+        depth = entry["peak_optical_depth"] * airmass * ratio.get(entry["species"], 1.0)
         rows.append({"species": entry["species"], "state":
                      "fitted" if entry["species"] in fitted else "below cut",
                      "peak_optical_depth": depth, "lines": entry.get("lines")})
     for entry in report["rejected_by_bound"]:
         rows.append({"species": entry["species"], "state": "bounded out",
-                     "optical_depth_bound": entry["optical_depth_bound"] * airmass,
+                     "optical_depth_bound": (entry["optical_depth_bound"] * airmass
+                                             * ratio.get(entry["species"], 1.0)),
                      "lines": entry["lines"]})
     for name in report["no_lines_in_window"]:
         rows.append({"species": name, "state": "no lines here"})
@@ -197,7 +243,7 @@ def scan_rows(scan_name: str, root: Path, airmass: float, fitted) -> list[dict]:
     return rows
 
 
-def continuum_losses(profile, v1: float, v2: float, log_scales: dict, zenith_angle_deg: float,
+def continuum_losses(views, v1: float, v2: float, log_scales: dict,
                      paths: DataPaths, o2_cia: bool) -> dict:
     """The flux each continuum takes between lines, in percent, median over the window.
 
@@ -206,19 +252,27 @@ def continuum_losses(profile, v1: float, v2: float, log_scales: dict, zenith_ang
     no lines. The page names the terms apart. O2's 1.06 um band goes as the
     square of the O2 column, so a column the fit traded against the continuum
     polynomial moves it a lot -- the figure is the fitted model's, not the sky's.
+
+    ``views`` is ``[(profile, weight, zenith_angle_deg)]``: one for a single
+    spectrum, every node of every day for a co-add, whose loss is the weighted
+    mean of the nodes' transmissions, as its model's is.
     """
     grid = np.linspace(v1, v2, 61)
-    vmr = {name: np.asarray(values) * np.exp(log_scales.get(name, 0.0))
-           for name, values in profile.vmr.items()}
-    slant = 1.0 / np.cos(np.radians(zenith_angle_deg))
-    terms = {"H2O continuum": MTCKDWaterContinuum.from_netcdf(paths.mt_ckd, grid)}
-    if o2_cia:
-        o2 = O2CollisionInducedContinuum(grid)
-        if o2.terms:
+    water = MTCKDWaterContinuum.from_netcdf(paths.mt_ckd, grid)
+    o2 = O2CollisionInducedContinuum(grid) if o2_cia else None
+    total = sum(weight for _, weight, _ in views)
+    kept: dict[str, float] = {}
+    for profile, weight, zenith_angle_deg in views:
+        vmr = {name: np.asarray(values) * np.exp(log_scales.get(name, 0.0))
+               for name, values in profile.vmr.items()}
+        slant = 1.0 / np.cos(np.radians(zenith_angle_deg))
+        terms = {"H2O continuum": water}
+        if o2 is not None and o2.terms:
             terms["O2 collision-induced"] = o2.bind(profile)
-    return {name: round(100.0 * (1.0 - float(np.exp(-np.median(
-        np.asarray(term.optical_depth(profile, vmr)).sum(axis=0)) * slant))), 4)
-        for name, term in terms.items()}
+        for name, term in terms.items():
+            depth = np.median(np.asarray(term.optical_depth(profile, vmr)).sum(axis=0))
+            kept[name] = kept.get(name, 0.0) + weight / total * float(np.exp(-depth * slant))
+    return {name: round(100.0 * (1.0 - value), 4) for name, value in kept.items()}
 
 
 def main() -> None:
@@ -239,6 +293,11 @@ def main() -> None:
                         help="how far the product of the species may sit from the "
                              "transmission the fit recorded, before the window is "
                              "written as failed")
+    parser.add_argument("--baker-atlas", type=Path, default=None,
+                        help="Baker et al. 2020's telluric-free IAG atlas, drawn as the "
+                             "authors' columns of an IAG run")
+    parser.add_argument("--baker-score", type=Path, default=root / "docs/iag_baker_score.json",
+                        help="the score whose per-window velocities align it")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--shard", default=None, metavar="I/N")
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"))
@@ -275,6 +334,12 @@ def main() -> None:
         jobs = jobs[: args.limit]
 
     args.output.mkdir(parents=True, exist_ok=True)
+    baker = read_baker_solar_atlas(args.baker_atlas) if args.baker_atlas else None
+    baker_velocity = {}
+    if baker is not None and args.baker_score.exists():
+        baker_velocity = {int(round(w["v1"])): next(iter(w["runs"].values()))["velocity_kms"]
+                          for w in json.loads(args.baker_score.read_text())["windows"].values()}
+    views_cache: dict[str, list] = {}
     spectra: dict[str, object] = {}
     profiles: dict[Path, object] = {}
     manifest, failures = [], []
@@ -313,6 +378,9 @@ def main() -> None:
                 # again would be the same arithmetic on the same numbers.
                 rebuilt = False
             else:
+                if blob.get("physics", {}).get("coadd"):
+                    raise ValueError("a co-add window without saved species pieces cannot "
+                                     "be rebuilt here: settings_for builds one atmosphere")
                 rebuilt = True
                 import jax
 
@@ -373,7 +441,14 @@ def main() -> None:
                 mask = np.asarray(stored["mask"])[flip].astype(bool)
             sigma = float(row["pixel_sigma"])
             arrays["residual"] = np.where(mask, residual / sigma, np.nan)
-            arrays.update(authors_columns(spectrum_path, nu))
+            if baker is not None:
+                arrays.update(baker_columns(
+                    nu, arrays["observed"],
+                    arrays["observed"] / np.maximum(arrays["model"], 1e-6) * arrays["stellar"],
+                    arrays["transmission"], mask, baker,
+                    baker_velocity.get(int(round(row["v1"])), 0.0)))
+            else:
+                arrays.update(authors_columns(spectrum_path, nu))
 
             for name, values in pieces.items():
                 arrays[f"species:{name}"] = values
@@ -395,8 +470,8 @@ def main() -> None:
                     "log_scale": float(row["parameters"][name]),
                     "at_bound": name in row["at_bound"]}
                     for name in row["species"]},
-                "scan": scan_rows(row["scan"], root, float(row["airmass"]),
-                                  set(row["species"])),
+                "scan": scan_rows(row["scan"], root, float(row.get("scan_airmass", row["airmass"])),
+                                  set(row["species"]), row.get("scan_column_ratio")),
                 "quality": {k: row[k] for k in (
                     "residual_rms_over_noise", "residual_rms", "pixel_sigma",
                     "reduced_chi2", "jitter_over_uncertainty",
@@ -407,13 +482,22 @@ def main() -> None:
                 "species_split_drift": drift,
                 "pixel_product_drift": pixel_drift,
             }
-            profile_path = root / Path(blob.get("profile") or args.profile)
-            if profile_path not in profiles:
-                profiles[profile_path] = load_atmosphere_csv(profile_path)
+            coadd = blob.get("physics", {}).get("coadd")
+            if coadd:
+                if coadd not in views_cache:
+                    views_cache[coadd] = [(profile, node.weight, node.zenith_angle_deg)
+                                          for profile, nodes, _ in load_coadd(Path(coadd), root)[0]
+                                          for node in nodes]
+                views = views_cache[coadd]
+            else:
+                profile_path = root / Path(blob.get("profile") or args.profile)
+                if profile_path not in profiles:
+                    profiles[profile_path] = load_atmosphere_csv(profile_path)
+                views = [(profiles[profile_path], 1.0, float(row["zenith_angle_deg"]))]
             entry["continua"] = continuum_losses(
-                profiles[profile_path], row["v1"], row["v2"],
+                views, row["v1"], row["v2"],
                 {name: float(row["parameters"][name]) for name in row["species"]},
-                float(row["zenith_angle_deg"]), DataPaths.bootstrapped(root),
+                DataPaths.bootstrapped(root),
                 bool(blob.get("physics", {}).get("o2_cia", False)))
             for name, values in arrays.items():
                 keep = name in NAN_ARRAYS
