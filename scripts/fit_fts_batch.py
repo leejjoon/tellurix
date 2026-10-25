@@ -73,6 +73,18 @@ it reuses, to the atlas's 10000, on solar bands of its own (``data/stellar/iag_n
         --o2-cia --line-coupling --telluric-from-clean-pixels \\
         --line-strength-table data/line_strength/step3_iter1.npz
 
+``--fluxatl SCAN`` fits one scan's stretch of the Kurucz et al. 1984 flux atlas (109, 111,
+113, 115; `tellurix_fts.flux_atlas.FLUXATL_SCANS`), a co-add over that scan's two hours
+(`make_fluxatl_coadd.py`), on the visible runs' tiling to 19990 cm-1. Scan 109's water is
+pinned at its 571 nm band's values (docs/solar_fit_plan.md section 4u):
+
+    UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py --fluxatl 113 --vsini-kms 1.9 \\
+        --coadd data/profiles/fluxatl1981/coadd_scan113.json --scan-column-ratio \\
+        --profile data/profiles/fluxatl1981/kitt_peak_19810325T2100.csv \\
+        --scan-profile data/profiles/kitt_peak_19830626_file3.csv --scan-fwhm-cm1 0.04167 \\
+        --o2-cia --line-coupling --telluric-from-clean-pixels \\
+        --line-strength-table data/line_strength/step3_iter1.npz --output-dir data/corrected/solar/fluxatl
+
     UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
         --spectrum .../nso/photatl --airmass 2.0
 """

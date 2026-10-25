@@ -1,0 +1,1457 @@
+{
+ "about": "Flatness of the Kurucz et al. 1984 flux atlas's telluric correction, scan by scan (fit_fts_batch.py --fluxatl, each scan a co-add over its own two hours), 2026-10-25. scripts/score_telluric_correction.py --authors none --relative-transmission, scan 109 with --telluric-below 0.99 (its water lines are 1-4% deep, as in Wallace 2011 region 3). There is no authors' correction to compare: Kurucz's 2005 re-reduction files still hold the telluric lines.",
+ "scans": {
+  "109": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "fluxatl_109",
+    "authors": "none",
+    "relative_transmission": true,
+    "telluric_below": 0.99
+   },
+   "runs": {
+    "fluxatl": "data/corrected/solar/fluxatl"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 4,
+     "median_percent": {
+      "fluxatl": 0.47605172271783097
+     },
+     "pages_flatter_than_fluxatl": {}
+    }
+   },
+   "pages": {
+    "fluxatl_109_17440": {
+     "telluric": {
+      "pixels": 45,
+      "fluxatl": 0.3300140282215586
+     }
+    },
+    "fluxatl_109_17470": {
+     "telluric": {
+      "pixels": 33,
+      "fluxatl": 0.4399097337797595
+     }
+    },
+    "fluxatl_109_17530": {
+     "telluric": {
+      "pixels": 50,
+      "fluxatl": 0.5704687443499181
+     }
+    },
+    "fluxatl_109_17560": {
+     "telluric": {
+      "pixels": 76,
+      "fluxatl": 0.5121937116559024
+     }
+    }
+   }
+  },
+  "111": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "fluxatl_111",
+    "authors": "none",
+    "relative_transmission": true
+   },
+   "runs": {
+    "fluxatl": "data/corrected/solar/fluxatl"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 45,
+     "median_percent": {
+      "fluxatl": 0.5496635705045984
+     },
+     "pages_flatter_than_fluxatl": {}
+    },
+    "deep": {
+     "pages": 21,
+     "median_percent": {
+      "fluxatl": 1.295828407639492
+     },
+     "pages_flatter_than_fluxatl": {}
+    }
+   },
+   "pages": {
+    "fluxatl_111_13510": {
+     "telluric": {
+      "pixels": 48,
+      "fluxatl": 0.37938079714978595
+     }
+    },
+    "fluxatl_111_13540": {
+     "telluric": {
+      "pixels": 87,
+      "fluxatl": 0.37472667760421685
+     }
+    },
+    "fluxatl_111_13570": {
+     "telluric": {
+      "pixels": 100,
+      "fluxatl": 0.34733071451082476
+     }
+    },
+    "fluxatl_111_13600": {
+     "telluric": {
+      "pixels": 95,
+      "fluxatl": 0.5500213651236951
+     }
+    },
+    "fluxatl_111_13630": {
+     "telluric": {
+      "pixels": 52,
+      "fluxatl": 0.3418485591285885
+     }
+    },
+    "fluxatl_111_13660": {
+     "telluric": {
+      "pixels": 245,
+      "fluxatl": 0.6559397658716603
+     },
+     "deep": {
+      "pixels": 36,
+      "fluxatl": 0.9072038880125277
+     }
+    },
+    "fluxatl_111_13690": {
+     "telluric": {
+      "pixels": 227,
+      "fluxatl": 0.8169643777063039
+     },
+     "deep": {
+      "pixels": 23,
+      "fluxatl": 1.7770604351551902
+     }
+    },
+    "fluxatl_111_13720": {
+     "telluric": {
+      "pixels": 254,
+      "fluxatl": 0.7486159334613545
+     },
+     "deep": {
+      "pixels": 24,
+      "fluxatl": 1.169756527521116
+     }
+    },
+    "fluxatl_111_13750": {
+     "telluric": {
+      "pixels": 362,
+      "fluxatl": 1.077957701167411
+     },
+     "deep": {
+      "pixels": 38,
+      "fluxatl": 2.278127581713598
+     }
+    },
+    "fluxatl_111_13780": {
+     "telluric": {
+      "pixels": 370,
+      "fluxatl": 0.7420747950588267
+     },
+     "deep": {
+      "pixels": 45,
+      "fluxatl": 1.2173860106221033
+     }
+    },
+    "fluxatl_111_13810": {
+     "telluric": {
+      "pixels": 300,
+      "fluxatl": 1.2300996792468366
+     },
+     "deep": {
+      "pixels": 55,
+      "fluxatl": 2.570955836386023
+     }
+    },
+    "fluxatl_111_13840": {
+     "telluric": {
+      "pixels": 91,
+      "fluxatl": 0.7349349903622949
+     },
+     "deep": {
+      "pixels": 8,
+      "fluxatl": 0.889151497770366
+     }
+    },
+    "fluxatl_111_13870": {
+     "telluric": {
+      "pixels": 407,
+      "fluxatl": 0.7879619354335612
+     },
+     "deep": {
+      "pixels": 60,
+      "fluxatl": 1.019942979950742
+     }
+    },
+    "fluxatl_111_13900": {
+     "telluric": {
+      "pixels": 224,
+      "fluxatl": 1.581083478091879
+     },
+     "deep": {
+      "pixels": 43,
+      "fluxatl": 3.1433162205310143
+     }
+    },
+    "fluxatl_111_13930": {
+     "telluric": {
+      "pixels": 354,
+      "fluxatl": 1.6227457804050451
+     },
+     "deep": {
+      "pixels": 48,
+      "fluxatl": 4.087894515278461
+     }
+    },
+    "fluxatl_111_13960": {
+     "telluric": {
+      "pixels": 69,
+      "fluxatl": 0.45022388950086406
+     }
+    },
+    "fluxatl_111_14110": {
+     "telluric": {
+      "pixels": 48,
+      "fluxatl": 0.5277472212226515
+     }
+    },
+    "fluxatl_111_14140": {
+     "telluric": {
+      "pixels": 40,
+      "fluxatl": 0.5242197075079889
+     }
+    },
+    "fluxatl_111_14170": {
+     "telluric": {
+      "pixels": 51,
+      "fluxatl": 0.4327179717195555
+     }
+    },
+    "fluxatl_111_14200": {
+     "telluric": {
+      "pixels": 67,
+      "fluxatl": 0.3721892384125575
+     }
+    },
+    "fluxatl_111_14230": {
+     "telluric": {
+      "pixels": 46,
+      "fluxatl": 0.9425171470883229
+     }
+    },
+    "fluxatl_111_14260": {
+     "telluric": {
+      "pixels": 88,
+      "fluxatl": 0.40759356638844035
+     }
+    },
+    "fluxatl_111_14290": {
+     "telluric": {
+      "pixels": 125,
+      "fluxatl": 0.27608108840439644
+     },
+     "deep": {
+      "pixels": 6,
+      "fluxatl": 0.4557667859049763
+     }
+    },
+    "fluxatl_111_14350": {
+     "telluric": {
+      "pixels": 152,
+      "fluxatl": 0.6486121200960974
+     },
+     "deep": {
+      "pixels": 19,
+      "fluxatl": 0.7168387095975007
+     }
+    },
+    "fluxatl_111_14380": {
+     "telluric": {
+      "pixels": 190,
+      "fluxatl": 0.46103921448469437
+     },
+     "deep": {
+      "pixels": 20,
+      "fluxatl": 0.5583186473305168
+     }
+    },
+    "fluxatl_111_14410": {
+     "telluric": {
+      "pixels": 195,
+      "fluxatl": 0.5397108077013482
+     },
+     "deep": {
+      "pixels": 16,
+      "fluxatl": 1.295828407639492
+     }
+    },
+    "fluxatl_111_14440": {
+     "telluric": {
+      "pixels": 186,
+      "fluxatl": 0.9863651455804012
+     },
+     "deep": {
+      "pixels": 22,
+      "fluxatl": 2.0545762168308603
+     }
+    },
+    "fluxatl_111_14470": {
+     "telluric": {
+      "pixels": 439,
+      "fluxatl": 1.0192859606304672
+     },
+     "deep": {
+      "pixels": 67,
+      "fluxatl": 1.671488041228269
+     }
+    },
+    "fluxatl_111_14500": {
+     "telluric": {
+      "pixels": 504,
+      "fluxatl": 0.6968219097694756
+     },
+     "deep": {
+      "pixels": 66,
+      "fluxatl": 1.3315563521788603
+     }
+    },
+    "fluxatl_111_14530": {
+     "telluric": {
+      "pixels": 875,
+      "fluxatl": 2.246997054715601
+     },
+     "deep": {
+      "pixels": 173,
+      "fluxatl": 4.154470032128603
+     }
+    },
+    "fluxatl_111_15340": {
+     "telluric": {
+      "pixels": 71,
+      "fluxatl": 0.2814833186270289
+     }
+    },
+    "fluxatl_111_15400": {
+     "telluric": {
+      "pixels": 123,
+      "fluxatl": 0.39435389041825447
+     }
+    },
+    "fluxatl_111_15430": {
+     "telluric": {
+      "pixels": 110,
+      "fluxatl": 0.3807448713291319
+     }
+    },
+    "fluxatl_111_15850": {
+     "telluric": {
+      "pixels": 42,
+      "fluxatl": 0.5496635705045984
+     },
+     "deep": {
+      "pixels": 8,
+      "fluxatl": 0.8732406527984706
+     }
+    },
+    "fluxatl_111_15880": {
+     "telluric": {
+      "pixels": 75,
+      "fluxatl": 0.5482341773909123
+     },
+     "deep": {
+      "pixels": 14,
+      "fluxatl": 0.9027218668344023
+     }
+    },
+    "fluxatl_111_15910": {
+     "telluric": {
+      "pixels": 162,
+      "fluxatl": 1.9256617314672093
+     },
+     "deep": {
+      "pixels": 26,
+      "fluxatl": 2.9979873662196534
+     }
+    },
+    "fluxatl_111_16660": {
+     "telluric": {
+      "pixels": 30,
+      "fluxatl": 1.4171228996104661
+     }
+    },
+    "fluxatl_111_16720": {
+     "telluric": {
+      "pixels": 72,
+      "fluxatl": 0.2575327309379877
+     }
+    },
+    "fluxatl_111_16750": {
+     "telluric": {
+      "pixels": 33,
+      "fluxatl": 0.42836531549488777
+     }
+    },
+    "fluxatl_111_16780": {
+     "telluric": {
+      "pixels": 50,
+      "fluxatl": 0.263755808312872
+     }
+    },
+    "fluxatl_111_16810": {
+     "telluric": {
+      "pixels": 136,
+      "fluxatl": 0.7679078759002099
+     }
+    },
+    "fluxatl_111_16870": {
+     "telluric": {
+      "pixels": 90,
+      "fluxatl": 0.5123145099010522
+     }
+    },
+    "fluxatl_111_16900": {
+     "telluric": {
+      "pixels": 60,
+      "fluxatl": 0.5554613984213687
+     }
+    },
+    "fluxatl_111_16930": {
+     "telluric": {
+      "pixels": 58,
+      "fluxatl": 1.459328501066435
+     }
+    },
+    "fluxatl_111_16990": {
+     "telluric": {
+      "pixels": 54,
+      "fluxatl": 0.5149644909194073
+     }
+    }
+   }
+  },
+  "113": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "fluxatl_113",
+    "authors": "none",
+    "relative_transmission": true
+   },
+   "runs": {
+    "fluxatl": "data/corrected/solar/fluxatl"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 61,
+     "median_percent": {
+      "fluxatl": 0.8107661877001386
+     },
+     "pages_flatter_than_fluxatl": {}
+    },
+    "deep": {
+     "pages": 38,
+     "median_percent": {
+      "fluxatl": 1.8999970710930345
+     },
+     "pages_flatter_than_fluxatl": {}
+    }
+   },
+   "pages": {
+    "fluxatl_113_10060": {
+     "telluric": {
+      "pixels": 51,
+      "fluxatl": 0.5906732144598833
+     }
+    },
+    "fluxatl_113_10090": {
+     "telluric": {
+      "pixels": 66,
+      "fluxatl": 0.22663452474417237
+     }
+    },
+    "fluxatl_113_10120": {
+     "telluric": {
+      "pixels": 120,
+      "fluxatl": 0.9825424906589056
+     }
+    },
+    "fluxatl_113_10150": {
+     "telluric": {
+      "pixels": 371,
+      "fluxatl": 0.7375440194269376
+     },
+     "deep": {
+      "pixels": 39,
+      "fluxatl": 0.8792152197712195
+     }
+    },
+    "fluxatl_113_10180": {
+     "telluric": {
+      "pixels": 418,
+      "fluxatl": 0.7578006456151463
+     },
+     "deep": {
+      "pixels": 59,
+      "fluxatl": 1.3588070668611532
+     }
+    },
+    "fluxatl_113_10210": {
+     "telluric": {
+      "pixels": 525,
+      "fluxatl": 0.8107661877001386
+     },
+     "deep": {
+      "pixels": 104,
+      "fluxatl": 1.29290967531222
+     }
+    },
+    "fluxatl_113_10240": {
+     "telluric": {
+      "pixels": 658,
+      "fluxatl": 0.6643856388489233
+     },
+     "deep": {
+      "pixels": 102,
+      "fluxatl": 1.3506826730249777
+     }
+    },
+    "fluxatl_113_10270": {
+     "telluric": {
+      "pixels": 497,
+      "fluxatl": 1.0868330590781672
+     },
+     "deep": {
+      "pixels": 60,
+      "fluxatl": 2.3542765217660926
+     }
+    },
+    "fluxatl_113_10300": {
+     "telluric": {
+      "pixels": 493,
+      "fluxatl": 0.9279425879770464
+     },
+     "deep": {
+      "pixels": 83,
+      "fluxatl": 1.5834814211867763
+     }
+    },
+    "fluxatl_113_10330": {
+     "telluric": {
+      "pixels": 725,
+      "fluxatl": 1.1189891981741296
+     },
+     "deep": {
+      "pixels": 117,
+      "fluxatl": 2.2350139387541654
+     }
+    },
+    "fluxatl_113_10390": {
+     "telluric": {
+      "pixels": 889,
+      "fluxatl": 1.3299756815754353
+     },
+     "deep": {
+      "pixels": 231,
+      "fluxatl": 2.4205772282798383
+     }
+    },
+    "fluxatl_113_10570": {
+     "telluric": {
+      "pixels": 518,
+      "fluxatl": 1.464963964555678
+     },
+     "deep": {
+      "pixels": 224,
+      "fluxatl": 1.946168522352339
+     }
+    },
+    "fluxatl_113_10750": {
+     "telluric": {
+      "pixels": 877,
+      "fluxatl": 2.6830276360278438
+     },
+     "deep": {
+      "pixels": 157,
+      "fluxatl": 5.284354495252943
+     }
+    },
+    "fluxatl_113_10780": {
+     "telluric": {
+      "pixels": 331,
+      "fluxatl": 0.6271280299119083
+     },
+     "deep": {
+      "pixels": 42,
+      "fluxatl": 1.168966547439728
+     }
+    },
+    "fluxatl_113_10840": {
+     "telluric": {
+      "pixels": 108,
+      "fluxatl": 0.38326304615360973
+     },
+     "deep": {
+      "pixels": 10,
+      "fluxatl": 0.6759764399341133
+     }
+    },
+    "fluxatl_113_10870": {
+     "telluric": {
+      "pixels": 563,
+      "fluxatl": 0.8207328215416081
+     },
+     "deep": {
+      "pixels": 92,
+      "fluxatl": 1.1285880208111119
+     }
+    },
+    "fluxatl_113_10900": {
+     "telluric": {
+      "pixels": 664,
+      "fluxatl": 1.9465481327811327
+     },
+     "deep": {
+      "pixels": 188,
+      "fluxatl": 3.2030122472490015
+     }
+    },
+    "fluxatl_113_10930": {
+     "telluric": {
+      "pixels": 893,
+      "fluxatl": 0.9762777890884197
+     },
+     "deep": {
+      "pixels": 175,
+      "fluxatl": 1.639416648477187
+     }
+    },
+    "fluxatl_113_10960": {
+     "telluric": {
+      "pixels": 676,
+      "fluxatl": 1.2255528038325665
+     },
+     "deep": {
+      "pixels": 111,
+      "fluxatl": 2.575092233021209
+     }
+    },
+    "fluxatl_113_10990": {
+     "telluric": {
+      "pixels": 619,
+      "fluxatl": 0.8325845125520407
+     },
+     "deep": {
+      "pixels": 113,
+      "fluxatl": 1.5458968931155346
+     }
+    },
+    "fluxatl_113_11020": {
+     "telluric": {
+      "pixels": 452,
+      "fluxatl": 0.7917454797329175
+     },
+     "deep": {
+      "pixels": 56,
+      "fluxatl": 1.4034868049514122
+     }
+    },
+    "fluxatl_113_11050": {
+     "telluric": {
+      "pixels": 214,
+      "fluxatl": 0.6617739370570003
+     },
+     "deep": {
+      "pixels": 34,
+      "fluxatl": 1.50813921214236
+     }
+    },
+    "fluxatl_113_11110": {
+     "telluric": {
+      "pixels": 537,
+      "fluxatl": 1.1583056999754577
+     },
+     "deep": {
+      "pixels": 125,
+      "fluxatl": 1.977774129680942
+     }
+    },
+    "fluxatl_113_11140": {
+     "telluric": {
+      "pixels": 691,
+      "fluxatl": 1.0633983079989104
+     },
+     "deep": {
+      "pixels": 164,
+      "fluxatl": 1.8770938347748938
+     }
+    },
+    "fluxatl_113_11170": {
+     "telluric": {
+      "pixels": 264,
+      "fluxatl": 1.026478246445735
+     },
+     "deep": {
+      "pixels": 24,
+      "fluxatl": 2.5658689869691584
+     }
+    },
+    "fluxatl_113_11200": {
+     "telluric": {
+      "pixels": 58,
+      "fluxatl": 0.6646628863750381
+     }
+    },
+    "fluxatl_113_11230": {
+     "telluric": {
+      "pixels": 60,
+      "fluxatl": 0.21038031401336824
+     }
+    },
+    "fluxatl_113_11830": {
+     "telluric": {
+      "pixels": 43,
+      "fluxatl": 0.22642623972277398
+     }
+    },
+    "fluxatl_113_11860": {
+     "telluric": {
+      "pixels": 30,
+      "fluxatl": 0.23775117833154694
+     }
+    },
+    "fluxatl_113_11890": {
+     "telluric": {
+      "pixels": 31,
+      "fluxatl": 0.25643251372900244
+     }
+    },
+    "fluxatl_113_11920": {
+     "telluric": {
+      "pixels": 101,
+      "fluxatl": 0.6348525813855027
+     }
+    },
+    "fluxatl_113_11950": {
+     "telluric": {
+      "pixels": 117,
+      "fluxatl": 0.48531253097522087
+     },
+     "deep": {
+      "pixels": 5,
+      "fluxatl": 0.9019941914417203
+     }
+    },
+    "fluxatl_113_11980": {
+     "telluric": {
+      "pixels": 45,
+      "fluxatl": 1.4988206370673638
+     },
+     "deep": {
+      "pixels": 9,
+      "fluxatl": 2.090176505193887
+     }
+    },
+    "fluxatl_113_12040": {
+     "telluric": {
+      "pixels": 147,
+      "fluxatl": 2.8777689885150513
+     },
+     "deep": {
+      "pixels": 32,
+      "fluxatl": 3.6246005619986157
+     }
+    },
+    "fluxatl_113_12070": {
+     "telluric": {
+      "pixels": 219,
+      "fluxatl": 1.1356051420505786
+     },
+     "deep": {
+      "pixels": 43,
+      "fluxatl": 2.3059463896895394
+     }
+    },
+    "fluxatl_113_12100": {
+     "telluric": {
+      "pixels": 154,
+      "fluxatl": 0.5058766103280463
+     },
+     "deep": {
+      "pixels": 23,
+      "fluxatl": 0.9937055411514236
+     }
+    },
+    "fluxatl_113_12130": {
+     "telluric": {
+      "pixels": 348,
+      "fluxatl": 1.2689015917947666
+     },
+     "deep": {
+      "pixels": 99,
+      "fluxatl": 2.251472248773551
+     }
+    },
+    "fluxatl_113_12190": {
+     "telluric": {
+      "pixels": 403,
+      "fluxatl": 1.146652191914155
+     },
+     "deep": {
+      "pixels": 95,
+      "fluxatl": 2.050318248114653
+     }
+    },
+    "fluxatl_113_12220": {
+     "telluric": {
+      "pixels": 529,
+      "fluxatl": 0.8740186562842456
+     },
+     "deep": {
+      "pixels": 82,
+      "fluxatl": 1.7406894475283234
+     }
+    },
+    "fluxatl_113_12250": {
+     "telluric": {
+      "pixels": 421,
+      "fluxatl": 1.6871424705319251
+     },
+     "deep": {
+      "pixels": 55,
+      "fluxatl": 3.798117633828241
+     }
+    },
+    "fluxatl_113_12280": {
+     "telluric": {
+      "pixels": 347,
+      "fluxatl": 1.2293969756730758
+     },
+     "deep": {
+      "pixels": 50,
+      "fluxatl": 2.760103766502485
+     }
+    },
+    "fluxatl_113_12310": {
+     "telluric": {
+      "pixels": 214,
+      "fluxatl": 0.5593637599636769
+     }
+    },
+    "fluxatl_113_12340": {
+     "telluric": {
+      "pixels": 49,
+      "fluxatl": 0.4627855137016556
+     }
+    },
+    "fluxatl_113_12370": {
+     "telluric": {
+      "pixels": 67,
+      "fluxatl": 0.867011706475483
+     }
+    },
+    "fluxatl_113_12400": {
+     "telluric": {
+      "pixels": 38,
+      "fluxatl": 0.27300953409405143
+     }
+    },
+    "fluxatl_113_12430": {
+     "telluric": {
+      "pixels": 164,
+      "fluxatl": 0.3861270233328888
+     }
+    },
+    "fluxatl_113_12460": {
+     "telluric": {
+      "pixels": 133,
+      "fluxatl": 0.9840860375667676
+     }
+    },
+    "fluxatl_113_12490": {
+     "telluric": {
+      "pixels": 50,
+      "fluxatl": 1.6688200303920238
+     }
+    },
+    "fluxatl_113_12520": {
+     "telluric": {
+      "pixels": 137,
+      "fluxatl": 0.24987765157693248
+     }
+    },
+    "fluxatl_113_12550": {
+     "telluric": {
+      "pixels": 161,
+      "fluxatl": 0.33714083870515044
+     }
+    },
+    "fluxatl_113_12580": {
+     "telluric": {
+      "pixels": 44,
+      "fluxatl": 0.6457259229842837
+     }
+    },
+    "fluxatl_113_12610": {
+     "telluric": {
+      "pixels": 59,
+      "fluxatl": 0.4448378213978089
+     },
+     "deep": {
+      "pixels": 6,
+      "fluxatl": 0.5121918573458223
+     }
+    },
+    "fluxatl_113_12640": {
+     "telluric": {
+      "pixels": 107,
+      "fluxatl": 0.5790760450102689
+     }
+    },
+    "fluxatl_113_12670": {
+     "telluric": {
+      "pixels": 46,
+      "fluxatl": 0.5857770604443787
+     }
+    },
+    "fluxatl_113_12700": {
+     "telluric": {
+      "pixels": 69,
+      "fluxatl": 0.47885285330581334
+     }
+    },
+    "fluxatl_113_12970": {
+     "telluric": {
+      "pixels": 45,
+      "fluxatl": 0.39807022977570006
+     }
+    },
+    "fluxatl_113_13000": {
+     "telluric": {
+      "pixels": 131,
+      "fluxatl": 16.760455530478403
+     },
+     "deep": {
+      "pixels": 19,
+      "fluxatl": 43.99407638924313
+     }
+    },
+    "fluxatl_113_13030": {
+     "telluric": {
+      "pixels": 368,
+      "fluxatl": 0.6047556145639346
+     },
+     "deep": {
+      "pixels": 82,
+      "fluxatl": 0.9454992895906184
+     }
+    },
+    "fluxatl_113_13060": {
+     "telluric": {
+      "pixels": 1001,
+      "fluxatl": 0.9793044691275864
+     },
+     "deep": {
+      "pixels": 352,
+      "fluxatl": 1.2506494959181875
+     }
+    },
+    "fluxatl_113_13120": {
+     "telluric": {
+      "pixels": 673,
+      "fluxatl": 1.9234286026170062
+     },
+     "deep": {
+      "pixels": 553,
+      "fluxatl": 1.9229003074111752
+     }
+    },
+    "fluxatl_113_13150": {
+     "telluric": {
+      "pixels": 458,
+      "fluxatl": 2.5260061783008143
+     },
+     "deep": {
+      "pixels": 369,
+      "fluxatl": 2.7688850894397663
+     }
+    }
+   }
+  },
+  "115": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "fluxatl_115",
+    "authors": "none",
+    "relative_transmission": true
+   },
+   "runs": {
+    "fluxatl": "data/corrected/solar/fluxatl"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 49,
+     "median_percent": {
+      "fluxatl": 0.9951972352757559
+     },
+     "pages_flatter_than_fluxatl": {}
+    },
+    "deep": {
+     "pages": 38,
+     "median_percent": {
+      "fluxatl": 2.2447100335202705
+     },
+     "pages_flatter_than_fluxatl": {}
+    }
+   },
+   "pages": {
+    "fluxatl_115_7690": {
+     "telluric": {
+      "pixels": 359,
+      "fluxatl": 0.7012236955964636
+     },
+     "deep": {
+      "pixels": 43,
+      "fluxatl": 1.5355509727856445
+     }
+    },
+    "fluxatl_115_7720": {
+     "telluric": {
+      "pixels": 188,
+      "fluxatl": 0.46840808310565074
+     }
+    },
+    "fluxatl_115_7750": {
+     "telluric": {
+      "pixels": 77,
+      "fluxatl": 0.4521595539878722
+     }
+    },
+    "fluxatl_115_7840": {
+     "telluric": {
+      "pixels": 383,
+      "fluxatl": 1.820331557359372
+     },
+     "deep": {
+      "pixels": 56,
+      "fluxatl": 1.8022430016652147
+     }
+    },
+    "fluxatl_115_7870": {
+     "telluric": {
+      "pixels": 708,
+      "fluxatl": 1.0306575218491845
+     },
+     "deep": {
+      "pixels": 123,
+      "fluxatl": 1.5762465442659308
+     }
+    },
+    "fluxatl_115_7900": {
+     "telluric": {
+      "pixels": 445,
+      "fluxatl": 0.8890994012543934
+     },
+     "deep": {
+      "pixels": 79,
+      "fluxatl": 1.6076011598518323
+     }
+    },
+    "fluxatl_115_7930": {
+     "telluric": {
+      "pixels": 152,
+      "fluxatl": 1.6697084971938683
+     },
+     "deep": {
+      "pixels": 29,
+      "fluxatl": 2.1797336099138134
+     }
+    },
+    "fluxatl_115_7960": {
+     "telluric": {
+      "pixels": 68,
+      "fluxatl": 1.0613553420746116
+     },
+     "deep": {
+      "pixels": 13,
+      "fluxatl": 1.52924722100144
+     }
+    },
+    "fluxatl_115_8080": {
+     "telluric": {
+      "pixels": 37,
+      "fluxatl": 0.9951972352757559
+     }
+    },
+    "fluxatl_115_8110": {
+     "telluric": {
+      "pixels": 133,
+      "fluxatl": 0.8957936251526547
+     }
+    },
+    "fluxatl_115_8140": {
+     "telluric": {
+      "pixels": 272,
+      "fluxatl": 0.835551368296676
+     },
+     "deep": {
+      "pixels": 11,
+      "fluxatl": 2.830715853414412
+     }
+    },
+    "fluxatl_115_8170": {
+     "telluric": {
+      "pixels": 355,
+      "fluxatl": 1.3944389460400604
+     },
+     "deep": {
+      "pixels": 32,
+      "fluxatl": 3.4746011127415133
+     }
+    },
+    "fluxatl_115_8200": {
+     "telluric": {
+      "pixels": 393,
+      "fluxatl": 1.020218433522536
+     },
+     "deep": {
+      "pixels": 29,
+      "fluxatl": 2.8989088199025437
+     }
+    },
+    "fluxatl_115_8230": {
+     "telluric": {
+      "pixels": 521,
+      "fluxatl": 1.0800082007300416
+     },
+     "deep": {
+      "pixels": 51,
+      "fluxatl": 2.9074138423926628
+     }
+    },
+    "fluxatl_115_8260": {
+     "telluric": {
+      "pixels": 448,
+      "fluxatl": 1.2259454917524302
+     },
+     "deep": {
+      "pixels": 86,
+      "fluxatl": 2.410349773888826
+     }
+    },
+    "fluxatl_115_8290": {
+     "telluric": {
+      "pixels": 351,
+      "fluxatl": 0.8926464593327568
+     },
+     "deep": {
+      "pixels": 50,
+      "fluxatl": 2.0699669861823935
+     }
+    },
+    "fluxatl_115_8320": {
+     "telluric": {
+      "pixels": 280,
+      "fluxatl": 0.9845598302490938
+     },
+     "deep": {
+      "pixels": 40,
+      "fluxatl": 2.2280126352566434
+     }
+    },
+    "fluxatl_115_8350": {
+     "telluric": {
+      "pixels": 574,
+      "fluxatl": 0.96016267526887
+     },
+     "deep": {
+      "pixels": 61,
+      "fluxatl": 2.593876508953053
+     }
+    },
+    "fluxatl_115_8380": {
+     "telluric": {
+      "pixels": 510,
+      "fluxatl": 0.6350939523293694
+     },
+     "deep": {
+      "pixels": 44,
+      "fluxatl": 1.535967326819736
+     }
+    },
+    "fluxatl_115_8410": {
+     "telluric": {
+      "pixels": 763,
+      "fluxatl": 1.2243095752774567
+     },
+     "deep": {
+      "pixels": 116,
+      "fluxatl": 1.9525172647708608
+     }
+    },
+    "fluxatl_115_8440": {
+     "telluric": {
+      "pixels": 691,
+      "fluxatl": 1.182260808916492
+     },
+     "deep": {
+      "pixels": 92,
+      "fluxatl": 2.1123822582204905
+     }
+    },
+    "fluxatl_115_8470": {
+     "telluric": {
+      "pixels": 614,
+      "fluxatl": 1.1561192318771942
+     },
+     "deep": {
+      "pixels": 105,
+      "fluxatl": 1.888411756313084
+     }
+    },
+    "fluxatl_115_8500": {
+     "telluric": {
+      "pixels": 739,
+      "fluxatl": 1.719554734412529
+     },
+     "deep": {
+      "pixels": 145,
+      "fluxatl": 3.5650510181332176
+     }
+    },
+    "fluxatl_115_8530": {
+     "telluric": {
+      "pixels": 656,
+      "fluxatl": 1.0535708445703658
+     },
+     "deep": {
+      "pixels": 90,
+      "fluxatl": 2.2614074317838972
+     }
+    },
+    "fluxatl_115_8560": {
+     "telluric": {
+      "pixels": 960,
+      "fluxatl": 2.227910490765472
+     },
+     "deep": {
+      "pixels": 161,
+      "fluxatl": 3.8844492777581334
+     }
+    },
+    "fluxatl_115_8590": {
+     "telluric": {
+      "pixels": 1020,
+      "fluxatl": 1.6925561321501974
+     },
+     "deep": {
+      "pixels": 185,
+      "fluxatl": 3.239861144947849
+     }
+    },
+    "fluxatl_115_8620": {
+     "telluric": {
+      "pixels": 1094,
+      "fluxatl": 1.316593600747091
+     },
+     "deep": {
+      "pixels": 272,
+      "fluxatl": 2.48827896457515
+     }
+    },
+    "fluxatl_115_8650": {
+     "telluric": {
+      "pixels": 1474,
+      "fluxatl": 2.210403427862362
+     },
+     "deep": {
+      "pixels": 392,
+      "fluxatl": 3.868408763126046
+     }
+    },
+    "fluxatl_115_8680": {
+     "telluric": {
+      "pixels": 1221,
+      "fluxatl": 2.5621847665515203
+     },
+     "deep": {
+      "pixels": 288,
+      "fluxatl": 4.574738994911738
+     }
+    },
+    "fluxatl_115_8740": {
+     "telluric": {
+      "pixels": 1189,
+      "fluxatl": 1.910885456885948
+     },
+     "deep": {
+      "pixels": 305,
+      "fluxatl": 2.7335352241520052
+     }
+    },
+    "fluxatl_115_8770": {
+     "telluric": {
+      "pixels": 1306,
+      "fluxatl": 1.4092297850049915
+     },
+     "deep": {
+      "pixels": 249,
+      "fluxatl": 2.865531509739015
+     }
+    },
+    "fluxatl_115_8830": {
+     "telluric": {
+      "pixels": 1156,
+      "fluxatl": 1.939369558489679
+     },
+     "deep": {
+      "pixels": 452,
+      "fluxatl": 2.705555944460936
+     }
+    },
+    "fluxatl_115_8950": {
+     "telluric": {
+      "pixels": 1210,
+      "fluxatl": 2.497031148598626
+     },
+     "deep": {
+      "pixels": 423,
+      "fluxatl": 4.089964528855779
+     }
+    },
+    "fluxatl_115_8980": {
+     "telluric": {
+      "pixels": 947,
+      "fluxatl": 1.5180680839516667
+     },
+     "deep": {
+      "pixels": 183,
+      "fluxatl": 3.1901451325428147
+     }
+    },
+    "fluxatl_115_9010": {
+     "telluric": {
+      "pixels": 1067,
+      "fluxatl": 1.2507639792265146
+     },
+     "deep": {
+      "pixels": 175,
+      "fluxatl": 2.6272324580718767
+     }
+    },
+    "fluxatl_115_9040": {
+     "telluric": {
+      "pixels": 769,
+      "fluxatl": 0.8762770807749046
+     },
+     "deep": {
+      "pixels": 101,
+      "fluxatl": 1.6412677909701614
+     }
+    },
+    "fluxatl_115_9070": {
+     "telluric": {
+      "pixels": 506,
+      "fluxatl": 0.8788320015878485
+     },
+     "deep": {
+      "pixels": 55,
+      "fluxatl": 2.0917642507821412
+     }
+    },
+    "fluxatl_115_9100": {
+     "telluric": {
+      "pixels": 104,
+      "fluxatl": 0.4627554235127419
+     },
+     "deep": {
+      "pixels": 11,
+      "fluxatl": 0.5099293453041948
+     }
+    },
+    "fluxatl_115_9160": {
+     "telluric": {
+      "pixels": 200,
+      "fluxatl": 0.4296482626821201
+     },
+     "deep": {
+      "pixels": 28,
+      "fluxatl": 0.8420139745293499
+     }
+    },
+    "fluxatl_115_9190": {
+     "telluric": {
+      "pixels": 190,
+      "fluxatl": 0.610065247183027
+     },
+     "deep": {
+      "pixels": 39,
+      "fluxatl": 1.111304723214804
+     }
+    },
+    "fluxatl_115_9220": {
+     "telluric": {
+      "pixels": 50,
+      "fluxatl": 0.7405873868233246
+     }
+    },
+    "fluxatl_115_9250": {
+     "telluric": {
+      "pixels": 100,
+      "fluxatl": 0.4123160483369973
+     },
+     "deep": {
+      "pixels": 12,
+      "fluxatl": 0.9019393661375799
+     }
+    },
+    "fluxatl_115_9280": {
+     "telluric": {
+      "pixels": 85,
+      "fluxatl": 0.3462419778256231
+     },
+     "deep": {
+      "pixels": 9,
+      "fluxatl": 0.4041357329445385
+     }
+    },
+    "fluxatl_115_9310": {
+     "telluric": {
+      "pixels": 35,
+      "fluxatl": 0.2015273155128431
+     }
+    },
+    "fluxatl_115_9760": {
+     "telluric": {
+      "pixels": 49,
+      "fluxatl": 0.5945387728055118
+     }
+    },
+    "fluxatl_115_9790": {
+     "telluric": {
+      "pixels": 32,
+      "fluxatl": 0.19605601658520774
+     }
+    },
+    "fluxatl_115_9880": {
+     "telluric": {
+      "pixels": 45,
+      "fluxatl": 0.10145388481947358
+     }
+    },
+    "fluxatl_115_9910": {
+     "telluric": {
+      "pixels": 36,
+      "fluxatl": 0.16901481835842236
+     }
+    },
+    "fluxatl_115_9970": {
+     "telluric": {
+      "pixels": 56,
+      "fluxatl": 0.34711820538025195
+     }
+    }
+   }
+  }
+ }
+}
