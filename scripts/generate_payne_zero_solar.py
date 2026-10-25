@@ -17,6 +17,20 @@ environment. It runs in Payne Zero's own environment and writes an npz that
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band nir --fwhm-cm1 0.01859
     .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py --band vis --fwhm-cm1 0.04102
 
+The IAG NIR atlas (sinc 0.00295 cm-1) needs a source finer than any band above, and its
+own directory, because the driver takes the first band in sorted order that covers a
+window. Four ranges, one at a time (each takes 20-70 GB of memory and 19-50 min):
+
+    for b in "a 995 1110" "b 1100 1510" "c 1490 1800" "d 1790 2300"; do set -- $b
+        .venv/bin/python /home/jjlee/work/lblrtm/scripts/generate_payne_zero_solar.py \\
+            --wavelength-start-nm $2 --wavelength-end-nm $3 --fwhm-cm1 0.00295 \\
+            --samples-per-resolution 1.4 \\
+            --output /home/jjlee/work/lblrtm/data/stellar/iag_nir/solar_payne_zero_iagnir_$1.npz
+    done
+
+1.4 samples per sinc FWHM is a step 1.43 times the fit grid's (2.0 samples), inside the 1.5x
+coarser step `resample_stellar_source` accepts.
+
 The spectrum is a *fixed* input: the stellar labels are held at literature
 values and are not fitted. See docs/solar_fit_plan.md for where it is used.
 

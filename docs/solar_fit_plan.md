@@ -574,7 +574,7 @@ Ordered by what each needs beyond Phases 1-3.
 | 3 | **`photatl`** | 1850-9000, 258 pages | page reader | fit `total`; per-page intensity scale absorbed by the continuum |
 | 4 | `niratl` | 8900-13600, 188 pages | source to 735 nm; mask the -1.0 fill | ships an observed column already at air mass 1.0; O2 A-band |
 | 5 | `ftsspec_830626_{2,3}` | 8516-20735 cm⁻¹ | visible source | `_2` is air mass 6.66 -> 4.08; `_3`'s header reads `?.??` |
-| 6 | IAG `spnir`, `spvis` | 1000-2300, 405-1065 nm | `vsini_kms ~ 1.9` | `spvis` re-downloaded 2026-10-05 to `data/databases/iag/` (gitignored, from CDS); its O2 windows fitted by `fit_atlas_o2.py iag` (§4n) -- a nine-day co-add, so no single air mass. Disc-integrated flux, so the source mode is correct. `spnir` has tellurics, ships no telluric column, and is what the sibling project's H band actually needs; its wavelength scale is anchored on telluric O2, which this work would make circular unless the fit is judged on other species |
+| 6 | IAG `spnir`, `spvis` | 1000-2300, 405-1065 nm | `vsini_kms ~ 1.9` | `spvis` re-downloaded 2026-10-05 to `data/databases/iag/` (gitignored, from CDS); its O2 windows fitted by `fit_atlas_o2.py iag` (§4n) -- a nine-day co-add, so no single air mass. Disc-integrated flux, so the source mode is correct. `spnir` has tellurics, ships no telluric column, and is what the sibling project's H band actually needs (fitted 2026-10-25 as a six-day co-add, §4t); its wavelength scale is anchored on telluric O2, which this work would make circular unless the fit is judged on other species |
 | 7 | `telluric_mid_ir` spec1-10 | TBD | header inspection | telluric-dominated; likely the best pure validation target, with 11 per-molecule line lists to check against |
 | 8 | `fluxatl`, `wallace2011_flux` | 296-1300 nm, 2958-9250 A | air -> vacuum; `vsini_kms ~ 1.9`; blue r-grid | disc-integrated, so Payne Zero's Eddington flux is the right quantity here. `fluxatl`'s pseudo-continuum is subjective and its scale is distorted by 10-100 m/s (Reiners+2016). `wallace2011_flux` regions 1-2 are single 1989/10/13 spectra (#8 at air mass 1.5, #7 at 1.4, to one decimal); their observed-flux column (the fourth; vacuum wavenumbers) is read by `fit_atlas_o2.py wallace2011` for the O2 windows (§4n). Regions 1-3 fitted and promoted 2026-10-20 (`data/corrected/solar/wallace2011/`; region 3 with its atmosphere pinned, `packages/tellurix-fts/CLAUDE.md`); regions 4-6 carry no telluric correction in the atlas and are not fitted |
 | 9 | `spot1atl` | 1970-8640 cm⁻¹ | `--stellar flat` | Payne Zero floors at 4000 K; an umbra is ~3800 K and molecule-dominated. Or reuse a transmission fitted at matched air mass |
@@ -1753,6 +1753,80 @@ strengths, that no per-feature strength factor can reach. The other half is part
 to the IAG atlas or the comparison: the unknown observing schedule, the per-day
 atmospheres, interpolating Baker's undersampled Sun, and Baker's own error (0.35% quoted).
 The window median left after removing the shared part is 0.62%.
+
+### 4t. The IAG NIR atlas: the same co-add, under four times the water
+
+`spnir` (Reiners et al. 2016, Table 2, NIR setting) co-adds 1130 scans from six days of
+2014: 02-24 (150), 03-14 (150), 03-20 (190), 03-27 (210), 06-06 (300) and 06-07 (130), in
+17-minute 10-scan packages. It is fitted exactly as §4s fits `spvis`:
+`fit_fts_batch.py --iag nir --coadd data/profiles/iag2014/coadd_nir.json` (written by
+`make_iag_coadd.py --setting nir`; 31 nodes, ERA5 water 3.6-20.8 mm, weighted mean air mass
+1.625), with `--scan-column-ratio`, `--o2-cia --line-coupling --telluric-from-clean-pixels`
+and the strength table. The full command is in the driver's docstring. Run 2026-10-25, `data/corrected/solar/iag_nir/iag_nir.h5`.
+
+**Instrument and grid.** The atlas is sampled at 0.0018833 cm-1 (Nyquist for 266 cm), but
+the paper's maximum OPD is 204.5 cm, a sinc FWHM of 0.00295 cm-1 (`IAG_NIR_FWHM_CM1`).
+Like VIS, the fit's extra Gaussian rests on its lower bound: the sinc is the whole
+instrument. `--iag nir` sets 2.0 samples per resolution (grid step 0.00148 cm-1) and windows
+from 4366 cm-1, which is file 5's tiling (1876 + 30k), so the two compare window for window.
+No existing Payne Zero band is fine enough (`resample_stellar_source` refuses a source more
+than 1.5x coarser than the grid), so four bands at 1.4 samples a FWHM were synthesized into
+their own directory, `data/stellar/iag_nir/` (995-2300 nm; command in
+`generate_payne_zero_solar.py`), which `--iag nir` uses by default. A separate directory
+because the driver takes the first band in sorted order that covers a window, and new bands
+beside the old would have changed every other fit's source.
+
+**The run.** 187 windows, 4366-10006 cm-1, on two GPUs in about 5 h. 17 inside the 1.4 and
+1.9 um bands have no pixel above the transmission floor and are kept out of the record;
+170 are fitted. Residual / noise median 90 (IAG's continuum S/N is ~12000, so this is model
+error, not noise). One window (5086) failed once on a cuFFT plan allocation and refitted
+cleanly. Trap: `merge_fts_shards.py` keeps a failed row and `--resume` skips every row
+present, failed or not, so drop the failed row from the merged summary before the resume.
+Per-day water (a free scale per day, refitted on window 6836 with the opacity frozen) improves the residual
+from 1.196% to 1.192%: the day-to-day ratios ERA5 gives are good enough.
+
+**Flatness** (`score_telluric_correction.py --stem iag_nir --authors none
+--relative-transmission` -> `docs/iag_nir_correction_score.json`): median 1.19% at
+telluric pixels over 126 windows and 2.32% at deep pixels over 100 (VIS: 0.89% and 1.97%).
+By region: 0.89% at 4366-5000, 1.49% at 5000-6000, 1.61% at 6000-7000, 1.19% at
+7000-8000, 1.71% in the 8000-9000 water band and 0.47% above 9000.
+
+**Against Kitt Peak file 5, the overlap** (`scripts/compare_iag_nir_file5.py` ->
+`docs/iag_nir_file5_comparison.json`). Each atlas scored on its own pixels, IAG NIR is less
+flat (1.27% against 0.86% over 80 shared windows). On file 5's pixels, 66 windows:
+
+| | telluric | deep |
+|---|---|---|
+| IAG, native | 1.43% | 4.02% |
+| IAG, cut to file 5's sinc | 1.43% | 3.98% |
+| file 5, ours | 0.85% | 1.59% |
+| file 5, the authors' (photatl) | 0.89% | 1.73% |
+| median optical depth, IAG / file 5 | 0.27 / 0.077 | 1.55 / 0.42 |
+| score per unit optical depth, IAG / file 5 | 5.8 / 10.6 | 2.9 / 3.7 |
+| windows where IAG is better per unit depth | 65 of 66 | 18 of 21 |
+
+Resolution is not it: cutting IAG to file 5's sinc (`tellurix_fts.flatness.truncate_to_sinc`,
+exact for IAG's longer boxcar) changes nothing, because pressure-broadened telluric lines
+(~0.1 cm-1) are resolved by both. The sky is: Goettingen in spring and summer at air mass
+1.6 puts four times Kitt Peak's December optical depth on the same pixels (1.7x in the CO2
+and CH4 windows below 5000, where the two scores are equal on deep pixels), and a model
+error that is a fraction of the depth grows with it. Per unit depth IAG is the better
+correction almost everywhere. The normalization is rough (the error is not strictly
+proportional to tau), but file 5's noise is too small at its depths to reverse it.
+
+**The atlas's zero level.** In saturated cores IAG sits 0.1-0.4% of the continuum above the
+model (median +0.2%), worth ~1% of correction near T = 0.15 and part of the deep-pixel score.
+At 7216 and 7336 cm-1 it is 19% and 12%: a pedestal over the saturated 1.4 um band that no
+transmission explains. **Do not use those two windows** (scores 37% and 69%; the medians
+above barely move without them).
+
+Two traps from the pilot. A window npz's `observed_raw` is the atlas itself; `flux`, which
+the model is fitted to, is it over the window's 99th percentile. Plot the model against
+`flux`. And the npz's `corrected_normalized` (corrected / continuum) mixes the two scales,
+off by that percentile level (0.47-0.81 in the pilot), in every solar run's cache. The
+record, the exports and the scores use `flux` and are right; the column is open to fix.
+Not yet supported, as for VIS: `rebuild_fts_window`, `export_transmission_hdf5` and the
+review exporter.
 
 ## Open work (as of 2026-10-02)
 

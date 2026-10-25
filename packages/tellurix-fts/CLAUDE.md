@@ -233,6 +233,18 @@ co-add takes telluric pixels from 1.94% to 1.55% and deep ones from 3.70% to 2.9
 full run is 1.10% and 2.84% at the median. About half of that residual's variance repeats in our fits of Baker's single spectra (`scripts/attribute_iag_residuals.py`, §4s): model error Baker's empirical per-line fit absorbs. Only a third of it is the core strengths a strength table can fix; the rest is in wings and weak lines. Not yet supported by
 a co-add: `rebuild_fts_window`, `export_transmission_hdf5` and the review exporter, which
 build a single model from the record.
+**The IAG NIR atlas is fitted the same way** (§4t, `data/corrected/solar/iag_nir/iag_nir.h5`,
+2026-10-25): `fit_fts_batch.py --iag nir --coadd data/profiles/iag2014/coadd_nir.json`, six
+days (`make_iag_coadd.py --setting nir`), sinc 0.00295 cm-1 from the paper's 204.5 cm MOPD,
+2.0 samples per resolution and windows from 4366 (file 5's tiling). Its solar source is four
+finer Payne Zero bands in `data/stellar/iag_nir/`, which `--iag nir` selects
+(`--stellar-directory`); a band in `data/stellar/` would change every other fit's source.
+Median flatness 1.19% (deep 2.32%). On file 5's pixels it is less flat than file 5
+(`scripts/compare_iag_nir_file5.py`), but cut to file 5's sinc it is unchanged, and it carries
+four times file 5's optical depth: per unit depth it is the better correction in 65 of 66
+windows. Its saturated cores sit ~0.2% above zero, and at 7216 and 7336 the atlas has a
+12-19% pedestal: do not use those windows. The flatness score's helpers, and the sinc
+truncation, are `tellurix_fts.flatness`.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error
