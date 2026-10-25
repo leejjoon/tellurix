@@ -261,6 +261,9 @@ def main() -> None:
     parser.add_argument("--baker-fits", type=Path, default=ROOT / "data/corrected/baker2020_step3_iter1")
     parser.add_argument("--wallace-fits", type=Path, default=ROOT / "data/corrected/solar/wallace2011")
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--figure", type=Path, default=None,
+                        help="also draw the evidence: an example window at the median, the per-feature "
+                             "ratios, the budget by pixel class and the per-window rms")
     args = parser.parse_args()
 
     lines = read_feature_lines(AER)
@@ -282,6 +285,7 @@ def main() -> None:
                  "wallace2011_solar_clean": (FitResiduals.solar_run(args.wallace_fits, "wallace2011_reg[12]"), 1)}
     repeats = {name: RepeatTest(classes) for name in templates}
     # Where both exist: each alone and both together, on the same pixels.
+    examples = {}
     joint = {"pixels": 0, "base": 0.0, "baker": 0.0, "wallace": 0.0, "both": 0.0, "cross_templates": [],
              "windows": 0}
     pixels_total = 0
@@ -369,12 +373,16 @@ def main() -> None:
 
         # 4. Does the residual repeat in other spectra fitted with the same model? Each
         # template's tau is matched to ours and its frame aligned on the models.
-        found = {}
+        found, scales = {}, {}
         for name, (fits, minimum) in templates.items():
             template, spectra, shift = fits.aligned(nu, tau_model, minimum)
-            if template is not None and repeats[name].add(v1, residual, template, telluric, kind,
-                                                          spectra, shift) is not None:
-                found[name] = template
+            a = (repeats[name].add(v1, residual, template, telluric, kind, spectra, shift)
+                 if template is not None else None)
+            if a is not None:
+                found[name], scales[name] = template, a
+        if args.figure and len(found) == 2:
+            examples[v1] = {"nu": nu, "residual": residual, "telluric": telluric, "transmission": transmission,
+                            "templates": {k: scales[k] * t for k, t in found.items()}}
         if len(found) == 2:
             tb, tw = found["baker_single_spectra"], found["wallace2011_solar_clean"]
             m = telluric & np.isfinite(tb) & np.isfinite(tw)
@@ -472,6 +480,132 @@ def main() -> None:
     if args.output:
         args.output.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
         print(f"wrote {args.output}")
+    if args.figure:
+        draw(report, examples, args.figure)
+
+
+def draw(report, examples, path):
+    """Four panels: an example window, the per-feature ratios, the budget by class, the windows."""
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    baker = report["repeats_in_other_fits"]["baker_single_spectra"]
+    wallace = report["repeats_in_other_fits"]["wallace2011_solar_clean"]
+    windows = {w["window"]: w for w in baker["per_window"]}
+    # The example is the window nearest the median in both correlation and rms, not the best.
+    candidates = [v for v in examples if v in windows]
+    pick = min(candidates, key=lambda v: abs(windows[v]["r"] - baker["median_window_r"]) / 0.1
+               + abs(windows[v]["rms_percent"] - baker["median_window_rms_percent"]) / 0.3)
+    e, w = examples[pick], windows[pick]
+    nu, telluric = e["nu"], e["telluric"]
+    show = lambda x: np.where(telluric, 100.0 * x, np.nan)
+    colours = {"iag": "#10181c", "baker": "#d1493f", "wallace": "#2f7ad6", "table": "#8a9aa1"}
+
+    fig = plt.figure(figsize=(13, 11.5))
+    grid = fig.add_gridspec(4, 3, height_ratios=[0.55, 1.0, 1.0, 1.25], hspace=0.75, wspace=0.32)
+
+    # (a) The window, and the 1.5 cm-1 stretch with the most telluric pixels.
+    width = 1.5
+    starts = np.arange(nu[0] + 1.0, nu[-1] - width - 1.0, 0.25)
+    start = max(starts, key=lambda a: int(np.sum(telluric & (nu >= a) & (nu < a + width))))
+    pixel_axis = (lambda x: np.interp(x, nu, np.arange(nu.size)),
+                  lambda i: np.interp(i, np.arange(nu.size), nu))
+    ax_t = fig.add_subplot(grid[0, :])
+    ax_t.plot(nu, e["transmission"], color=colours["iag"], lw=0.6)
+    ax_t.axvspan(start, start + width, color="#f2d16b", alpha=0.35, lw=0)
+    ax_t.set_ylabel("our T")
+    ax_t.set_xlim(nu[0], nu[-1])
+    ax_t.set_title(f"(a) IAG window {pick} cm$^{{-1}}$ ({1e7 / nu[-1]:.0f}-{1e7 / nu[0]:.0f} nm), chosen at the "
+                   f"median of all windows (r {w['r']:.2f}, rms {w['rms_percent']:.2f}%), not the best",
+                   loc="left", fontsize=10, pad=22)
+    ax_t.secondary_xaxis("top", functions=pixel_axis).set_xlabel("pixel in window", fontsize=8)
+    ax = fig.add_subplot(grid[1, :2])
+    zoom = fig.add_subplot(grid[1, 2])
+    for axis, (lo, hi) in ((ax, (nu[0], nu[-1])), (zoom, (start, start + width))):
+        axis.axhline(0, color="#c5cdd0", lw=0.6)
+        axis.plot(nu, show(e["residual"]), color=colours["iag"], lw=0.7,
+                  label="IAG: ln(observed / Baker Sun / our T)")
+        axis.plot(nu, show(e["templates"]["baker_single_spectra"]), color=colours["baker"], lw=0.8, alpha=0.85,
+                  label=f"our fits of Baker's {w['spectra']} single spectra, median residual (x{w['scale']:.2f})")
+        axis.plot(nu, show(e["templates"]["wallace2011_solar_clean"]), color=colours["wallace"], lw=0.7, alpha=0.7,
+                  label="our Wallace 2011 fit, solar-clean pixels (control)")
+        axis.set_xlim(lo, hi)
+        axis.set_xlabel("wavenumber (cm$^{-1}$)")
+        axis.secondary_xaxis("top", functions=pixel_axis).tick_params(labelsize=7)
+    zoom.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(0.5))
+    zoom.xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%.1f"))
+    zoom.set_ylim(ax.get_ylim())
+    ax.set_ylabel("residual (%)")
+    ax.legend(fontsize=7.5, loc="lower left", bbox_to_anchor=(0.0, 1.13), ncol=3, frameon=False)
+    zoom.text(0.02, 0.96, "zoom: the yellow stretch above", transform=zoom.transAxes, fontsize=8, va="top")
+    ax.text(0.99, 0.04, f"rms {w['rms_percent']:.2f}% -> {w['rms_after_percent']:.2f}% after removing the red curve",
+            transform=ax.transAxes, ha="right", fontsize=8)
+
+    # (b) Per feature, the IAG depth error against Baker's single spectra, both relative to AER.
+    feature_ax = fig.add_subplot(grid[2:, 0])
+    rows = [r for r in report["features"] if r["baker_ratio"] is not None and np.isfinite(r["baker_ratio"])]
+    for in_table, colour, label in ((True, colours["table"], "corrected by the table"),
+                                    (False, colours["baker"], "left at AER")):
+        pick_rows = [r for r in rows if (r["group"] == "in table") == in_table]
+        x = 100 * np.log([r["baker_ratio"] for r in pick_rows])
+        y = 100 * np.log([r["iag_ratio"] * r["table_factor"] for r in pick_rows])
+        stats = report["corrected_vs_other_datasets_relative_to_aer" if in_table
+                       else "uncorrected_vs_other_datasets"]["baker"]
+        feature_ax.scatter(x, y, s=6 if in_table else 9, color=colour, alpha=0.45 if in_table else 0.8, lw=0,
+                           label=f"{label}: {stats['features']}, r {stats['r']:.2f}, slope {stats['slope_through_zero']:.2f}")
+    lim = 30
+    feature_ax.plot([-lim, lim], [-lim, lim], color="#10181c", lw=0.6, ls="--")
+    feature_ax.set_xlim(-lim, lim); feature_ax.set_ylim(-lim, lim)
+    feature_ax.set_xlabel("Baker's single spectra: depth error vs AER (%)")
+    feature_ax.set_ylabel("IAG atlas, Baker's Sun: depth error vs AER (%)")
+    feature_ax.set_title("(b) per feature: the errors repeat", loc="left", fontsize=10)
+    feature_ax.legend(fontsize=7, loc="upper left", frameon=False)
+
+    # (c) rms by pixel class: as fitted, with a perfect per-feature table, with the shared part removed.
+    budget_ax = fig.add_subplot(grid[2:, 1])
+    classes = [c for c in ("core", "wing", "weak line") if c in baker["by_pixel_class"]]
+    share = report["residual_by_pixel_class"]
+    bars = [("as fitted", [share[c]["rms_percent"] for c in classes], "#10181c"),
+            ("perfect strength + position table\n(each feature's own IAG error)",
+             [share[c]["rms_after_own_strength_shift_percent"] for c in classes], colours["table"]),
+            ("minus Wallace 2011 residual", [wallace["by_pixel_class"][c]["rms_after_percent"] *
+                                              share[c]["rms_percent"] / wallace["by_pixel_class"][c]["rms_percent"]
+                                              for c in classes], colours["wallace"]),
+            ("minus Baker single-spectra residual", [baker["by_pixel_class"][c]["rms_after_percent"] *
+                                                     share[c]["rms_percent"] / baker["by_pixel_class"][c]["rms_percent"]
+                                                     for c in classes], colours["baker"])]
+    x = np.arange(len(classes))
+    for k, (label, values, colour) in enumerate(bars):
+        budget_ax.bar(x + (k - 1.5) * 0.2, values, 0.19, color=colour, label=label)
+    budget_ax.set_xticks(x, [f"{c}\n{share[c]['pixels_percent']:.0f}% of px,\n{share[c]['sum_of_squares_percent']:.0f}% of rms$^2$"
+                             for c in classes], fontsize=8)
+    budget_ax.set_ylabel("residual rms (%)")
+    budget_ax.set_title("(c) where it is, and what removes it", loc="left", fontsize=10)
+    budget_ax.legend(fontsize=6.5, loc="upper right", frameon=False)
+
+    # (d) Every window: rms before and after removing the shared part.
+    window_ax = fig.add_subplot(grid[2:, 2])
+    before = np.array([w["rms_percent"] for w in baker["per_window"]])
+    after = np.array([w["rms_after_percent"] for w in baker["per_window"]])
+    centre = np.array([w["window"] for w in baker["per_window"]])
+    points = window_ax.scatter(before, after, c=centre, cmap="viridis", s=14, lw=0)
+    top_value = float(np.percentile(before, 99)) * 1.1
+    window_ax.plot([0, top_value], [0, top_value], color="#10181c", lw=0.6, ls="--")
+    window_ax.axhline(0.35, color=colours["baker"], lw=0.6, ls=":")
+    window_ax.text(top_value * 0.98, 0.37, "Baker's quoted error", ha="right", fontsize=7, color=colours["baker"])
+    window_ax.set_xlim(0, top_value); window_ax.set_ylim(0, top_value)
+    window_ax.set_xlabel("IAG residual rms (%)")
+    window_ax.set_ylabel("after removing the Baker single-spectra residual (%)")
+    window_ax.set_title(f"(d) {len(before)} windows: median {np.median(before):.2f}% -> {np.median(after):.2f}%",
+                        loc="left", fontsize=10)
+    fig.colorbar(points, ax=window_ax, label="window (cm$^{-1}$)", shrink=0.8)
+
+    fig.suptitle("Half of the IAG co-add fit's residual against Baker's telluric-free Sun is model error "
+                 "shared by every spectrum fitted with this model", fontsize=12, x=0.5, y=0.995)
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    print(f"wrote {path}")
 
 
 if __name__ == "__main__":
