@@ -1,0 +1,66 @@
+{
+ "about": "The atlas splices eight McMath FTS scans of 1980-81 (Table 1, reprinted in Kurucz's 2005 re-reduction as `kurucz2005/fluxscans.dat`; `tellurix_fts.flux_atlas.FLUXATL_SCANS`). Each scan co-adds 16-36 interferograms over about two hours of one day, so its telluric lines are a mean over a changing air mass: 1.16 to 1.45 in scan 113. One component per scan, on the ERA5 profile at the hour nearest the scan's middle, with nodes evenly spaced in time from its start to its stop, each at the Sun's zenith angle then. Table 1's times are local (MST): with UTC = MST + 7 h the Sun's air mass at each start and stop matches the table's to 0.01. The nodes carry no velocity. Each scan was recorded in the observatory's frame and corrected afterwards by one factor (Table 1's \"FTS frequency correction\"), so the telluric lines are not smeared, only moved together, which the fitted velocity takes.",
+ "source": "Kurucz, Furenlid, Brault & Testerman 1984, NSO Atlas No. 1, Table 1, scan 115",
+ "components": [
+  {
+   "label": "scan115",
+   "date": "1981-05-11",
+   "utc_hours": [
+    17.372,
+    19.641
+   ],
+   "profile": "data/profiles/fluxatl1981/kitt_peak_19810511T1900.csv",
+   "nodes": [
+    {
+     "utc_hour": 17.534,
+     "weight": 1.0,
+     "zenith_angle_deg": 28.5839,
+     "airmass": 1.1388,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 17.858,
+     "weight": 1.0,
+     "zenith_angle_deg": 24.8616,
+     "airmass": 1.1021,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 18.182,
+     "weight": 1.0,
+     "zenith_angle_deg": 21.3806,
+     "airmass": 1.0739,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 18.506,
+     "weight": 1.0,
+     "zenith_angle_deg": 18.2851,
+     "airmass": 1.0532,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 18.83,
+     "weight": 1.0,
+     "zenith_angle_deg": 15.8085,
+     "airmass": 1.0393,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 19.154,
+     "weight": 1.0,
+     "zenith_angle_deg": 14.2805,
+     "airmass": 1.0319,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 19.479,
+     "weight": 1.0,
+     "zenith_angle_deg": 14.0168,
+     "airmass": 1.0307,
+     "velocity_kms": 0.0
+    }
+   ]
+  }
+ ]
+}

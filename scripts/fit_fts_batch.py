@@ -94,7 +94,9 @@ from tellurix import (  # noqa: E402
     load_atmosphere_csv, species_above,
 )
 from tellurix_fts import read_solar_spectrum  # noqa: E402
-from tellurix_fts.flux_atlas import IAG_NIR, IAG_VIS, WALLACE2011_REGIONS, read_flux_atlas  # noqa: E402
+from tellurix_fts.flux_atlas import (  # noqa: E402
+    FLUXATL_SCANS, IAG_NIR, IAG_VIS, WALLACE2011_REGIONS, read_flux_atlas,
+)
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_atlas_page, window_continuum_snr  # noqa: E402
 
 from tellurix.download import DataPaths  # noqa: E402
@@ -102,6 +104,7 @@ from tellurix_fts.window import WindowSettings, fit_window  # noqa: E402
 
 WALLACE2011 = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso/wallace2011_flux")
 IAG = Path("data/databases/iag")
+FLUXATL = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso/fluxatl")
 LINE_ROOT = Path("data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
 
 # Everything about the fit that is the same for every window. Named here and
@@ -552,6 +555,10 @@ def main() -> None:
     parser.add_argument("--iag", nargs="?", const="vis", choices=("vis", "nir"), default=None,
                         help="fit the IAG flux atlas instead of --spectrum: its VIS setting, or "
                              "with 'nir' its NIR one")
+    parser.add_argument("--fluxatl", type=int, choices=sorted(FLUXATL_SCANS), default=None,
+                        help="fit this scan's stretch of the Kurucz et al. 1984 flux atlas instead "
+                             "of --spectrum; its sinc FWHM is the default, and its air mass is "
+                             "only the species cut's (fit it with --coadd)")
     parser.add_argument("--stellar-directory", type=Path, default=None,
                         help="where the solar_payne_zero_* bands are, relative to the checkout; "
                              "default data/stellar, and data/stellar/iag_nir for --iag nir")
@@ -706,6 +713,21 @@ def main() -> None:
             args.airmass = region["airmass"]
         if args.fwhm_cm1 == MEASURED_FWHM_CM1:
             args.fwhm_cm1 = region["fwhm_cm1"]
+    elif args.fluxatl is not None:
+        if args.spectrum is not None:
+            raise SystemExit("pass --spectrum or --fluxatl, not both")
+        region = {**FLUXATL_SCANS[args.fluxatl], "spectrum": f"scan {args.fluxatl}"}
+        args.spectrum = FLUXATL
+        args.window_stem = f"fluxatl_{args.fluxatl}"
+        if args.airmass is None and args.zenith_angle_deg is None:
+            args.airmass = region["mean_airmass"]
+        if args.fwhm_cm1 == MEASURED_FWHM_CM1:
+            args.fwhm_cm1 = region["fwhm_cm1"]
+        # On the tiling every other visible run shares (v1 = 10 mod 30), so the 1983
+        # pair's species scans serve above 8530 cm-1; MT_CKD's table ends at 20000.
+        low, high = region["range_cm1"]
+        args.v1 = float(np.floor((low - 10.0) / 30.0) * 30.0 + 10.0) if args.v1 is None else args.v1
+        args.v2 = min(high, 19990.0) if args.v2 is None else args.v2
     if args.iag == "nir":
         # The grid's floor of 2 samples per 0.00295 cm-1 sinc, 0.0015 cm-1, is
         # finer than any band in data/stellar holds, so this setting has its own
@@ -728,7 +750,7 @@ def main() -> None:
         args.v1 = 9400.0 if args.v1 is None else args.v1
         args.v2 = 20000.0 if args.v2 is None else args.v2
     elif args.spectrum is None:
-        raise SystemExit("pass --spectrum, --wallace2011-region or --iag")
+        raise SystemExit("pass --spectrum, --wallace2011-region, --iag or --fluxatl")
     if args.stellar_directory is None:
         args.stellar_directory = Path("data/stellar")
 
@@ -754,7 +776,7 @@ def main() -> None:
     if args.scan_column_ratios:
         print("species cut scaled by column ratio: " + ", ".join(
             f"{k} {v:.2f}" for k, v in sorted(args.scan_column_ratios.items())))
-    if args.spectrum.is_dir():
+    if args.spectrum.is_dir() and region is None:
         jobs, spectra = atlas_pages(args.spectrum, args.v1, args.v2, args.minimum_snr,
                                       names=args.pages.split(",") if args.pages else None)
         spectrum = run_identity(spectra)
@@ -764,13 +786,15 @@ def main() -> None:
         if region is not None:
             # The whole file: the atlas's region edges are where its good data
             # ends, and the S/N test below drops anything past them.
-            atlas = "iag" if args.iag else "wallace2011"
+            atlas = "iag" if args.iag else "fluxatl" if args.fluxatl is not None else "wallace2011"
             spectrum = read_flux_atlas(
                 atlas, root / args.spectrum if args.iag else args.spectrum, (0.0, 1.0e6),
                 cache_directory=root / f"data/databases/{atlas}",
                 airmass=args.airmass, fwhm_cm1=args.fwhm_cm1,
-                source_name=(f"IAG solar flux atlas, {region['spectrum']}, normalised flux" if args.iag else
-                             f"Kitt Peak flux atlas #2, {region['spectrum']}, observed flux"))
+                source_name={"iag": f"IAG solar flux atlas, {region['spectrum']}, normalised flux",
+                             "fluxatl": f"Kitt Peak solar flux atlas (Kurucz et al. 1984), "
+                                        f"{region['spectrum']}, pseudo-residual flux",
+                             "wallace2011": f"Kitt Peak flux atlas #2, {region['spectrum']}, observed flux"}[atlas])
         else:
             spectrum = read_solar_spectrum(args.spectrum)
         spectra = {str(args.spectrum): spectrum}

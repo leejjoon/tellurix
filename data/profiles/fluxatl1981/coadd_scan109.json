@@ -1,0 +1,59 @@
+{
+ "about": "The atlas splices eight McMath FTS scans of 1980-81 (Table 1, reprinted in Kurucz's 2005 re-reduction as `kurucz2005/fluxscans.dat`; `tellurix_fts.flux_atlas.FLUXATL_SCANS`). Each scan co-adds 16-36 interferograms over about two hours of one day, so its telluric lines are a mean over a changing air mass: 1.16 to 1.45 in scan 113. One component per scan, on the ERA5 profile at the hour nearest the scan's middle, with nodes evenly spaced in time from its start to its stop, each at the Sun's zenith angle then. Table 1's times are local (MST): with UTC = MST + 7 h the Sun's air mass at each start and stop matches the table's to 0.01. The nodes carry no velocity. Each scan was recorded in the observatory's frame and corrected afterwards by one factor (Table 1's \"FTS frequency correction\"), so the telluric lines are not smeared, only moved together, which the fitted velocity takes.",
+ "source": "Kurucz, Furenlid, Brault & Testerman 1984, NSO Atlas No. 1, Table 1, scan 109",
+ "components": [
+  {
+   "label": "scan109",
+   "date": "1981-03-24",
+   "utc_hours": [
+    19.51,
+    21.668
+   ],
+   "profile": "data/profiles/fluxatl1981/kitt_peak_19810324T2100.csv",
+   "nodes": [
+    {
+     "utc_hour": 19.69,
+     "weight": 1.0,
+     "zenith_angle_deg": 30.4097,
+     "airmass": 1.1595,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 20.049,
+     "weight": 1.0,
+     "zenith_angle_deg": 31.1665,
+     "airmass": 1.1687,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 20.409,
+     "weight": 1.0,
+     "zenith_angle_deg": 32.7061,
+     "airmass": 1.1884,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 20.769,
+     "weight": 1.0,
+     "zenith_angle_deg": 34.9239,
+     "airmass": 1.2196,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 21.129,
+     "weight": 1.0,
+     "zenith_angle_deg": 37.6987,
+     "airmass": 1.2638,
+     "velocity_kms": 0.0
+    },
+    {
+     "utc_hour": 21.488,
+     "weight": 1.0,
+     "zenith_angle_deg": 40.915,
+     "airmass": 1.3233,
+     "velocity_kms": 0.0
+    }
+   ]
+  }
+ ]
+}

@@ -77,3 +77,43 @@ def test_unknown_atlas_is_refused(tmp_path):
     path.write_text("1 2 3 4\n")
     with pytest.raises(ValueError, match="unknown flux atlas"):
         read_flux_atlas("kurucz", path, (0.0, 2.0))
+
+
+def test_edlen_inverts_back_to_the_air_wavelength():
+    from tellurix_fts.flux_atlas import air_to_vacuum_wavenumber, edlen_refractive_index
+
+    air_nm = np.array([300.0, 500.0, 760.0, 1300.0])
+    vacuum = air_to_vacuum_wavenumber(air_nm)
+    assert np.allclose(1.0e7 / vacuum / edlen_refractive_index(vacuum), air_nm, rtol=0, atol=1e-9)
+    # n - 1 is 2.8e-4 to 2.9e-4 over this range, so vacuum wavenumbers sit that much lower.
+    assert np.all((1.0e7 / air_nm - vacuum) / vacuum > 2.7e-4)
+
+
+def test_fluxatl_pages_join_without_their_overlap(tmp_path):
+    from tellurix_fts.flux_atlas import air_to_vacuum_wavenumber
+
+    first = np.arange(700.0, 704.1, 0.01)
+    second = np.arange(704.0, 708.1, 0.01)
+    for name, waves in (("lm0700", first), ("lm0704", second)):
+        (tmp_path / name).write_text("".join(f"{w:12.5f} {0.9:10.7f} {130.0:10.2f}\n" for w in waves))
+    (tmp_path / "README").write_text("not a page\n")
+
+    spectrum = read_flux_atlas("fluxatl", tmp_path, (0.0, 1.0e6))
+
+    unique = np.unique(np.round(np.concatenate([first, second]), 5))
+    assert spectrum.wavenumber_vacuum_cm1.size == unique.size
+    assert np.all(np.diff(spectrum.wavenumber_vacuum_cm1) > 0)
+    assert spectrum.wavenumber_vacuum_cm1[-1] == pytest.approx(air_to_vacuum_wavenumber(700.0))
+    # A directory's hash covers every page, so editing one changes it.
+    before = spectrum.sha256
+    (tmp_path / "lm0704").write_text((tmp_path / "lm0704").read_text().replace("0.9000000", "0.8000000", 1))
+    assert read_flux_atlas("fluxatl", tmp_path, (0.0, 1.0e6)).sha256 != before
+
+
+def test_fluxatl_scans_put_the_sinc_at_the_centre():
+    from tellurix_fts.flux_atlas import FLUXATL_SCANS
+
+    scan = FLUXATL_SCANS[113]
+    assert scan["range_cm1"] == pytest.approx((10000.0, 1.0e7 / 751.0))
+    assert scan["fwhm_cm1"] == pytest.approx(0.5 * sum(scan["range_cm1"]) / 522990)
+    assert scan["mean_airmass"] == pytest.approx(1.305)

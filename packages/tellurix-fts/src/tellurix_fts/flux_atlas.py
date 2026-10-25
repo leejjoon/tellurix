@@ -16,6 +16,13 @@ what a fit needs from the header -- air mass, resolution -- is carried here.
   The corrected column borrowed its transmission from the 1983-06-26 disc-centre
   pair, so a telluric fit reads the observed one. Regions 1-3 are each one
   McMath integrated-sun spectrum.
+- ``fluxatl``: the Kitt Peak solar flux atlas (Kurucz, Furenlid, Brault & Testerman
+  1984, NSO Atlas No. 1), a directory of ``lmXXXX`` pages, 4 nm each plus 0.1 nm
+  of overlap: air wavelength (nm), pseudo-residual flux, irradiance. It splices
+  eight McMath FTS scans of 1980-81, each of one day and about two hours, and its
+  telluric lines are left in. Kurucz's 2005 re-reduction of the same scans ships
+  their Table 1 (``kurucz2005/fluxscans.dat``), which is where FLUXATL_SCANS comes
+  from.
 """
 
 from __future__ import annotations
@@ -71,6 +78,66 @@ IAG_NIR = {"file": "spnir.dat.gz", "spectrum": "NIR setting, 2014, 1130 scans on
            "airmass": 1.625, "fwhm_cm1": IAG_NIR_FWHM_CM1}
 
 
+# Table 1 of the atlas, as Kurucz's 2005 re-reduction reprints it, for the scans with
+# telluric lines worth fitting (109 has few; 101-107 sit under ozone's Huggins and
+# Chappuis bands, which AER does not carry). Limits are the splice points in vacuum
+# nm. Times are local (MST) seconds: scan 111's start, 10:38, is 1.8 h before transit,
+# as its hour angle (-6513 s) says, so the UTC is that plus 7 h. The resolving power
+# is the sinc's; the FWHM a run uses is the scan's centre over it, since an FTS holds
+# its path difference, not R, fixed across a scan.
+FLUXATL_SCANS = {
+    109: {"vacuum_nm": (472.82, 577.2), "date": "1981-03-24", "mst_seconds": (45035.48, 52805.08),
+          "airmass": (1.15, 1.35), "resolving_power": 521360, "dispersion_cm1": 0.02381424},
+    111: {"vacuum_nm": (577.2, 751.0), "date": "1981-03-25", "mst_seconds": (38297.73, 45284.97),
+          "airmass": (1.30, 1.15), "resolving_power": 522900, "dispersion_cm1": 0.01815228},
+    113: {"vacuum_nm": (751.0, 1000.0), "date": "1981-03-25", "mst_seconds": (47186.79, 54248.59),
+          "airmass": (1.16, 1.45), "resolving_power": 522990, "dispersion_cm1": 0.01421564},
+    115: {"vacuum_nm": (1000.0, 1300.0), "date": "1981-05-11", "mst_seconds": (37338.11, 45506.13),
+          "airmass": (1.16, 1.03), "resolving_power": 522500, "dispersion_cm1": 0.01154261},
+}
+for _scan in FLUXATL_SCANS.values():
+    _low_cm1, _high_cm1 = 1.0e7 / _scan["vacuum_nm"][1], 1.0e7 / _scan["vacuum_nm"][0]
+    _scan["range_cm1"] = (_low_cm1, _high_cm1)
+    _scan["fwhm_cm1"] = 0.5 * (_low_cm1 + _high_cm1) / _scan["resolving_power"]
+    _scan["mean_airmass"] = 0.5 * sum(_scan["airmass"])
+
+
+def edlen_refractive_index(wavenumber_vacuum_cm1):
+    """Standard air's refractive index, Edlén 1966, at a vacuum wavenumber.
+
+    The fluxatl pages were written in air with it (Kurucz et al. 1984); their
+    steps come back to each scan's even wavenumber spacing in Table 1 through it.
+    """
+
+    sigma2 = (np.asarray(wavenumber_vacuum_cm1, dtype=float) * 1.0e-4) ** 2
+    return 1.0 + 1.0e-8 * (8342.13 + 2406030.0 / (130.0 - sigma2) + 15997.0 / (38.9 - sigma2))
+
+
+def air_to_vacuum_wavenumber(wavelength_air_nm):
+    """Vacuum wavenumber (cm-1) of an air wavelength, inverting Edlén 1966 by iteration."""
+
+    in_air = 1.0e7 / np.asarray(wavelength_air_nm, dtype=float)
+    vacuum = in_air.copy()
+    # n - 1 is ~3e-4 and varies slowly, so each pass gains about four decades.
+    for _ in range(4):
+        vacuum = in_air / edlen_refractive_index(vacuum)
+    return vacuum
+
+
+def _fluxatl_pages(directory: Path) -> list[Path]:
+    return sorted(p for p in Path(directory).iterdir() if p.name.startswith("lm") and p.name[2:].isdigit())
+
+
+def _sha256(path: Path) -> str:
+    if not path.is_dir():
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    # A page atlas: every page's name and bytes, in order.
+    digest = hashlib.sha256()
+    for page in _fluxatl_pages(path):
+        digest.update(page.name.encode() + b"\0" + page.read_bytes())
+    return digest.hexdigest()
+
+
 def _read_columns(atlas: str, path: Path) -> tuple[np.ndarray, np.ndarray]:
     if atlas == "iag":
         opener = gzip.open if path.suffix == ".gz" else open
@@ -78,6 +145,16 @@ def _read_columns(atlas: str, path: Path) -> tuple[np.ndarray, np.ndarray]:
             data = np.loadtxt(handle, usecols=(0, 1))
     elif atlas == "wallace2011":
         data = np.loadtxt(path, usecols=(0, 3))
+    elif atlas == "fluxatl":
+        # Pages overlap by 0.1 nm with the same samples; the first copy is kept.
+        pages = [np.loadtxt(page, usecols=(0, 1)) for page in _fluxatl_pages(path)]
+        data = np.concatenate(pages)
+        order = np.argsort(data[:, 0], kind="stable")
+        data = data[order]
+        data = data[np.concatenate([[True], np.diff(data[:, 0]) > 0])]
+        nu = air_to_vacuum_wavenumber(data[:, 0])
+        order = np.argsort(nu)
+        return nu[order], data[order, 1]
     else:
         raise ValueError(f"unknown flux atlas {atlas!r}")
     return data[:, 0], data[:, 1]
@@ -111,7 +188,7 @@ def read_flux_atlas(atlas: str, path: str | Path, keep: tuple[float, float], *,
             cache.parent.mkdir(parents=True, exist_ok=True)
             np.savez(cache, nu=nu, flux=flux)
     return FTSSpectrum(
-        path=path, sha256=hashlib.sha256(path.read_bytes()).hexdigest(), source_name=source_name,
+        path=path, sha256=_sha256(path), source_name=source_name,
         comment="", date_mst="", julian_day=0, universal_time_start="", universal_time_stop="",
         airmass_start=airmass, airmass_stop=airmass, stated_resolution_cm1=fwhm_cm1,
         transform_samples=0, point_of_center=0, wavenumber_vacuum_cm1=nu, flux=flux,
@@ -137,3 +214,4 @@ def read_wallace2011_correction(path: str | Path) -> tuple[np.ndarray, np.ndarra
     distinct = np.concatenate([[True], np.diff(nu) > 0])
     corrected = np.where(corrected > 0, corrected, np.nan)
     return nu[distinct], corrected[distinct], transmission[distinct]
+
