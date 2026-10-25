@@ -1825,8 +1825,75 @@ the model is fitted to, is it over the window's 99th percentile. Plot the model 
 `flux`. And the npz's `corrected_normalized` (corrected / continuum) mixes the two scales,
 off by that percentile level (0.47-0.81 in the pilot), in every solar run's cache. The
 record, the exports and the scores use `flux` and are right; the column is open to fix.
-Not yet supported, as for VIS: `rebuild_fts_window`, `export_transmission_hdf5` and the
-review exporter.
+Products (2026-10-25): `export_transmission_hdf5.py` rebuilds a co-add record as its
+`CoaddedTelluricModel` and writes the node-weighted mean, with the days and nodes in
+`/coadd` (`data/corrected/iag_{vis,nir}_transmission.h5`); `export_atlas_corrected.py`
+packs a windowed run, a row per window (`data/corrected/iag_{vis,nir}_corrected.h5`), and
+withholds 7216 and 7336 (status 4, saturated cores 19% and 12% above the model). The
+review exporter needed nothing: the windows carry their species split. Review page
+`docs/review_page/iag_nir.html`. `rebuild_fts_window.py` rebuilds `fit_fts_window.py`
+reports, which have no co-add, so it is untouched.
+
+### 4u. The Kurucz et al. 1984 flux atlas: eight scans, each its own co-add
+
+`fluxatl` (Kurucz, Furenlid, Brault & Testerman 1984, NSO Atlas No. 1; 296-1300 nm) is a
+directory of 4 nm pages in **air** wavelengths, pseudo-residual flux. It splices eight McMath
+FTS scans of 1980-81, each one day and about two hours of interferograms. Its Table 1, which
+Kurucz's 2005 re-reduction reprints (`kurucz2005/fluxscans.dat`), gives every scan's range,
+date, start and stop time, air mass, resolving power and dispersion
+(`tellurix_fts.flux_atlas.FLUXATL_SCANS`, for scans 109-115; 101-107 sit under ozone's
+Huggins and Chappuis bands, which AER does not carry).
+
+**Reader.** `read_flux_atlas("fluxatl", directory)` joins the pages without their 0.1 nm
+overlap and converts air to vacuum with Edlén 1966 (`air_to_vacuum_wavenumber`): the steps
+then come back to each scan's even dispersion in Table 1 (0.0238, 0.0182, 0.0142, 0.0115
+cm-1), and the 2005 files' own vacuum column agrees to 5e-4 cm-1. Near 1100 nm the steps
+are a few percent finer and uneven (resampled); the fit takes uneven pixels. The run's hash
+is of every page's name and bytes. The interferogram envelope falls smoothly rather than
+cutting off, which smoothing or the lines' own widths would both give, so the sinc is Table
+1's (the scan's centre over its R) and the fitted Gaussian takes the rest: `lsf_sigma_kms`
+settles at 0.14-0.17 km/s in scans 111-115 and 1.3 in 109.
+
+**Geometry.** One co-add per scan (`scripts/make_fluxatl_coadd.py` ->
+`data/profiles/fluxatl1981/coadd_scan{109,111,113,115}.json`): the ERA5 profile at the hour
+nearest the scan's middle (epoch-1983 trace gases, 4.5-6.7 mm of water) and 20-minute nodes
+from start to stop, each at the Sun's zenith angle. Table 1's times are MST: with UTC = MST +
+7 h the Sun's air mass at each start and stop matches the table's to 0.01. The nodes carry
+no velocity: a scan was recorded in the observatory frame and corrected by one factor
+afterwards, so its telluric lines are moved, not smeared. `fit_fts_batch.py --fluxatl SCAN
+--coadd ...` (the driver's docstring has the command) fits on the tiling every visible run
+shares (v1 = 10 mod 30), so the 1983 pair's species scans serve above 8530 cm-1, up to
+19990 (MT_CKD). The existing Payne Zero bands are fine enough at 4 samples per resolution.
+
+**Result** (2026-10-25, `data/corrected/solar/fluxatl/fluxatl_{scan}.h5`; flatness
+`docs/fluxatl_correction_score.json`):
+
+| scan | nm | windows fitted / negligible | H2O, median log scale | O2 | flatness, telluric / deep |
+|---|---|---|---|---|---|
+| 115 | 1000-1300 | 70 / 7 | -0.06 | +0.03 | 0.995% / 2.25% |
+| 113 | 751-1000 | 98 / 13 | +0.17 | +0.03 | 0.81% / 1.90% |
+| 111 | 577-751 | 86 / 48 | +0.05 | +0.03 | 0.55% / 1.30% |
+| 109 | 501-577 | 31 / 58 | +0.31, pinned | -- | 0.48% (T < 0.99, 4 windows) |
+
+O2 at +0.03 in three scans and two seasons says the air masses and nodes are right. The
+fitted velocity is +0.5 to +0.7 km/s in scans 109-113 and +0.08 in 115: the 1984 wavelength
+scale, which Reiners et al. 2016 put 10-100 m/s off, sits further off than that in the
+visible. **Scan 109 is Wallace region 3 again**: inside the 571 nm band (17320-17590) water
+fits at about +0.3, and above it, with lines under 0.1% deep, it wandered between the bounds
+(0.14 to 4.9 times the profile) on the solar model's error. It is fitted with H2O, velocity
+and `lsf_sigma_kms` pinned at the band's medians (0.31, 0.64, 0.54): residual 2.80 -> 3.05%,
+flatness 0.54 -> 0.50% on the windows the score can judge; the free fit is kept in
+`fluxatl_109_free/`.
+
+**There is no authors' correction.** Kurucz's 2005 files (`kurucz2005/`), described in the
+sibling project's provenance as the scans with the tellurics divided out, still carry them:
+at our telluric pixels both the per-scan `flux113a.2005` and `fluxspliced.2005` equal the
+1984 atlas to 0.007, and only their headers mention a telluric spectrum ("shift of telluric
+spectrum -0.649 km/s"). They do remove the gravitational redshift (-0.636 km/s), which is
+the -0.5 km/s the two align at where nothing absorbs.
+
+Products: `data/corrected/fluxatl_{scan}_corrected.h5` (`export_atlas_corrected.py`, a row
+per window) and `fluxatl_{scan}_transmission.h5`.
 
 ## Open work (as of 2026-10-02)
 
@@ -2052,6 +2119,54 @@ them. Baker et al.'s own fits (`data/corrected/baker2020/`) stay the Voigt fits:
 measurements, and the committed Baker reports are made on them. Region 3, the 1990 files and
 photatl are outside the table's range and unchanged.
 
+### Done 2026-10-25: files 4 and 5 refitted with the niratl recipe at x1.00
+
+The 2026-10-18 trial (above) found the clean-pixel telluric fit flatter on 10 of 12 file-4
+and 11 of 14 file-5 windows and stopped on CO in the 2.3 um windows. The full refit
+(`--telluric-from-clean-pixels --stellar-broadening`, HITRAN shifts, line coupling kept,
+the strength table, widths x1.00; `data/corrected/solar/ftsspec_901218_{4,5}*`, promoted;
+the old run in `data/corrected/superseded_pre_clean1990/`) fitted all 223 and 224 windows.
+
+**CO.** In the 4.6 um windows (2026-2176) the new CO agrees with the old: median log scale
+-0.035 (file 4) and -0.002 (file 5). In the 2.3 um windows telluric CO sits under solar CO,
+the clean pixels see almost none of it, and 4156 went to the -2 bound in both files (+0.13
+and +0.63 before). So the six 2.3 um CO windows (4156-4306) were refitted with CO pinned at
+the 4.6 um median (`--pin CO=`) and spliced in; each such row carries `pin`, and the
+unspliced summaries are kept beside the shards in `data/corrected/solar/refit_clean_1990/`.
+The flatness score cannot choose here, since it scores no pixel under a solar line and every
+telluric CO line is under one: the three fits agree to 0.03% in all six windows. The choice
+is physical -- a CO column at 14% of the profile is not one -- and those solar CO lines are
+what the sibling project corrects for.
+
+**Result** (`score_telluric_correction.py --authors photatl --relative-transmission` -> `docs/kitt_peak_clean_1990_score.json`):
+
+| file | telluric, old -> new | deep, old -> new | flatter | photatl (authors) |
+|---|---|---|---|---|
+| 5 | 0.853 -> 0.738% | 1.485 -> 1.319% | 91 of 125 | 0.791%, 1.270% |
+| 4 | 1.275 -> 1.240% | 2.567 -> 2.412% | 79 of 106 | (file 5's correction) |
+
+File 5 is now flatter than photatl's own correction at the median, and at or below it in 73
+of 125 windows against 62. `compare_fts_runs.py`: water moves 0.4-0.5% at the median; the
+large moves are weak CH4, CO2 and N2O columns inside water bands, with the residual down;
+no column is newly at an upper bound (file 4 loses CH4 at 2206). Products rebuilt from the
+promoted records: `ftsspec_901218_{4,5}_transmission.h5` and `photatl_corrected.h5` (worst
+0.223 sigma against the file-5 fit, the four 1.9 um band pages still from photatl's own
+2026-10-11 fits).
+
+### Done 2026-10-25: the transmission exports held absorbers their fits had left out
+
+`export_transmission_hdf5.py` built every species of a record's union into each window. A
+solar batch record (keyed `file`, `window`) stores 0 for a species its window's scan did not
+keep, and its model never held it, so the export added those absorbers at full column: up to
+0.8% too much absorption in file 5, 0.9% in the 1983 pair (66 and 56 of ~300 windows past
+1e-3), 0.7% in niratl and 1.6e-3 in the IAG windows (all below the scan's 1% cut,
+which is why it stayed small). Arcturus and IGRINS are unaffected: they keep every species
+in the model and pin the rest at the profile column. The export now builds a solar window
+from its row's `free_species`, and `--check` finds the solar arrays through the summary
+(it had silently compared nothing): 4e-8 for the 1983 pair, 8e-7 for niratl, 1e-8 for IAG
+VIS, 2e-9 for IAG NIR. Regenerated and promoted: the 1983 pair and niratl (the old files in
+`data/corrected/superseded_pre_species_fix/`), files 4 and 5 with their refit.
+
 ### Also open
 
 - **The O2 excess: closed 2026-10-05, cause inside the 1983 pair not identified** (§4n):
@@ -2112,11 +2227,8 @@ photatl are outside the table's range and unchanged.
     the authors', and how far the recovered solar lines move from Payne Zero's.
 - **Per-line intensity corrections: done and promoted 2026-10-24** (above, and
   `docs/line_intensity_corrections.md`, Plan steps 1-3).
-- **Atlases not started**: `fluxatl` (disc-integrated, so the one atlas where Payne Zero's
-  quantity is right -- a measure of how much of the floor is the flux/intensity mismatch;
-  needs an air-wavelength, uneven-grid reader), `spot1atl` (waits on the solar model),
-  IAG beyond its O2 windows (VIS setting re-downloaded 2026-10-05 into the gitignored
-  `data/databases/iag/`, from CDS J/A+A/587/A65; `fit_atlas_o2.py` reads it). `telluric_mid_ir` is not a target (§"What the atlases' own
+- **Atlases not started**: `spot1atl` (waits on the solar model). `fluxatl` was fitted
+  2026-10-25 (§4u) and both IAG settings 2026-10-24/25 (§4s, §4t). `telluric_mid_ir` is not a target (§"What the atlases' own
   documentation says" in `solar_atlases.md`).
 - **A telluric error model for joint stellar + telluric fits (future work, 2026-10-25).**
   The sibling project wants solar log gf values from fits that model the star and the

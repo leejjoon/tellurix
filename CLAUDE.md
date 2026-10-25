@@ -93,7 +93,7 @@ it covers.
   project and the solar products it is asking for, rerunning and promoting a solar
   run (`merge_fts_shards`, `compare_fts_runs`), and the O2 checks (`compare_o2_*`,
   `o2_*`, `fit_atlas_o2` for the IAG and Wallace 2011 flux atlases), and the IAG
-  co-add fit (`fit_fts_batch --iag --coadd`, `make_iag_coadd`, `score_iag_against_baker`, `compare_iag_nir_file5`).
+  co-add fit (`fit_fts_batch --iag --coadd`, `make_iag_coadd`, `score_iag_against_baker`, `compare_iag_nir_file5`), and the Kurucz et al. 1984 flux atlas (`fit_fts_batch --fluxatl`, `make_fluxatl_coadd`).
 - `packages/tellurix-igrins/CLAUDE.md` -- IGRINS: `*igrins*`,
   `download_rrisa_standard`, `era5_site_profile`, `generate_payne_zero_{a0v,star}`,
   the night calibrations under `data/calibration/`.

@@ -174,7 +174,11 @@ windows have a species above 1%; nothing does past 19900 at this air mass, so MT
 windows at or below theirs; the 505 nm band is worse than theirs, from solar-model error. The refit is in
 `data/corrected/solar/niratl/`, promoted 2026-10-18 (the old run is in
 `data/corrected/superseded_pre_widthscale/`). The 1983 pair was refitted the same way at x1.06 and promoted the same day
-(median flatness 1.44 -> 1.06% and 1.40 -> 1.00%); files 4 and 5 are not refitted. What stays behind is per-line
+(median flatness 1.44 -> 1.06% and 1.40 -> 1.00%). **Files 4 and 5 were refitted the same way at
+x1.00 and promoted 2026-10-25** (file 5 0.853 -> 0.738%, now flatter than photatl's own
+correction; file 4 1.275 -> 1.240%), with CO pinned in the six 2.3 um CO windows at the 4.6 um
+windows' median, because there telluric CO sits under solar CO and the clean-pixel fit drove
+it to its bound (rows carry `pin`; `docs/solar_fit_plan.md`, "Done 2026-10-25"). What stays behind is per-line
 line-list error, mostly in the 0.89 um band. It repeats from fit to fit (r 0.82-0.92 across
 Wallace 2011, the 1983 pair and niratl; `scripts/measure_line_depth_ratios.py` ->
 `docs/line_depth_ratios.json`), so a per-line strength table could remove half of it --
@@ -230,9 +234,16 @@ IAG's water) drop water from ~50 windows. `--iag` defaults to 2.2 samples per re
 because Payne Zero's visible grid cannot go finer. Baker et al.'s telluric-free IAG atlas
 is the yardstick (`scripts/score_iag_against_baker.py`): on the 15 pilot windows the
 co-add takes telluric pixels from 1.94% to 1.55% and deep ones from 3.70% to 2.94%; the
-full run is 1.10% and 2.84% at the median. About half of that residual's variance repeats in our fits of Baker's single spectra (`scripts/attribute_iag_residuals.py`, §4s): model error Baker's empirical per-line fit absorbs. Only a third of it is the core strengths a strength table can fix; the rest is in wings and weak lines. Not yet supported by
-a co-add: `rebuild_fts_window`, `export_transmission_hdf5` and the review exporter, which
-build a single model from the record.
+full run is 1.10% and 2.84% at the median. About half of that residual's variance repeats in our fits of Baker's single spectra (`scripts/attribute_iag_residuals.py`, §4s): model error Baker's empirical per-line fit absorbs. Only a third of it is the core strengths a strength table can fix; the rest is in wings and weak lines. Products of a co-add (2026-10-25): `export_transmission_hdf5.py` rebuilds the record's
+`CoaddedTelluricModel` and writes the node-weighted mean with the days and nodes in `/coadd`
+(no `/profile`); `export_atlas_corrected.py` packs a run over windows of one long spectrum, a
+row per window; the review exporter reads the species split the windows saved.
+`rebuild_fts_window.py` rebuilds `fit_fts_window.py` reports, which have no co-add.
+**A solar record's window holds only its `free_species`**: the record stores 0 for the rest
+of the run's union, and the transmission export built those in at full column until
+2026-10-25 (up to 0.8% of fake absorption in file 5). Arcturus and IGRINS records keep every
+species in the model, so there the union is right; the export tells them apart by the key
+fields (`file`, `window`).
 **The IAG NIR atlas is fitted the same way** (§4t, `data/corrected/solar/iag_nir/iag_nir.h5`,
 2026-10-25): `fit_fts_batch.py --iag nir --coadd data/profiles/iag2014/coadd_nir.json`, six
 days (`make_iag_coadd.py --setting nir`), sinc 0.00295 cm-1 from the paper's 204.5 cm MOPD,
@@ -245,6 +256,17 @@ four times file 5's optical depth: per unit depth it is the better correction in
 windows. Its saturated cores sit ~0.2% above zero, and at 7216 and 7336 the atlas has a
 12-19% pedestal: do not use those windows. The flatness score's helpers, and the sinc
 truncation, are `tellurix_fts.flatness`.
+**The Kurucz et al. 1984 flux atlas (`fluxatl`) is fitted scan by scan** (§4u,
+`data/corrected/solar/fluxatl/fluxatl_{109,111,113,115}.h5`, 2026-10-25). It is a page
+directory in air wavelengths (`read_flux_atlas("fluxatl", dir)`, Edlén 1966) splicing eight
+1980-81 McMath scans; Table 1 (`FLUXATL_SCANS`, from `kurucz2005/fluxscans.dat`) gives each
+scan's date, MST times, air mass and R. `fit_fts_batch.py --fluxatl SCAN --coadd
+data/profiles/fluxatl1981/coadd_scanSCAN.json` (`make_fluxatl_coadd.py`: one ERA5 profile, nodes
+over the scan's two hours). Flatness 0.55-1.0% at telluric pixels; O2 +0.03 in every scan.
+Scan 109 (501-577 nm) has water 1-4% deep, so, as for Wallace region 3, its water, velocity
+and `lsf_sigma_kms` are pinned at its 571 nm band's values. **Kurucz's 2005 files are not
+telluric-corrected**, whatever the sibling project's provenance says: at telluric pixels they
+equal the 1984 atlas to 0.007. There is no authors' correction to score against.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error
