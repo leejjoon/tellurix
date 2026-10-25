@@ -33,11 +33,22 @@ Rebuilding is per *window*, not per row -- the grid, the line selection, the
 opacity backend and the XLA compilation all belong to the window, and only the
 column scales change between epochs. That is the same loop inversion the IGRINS
 driver uses and it halves the work here.
+
+A co-add record (`physics["coadd"]`, the IAG atlases) is rebuilt as its
+`CoaddedTelluricModel`: one atmosphere per day, each node at its own zenith angle
+and moved by its own velocity, averaged by weight. That mean is what the atlas
+saw, so it is what this writes; there is no single profile or zenith angle, and
+the file carries the co-add's components and nodes in /coadd instead of /profile.
+
+    uv run python scripts/export_transmission_hdf5.py \\
+        --record data/corrected/solar/iag_nir/iag_nir.h5 \\
+        --output data/corrected/iag_nir_transmission.h5 --check
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import time
 from pathlib import Path
@@ -48,6 +59,47 @@ from pathlib import Path
 # whatever its per-window scan found, and a hardcoded six would silently drop
 # the rest. Iterating the record's own species is also faster than iterating all
 # 46 AER molecules, which is what a naive fix would do.
+
+
+def write_profile(group, profile, source: str) -> None:
+    import numpy as np
+
+    group.attrs["source"] = source
+    group.attrs["description"] = (
+        "the layered atmosphere, top to bottom. A fitted log_column_X scales vmr/X "
+        "uniformly over every layer; tau_X = cross_section(T, P, p_X) * air_column_cm2 * vmr.")
+    for name, values in (("pressure_layer_bar", profile.pressure_layer_bar),
+                         ("pressure_edges_bar", profile.pressure_edges_bar),
+                         ("temperature_k", profile.temperature_k),
+                         ("altitude_km", profile.altitude_km),
+                         ("air_column_cm2", profile.air_column_cm2)):
+        group.create_dataset(name, data=np.asarray(values))
+    vmr = group.create_group("vmr")
+    for name, values in profile.vmr.items():
+        vmr.create_dataset(name, data=np.asarray(values))
+
+
+def write_coadd(handle, coadd, physics) -> None:
+    import numpy as np
+
+    group = handle.create_group("coadd")
+    group.attrs["description"] = (
+        "the atmospheres the transmission averages: one component per observing day, each "
+        "with its own profile and nodes (weight, zenith angle, velocity). The weights are "
+        "normalized over all nodes. One set of column scales serves every component.")
+    group.attrs["source"] = str(physics["coadd"])
+    group.attrs["sha256"] = str(physics.get("coadd_sha256", ""))
+    total = sum(node.weight for _, nodes, _ in coadd for node in nodes)
+    for number, (component, nodes, label) in enumerate(coadd):
+        item = group.create_group(f"component_{number:02d}")
+        item.attrs["label"] = label
+        for name, values in (("weight", [node.weight / total for node in nodes]),
+                             ("zenith_angle_deg", [node.zenith_angle_deg for node in nodes]),
+                             ("velocity_kms", [node.velocity_kms for node in nodes])):
+            item.create_dataset(name, data=np.asarray(values, dtype="f8"))
+        item["velocity_kms"].attrs["description"] = (
+            "positive moves that node's transmission to the red, toward lower wavenumber")
+        write_profile(item.create_group("profile"), component, label)
 
 
 def main() -> None:
@@ -78,6 +130,7 @@ def main() -> None:
         file_sha256, constant_velocity_grid, load_atmosphere_csv, parameters_from_row,
         read_record, select_significant_lines, trim_wavenumber_grid,
     )
+    from tellurix.record import text
     from tellurix.quality import write_upper_bound_flags
 
     record = read_record(args.record)
@@ -85,6 +138,13 @@ def main() -> None:
     pages = record.pages
     species_all = [n[len("log_column_"):] for n in pages.dtype.names
                    if n.startswith("log_column_")]
+    # A solar batch (fit_fts_batch.py, keyed by file and window) builds each
+    # window's model from that window's scanned species alone, `free_species`, and
+    # stores 0 for the rest of the run's union. Arcturus and IGRINS keep every
+    # species in the model and pin the ones not free at their profile column, so
+    # there the union is right. Building the union for a solar window adds the
+    # absorbers its scan left out at full column: up to 1.6e-3 in the IAG windows.
+    windowed = tuple(record.key_fields) == ("file", "window")
 
     def verified(key: str, path: Path) -> Path:
         stored = inputs.get(f"{key}_sha256")
@@ -93,6 +153,23 @@ def main() -> None:
         return path
 
     profile = load_atmosphere_csv(verified("profile", Path(inputs["profile"])))
+    # A co-add's own profiles, one per day, held to the hashes the run recorded.
+    coadd = None
+    if physics.get("coadd"):
+        from tellurix import CoaddedTelluricModel
+        from tellurix_fts.window import load_coadd
+
+        coadd_path = Path(inputs.get("coadd") or root / physics["coadd"])
+        coadd, provenance = load_coadd(coadd_path, root)
+        if provenance["coadd_sha256"] != physics.get("coadd_sha256"):
+            raise SystemExit(f"{coadd_path} has changed since the run")
+        for item in json.loads(coadd_path.read_text())["components"]:
+            key = f"coadd_profile_{item.get('label', item['profile'])}"
+            if f"{key}_sha256" not in inputs:
+                raise SystemExit(f"the record holds no hash for the co-add profile {item['profile']}")
+            verified(key, root / item["profile"])
+    # The opacity's validity bounds cover every profile it serves, as the fit's did.
+    bounding = [profile, *(component for component, _, _ in coadd or ())]
     line_root = Path(inputs.get("aer_line_root")
                      or root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
     # A record without the key predates HITRAN's H2O shifts and used AER's.
@@ -126,10 +203,14 @@ def main() -> None:
         raise SystemExit("this record carries neither a resolving power nor an ILS width")
 
     per_row_zenith = "zenith_angle_deg" in pages.dtype.names
-    if not per_row_zenith and "zenith_angle_deg" not in config:
+    if coadd is not None:
+        # Each node carries its own angle; the row has none to report.
+        zenith_of = lambda row: float("nan")
+    elif not per_row_zenith and "zenith_angle_deg" not in config:
         raise SystemExit("this record carries no zenith angle, per row or in its config")
-    zenith_of = ((lambda row: float(row["zenith_angle_deg"])) if per_row_zenith
-                 else (lambda row: float(config["zenith_angle_deg"])))
+    else:
+        zenith_of = ((lambda row: float(row["zenith_angle_deg"])) if per_row_zenith
+                     else (lambda row: float(config["zenith_angle_deg"])))
 
     # Group the rows by window. Rounding to 1e-6 cm-1 is far below the 5 cm-1
     # grid margin and only exists so a float repr cannot split a shared window.
@@ -149,6 +230,15 @@ def main() -> None:
     grid_index = np.full(len(pages), -1, dtype="i4")
     grid_points = np.zeros(len(ordered), dtype="i4")
     worst_check = 0.0
+
+    # A solar batch names its arrays in its summary, not by the record's key.
+    summary_path = args.record.with_name(args.record.stem + "_summary.json")
+    arrays_by_window = {}
+    if args.check and summary_path.exists():
+        for entry in json.loads(summary_path.read_text())["results"]:
+            if entry.get("npz"):
+                arrays_by_window[(round(float(entry["v1"]), 6), round(float(entry["v2"]), 6))] = (
+                    args.record.parent / Path(entry["npz"]).name)
 
     started = time.time()
     for position, key in enumerate(ordered):
@@ -170,8 +260,15 @@ def main() -> None:
         else:
             # A record without the column used the run's setting everywhere.
             coupled = bool(physics.get("line_coupling", False))
+        if windowed:
+            chosen = {str(text(pages["free_species"][i])) for i in windows[key]}
+            if len(chosen) != 1:
+                raise SystemExit(f"rows of window {v1}-{v2} disagree on their species")
+            window_species = sorted(n for n in chosen.pop().split("+") if n)
+        else:
+            window_species = sorted(species_all)
         databases = {}
-        for name in sorted(species_all):
+        for name in window_species:
             stem = f"{AER_MOLECULE_IDS[name]:02d}_{name}"
             try:
                 databases[name] = AERLineDatabase(
@@ -193,9 +290,9 @@ def main() -> None:
 
         opacity = ExoJAXOpacityBackend.prepare(
             databases, grid, methods=physics["opacity_method"],
-            temperature_range_k=(float(np.min(profile.temperature_k)),
-                                 float(np.max(profile.temperature_k))),
-            maximum_pressure_bar=float(np.max(profile.pressure_layer_bar)),
+            temperature_range_k=(min(float(np.min(p.temperature_k)) for p in bounding),
+                                 max(float(np.max(p.temperature_k)) for p in bounding)),
+            maximum_pressure_bar=max(float(np.max(p.pressure_layer_bar)) for p in bounding),
             vectorize_layers=bool(physics["vectorize_layers"]),
             mixed_precision=bool(physics["mixed_precision"]),
             pressure_shift=bool(physics["pressure_shift"]),
@@ -211,13 +308,23 @@ def main() -> None:
             o2 = O2CollisionInducedContinuum(grid)
             if o2.terms:
                 continuum = o2 if continuum is None else ContinuumSum((continuum, o2))
-        model = TelluricModel(profile, grid, opacity, continuum=continuum,
-                              accuracy_mode=physics["accuracy_mode"],
-                              max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
-                              pixel_integration=physics["pixel_integration"])
-
         grids[position, :grid.size] = grid
         grid_points[position] = grid.size
+        if not databases:
+            # Nothing above the scan's cut: the fit had no atmosphere here.
+            for index in windows[key]:
+                transmission[index, :grid.size] = 1.0
+                grid_index[index] = position
+            continue
+
+        def single(atmosphere):
+            return TelluricModel(atmosphere, grid, opacity, continuum=continuum,
+                                 accuracy_mode=physics["accuracy_mode"],
+                                 max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
+                                 pixel_integration=physics["pixel_integration"])
+
+        model = (single(profile) if coadd is None else CoaddedTelluricModel(
+            [(single(component), nodes) for component, nodes, _ in coadd]))
 
         # One compile per window, one evaluation per epoch on it. Calling
         # `transmission` eagerly instead costs 35.9 s on the first call of a
@@ -248,11 +355,14 @@ def main() -> None:
             grid_index[index] = position
 
             if args.check:
-                cached = args.record.parent / ("_".join(record.key(index)) + ".npz")
+                cached = arrays_by_window.get(key) or (
+                    args.record.parent / ("_".join(record.key(index)) + ".npz"))
                 if cached.exists():
                     with np.load(cached) as stored:
                         pixels = np.asarray(stored["wavenumber_cm1"])
-                        reference = np.asarray(stored["transmission"])
+                        # The solar fit names it for the pixels it is on.
+                        reference = np.asarray(stored["transmission"] if "transmission" in stored.files
+                                               else stored["transmission_pixels"])
                         mask = np.asarray(stored["mask"]).astype(bool)
                     again = np.interp(pixels, grid, values)
                     drift = float(np.max(np.abs(again[mask] - reference[mask])))
@@ -279,7 +389,9 @@ def main() -> None:
             "zenith angle is in /zenith_angle_deg, one per row: 0 for the Arcturus atlas, so "
             "that is the vertical transmission and the fitted column scales in /parameters "
             "already absorbed any slant path, and the frame's own angle for an IGRINS night, "
-            "so that is the slant transmission along the line of sight.")
+            "so that is the slant transmission along the line of sight. A co-add (the IAG "
+            "atlases) has no angle of its own: its rows are the weighted mean over the "
+            "atmospheres and nodes described in /coadd, which replaces /profile.")
         handle.attrs["format"] = "tellurix transmission 1"
         handle.attrs["record"] = str(args.record)
         if "resolving_power" in config:
@@ -309,31 +421,30 @@ def main() -> None:
         handle.create_dataset("zenith_angle_deg", data=np.array(
             [zenith_of(pages[i]) for i in range(len(pages)) if keep[i]], dtype="f8"))
         handle["zenith_angle_deg"].attrs["description"] = (
-            "the angle each row's transmission was evaluated at; 0 means a vertical column")
+            "the angle each row's transmission was evaluated at; 0 means a vertical column, "
+            "NaN a co-add, whose nodes each carry their own (see /coadd)")
         handle.create_dataset("transmission", data=transmission[keep],
                               compression=args.compression, shuffle=True)
         handle["transmission"].attrs["units"] = "fraction"
         handle["transmission"].attrs["description"] = (
             "exp(-sum_layers tau) at the fitted column scales, vertical path, before any "
-            "instrument profile. Multiply this into your synthesis; do not divide by it.")
+            "instrument profile. Multiply this into your synthesis; do not divide by it."
+            if coadd is None else
+            "the co-add's weighted mean of exp(-sum_layers tau / cos z) over its nodes, each "
+            "node at its own zenith angle z and moved by its own velocity, at the fitted column "
+            "scales and before any instrument profile. The fitted velocity_kms in /parameters "
+            "is not applied, as in every row of every record. Multiply this into your "
+            "synthesis; do not divide by it.")
 
+        if coadd is not None:
+            write_coadd(handle, coadd, physics)
         # The atmosphere the scales multiply, so T can be regenerated elsewhere.
-        group = handle.create_group("profile")
-        group.attrs["source"] = str(inputs["profile"])
-        group.attrs["description"] = (
-            "the layered atmosphere, top to bottom. A fitted log_column_X scales vmr/X "
-            "uniformly over every layer; tau_X = cross_section(T, P, p_X) * air_column_cm2 * vmr.")
-        for name, values in (("pressure_layer_bar", profile.pressure_layer_bar),
-                             ("pressure_edges_bar", profile.pressure_edges_bar),
-                             ("temperature_k", profile.temperature_k),
-                             ("altitude_km", profile.altitude_km),
-                             ("air_column_cm2", profile.air_column_cm2)):
-            group.create_dataset(name, data=np.asarray(values))
-        vmr = group.create_group("vmr")
-        for name, values in profile.vmr.items():
-            vmr.create_dataset(name, data=np.asarray(values))
+        group = handle.create_group("profile") if coadd is None else None
+        if group is not None:
+            write_profile(group, profile, str(inputs["profile"]))
 
         write_upper_bound_flags(handle, pages[keep], species_all)
+
 
         handle.create_dataset("parameters", data=pages[keep], compression=args.compression)
         handle["parameters"].attrs["description"] = (
