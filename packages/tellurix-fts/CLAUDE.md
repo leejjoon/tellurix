@@ -230,7 +230,7 @@ IAG's water) drop water from ~50 windows. `--iag` defaults to 2.2 samples per re
 because Payne Zero's visible grid cannot go finer. Baker et al.'s telluric-free IAG atlas
 is the yardstick (`scripts/score_iag_against_baker.py`): on the 15 pilot windows the
 co-add takes telluric pixels from 1.94% to 1.55% and deep ones from 3.70% to 2.94%; the
-full run is 1.10% and 2.84% at the median. Not yet supported by
+full run is 1.10% and 2.84% at the median. About half of that residual's variance repeats in our fits of Baker's single spectra (`scripts/attribute_iag_residuals.py`, §4s): model error Baker's empirical per-line fit absorbs. Only a third of it is the core strengths a strength table can fix; the rest is in wings and weak lines. Not yet supported by
 a co-add: `rebuild_fts_window`, `export_transmission_hdf5` and the review exporter, which
 build a single model from the record.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the

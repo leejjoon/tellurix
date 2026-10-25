@@ -1705,6 +1705,55 @@ fitted in 29 windows. The deep-pixel gap to Baker is still the largest (2.8% aga
 and where Baker's empirical per-line fit has nothing to get wrong. Window 10900 aligns at
 the -1 km/s limit (only 65 reference pixels), so its score is not meaningful.
 
+**How much of the gap to Baker is our line list** (`scripts/attribute_iag_residuals.py` ->
+`docs/iag_residual_attribution.json`, 175 windows, 9400-17600 cm-1). Baker's Sun replaces ours,
+so observed / Baker is the transmission the atlas saw. The residual is
+ln(observed / Baker / our T) at the score's telluric pixels: 1.02% rms at the window median,
+on our pixels with Baker cubic-interpolated onto them, against the score's 1.10%.
+
+- **Per-feature strengths, the table's catalogue** (H2O and O2 clusters with S ≥ 3e-25),
+  measured as the table was:
+
+  | features | IAG depth error, median abs (rms) | beyond 5% |
+  |---|---|---|
+  | in the table, 1015 | 2.95% (4.3%) | 24% |
+  | left at AER, sources disagree, 55 | 5.3% (7.7%) | 53% |
+  | left at AER, one source only, 157 | 5.4% (8.1%) | 54% |
+  | left at AER, never measured, 153 | 6.2% (8.3%) | 57% |
+
+  The table halves the per-feature error. Where it left AER alone, the IAG ratio repeats
+  what Baker's single spectra measured: r 0.82, slope 1.02, rms 8.0% → 4.8% after
+  subtracting theirs (Kitt Peak: r 0.73). These are strength errors in the line list,
+  seen by another instrument, epoch and solar model. Where the table did act, IAG wants
+  about 17% more correction than Baker and Kitt Peak measured (slope 1.18, r 0.88).
+- **But feature cores are only 12% of telluric pixels**, and hold 31% of the residual sum
+  of squares (core rms 2.6%). Line wings (0.05-0.15 cm-1 from a feature) are 24% of the
+  pixels and 29%; pixels absorbed only by weaker lines are 64% and 40%. Correcting every
+  measured feature by the other datasets' ratio takes the median window from 1.02% to
+  0.94%. Even a perfect per-feature strength table built from IAG itself gets only to
+  0.82%, and a position term changes nothing.
+- **What repeats elsewhere.** Our fits of Baker's 53 single spectra (2015-16, flat Sun,
+  same table; `data/corrected/baker2020_step3_iter1`) give a median residual per window,
+  scaled to IAG's optical depth and aligned to its frame (-0.4 to -0.5 km/s). Fitted with
+  one scale per window, it explains 61% of the IAG residual variance in feature cores, 62%
+  in wings and 50% in weak-line pixels. The median window has r 0.81 and goes from 1.04% to
+  0.62%; the fitted scale is 0.95, the amplitude an optical-depth error predicts. As a
+  control, Wallace 2011 regions 1-2 at solar-clean pixels (Kitt Peak 1989, Payne Zero,
+  nothing of Baker's) explain 30% on the same pixels. Together with Baker they explain
+  58.5% against Baker's 54.4% alone, so what the independent spectrum explains is almost
+  all inside what Baker's explain: the shared part is our model, not Baker's Sun leaking
+  into both. Wallace's lower share is its own noise and solar residue: one spectrum, a dry
+  site, and scale 0.31.
+
+So about half the residual variance (40% of the rms) is model error that every spectrum
+fitted with this model shares. Baker et al.'s empirical per-line fit absorbs it; our
+strength table reaches only its core-strength part, about a third. The rest is in
+line wings and lines too weak to be catalogued: widths and shapes, and weak-line
+strengths, that no per-feature strength factor can reach. The other half is particular
+to the IAG atlas or the comparison: the unknown observing schedule, the per-day
+atmospheres, interpolating Baker's undersampled Sun, and Baker's own error (0.35% quoted).
+The window median left after removing the shared part is 0.62%.
+
 ## Open work (as of 2026-10-02)
 
 ### Done 2026-10-05: every solar product regenerated with the O2 collision-induced continuum
