@@ -1,0 +1,1594 @@
+{
+ "about": "Our fluxatl telluric correction against Kurucz's own, scan by scan, 2026-10-25: the flatness score (scripts/score_telluric_correction.py --authors kurucz2005 --relative-transmission; scan 109 with --telluric-below 0.99) of our corrected spectrum and of Kurucz's 2005 residual irradiance atlas (irradrelwl.dat, kurucz.harvard.edu/sun/irradiance2005; read_kurucz_irradiance), on the same pixels. Kurucz's is aligned per page where nothing absorbs (-0.10 to -0.13 km/s median) and its hand-interpolated straight stretches are left out for both, which favours it. 'native' scores ours as fitted; 'smoothed' gives ours Kurucz's Gaussian first (--smooth-fwhm-cm1 = Table 1's smoothed resolving power: 0.0714, 0.0545, 0.0426 cm-1 for scans 109, 111, 113), since his release was smoothed at three times each scan's dispersion. Scan 115 (1000-1300 nm) was never re-reduced: Kurucz's spectrum stops at 1001 nm.",
+ "scans": {
+  "109": {
+   "native": {
+    "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+    "settings": {
+     "stem": "fluxatl_109",
+     "authors": "kurucz2005",
+     "relative_transmission": true,
+     "telluric_below": 0.99
+    },
+    "runs": {
+     "fluxatl": "data/corrected/solar/fluxatl"
+    },
+    "summary": {
+     "telluric": {
+      "pages": 4,
+      "median_percent": {
+       "fluxatl": 0.4831611785942485,
+       "authors": 0.45261979182551654
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 2
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 2
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 0
+      }
+     }
+    },
+    "pages": {
+     "fluxatl_109_17440": {
+      "telluric": {
+       "pixels": 45,
+       "fluxatl": 0.3300140282215586,
+       "authors": 0.38697158594481207
+      },
+      "authors_velocity_kms": -0.0961869333587464
+     },
+     "fluxatl_109_17470": {
+      "telluric": {
+       "pixels": 33,
+       "fluxatl": 0.4399097337797595,
+       "authors": 0.32042328332754444
+      },
+      "authors_velocity_kms": -0.10008308401167443
+     },
+     "fluxatl_109_17530": {
+      "telluric": {
+       "pixels": 35,
+       "fluxatl": 0.5296300604232594,
+       "authors": 0.518267997706221
+      },
+      "authors_velocity_kms": -0.08768432929674753
+     },
+     "fluxatl_109_17560": {
+      "telluric": {
+       "pixels": 65,
+       "fluxatl": 0.5264126234087375,
+       "authors": 0.5646083790151764
+      },
+      "authors_velocity_kms": -0.09282466357060044
+     }
+    }
+   },
+   "smoothed": {
+    "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+    "settings": {
+     "stem": "fluxatl_109",
+     "authors": "kurucz2005",
+     "relative_transmission": true,
+     "smooth_fwhm_cm1": 0.071442708,
+     "telluric_below": 0.99
+    },
+    "runs": {
+     "fluxatl": "data/corrected/solar/fluxatl"
+    },
+    "summary": {
+     "telluric": {
+      "pages": 4,
+      "median_percent": {
+       "fluxatl": 0.4759367560999992,
+       "authors": 0.45261979182551654
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 2
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 2
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 0
+      }
+     }
+    },
+    "pages": {
+     "fluxatl_109_17440": {
+      "telluric": {
+       "pixels": 45,
+       "fluxatl": 0.32853592735813164,
+       "authors": 0.38697158594481207
+      },
+      "authors_velocity_kms": -0.0961869333587464
+     },
+     "fluxatl_109_17470": {
+      "telluric": {
+       "pixels": 33,
+       "fluxatl": 0.4246700492701107,
+       "authors": 0.32042328332754444
+      },
+      "authors_velocity_kms": -0.10008308401167443
+     },
+     "fluxatl_109_17530": {
+      "telluric": {
+       "pixels": 35,
+       "fluxatl": 0.5280724844423867,
+       "authors": 0.518267997706221
+      },
+      "authors_velocity_kms": -0.08768432929674753
+     },
+     "fluxatl_109_17560": {
+      "telluric": {
+       "pixels": 65,
+       "fluxatl": 0.5272034629298876,
+       "authors": 0.5646083790151764
+      },
+      "authors_velocity_kms": -0.09282466357060044
+     }
+    }
+   }
+  },
+  "111": {
+   "native": {
+    "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+    "settings": {
+     "stem": "fluxatl_111",
+     "authors": "kurucz2005",
+     "relative_transmission": true
+    },
+    "runs": {
+     "fluxatl": "data/corrected/solar/fluxatl"
+    },
+    "summary": {
+     "telluric": {
+      "pages": 32,
+      "median_percent": {
+       "fluxatl": 0.5343759342078854,
+       "authors": 0.5003260140214464
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 20
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 12
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 5
+      }
+     },
+     "deep": {
+      "pages": 11,
+      "median_percent": {
+       "fluxatl": 0.9418760218401082,
+       "authors": 1.122539217358801
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 7
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 4
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 6
+      }
+     }
+    },
+    "pages": {
+     "fluxatl_111_13540": {
+      "telluric": {
+       "pixels": 44,
+       "fluxatl": 0.4634336536051471,
+       "authors": 0.4648426577871959
+      },
+      "authors_velocity_kms": -0.11315852337905688
+     },
+     "fluxatl_111_13570": {
+      "telluric": {
+       "pixels": 41,
+       "fluxatl": 0.3656102109251463,
+       "authors": 0.47532591146395464
+      },
+      "authors_velocity_kms": -0.09156960503040845
+     },
+     "fluxatl_111_13660": {
+      "telluric": {
+       "pixels": 117,
+       "fluxatl": 0.7396775483704584,
+       "authors": 0.753779086815484
+      },
+      "authors_velocity_kms": -0.10381246541112979
+     },
+     "fluxatl_111_13690": {
+      "telluric": {
+       "pixels": 79,
+       "fluxatl": 0.6971756855498499,
+       "authors": 1.2269059595593856
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 2.0602515804605477,
+       "authors": 4.239999730319527
+      },
+      "authors_velocity_kms": -0.11835728337128143
+     },
+     "fluxatl_111_13720": {
+      "telluric": {
+       "pixels": 88,
+       "fluxatl": 0.908905689256487,
+       "authors": 1.0734628494635803
+      },
+      "deep": {
+       "pixels": 6,
+       "fluxatl": 0.5889942453216611,
+       "authors": 2.1898390605810834
+      },
+      "authors_velocity_kms": -0.1021584298446356
+     },
+     "fluxatl_111_13750": {
+      "telluric": {
+       "pixels": 134,
+       "fluxatl": 1.2338585110400484,
+       "authors": 1.0076664671326352
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 4.486921350644966,
+       "authors": 2.922763990338572
+      },
+      "authors_velocity_kms": -0.056740346069776716
+     },
+     "fluxatl_111_13780": {
+      "telluric": {
+       "pixels": 161,
+       "fluxatl": 0.7188634936931507,
+       "authors": 0.5296470498789059
+      },
+      "authors_velocity_kms": 0.005756690861352829
+     },
+     "fluxatl_111_13810": {
+      "telluric": {
+       "pixels": 151,
+       "fluxatl": 0.7674824093955263,
+       "authors": 0.7037604062456297
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 1.8159987644715436,
+       "authors": 1.122539217358801
+      },
+      "authors_velocity_kms": -0.09761032845301054
+     },
+     "fluxatl_111_13840": {
+      "telluric": {
+       "pixels": 35,
+       "fluxatl": 1.021426623659189,
+       "authors": 1.1788166712468298
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 0.9418760218401082,
+       "authors": 1.1204343107094408
+      },
+      "authors_velocity_kms": -0.09351108222535516
+     },
+     "fluxatl_111_13870": {
+      "telluric": {
+       "pixels": 176,
+       "fluxatl": 0.5056046921956402,
+       "authors": 0.5232956787887157
+      },
+      "deep": {
+       "pixels": 7,
+       "fluxatl": 0.6627351482466782,
+       "authors": 0.3701366399479226
+      },
+      "authors_velocity_kms": -0.122044774762578
+     },
+     "fluxatl_111_13930": {
+      "telluric": {
+       "pixels": 49,
+       "fluxatl": 0.4658779902730347,
+       "authors": 0.3377360955982788
+      },
+      "authors_velocity_kms": -0.07925555784038069
+     },
+     "fluxatl_111_14110": {
+      "telluric": {
+       "pixels": 48,
+       "fluxatl": 0.4593290527051242,
+       "authors": 0.5333563954429043
+      },
+      "authors_velocity_kms": -0.05551428837609573
+     },
+     "fluxatl_111_14170": {
+      "telluric": {
+       "pixels": 40,
+       "fluxatl": 0.48056016280396313,
+       "authors": 0.43376842849835423
+      },
+      "authors_velocity_kms": -0.14421581970939074
+     },
+     "fluxatl_111_14260": {
+      "telluric": {
+       "pixels": 41,
+       "fluxatl": 0.375646659251184,
+       "authors": 0.35328867127267943
+      },
+      "authors_velocity_kms": -0.10224801038664667
+     },
+     "fluxatl_111_14290": {
+      "telluric": {
+       "pixels": 34,
+       "fluxatl": 0.1985634328816108,
+       "authors": 0.14995110000899764
+      },
+      "authors_velocity_kms": -0.08546560213808065
+     },
+     "fluxatl_111_14350": {
+      "telluric": {
+       "pixels": 38,
+       "fluxatl": 0.7018746963394216,
+       "authors": 0.9273000162414647
+      },
+      "authors_velocity_kms": -0.09338269799913301
+     },
+     "fluxatl_111_14380": {
+      "telluric": {
+       "pixels": 54,
+       "fluxatl": 0.5422435605140425,
+       "authors": 0.3469243530095461
+      },
+      "authors_velocity_kms": -0.09820397623562568
+     },
+     "fluxatl_111_14410": {
+      "telluric": {
+       "pixels": 68,
+       "fluxatl": 0.3201382349683394,
+       "authors": 0.33763243980326785
+      },
+      "authors_velocity_kms": -0.11051613220421445
+     },
+     "fluxatl_111_14440": {
+      "telluric": {
+       "pixels": 66,
+       "fluxatl": 1.007873606483598,
+       "authors": 0.8739631600231385
+      },
+      "authors_velocity_kms": -0.10909174235594947
+     },
+     "fluxatl_111_14470": {
+      "telluric": {
+       "pixels": 185,
+       "fluxatl": 1.1151429834159738,
+       "authors": 0.8297914088511839
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 0.3467987859246875,
+       "authors": 0.2577995893476623
+      },
+      "authors_velocity_kms": -0.08500563052942509
+     },
+     "fluxatl_111_14500": {
+      "telluric": {
+       "pixels": 107,
+       "fluxatl": 0.3740336193382474,
+       "authors": 0.35794784898641474
+      },
+      "deep": {
+       "pixels": 11,
+       "fluxatl": 0.5997733240923669,
+       "authors": 0.8446937975635952
+      },
+      "authors_velocity_kms": -0.09939839408282611
+     },
+     "fluxatl_111_14530": {
+      "telluric": {
+       "pixels": 382,
+       "fluxatl": 1.7369864052798625,
+       "authors": 1.2250872668164472
+      },
+      "deep": {
+       "pixels": 20,
+       "fluxatl": 3.4224729813704733,
+       "authors": 1.6478992549077593
+      },
+      "authors_velocity_kms": -0.11853340281767273
+     },
+     "fluxatl_111_15340": {
+      "telluric": {
+       "pixels": 36,
+       "fluxatl": 0.29543692374670505,
+       "authors": 0.22854131588839444
+      },
+      "authors_velocity_kms": -0.12381137216418531
+     },
+     "fluxatl_111_15400": {
+      "telluric": {
+       "pixels": 47,
+       "fluxatl": 0.26311463711895117,
+       "authors": 0.20058733939066442
+      },
+      "authors_velocity_kms": -0.09981121659709202
+     },
+     "fluxatl_111_15880": {
+      "telluric": {
+       "pixels": 38,
+       "fluxatl": 0.5201934676304985,
+       "authors": 0.29494510196285434
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 0.7853151628442264,
+       "authors": 0.39810373370253094
+      },
+      "authors_velocity_kms": -0.10263922387388377
+     },
+     "fluxatl_111_15910": {
+      "telluric": {
+       "pixels": 102,
+       "fluxatl": 2.0731673259193575,
+       "authors": 1.9052718366588963
+      },
+      "deep": {
+       "pixels": 18,
+       "fluxatl": 2.575801008992773,
+       "authors": 2.0222591255759133
+      },
+      "authors_velocity_kms": -0.1065250801986448
+     },
+     "fluxatl_111_16720": {
+      "telluric": {
+       "pixels": 57,
+       "fluxatl": 0.27832015687914485,
+       "authors": 0.34997951627171603
+      },
+      "authors_velocity_kms": -0.08740512376640572
+     },
+     "fluxatl_111_16780": {
+      "telluric": {
+       "pixels": 32,
+       "fluxatl": 0.3101536017579005,
+       "authors": 0.26056340916912024
+      },
+      "authors_velocity_kms": -0.0980624783792315
+     },
+     "fluxatl_111_16810": {
+      "telluric": {
+       "pixels": 69,
+       "fluxatl": 0.7084426239359546,
+       "authors": 0.7057457790004196
+      },
+      "authors_velocity_kms": -0.1129471863825979
+     },
+     "fluxatl_111_16870": {
+      "telluric": {
+       "pixels": 58,
+       "fluxatl": 0.6001396520116989,
+       "authors": 0.3995132474606203
+      },
+      "authors_velocity_kms": -0.10028761439677646
+     },
+     "fluxatl_111_16930": {
+      "telluric": {
+       "pixels": 36,
+       "fluxatl": 1.6751730294950073,
+       "authors": 1.8296349342713962
+      },
+      "authors_velocity_kms": -0.09780420423859844
+     },
+     "fluxatl_111_16990": {
+      "telluric": {
+       "pixels": 45,
+       "fluxatl": 0.5265083079017283,
+       "authors": 0.477356349254177
+      },
+      "authors_velocity_kms": -0.04967616110745499
+     }
+    }
+   },
+   "smoothed": {
+    "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+    "settings": {
+     "stem": "fluxatl_111",
+     "authors": "kurucz2005",
+     "relative_transmission": true,
+     "smooth_fwhm_cm1": 0.05445684
+    },
+    "runs": {
+     "fluxatl": "data/corrected/solar/fluxatl"
+    },
+    "summary": {
+     "telluric": {
+      "pages": 32,
+      "median_percent": {
+       "fluxatl": 0.48947075949571317,
+       "authors": 0.5003260140214464
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 19
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 13
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 2
+      }
+     },
+     "deep": {
+      "pages": 11,
+      "median_percent": {
+       "fluxatl": 0.63791396691736,
+       "authors": 1.122539217358801
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 7
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 4
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 4
+      }
+     }
+    },
+    "pages": {
+     "fluxatl_111_13540": {
+      "telluric": {
+       "pixels": 44,
+       "fluxatl": 0.4432649831026792,
+       "authors": 0.4648426577871959
+      },
+      "authors_velocity_kms": -0.11315852337905688
+     },
+     "fluxatl_111_13570": {
+      "telluric": {
+       "pixels": 41,
+       "fluxatl": 0.34931001516337185,
+       "authors": 0.47532591146395464
+      },
+      "authors_velocity_kms": -0.09156960503040845
+     },
+     "fluxatl_111_13660": {
+      "telluric": {
+       "pixels": 117,
+       "fluxatl": 0.7581932192066064,
+       "authors": 0.753779086815484
+      },
+      "authors_velocity_kms": -0.10381246541112979
+     },
+     "fluxatl_111_13690": {
+      "telluric": {
+       "pixels": 79,
+       "fluxatl": 0.6348364355610985,
+       "authors": 1.2269059595593856
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 2.0472992820261378,
+       "authors": 4.239999730319527
+      },
+      "authors_velocity_kms": -0.11835728337128143
+     },
+     "fluxatl_111_13720": {
+      "telluric": {
+       "pixels": 88,
+       "fluxatl": 0.8826121665830953,
+       "authors": 1.0734628494635803
+      },
+      "deep": {
+       "pixels": 6,
+       "fluxatl": 0.23510242395588565,
+       "authors": 2.1898390605810834
+      },
+      "authors_velocity_kms": -0.1021584298446356
+     },
+     "fluxatl_111_13750": {
+      "telluric": {
+       "pixels": 134,
+       "fluxatl": 1.1439395520464262,
+       "authors": 1.0076664671326352
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 4.09210520087982,
+       "authors": 2.922763990338572
+      },
+      "authors_velocity_kms": -0.056740346069776716
+     },
+     "fluxatl_111_13780": {
+      "telluric": {
+       "pixels": 161,
+       "fluxatl": 0.7212557695968612,
+       "authors": 0.5296470498789059
+      },
+      "authors_velocity_kms": 0.005756690861352829
+     },
+     "fluxatl_111_13810": {
+      "telluric": {
+       "pixels": 151,
+       "fluxatl": 0.7442295527238189,
+       "authors": 0.7037604062456297
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 1.6411407419056,
+       "authors": 1.122539217358801
+      },
+      "authors_velocity_kms": -0.09761032845301054
+     },
+     "fluxatl_111_13840": {
+      "telluric": {
+       "pixels": 35,
+       "fluxatl": 0.9228629324870041,
+       "authors": 1.1788166712468298
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 0.4844876493028613,
+       "authors": 1.1204343107094408
+      },
+      "authors_velocity_kms": -0.09351108222535516
+     },
+     "fluxatl_111_13870": {
+      "telluric": {
+       "pixels": 176,
+       "fluxatl": 0.4919034111437569,
+       "authors": 0.5232956787887157
+      },
+      "deep": {
+       "pixels": 7,
+       "fluxatl": 0.4103640283055381,
+       "authors": 0.3701366399479226
+      },
+      "authors_velocity_kms": -0.122044774762578
+     },
+     "fluxatl_111_13930": {
+      "telluric": {
+       "pixels": 49,
+       "fluxatl": 0.47144881079226664,
+       "authors": 0.3377360955982788
+      },
+      "authors_velocity_kms": -0.07925555784038069
+     },
+     "fluxatl_111_14110": {
+      "telluric": {
+       "pixels": 48,
+       "fluxatl": 0.44337379979514535,
+       "authors": 0.5333563954429043
+      },
+      "authors_velocity_kms": -0.05551428837609573
+     },
+     "fluxatl_111_14170": {
+      "telluric": {
+       "pixels": 40,
+       "fluxatl": 0.46869676760430923,
+       "authors": 0.43376842849835423
+      },
+      "authors_velocity_kms": -0.14421581970939074
+     },
+     "fluxatl_111_14260": {
+      "telluric": {
+       "pixels": 41,
+       "fluxatl": 0.3669101247218951,
+       "authors": 0.35328867127267943
+      },
+      "authors_velocity_kms": -0.10224801038664667
+     },
+     "fluxatl_111_14290": {
+      "telluric": {
+       "pixels": 34,
+       "fluxatl": 0.19424087566078682,
+       "authors": 0.14995110000899764
+      },
+      "authors_velocity_kms": -0.08546560213808065
+     },
+     "fluxatl_111_14350": {
+      "telluric": {
+       "pixels": 38,
+       "fluxatl": 0.699647003749313,
+       "authors": 0.9273000162414647
+      },
+      "authors_velocity_kms": -0.09338269799913301
+     },
+     "fluxatl_111_14380": {
+      "telluric": {
+       "pixels": 54,
+       "fluxatl": 0.486749392948939,
+       "authors": 0.3469243530095461
+      },
+      "authors_velocity_kms": -0.09820397623562568
+     },
+     "fluxatl_111_14410": {
+      "telluric": {
+       "pixels": 68,
+       "fluxatl": 0.2724073361849761,
+       "authors": 0.33763243980326785
+      },
+      "authors_velocity_kms": -0.11051613220421445
+     },
+     "fluxatl_111_14440": {
+      "telluric": {
+       "pixels": 66,
+       "fluxatl": 0.9784735945254355,
+       "authors": 0.8739631600231385
+      },
+      "authors_velocity_kms": -0.10909174235594947
+     },
+     "fluxatl_111_14470": {
+      "telluric": {
+       "pixels": 185,
+       "fluxatl": 1.101649908416344,
+       "authors": 0.8297914088511839
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 0.275543993709927,
+       "authors": 0.2577995893476623
+      },
+      "authors_velocity_kms": -0.08500563052942509
+     },
+     "fluxatl_111_14500": {
+      "telluric": {
+       "pixels": 107,
+       "fluxatl": 0.34568659179528083,
+       "authors": 0.35794784898641474
+      },
+      "deep": {
+       "pixels": 11,
+       "fluxatl": 0.4792010065875093,
+       "authors": 0.8446937975635952
+      },
+      "authors_velocity_kms": -0.09939839408282611
+     },
+     "fluxatl_111_14530": {
+      "telluric": {
+       "pixels": 382,
+       "fluxatl": 1.679353098392158,
+       "authors": 1.2250872668164472
+      },
+      "deep": {
+       "pixels": 20,
+       "fluxatl": 2.8314422373610806,
+       "authors": 1.6478992549077593
+      },
+      "authors_velocity_kms": -0.11853340281767273
+     },
+     "fluxatl_111_15340": {
+      "telluric": {
+       "pixels": 36,
+       "fluxatl": 0.2708466113280248,
+       "authors": 0.22854131588839444
+      },
+      "authors_velocity_kms": -0.12381137216418531
+     },
+     "fluxatl_111_15400": {
+      "telluric": {
+       "pixels": 47,
+       "fluxatl": 0.25165520610006953,
+       "authors": 0.20058733939066442
+      },
+      "authors_velocity_kms": -0.09981121659709202
+     },
+     "fluxatl_111_15880": {
+      "telluric": {
+       "pixels": 38,
+       "fluxatl": 0.3965590142726166,
+       "authors": 0.29494510196285434
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 0.63791396691736,
+       "authors": 0.39810373370253094
+      },
+      "authors_velocity_kms": -0.10263922387388377
+     },
+     "fluxatl_111_15910": {
+      "telluric": {
+       "pixels": 102,
+       "fluxatl": 1.9929157620626394,
+       "authors": 1.9052718366588963
+      },
+      "deep": {
+       "pixels": 18,
+       "fluxatl": 2.1929436707978414,
+       "authors": 2.0222591255759133
+      },
+      "authors_velocity_kms": -0.1065250801986448
+     },
+     "fluxatl_111_16720": {
+      "telluric": {
+       "pixels": 57,
+       "fluxatl": 0.26699246024402795,
+       "authors": 0.34997951627171603
+      },
+      "authors_velocity_kms": -0.08740512376640572
+     },
+     "fluxatl_111_16780": {
+      "telluric": {
+       "pixels": 32,
+       "fluxatl": 0.30905845804117715,
+       "authors": 0.26056340916912024
+      },
+      "authors_velocity_kms": -0.0980624783792315
+     },
+     "fluxatl_111_16810": {
+      "telluric": {
+       "pixels": 69,
+       "fluxatl": 0.6724168326611768,
+       "authors": 0.7057457790004196
+      },
+      "authors_velocity_kms": -0.1129471863825979
+     },
+     "fluxatl_111_16870": {
+      "telluric": {
+       "pixels": 58,
+       "fluxatl": 0.5862413454543165,
+       "authors": 0.3995132474606203
+      },
+      "authors_velocity_kms": -0.10028761439677646
+     },
+     "fluxatl_111_16930": {
+      "telluric": {
+       "pixels": 36,
+       "fluxatl": 1.6859140378930242,
+       "authors": 1.8296349342713962
+      },
+      "authors_velocity_kms": -0.09780420423859844
+     },
+     "fluxatl_111_16990": {
+      "telluric": {
+       "pixels": 45,
+       "fluxatl": 0.4870381078476695,
+       "authors": 0.477356349254177
+      },
+      "authors_velocity_kms": -0.04967616110745499
+     }
+    }
+   }
+  },
+  "113": {
+   "native": {
+    "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+    "settings": {
+     "stem": "fluxatl_113",
+     "authors": "kurucz2005",
+     "relative_transmission": true
+    },
+    "runs": {
+     "fluxatl": "data/corrected/solar/fluxatl"
+    },
+    "summary": {
+     "telluric": {
+      "pages": 31,
+      "median_percent": {
+       "fluxatl": 0.7661144651390047,
+       "authors": 0.7405164838586493
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 16
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 15
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 8
+      }
+     },
+     "deep": {
+      "pages": 14,
+      "median_percent": {
+       "fluxatl": 1.3529953821687395,
+       "authors": 1.1234549919380012
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 9
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 5
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 8
+      }
+     }
+    },
+    "pages": {
+     "fluxatl_113_10120": {
+      "telluric": {
+       "pixels": 31,
+       "fluxatl": 1.7539121058668463,
+       "authors": 1.88382968104781
+      },
+      "authors_velocity_kms": -0.12999217046867959
+     },
+     "fluxatl_113_10150": {
+      "telluric": {
+       "pixels": 114,
+       "fluxatl": 0.9448992859820473,
+       "authors": 0.9172170465845789
+      },
+      "authors_velocity_kms": -0.15269694336306358
+     },
+     "fluxatl_113_10180": {
+      "telluric": {
+       "pixels": 96,
+       "fluxatl": 0.753793397134855,
+       "authors": 0.7405164838586493
+      },
+      "deep": {
+       "pixels": 20,
+       "fluxatl": 0.840313069189819,
+       "authors": 1.0398962794153839
+      },
+      "authors_velocity_kms": -0.11911584636228892
+     },
+     "fluxatl_113_10210": {
+      "telluric": {
+       "pixels": 131,
+       "fluxatl": 0.7981176502825174,
+       "authors": 0.8395644422290625
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 0.39654447398517634,
+       "authors": 0.27120653306790243
+      },
+      "authors_velocity_kms": -0.12477135304254947
+     },
+     "fluxatl_113_10270": {
+      "telluric": {
+       "pixels": 87,
+       "fluxatl": 1.0658454462869225,
+       "authors": 0.921323892022011
+      },
+      "authors_velocity_kms": -0.14910400355416203
+     },
+     "fluxatl_113_10300": {
+      "telluric": {
+       "pixels": 77,
+       "fluxatl": 0.702689983226438,
+       "authors": 0.5644247362619261
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 0.9015610981469966,
+       "authors": 0.6043400105989155
+      },
+      "authors_velocity_kms": -0.1734477612472623
+     },
+     "fluxatl_113_10330": {
+      "telluric": {
+       "pixels": 210,
+       "fluxatl": 1.0831183306662817,
+       "authors": 0.6991004285095412
+      },
+      "deep": {
+       "pixels": 29,
+       "fluxatl": 2.6309351242944383,
+       "authors": 1.36534804232861
+      },
+      "authors_velocity_kms": -0.13229967447437616
+     },
+     "fluxatl_113_10750": {
+      "telluric": {
+       "pixels": 176,
+       "fluxatl": 1.106501748252934,
+       "authors": 0.7483631584802455
+      },
+      "deep": {
+       "pixels": 22,
+       "fluxatl": 1.1184593218304855,
+       "authors": 0.9170595311037458
+      },
+      "authors_velocity_kms": -0.1090638789887291
+     },
+     "fluxatl_113_10930": {
+      "telluric": {
+       "pixels": 193,
+       "fluxatl": 0.9910568658768979,
+       "authors": 1.260203101926309
+      },
+      "deep": {
+       "pixels": 13,
+       "fluxatl": 1.1898843846251896,
+       "authors": 1.2495507124377165
+      },
+      "authors_velocity_kms": -0.19592995723721107
+     },
+     "fluxatl_113_10990": {
+      "telluric": {
+       "pixels": 157,
+       "fluxatl": 0.8440966849507711,
+       "authors": 0.7504125978344048
+      },
+      "deep": {
+       "pixels": 12,
+       "fluxatl": 1.5161063797122893,
+       "authors": 1.1761284849871396
+      },
+      "authors_velocity_kms": -0.14428359673155186
+     },
+     "fluxatl_113_11020": {
+      "telluric": {
+       "pixels": 113,
+       "fluxatl": 0.6236781577626994,
+       "authors": 0.642163395364751
+      },
+      "authors_velocity_kms": -0.20054892449569167
+     },
+     "fluxatl_113_11050": {
+      "telluric": {
+       "pixels": 68,
+       "fluxatl": 0.6121424502046344,
+       "authors": 0.40087283332355594
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 1.6242894823369787,
+       "authors": 0.47534648691527814
+      },
+      "authors_velocity_kms": -0.12380321433281338
+     },
+     "fluxatl_113_11110": {
+      "telluric": {
+       "pixels": 124,
+       "fluxatl": 0.9916279800822818,
+       "authors": 0.6143471933257919
+      },
+      "deep": {
+       "pixels": 13,
+       "fluxatl": 1.816357130230184,
+       "authors": 0.46282522007443716
+      },
+      "authors_velocity_kms": -0.17435028541174444
+     },
+     "fluxatl_113_11140": {
+      "telluric": {
+       "pixels": 151,
+       "fluxatl": 0.6033453601794492,
+       "authors": 0.7009089544418634
+      },
+      "deep": {
+       "pixels": 11,
+       "fluxatl": 1.0762697253579592,
+       "authors": 1.9114759077769938
+      },
+      "authors_velocity_kms": -0.12521959661776952
+     },
+     "fluxatl_113_11170": {
+      "telluric": {
+       "pixels": 63,
+       "fluxatl": 0.9928399102188845,
+       "authors": 0.6600354923585496
+      },
+      "authors_velocity_kms": -0.13070656832563066
+     },
+     "fluxatl_113_12040": {
+      "telluric": {
+       "pixels": 37,
+       "fluxatl": 4.203616822741531,
+       "authors": 4.334887238556352
+      },
+      "authors_velocity_kms": -0.16856058383334627
+     },
+     "fluxatl_113_12070": {
+      "telluric": {
+       "pixels": 80,
+       "fluxatl": 0.35294408646678216,
+       "authors": 0.9566211011954848
+      },
+      "authors_velocity_kms": -0.14550458269254765
+     },
+     "fluxatl_113_12100": {
+      "telluric": {
+       "pixels": 45,
+       "fluxatl": 0.13034352816943467,
+       "authors": 1.6902618769385522
+      },
+      "authors_velocity_kms": -0.12928829279390555
+     },
+     "fluxatl_113_12130": {
+      "telluric": {
+       "pixels": 87,
+       "fluxatl": 0.4067774139515341,
+       "authors": 1.0661055410840925
+      },
+      "authors_velocity_kms": -0.1283225299556247
+     },
+     "fluxatl_113_12190": {
+      "telluric": {
+       "pixels": 159,
+       "fluxatl": 0.739471153221482,
+       "authors": 0.6904264588898354
+      },
+      "authors_velocity_kms": -0.1279453009540665
+     },
+     "fluxatl_113_12220": {
+      "telluric": {
+       "pixels": 250,
+       "fluxatl": 0.6157797120695893,
+       "authors": 1.011309313240377
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 0.7050110525891276,
+       "authors": 3.236967112787804
+      },
+      "authors_velocity_kms": -0.09963281336578028
+     },
+     "fluxatl_113_12250": {
+      "telluric": {
+       "pixels": 216,
+       "fluxatl": 0.9868926060776337,
+       "authors": 0.9922050343665173
+      },
+      "deep": {
+       "pixels": 12,
+       "fluxatl": 2.196690373947077,
+       "authors": 2.4109555581681423
+      },
+      "authors_velocity_kms": -0.1370218491281786
+     },
+     "fluxatl_113_12280": {
+      "telluric": {
+       "pixels": 93,
+       "fluxatl": 0.39367992659232914,
+       "authors": 0.5285964647482204
+      },
+      "authors_velocity_kms": -0.1469760933421969
+     },
+     "fluxatl_113_12310": {
+      "telluric": {
+       "pixels": 54,
+       "fluxatl": 0.7661144651390047,
+       "authors": 0.5455724657271005
+      },
+      "authors_velocity_kms": -0.12878686069201817
+     },
+     "fluxatl_113_12460": {
+      "telluric": {
+       "pixels": 80,
+       "fluxatl": 1.2205707307908933,
+       "authors": 1.306960171535239
+      },
+      "authors_velocity_kms": -0.12300023420760728
+     },
+     "fluxatl_113_12550": {
+      "telluric": {
+       "pixels": 49,
+       "fluxatl": 0.2984139684941436,
+       "authors": 0.32986472871638595
+      },
+      "authors_velocity_kms": -0.13969915732745639
+     },
+     "fluxatl_113_12610": {
+      "telluric": {
+       "pixels": 30,
+       "fluxatl": 0.4154110054516877,
+       "authors": 0.6668075476576739
+      },
+      "authors_velocity_kms": -0.13441335917077332
+     },
+     "fluxatl_113_12640": {
+      "telluric": {
+       "pixels": 34,
+       "fluxatl": 0.7081907242487465,
+       "authors": 0.5954803242619539
+      },
+      "authors_velocity_kms": -0.16502552478719681
+     },
+     "fluxatl_113_13030": {
+      "telluric": {
+       "pixels": 41,
+       "fluxatl": 0.5301235559137708,
+       "authors": 0.4761461646908688
+      },
+      "authors_velocity_kms": -0.1213313895041356
+     },
+     "fluxatl_113_13060": {
+      "telluric": {
+       "pixels": 151,
+       "fluxatl": 0.8496661444005444,
+       "authors": 0.4692362269628011
+      },
+      "authors_velocity_kms": -0.1135456283426203
+     },
+     "fluxatl_113_13120": {
+      "telluric": {
+       "pixels": 63,
+       "fluxatl": 2.5666323323026563,
+       "authors": 0.8357380294804968
+      },
+      "deep": {
+       "pixels": 15,
+       "fluxatl": 2.774561518738665,
+       "authors": 1.183633847246132
+      },
+      "authors_velocity_kms": -0.06845466146742879
+     },
+     "fluxatl_113_13150": {
+      "deep": {
+       "pixels": 10,
+       "fluxatl": 3.78254522200349,
+       "authors": 1.070781498888863
+      },
+      "authors_velocity_kms": -0.12496210967168737
+     }
+    }
+   },
+   "smoothed": {
+    "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+    "settings": {
+     "stem": "fluxatl_113",
+     "authors": "kurucz2005",
+     "relative_transmission": true,
+     "smooth_fwhm_cm1": 0.042646923
+    },
+    "runs": {
+     "fluxatl": "data/corrected/solar/fluxatl"
+    },
+    "summary": {
+     "telluric": {
+      "pages": 31,
+      "median_percent": {
+       "fluxatl": 0.7319990220396393,
+       "authors": 0.7405164838586493
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 15
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 16
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 5
+      }
+     },
+     "deep": {
+      "pages": 14,
+      "median_percent": {
+       "fluxatl": 1.300322622276139,
+       "authors": 1.1234549919380012
+      },
+      "pages_flatter_than_fluxatl": {
+       "authors": 9
+      },
+      "pages_at_or_below_authors": {
+       "fluxatl": 5
+      },
+      "pages_worse_than_authors_by_0p2": {
+       "fluxatl": 6
+      }
+     }
+    },
+    "pages": {
+     "fluxatl_113_10120": {
+      "telluric": {
+       "pixels": 31,
+       "fluxatl": 1.744037458503278,
+       "authors": 1.88382968104781
+      },
+      "authors_velocity_kms": -0.12999217046867959
+     },
+     "fluxatl_113_10150": {
+      "telluric": {
+       "pixels": 114,
+       "fluxatl": 0.9344771912450287,
+       "authors": 0.9172170465845789
+      },
+      "authors_velocity_kms": -0.15269694336306358
+     },
+     "fluxatl_113_10180": {
+      "telluric": {
+       "pixels": 96,
+       "fluxatl": 0.7164494790210263,
+       "authors": 0.7405164838586493
+      },
+      "deep": {
+       "pixels": 20,
+       "fluxatl": 0.7433566605097841,
+       "authors": 1.0398962794153839
+      },
+      "authors_velocity_kms": -0.11911584636228892
+     },
+     "fluxatl_113_10210": {
+      "telluric": {
+       "pixels": 131,
+       "fluxatl": 0.7770997325301381,
+       "authors": 0.8395644422290625
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 0.34627822150017734,
+       "authors": 0.27120653306790243
+      },
+      "authors_velocity_kms": -0.12477135304254947
+     },
+     "fluxatl_113_10270": {
+      "telluric": {
+       "pixels": 87,
+       "fluxatl": 1.0405498346094786,
+       "authors": 0.921323892022011
+      },
+      "authors_velocity_kms": -0.14910400355416203
+     },
+     "fluxatl_113_10300": {
+      "telluric": {
+       "pixels": 77,
+       "fluxatl": 0.7027065757616643,
+       "authors": 0.5644247362619261
+      },
+      "deep": {
+       "pixels": 5,
+       "fluxatl": 0.9910780902627113,
+       "authors": 0.6043400105989155
+      },
+      "authors_velocity_kms": -0.1734477612472623
+     },
+     "fluxatl_113_10330": {
+      "telluric": {
+       "pixels": 210,
+       "fluxatl": 0.7319990220396393,
+       "authors": 0.6991004285095412
+      },
+      "deep": {
+       "pixels": 29,
+       "fluxatl": 1.5088093780243974,
+       "authors": 1.36534804232861
+      },
+      "authors_velocity_kms": -0.13229967447437616
+     },
+     "fluxatl_113_10750": {
+      "telluric": {
+       "pixels": 176,
+       "fluxatl": 1.0710906524254493,
+       "authors": 0.7483631584802455
+      },
+      "deep": {
+       "pixels": 22,
+       "fluxatl": 1.0697463551151123,
+       "authors": 0.9170595311037458
+      },
+      "authors_velocity_kms": -0.1090638789887291
+     },
+     "fluxatl_113_10930": {
+      "telluric": {
+       "pixels": 193,
+       "fluxatl": 0.9646185148069945,
+       "authors": 1.260203101926309
+      },
+      "deep": {
+       "pixels": 13,
+       "fluxatl": 1.091835866527881,
+       "authors": 1.2495507124377165
+      },
+      "authors_velocity_kms": -0.19592995723721107
+     },
+     "fluxatl_113_10990": {
+      "telluric": {
+       "pixels": 157,
+       "fluxatl": 0.842749180107282,
+       "authors": 0.7504125978344048
+      },
+      "deep": {
+       "pixels": 12,
+       "fluxatl": 1.5480831556049992,
+       "authors": 1.1761284849871396
+      },
+      "authors_velocity_kms": -0.14428359673155186
+     },
+     "fluxatl_113_11020": {
+      "telluric": {
+       "pixels": 113,
+       "fluxatl": 0.6194555405666584,
+       "authors": 0.642163395364751
+      },
+      "authors_velocity_kms": -0.20054892449569167
+     },
+     "fluxatl_113_11050": {
+      "telluric": {
+       "pixels": 68,
+       "fluxatl": 0.5689940106557263,
+       "authors": 0.40087283332355594
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 1.5134938784402938,
+       "authors": 0.47534648691527814
+      },
+      "authors_velocity_kms": -0.12380321433281338
+     },
+     "fluxatl_113_11110": {
+      "telluric": {
+       "pixels": 124,
+       "fluxatl": 0.9984389557746803,
+       "authors": 0.6143471933257919
+      },
+      "deep": {
+       "pixels": 13,
+       "fluxatl": 1.82817340946584,
+       "authors": 0.46282522007443716
+      },
+      "authors_velocity_kms": -0.17435028541174444
+     },
+     "fluxatl_113_11140": {
+      "telluric": {
+       "pixels": 151,
+       "fluxatl": 0.5998204358351694,
+       "authors": 0.7009089544418634
+      },
+      "deep": {
+       "pixels": 11,
+       "fluxatl": 1.0194174673394727,
+       "authors": 1.9114759077769938
+      },
+      "authors_velocity_kms": -0.12521959661776952
+     },
+     "fluxatl_113_11170": {
+      "telluric": {
+       "pixels": 63,
+       "fluxatl": 1.1148338700598932,
+       "authors": 0.6600354923585496
+      },
+      "authors_velocity_kms": -0.13070656832563066
+     },
+     "fluxatl_113_12040": {
+      "telluric": {
+       "pixels": 37,
+       "fluxatl": 4.144378625977891,
+       "authors": 4.334887238556352
+      },
+      "authors_velocity_kms": -0.16856058383334627
+     },
+     "fluxatl_113_12070": {
+      "telluric": {
+       "pixels": 80,
+       "fluxatl": 0.3493660433423104,
+       "authors": 0.9566211011954848
+      },
+      "authors_velocity_kms": -0.14550458269254765
+     },
+     "fluxatl_113_12100": {
+      "telluric": {
+       "pixels": 45,
+       "fluxatl": 0.12975400510506108,
+       "authors": 1.6902618769385522
+      },
+      "authors_velocity_kms": -0.12928829279390555
+     },
+     "fluxatl_113_12130": {
+      "telluric": {
+       "pixels": 87,
+       "fluxatl": 0.3880761630732697,
+       "authors": 1.0661055410840925
+      },
+      "authors_velocity_kms": -0.1283225299556247
+     },
+     "fluxatl_113_12190": {
+      "telluric": {
+       "pixels": 159,
+       "fluxatl": 0.7417005845586195,
+       "authors": 0.6904264588898354
+      },
+      "authors_velocity_kms": -0.1279453009540665
+     },
+     "fluxatl_113_12220": {
+      "telluric": {
+       "pixels": 250,
+       "fluxatl": 0.6090223200134827,
+       "authors": 1.011309313240377
+      },
+      "deep": {
+       "pixels": 8,
+       "fluxatl": 0.5482433413858281,
+       "authors": 3.236967112787804
+      },
+      "authors_velocity_kms": -0.09963281336578028
+     },
+     "fluxatl_113_12250": {
+      "telluric": {
+       "pixels": 216,
+       "fluxatl": 0.9745268134685338,
+       "authors": 0.9922050343665173
+      },
+      "deep": {
+       "pixels": 12,
+       "fluxatl": 2.0716786331219046,
+       "authors": 2.4109555581681423
+      },
+      "authors_velocity_kms": -0.1370218491281786
+     },
+     "fluxatl_113_12280": {
+      "telluric": {
+       "pixels": 93,
+       "fluxatl": 0.35863177097791316,
+       "authors": 0.5285964647482204
+      },
+      "authors_velocity_kms": -0.1469760933421969
+     },
+     "fluxatl_113_12310": {
+      "telluric": {
+       "pixels": 54,
+       "fluxatl": 0.71002150014562,
+       "authors": 0.5455724657271005
+      },
+      "authors_velocity_kms": -0.12878686069201817
+     },
+     "fluxatl_113_12460": {
+      "telluric": {
+       "pixels": 80,
+       "fluxatl": 1.1892134558818432,
+       "authors": 1.306960171535239
+      },
+      "authors_velocity_kms": -0.12300023420760728
+     },
+     "fluxatl_113_12550": {
+      "telluric": {
+       "pixels": 49,
+       "fluxatl": 0.2927633031906164,
+       "authors": 0.32986472871638595
+      },
+      "authors_velocity_kms": -0.13969915732745639
+     },
+     "fluxatl_113_12610": {
+      "telluric": {
+       "pixels": 30,
+       "fluxatl": 0.37202810586951324,
+       "authors": 0.6668075476576739
+      },
+      "authors_velocity_kms": -0.13441335917077332
+     },
+     "fluxatl_113_12640": {
+      "telluric": {
+       "pixels": 34,
+       "fluxatl": 0.6748925713697544,
+       "authors": 0.5954803242619539
+      },
+      "authors_velocity_kms": -0.16502552478719681
+     },
+     "fluxatl_113_13030": {
+      "telluric": {
+       "pixels": 41,
+       "fluxatl": 0.5297361367383796,
+       "authors": 0.4761461646908688
+      },
+      "authors_velocity_kms": -0.1213313895041356
+     },
+     "fluxatl_113_13060": {
+      "telluric": {
+       "pixels": 151,
+       "fluxatl": 0.8500849322998596,
+       "authors": 0.4692362269628011
+      },
+      "authors_velocity_kms": -0.1135456283426203
+     },
+     "fluxatl_113_13120": {
+      "telluric": {
+       "pixels": 63,
+       "fluxatl": 2.5856012959679036,
+       "authors": 0.8357380294804968
+      },
+      "deep": {
+       "pixels": 15,
+       "fluxatl": 2.870781663169753,
+       "authors": 1.183633847246132
+      },
+      "authors_velocity_kms": -0.06845466146742879
+     },
+     "fluxatl_113_13150": {
+      "deep": {
+       "pixels": 10,
+       "fluxatl": 3.6023479627515944,
+       "authors": 1.070781498888863
+      },
+      "authors_velocity_kms": -0.12496210967168737
+     }
+    }
+   }
+  }
+ }
+}

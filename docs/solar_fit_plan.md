@@ -1885,12 +1885,34 @@ and `lsf_sigma_kms` pinned at the band's medians (0.31, 0.64, 0.54): residual 2.
 flatness 0.54 -> 0.50% on the windows the score can judge; the free fit is kept in
 `fluxatl_109_free/`.
 
-**There is no authors' correction.** Kurucz's 2005 files (`kurucz2005/`), described in the
-sibling project's provenance as the scans with the tellurics divided out, still carry them:
-at our telluric pixels both the per-scan `flux113a.2005` and `fluxspliced.2005` equal the
-1984 atlas to 0.007, and only their headers mention a telluric spectrum ("shift of telluric
-spectrum -0.649 km/s"). They do remove the gravitational redshift (-0.636 km/s), which is
-the -0.5 km/s the two align at where nothing absorbs.
+**The authors' correction is Kurucz's 2005 residual irradiance atlas, and ours matches it.**
+Kurucz re-reduced these scans (Kurucz 2006, astro-ph/0605029): a fitted telluric spectrum,
+line parameters adjusted by hand, divided out, and what failed replaced by straight lines.
+That spectrum is `irradrelwl.dat` in <http://kurucz.harvard.edu/sun/irradiance2005/> (299-1001
+nm by 0.001 nm, vacuum, gravitational redshift kept; `read_kurucz_irradiance`, which flags
+every run of 8 or more samples that is linear to the 4-decimal rounding, 18% of the file). The
+neighbouring `fluxatlas2005/` directory, which is what was first downloaded, is the
+re-reduced scans *before* that division: its `flux1*.2005` and `fluxspliced.2005` equal the
+1984 atlas to 0.003-0.015 rms through the A band, with the gravitational redshift removed
+(the -0.5 km/s the two align at), and its headers record the telluric shift that was later
+applied. `score_telluric_correction.py --authors kurucz2005` aligns his spectrum to ours per
+page where nothing absorbs (-0.10 km/s in scans 109-111, -0.13 in 113) and scores both on the
+same pixels, his straight stretches left out for both (`docs/fluxatl_kurucz_score.json`).
+His release was Gaussian smoothed at three times each scan's dispersion, which flattens it by
+construction, so ours is scored also with the same Gaussian (`--smooth-fwhm-cm1`, Table 1's
+smoothed resolving power):
+
+| scan | bin | pages | ours | ours, smoothed | Kurucz | pages ours (smoothed) flatter |
+|---|---|---|---|---|---|---|
+| 111 | telluric | 32 | 0.534% | 0.489% | 0.500% | 13 |
+| 111 | deep | 11 | 0.942% | 0.638% | 1.123% | 4 |
+| 113 | telluric | 31 | 0.766% | 0.732% | 0.741% | 16 |
+| 113 | deep | 14 | 1.353% | 1.300% | 1.123% | 5 |
+| 109 | T < 0.99 | 4 | 0.483% | 0.476% | 0.453% | 2 |
+
+At one resolution the two are level at telluric pixels; at deep ones he is flatter on most
+pages, by a hand-tuned correction that also left out what it could not fix. Scan 115
+(1000-1300 nm) was never re-reduced, so there it has no counterpart.
 
 Products: `data/corrected/fluxatl_{scan}_corrected.h5` (`export_atlas_corrected.py`, a row
 per window) and `fluxatl_{scan}_transmission.h5`.
@@ -2228,7 +2250,7 @@ VIS, 2e-9 for IAG NIR. Regenerated and promoted: the 1983 pair and niratl (the o
 - **Per-line intensity corrections: done and promoted 2026-10-24** (above, and
   `docs/line_intensity_corrections.md`, Plan steps 1-3).
 - **Atlases not started**: `spot1atl` (waits on the solar model). `fluxatl` was fitted
-  2026-10-25 (§4u) and both IAG settings 2026-10-24/25 (§4s, §4t). `telluric_mid_ir` is not a target (§"What the atlases' own
+  2026-10-25 and scored against Kurucz's own correction (§4u) and both IAG settings 2026-10-24/25 (§4s, §4t). `telluric_mid_ir` is not a target (§"What the atlases' own
   documentation says" in `solar_atlases.md`).
 - **A telluric error model for joint stellar + telluric fits (future work, 2026-10-25).**
   The sibling project wants solar log gf values from fits that model the star and the

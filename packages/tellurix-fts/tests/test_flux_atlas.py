@@ -3,7 +3,7 @@ import gzip
 import numpy as np
 import pytest
 
-from tellurix_fts.flux_atlas import read_flux_atlas, read_wallace2011_correction
+from tellurix_fts.flux_atlas import read_flux_atlas, read_kurucz_irradiance, read_wallace2011_correction
 
 
 def _wallace_lines(nu):
@@ -117,3 +117,21 @@ def test_fluxatl_scans_put_the_sinc_at_the_centre():
     assert scan["range_cm1"] == pytest.approx((10000.0, 1.0e7 / 751.0))
     assert scan["fwhm_cm1"] == pytest.approx(0.5 * sum(scan["range_cm1"]) / 522990)
     assert scan["mean_airmass"] == pytest.approx(1.305)
+
+
+def test_kurucz_irradiance_flags_the_straight_stretches(tmp_path):
+    wavelength = 760.0 + 0.001 * np.arange(60)
+    rng = np.random.default_rng(1)
+    flux = 0.9 + 0.01 * rng.standard_normal(60)
+    flux[20:35] = np.linspace(0.2, 0.8, 15)  # a core replaced by hand
+    header = "KURUCZ RESIDUAL IRRADIANCE ATLAS 2005\n760.000 by 0.001\nvacuum\n \n \n"
+    path = tmp_path / "irradrelwl.dat"
+    path.write_text(header + "".join(f"{w:8.3f} {f:7.4f}\n" for w, f in zip(wavelength, flux)))
+
+    nu, values, straight = read_kurucz_irradiance(path)
+
+    assert np.all(np.diff(nu) > 0)
+    assert nu[-1] == pytest.approx(1.0e7 / 760.0)
+    assert values[-1] == pytest.approx(round(flux[0], 4))
+    flagged = np.nonzero(straight[::-1])[0]
+    assert flagged.min() == 20 and flagged.max() == 34

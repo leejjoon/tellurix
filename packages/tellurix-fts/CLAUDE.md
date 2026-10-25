@@ -264,9 +264,13 @@ scan's date, MST times, air mass and R. `fit_fts_batch.py --fluxatl SCAN --coadd
 data/profiles/fluxatl1981/coadd_scanSCAN.json` (`make_fluxatl_coadd.py`: one ERA5 profile, nodes
 over the scan's two hours). Flatness 0.55-1.0% at telluric pixels; O2 +0.03 in every scan.
 Scan 109 (501-577 nm) has water 1-4% deep, so, as for Wallace region 3, its water, velocity
-and `lsf_sigma_kms` are pinned at its 571 nm band's values. **Kurucz's 2005 files are not
-telluric-corrected**, whatever the sibling project's provenance says: at telluric pixels they
-equal the 1984 atlas to 0.007. There is no authors' correction to score against.
+and `lsf_sigma_kms` are pinned at its 571 nm band's values. **The authors' correction is
+Kurucz's `irradrelwl.dat`** (from `sun/irradiance2005`, `read_kurucz_irradiance`, which flags his
+hand-drawn straight stretches), not the `fluxatlas2005` files beside `fluxscans.dat`: those are
+the scans before the division and still hold every telluric line. `score_telluric_correction.py
+--authors kurucz2005` aligns it per page (about -0.1 km/s); it was released smoothed at three
+times each scan's dispersion, so compare with `--smooth-fwhm-cm1` too. At one resolution ours
+and his are level at telluric pixels (`docs/fluxatl_kurucz_score.json`).
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

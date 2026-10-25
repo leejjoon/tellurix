@@ -39,6 +39,17 @@ and ``--authors none`` on the same runs scores the rest:
 
     uv run python scripts/score_telluric_correction.py --stem wallace2011_reg1 \\
         --authors wallace2011 --wallace2011-region 1 w100=data/corrected/solar/wallace2011
+
+fluxatl's authors' correction is Kurucz's 2005 residual irradiance (``--authors
+kurucz2005``, `read_kurucz_irradiance`), on its own 0.001 nm grid and Gaussian smoothed at
+three times each scan's dispersion before release, so its noise is lower than ours by
+construction. Each page aligns it to the first run's corrected spectrum where nothing
+absorbs (about -0.1 km/s throughout), and leaves out what it replaced by straight lines.
+``--smooth-fwhm-cm1`` gives every run the same Gaussian first (scan 113's is 0.0426 cm-1,
+Table 1's "smoothed resolving power"), so the two are compared at one resolution:
+
+    uv run python scripts/score_telluric_correction.py --stem fluxatl_113 --authors kurucz2005 \\
+        --relative-transmission --smooth-fwhm-cm1 0.042646923 fluxatl=data/corrected/solar/fluxatl
 """
 from __future__ import annotations
 
@@ -51,15 +62,50 @@ import numpy as np
 from tellurix_fts.flatness import BINS, EDGE_PIXELS, MIN_TRANSMISSION, corrected, photatl_solar, scatter
 
 ATLASES = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso")
+C_KMS = 299792.458
+VELOCITIES_KMS = np.arange(-1.0, 1.0001, 0.01)
+
+
+def gaussian_smoothed(nu, values, fwhm_cm1: float):
+    """A Gaussian of ``fwhm_cm1`` over an even grid, normalized over the finite pixels so a blanked core stays blank."""
+
+    sigma = fwhm_cm1 / (2.0 * np.sqrt(2.0 * np.log(2.0))) / np.median(np.diff(nu))
+    offsets = np.arange(-int(4.0 * sigma) - 1, int(4.0 * sigma) + 2)
+    kernel = np.exp(-0.5 * (offsets / sigma) ** 2)
+    finite = np.isfinite(values)
+    with np.errstate(invalid="ignore"):
+        out = (np.convolve(np.where(finite, values, 0.0), kernel, mode="same")
+               / np.convolve(finite.astype(float), kernel, mode="same"))
+    out[~finite] = np.nan
+    return out
+
+
+def kurucz_velocity(nu, flat, transmission, usable, kurucz) -> float:
+    """The shift that best lays Kurucz's spectrum on ours where nothing absorbs, solar lines and all."""
+
+    where = usable & np.isfinite(flat) & (transmission / np.percentile(transmission[usable], 99) > 0.995)
+
+    def cost(velocity):
+        ratio = flat[where] / np.interp(nu[where] * (1.0 + velocity / C_KMS), kurucz[0], kurucz[1])
+        return float(np.nanstd(ratio / np.nanmedian(ratio)))
+
+    costs = np.array([cost(v) for v in VELOCITIES_KMS])
+    best = int(np.argmin(costs))
+    if 0 < best < len(costs) - 1:
+        a, b, c = costs[best - 1: best + 2]
+        if a - 2.0 * b + c > 0:
+            return float(VELOCITIES_KMS[best] + 0.005 * (a - c) / (a - 2.0 * b + c))
+    return float(VELOCITIES_KMS[best])
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("runs", nargs="+", metavar="NAME=DIRECTORY")
     parser.add_argument("--stem", default="ph*", help="window files are <stem>_<v1>.npz (default: niratl pages)")
-    parser.add_argument("--authors", choices=("niratl", "photatl", "wallace2011", "none"), default="niratl")
+    parser.add_argument("--authors", choices=("niratl", "photatl", "wallace2011", "kurucz2005", "none"), default="niratl")
     parser.add_argument("--wallace2011-region", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--wallace2011", type=Path, default=ATLASES / "wallace2011_flux")
+    parser.add_argument("--kurucz2005", type=Path, default=ATLASES.parent / "kurucz2005" / "irradrelwl.dat")
     parser.add_argument("--niratl", type=Path, default=ATLASES / "niratl")
     parser.add_argument("--photatl", type=Path, default=ATLASES / "photatl")
     parser.add_argument("--relative-transmission", action="store_true",
@@ -69,11 +115,13 @@ def main() -> None:
     parser.add_argument("--telluric-below", type=float, default=BINS["telluric"],
                         help="the telluric bin's transmission ceiling; Wallace 2011 region 3's "
                              "water lines are 1-4%% deep, so few of its pixels reach 0.97")
+    parser.add_argument("--smooth-fwhm-cm1", type=float, default=None,
+                        help="smooth every run by this Gaussian FWHM before scoring (the authors' resolution)")
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
     bins = {**BINS, "telluric": args.telluric_below}
 
-    from tellurix_fts.flux_atlas import WALLACE2011_REGIONS, read_wallace2011_correction
+    from tellurix_fts.flux_atlas import WALLACE2011_REGIONS, read_kurucz_irradiance, read_wallace2011_correction
     from tellurix_fts.nso import read_niratl_page, read_photatl_page
 
     runs = dict(entry.split("=", 1) for entry in args.runs)
@@ -82,6 +130,7 @@ def main() -> None:
                if args.authors == "photatl" else [])
     wallace = (read_wallace2011_correction(args.wallace2011 / WALLACE2011_REGIONS[args.wallace2011_region]["file"])
                if args.authors == "wallace2011" else None)
+    kurucz = read_kurucz_irradiance(args.kurucz2005) if args.authors == "kurucz2005" else None
     pages = {}
     for path in sorted(Path(runs[first]).glob(f"{args.stem}_*.npz")):
         page = path.stem if args.authors != "niratl" else path.stem.split("_")[0]
@@ -91,6 +140,10 @@ def main() -> None:
             continue
         nu, flat, solar, transmission, mask = corrected(path)
         series = {name: np.interp(nu, *corrected(found[0])[:2]) for name, found in others.items()}
+        if args.smooth_fwhm_cm1:
+            # The cores the products blank must not leak into their neighbours.
+            series = {name: gaussian_smoothed(nu, np.where(transmission >= MIN_TRANSMISSION, values, np.nan),
+                                              args.smooth_fwhm_cm1) for name, values in series.items()}
         clean = mask & (solar > 0.995) & (transmission >= MIN_TRANSMISSION)
         authors = None
         if args.authors == "niratl":
@@ -105,6 +158,11 @@ def main() -> None:
             authors = np.interp(nu, w_nu, np.nan_to_num(w_corrected))
             # A pixel next to one they did not correct is partly interpolated from it.
             authors[np.interp(nu, w_nu, np.isfinite(w_corrected).astype(float)) < 0.999] = np.nan
+        elif args.authors == "kurucz2005":
+            velocity = kurucz_velocity(nu, flat, transmission, mask & (transmission >= MIN_TRANSMISSION), kurucz)
+            shifted = nu * (1.0 + velocity / C_KMS)
+            authors = np.interp(shifted, kurucz[0], kurucz[1])
+            authors[np.interp(shifted, kurucz[0], kurucz[2].astype(float)) > 0.0] = np.nan
         if authors is not None:
             clean &= np.isfinite(authors)
         if args.relative_transmission and mask.any():
@@ -126,6 +184,8 @@ def main() -> None:
                              **{name: scatter(nu, values, reference, scored)
                                 for name, values in series.items()}}
         if scores:
+            if args.authors == "kurucz2005":
+                scores["authors_velocity_kms"] = velocity
             pages[page] = scores
 
     authored = args.authors != "none"
@@ -159,6 +219,7 @@ def main() -> None:
             "settings": {"stem": args.stem, "authors": args.authors,
                          **({"wallace2011_region": args.wallace2011_region} if args.authors == "wallace2011" else {}),
                          "relative_transmission": args.relative_transmission,
+                         **({"smooth_fwhm_cm1": args.smooth_fwhm_cm1} if args.smooth_fwhm_cm1 else {}),
                          **({"telluric_below": args.telluric_below}
                             if args.telluric_below != BINS["telluric"] else {})},
             "runs": runs, "summary": summary, "pages": pages}, indent=1) + "\n")

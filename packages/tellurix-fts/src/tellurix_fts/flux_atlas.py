@@ -22,7 +22,9 @@ what a fit needs from the header -- air mass, resolution -- is carried here.
   eight McMath FTS scans of 1980-81, each of one day and about two hours, and its
   telluric lines are left in. Kurucz's 2005 re-reduction of the same scans ships
   their Table 1 (``kurucz2005/fluxscans.dat``), which is where FLUXATL_SCANS comes
-  from.
+  from. Its per-scan files there (``flux1*.2005``, ``fluxspliced.2005``) still hold
+  the tellurics; its corrected spectrum is ``irradrelwl.dat``
+  (`read_kurucz_irradiance`), from Kurucz's ``sun/irradiance2005``.
 """
 
 from __future__ import annotations
@@ -215,3 +217,31 @@ def read_wallace2011_correction(path: str | Path) -> tuple[np.ndarray, np.ndarra
     corrected = np.where(corrected > 0, corrected, np.nan)
     return nu[distinct], corrected[distinct], transmission[distinct]
 
+
+
+KURUCZ_IRRADIANCE_STRAIGHT_SAMPLES = 8
+
+
+def read_kurucz_irradiance(path: str | Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Kurucz's 2005 residual irradiance atlas: vacuum wavenumber, flux, hand-interpolated.
+
+    ``irradrelwl.dat`` (Kurucz 2006, astro-ph/0605029) is the 1984 flux atlas's scans
+    with a fitted telluric spectrum divided out, 299-1001 nm by 0.001 nm in vacuum
+    wavelength, gravitational redshift kept. Where the division failed (saturated
+    cores, wavelength mismatches) the abstract says the spectrum was replaced by hand
+    with straight lines, and nothing flags them: the third array marks every sample
+    in a run of at least KURUCZ_IRRADIANCE_STRAIGHT_SAMPLES whose second difference is
+    within the 4-decimal rounding, so a score can leave them out. Flat continuum at
+    exactly 1.0000 is caught too, which costs a comparison only pixels it did not
+    need. Wavenumber ascending.
+    """
+
+    data = np.loadtxt(path, skiprows=5)
+    wavelength_nm, flux = data[::-1, 0], data[::-1, 1]
+    level = np.abs(np.diff(flux, 2)) <= 1.5e-4
+    run = KURUCZ_IRRADIANCE_STRAIGHT_SAMPLES
+    starts = np.nonzero(np.convolve(level.astype(int), np.ones(run, int), "valid") == run)[0]
+    straight = np.zeros(flux.size, bool)
+    for start in starts:
+        straight[start:start + run + 2] = True
+    return 1.0e7 / wavelength_nm, flux, straight
