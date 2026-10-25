@@ -5,10 +5,11 @@ these two are the Sun as a star, which is the quantity Payne Zero synthesizes
 (docs/solar_fit_plan.md, Phase 1). Both are plain text and record no header, so
 what a fit needs from the header -- air mass, resolution -- is carried here.
 
-- ``iag``: the IAG solar flux atlas, VIS setting (Reiners et al. 2016, A&A 587,
-  A65; CDS J/A+A/587/A65), Göttingen 2014. Columns: vacuum wavenumber,
-  normalized flux, raw flux (the CDS ReadMe; there is no uncertainty). It
-  co-adds 1190 scans over nine days, so it has no one air mass.
+- ``iag``: the IAG solar flux atlas (Reiners et al. 2016, A&A 587, A65; CDS
+  J/A+A/587/A65), Göttingen 2014, VIS (``spvis``, 405-1065 nm) and NIR
+  (``spnir``, 1000-2300 nm) settings. Columns: vacuum wavenumber, normalized
+  flux, raw flux (the CDS ReadMe; there is no uncertainty). Each co-adds over
+  1100 scans from six or nine days, so neither has one air mass.
 - ``wallace2011``: Kitt Peak flux atlas #2 (Wallace, Hinkle, Livingston & Davis
   2011, ApJS 195, 6), ``sptr.regN``. Regions 1-3 carry vacuum wavenumber, the
   telluric-corrected flux, the transmission used for it, and the observed flux.
@@ -57,6 +58,17 @@ IAG_FWHM_CM1 = 0.0145
 IAG_EFFECTIVE_AIRMASS = 1.7
 IAG_VIS = {"file": "spvis.dat.gz", "spectrum": "VIS setting, 2014, 1190 scans on nine days",
            "airmass": IAG_EFFECTIVE_AIRMASS, "fwhm_cm1": IAG_FWHM_CM1}
+# The NIR setting was scanned at Bruker's 0.0044 cm-1 (Table 1), which is 0.9/MOPD:
+# 204.5 cm. Measured from spnir itself with `describe_truncation` in 100 cm-1 pieces,
+# the cut is at 198-210 cm wherever the envelope step is clean (4400-9800 cm-1; the
+# rest find a band's own structure or the 266 cm sampling limit). Its sinc is
+# 1.2067/(2 MOPD). The R ~ 1e6 optics limit is broader above ~3000 cm-1, and it
+# grows with wavenumber, as the fitted Gaussian lsf_sigma_kms (constant in velocity)
+# does. The air mass is only the species cut's, as for VIS: the weighted mean of
+# data/profiles/iag2014/coadd_nir.json's nodes is 1.625 (VIS's is 1.545).
+IAG_NIR_FWHM_CM1 = 0.00295
+IAG_NIR = {"file": "spnir.dat.gz", "spectrum": "NIR setting, 2014, 1130 scans on six days",
+           "airmass": 1.625, "fwhm_cm1": IAG_NIR_FWHM_CM1}
 
 
 def _read_columns(atlas: str, path: Path) -> tuple[np.ndarray, np.ndarray]:

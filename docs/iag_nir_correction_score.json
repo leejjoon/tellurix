@@ -1,0 +1,1185 @@
+{
+ "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+ "settings": {
+  "stem": "iag_nir",
+  "authors": "none",
+  "relative_transmission": true
+ },
+ "runs": {
+  "coadd": "data/corrected/solar/iag_nir"
+ },
+ "summary": {
+  "telluric": {
+   "pages": 126,
+   "median_percent": {
+    "coadd": 1.193080215820864
+   },
+   "pages_flatter_than_coadd": {}
+  },
+  "deep": {
+   "pages": 100,
+   "median_percent": {
+    "coadd": 2.318478728208265
+   },
+   "pages_flatter_than_coadd": {}
+  }
+ },
+ "pages": {
+  "iag_nir_4366": {
+   "telluric": {
+    "pixels": 8024,
+    "coadd": 1.5819246777222802
+   },
+   "deep": {
+    "pixels": 1275,
+    "coadd": 3.138629607640644
+   }
+  },
+  "iag_nir_4396": {
+   "telluric": {
+    "pixels": 8533,
+    "coadd": 1.388183330334867
+   },
+   "deep": {
+    "pixels": 1083,
+    "coadd": 3.1901323371866956
+   }
+  },
+  "iag_nir_4426": {
+   "telluric": {
+    "pixels": 8749,
+    "coadd": 1.0002099112842733
+   },
+   "deep": {
+    "pixels": 667,
+    "coadd": 2.0934466813926877
+   }
+  },
+  "iag_nir_4456": {
+   "telluric": {
+    "pixels": 6560,
+    "coadd": 1.1298584971837187
+   },
+   "deep": {
+    "pixels": 399,
+    "coadd": 3.059467195986009
+   }
+  },
+  "iag_nir_4486": {
+   "telluric": {
+    "pixels": 4202,
+    "coadd": 0.7218190242322986
+   },
+   "deep": {
+    "pixels": 356,
+    "coadd": 1.4606283942398066
+   }
+  },
+  "iag_nir_4516": {
+   "telluric": {
+    "pixels": 5875,
+    "coadd": 0.9074232542622919
+   },
+   "deep": {
+    "pixels": 573,
+    "coadd": 1.7783021945427628
+   }
+  },
+  "iag_nir_4546": {
+   "telluric": {
+    "pixels": 4410,
+    "coadd": 0.6043668107596107
+   },
+   "deep": {
+    "pixels": 634,
+    "coadd": 1.1533215460085395
+   }
+  },
+  "iag_nir_4576": {
+   "telluric": {
+    "pixels": 2498,
+    "coadd": 0.8740924080594067
+   },
+   "deep": {
+    "pixels": 514,
+    "coadd": 1.7424196300404575
+   }
+  },
+  "iag_nir_4606": {
+   "telluric": {
+    "pixels": 50,
+    "coadd": 0.353417815053925
+   }
+  },
+  "iag_nir_4636": {
+   "telluric": {
+    "pixels": 3463,
+    "coadd": 0.4763444498956666
+   },
+   "deep": {
+    "pixels": 111,
+    "coadd": 0.8049428053627551
+   }
+  },
+  "iag_nir_4666": {
+   "telluric": {
+    "pixels": 168,
+    "coadd": 0.26575797399546763
+   }
+  },
+  "iag_nir_4696": {
+   "telluric": {
+    "pixels": 2723,
+    "coadd": 0.8582559158514
+   },
+   "deep": {
+    "pixels": 337,
+    "coadd": 1.8655611895962183
+   }
+  },
+  "iag_nir_4726": {
+   "telluric": {
+    "pixels": 2673,
+    "coadd": 0.4736078737137572
+   },
+   "deep": {
+    "pixels": 96,
+    "coadd": 0.9355926029763243
+   }
+  },
+  "iag_nir_4756": {
+   "telluric": {
+    "pixels": 7007,
+    "coadd": 0.47649561651094685
+   },
+   "deep": {
+    "pixels": 745,
+    "coadd": 1.0917966978202518
+   }
+  },
+  "iag_nir_4786": {
+   "telluric": {
+    "pixels": 10744,
+    "coadd": 1.2428932160593538
+   },
+   "deep": {
+    "pixels": 1612,
+    "coadd": 1.0943161807211943
+   }
+  },
+  "iag_nir_4816": {
+   "telluric": {
+    "pixels": 9657,
+    "coadd": 0.6378156427834871
+   },
+   "deep": {
+    "pixels": 3476,
+    "coadd": 0.9147534412632028
+   }
+  },
+  "iag_nir_4846": {
+   "telluric": {
+    "pixels": 9973,
+    "coadd": 1.1483411016413694
+   },
+   "deep": {
+    "pixels": 4170,
+    "coadd": 0.9192167122706266
+   }
+  },
+  "iag_nir_4876": {
+   "telluric": {
+    "pixels": 9878,
+    "coadd": 0.8994426247790877
+   },
+   "deep": {
+    "pixels": 2176,
+    "coadd": 1.6847286010081435
+   }
+  },
+  "iag_nir_4906": {
+   "telluric": {
+    "pixels": 10436,
+    "coadd": 0.8424930434440736
+   },
+   "deep": {
+    "pixels": 1941,
+    "coadd": 1.7157835659120904
+   }
+  },
+  "iag_nir_4936": {
+   "telluric": {
+    "pixels": 8617,
+    "coadd": 1.1325192587722004
+   },
+   "deep": {
+    "pixels": 6122,
+    "coadd": 1.2911370444093053
+   }
+  },
+  "iag_nir_4966": {
+   "telluric": {
+    "pixels": 5051,
+    "coadd": 1.405730121715463
+   },
+   "deep": {
+    "pixels": 4887,
+    "coadd": 1.4273237850187073
+   }
+  },
+  "iag_nir_4996": {
+   "telluric": {
+    "pixels": 7576,
+    "coadd": 1.2196852398142748
+   },
+   "deep": {
+    "pixels": 4137,
+    "coadd": 1.350840263093409
+   }
+  },
+  "iag_nir_5026": {
+   "telluric": {
+    "pixels": 7953,
+    "coadd": 1.4896239033754486
+   },
+   "deep": {
+    "pixels": 1499,
+    "coadd": 2.54122426598923
+   }
+  },
+  "iag_nir_5056": {
+   "telluric": {
+    "pixels": 8484,
+    "coadd": 1.1251258349115696
+   },
+   "deep": {
+    "pixels": 4798,
+    "coadd": 1.2919543586104567
+   }
+  },
+  "iag_nir_5536": {
+   "telluric": {
+    "pixels": 2472,
+    "coadd": 4.762469007701713
+   },
+   "deep": {
+    "pixels": 1477,
+    "coadd": 4.060235588263568
+   }
+  },
+  "iag_nir_5566": {
+   "telluric": {
+    "pixels": 6691,
+    "coadd": 9.086895547724863
+   },
+   "deep": {
+    "pixels": 3612,
+    "coadd": 7.008695893080741
+   }
+  },
+  "iag_nir_5596": {
+   "telluric": {
+    "pixels": 5422,
+    "coadd": 1.8789013057845871
+   },
+   "deep": {
+    "pixels": 2218,
+    "coadd": 2.7464591342795144
+   }
+  },
+  "iag_nir_5626": {
+   "telluric": {
+    "pixels": 4496,
+    "coadd": 2.007491916475583
+   },
+   "deep": {
+    "pixels": 1233,
+    "coadd": 3.54452039864857
+   }
+  },
+  "iag_nir_5656": {
+   "telluric": {
+    "pixels": 5441,
+    "coadd": 1.8738461204092056
+   },
+   "deep": {
+    "pixels": 1081,
+    "coadd": 1.231416030999372
+   }
+  },
+  "iag_nir_5686": {
+   "telluric": {
+    "pixels": 3350,
+    "coadd": 1.888360255428635
+   },
+   "deep": {
+    "pixels": 419,
+    "coadd": 1.7445554186322167
+   }
+  },
+  "iag_nir_5776": {
+   "telluric": {
+    "pixels": 1408,
+    "coadd": 0.8219640507780648
+   },
+   "deep": {
+    "pixels": 223,
+    "coadd": 1.9638962330703391
+   }
+  },
+  "iag_nir_5806": {
+   "telluric": {
+    "pixels": 3037,
+    "coadd": 0.9094967113438033
+   },
+   "deep": {
+    "pixels": 481,
+    "coadd": 1.3836117328716437
+   }
+  },
+  "iag_nir_5836": {
+   "telluric": {
+    "pixels": 3525,
+    "coadd": 1.8715042853138204
+   },
+   "deep": {
+    "pixels": 391,
+    "coadd": 2.205862468146106
+   }
+  },
+  "iag_nir_5866": {
+   "telluric": {
+    "pixels": 1955,
+    "coadd": 0.8680651408571027
+   },
+   "deep": {
+    "pixels": 216,
+    "coadd": 1.1377385718747766
+   }
+  },
+  "iag_nir_5896": {
+   "telluric": {
+    "pixels": 1187,
+    "coadd": 0.7290039701073499
+   },
+   "deep": {
+    "pixels": 118,
+    "coadd": 1.0717282022098367
+   }
+  },
+  "iag_nir_5956": {
+   "telluric": {
+    "pixels": 135,
+    "coadd": 0.23400650366560785
+   }
+  },
+  "iag_nir_5986": {
+   "telluric": {
+    "pixels": 1504,
+    "coadd": 1.4006191266019823
+   },
+   "deep": {
+    "pixels": 302,
+    "coadd": 2.8881077273978875
+   }
+  },
+  "iag_nir_6016": {
+   "telluric": {
+    "pixels": 739,
+    "coadd": 0.5333217726108253
+   }
+  },
+  "iag_nir_6046": {
+   "telluric": {
+    "pixels": 680,
+    "coadd": 0.8359098357372807
+   },
+   "deep": {
+    "pixels": 34,
+    "coadd": 1.6198599253770165
+   }
+  },
+  "iag_nir_6106": {
+   "telluric": {
+    "pixels": 216,
+    "coadd": 1.664695927751221
+   }
+  },
+  "iag_nir_6136": {
+   "telluric": {
+    "pixels": 305,
+    "coadd": 0.4598652273493346
+   }
+  },
+  "iag_nir_6226": {
+   "telluric": {
+    "pixels": 132,
+    "coadd": 0.22428265302691583
+   }
+  },
+  "iag_nir_6856": {
+   "telluric": {
+    "pixels": 5053,
+    "coadd": 1.6116972527598115
+   },
+   "deep": {
+    "pixels": 2743,
+    "coadd": 2.1031879520548094
+   }
+  },
+  "iag_nir_6886": {
+   "telluric": {
+    "pixels": 4489,
+    "coadd": 2.5114690476999817
+   },
+   "deep": {
+    "pixels": 3054,
+    "coadd": 2.510415533845024
+   }
+  },
+  "iag_nir_6946": {
+   "telluric": {
+    "pixels": 3226,
+    "coadd": 2.5498249359003426
+   },
+   "deep": {
+    "pixels": 2360,
+    "coadd": 2.9280926980130495
+   }
+  },
+  "iag_nir_6976": {
+   "telluric": {
+    "pixels": 2714,
+    "coadd": 1.7016919607699497
+   },
+   "deep": {
+    "pixels": 1286,
+    "coadd": 2.1421553079674513
+   }
+  },
+  "iag_nir_7006": {
+   "telluric": {
+    "pixels": 3695,
+    "coadd": 2.3603816402665783
+   },
+   "deep": {
+    "pixels": 2705,
+    "coadd": 2.688708749444943
+   }
+  },
+  "iag_nir_7036": {
+   "telluric": {
+    "pixels": 1440,
+    "coadd": 2.3457215465176553
+   },
+   "deep": {
+    "pixels": 1011,
+    "coadd": 2.7431044896030183
+   }
+  },
+  "iag_nir_7216": {
+   "telluric": {
+    "pixels": 2820,
+    "coadd": 37.19383557552447
+   },
+   "deep": {
+    "pixels": 1575,
+    "coadd": 47.31838837883074
+   }
+  },
+  "iag_nir_7336": {
+   "telluric": {
+    "pixels": 2420,
+    "coadd": 68.7677373227249
+   },
+   "deep": {
+    "pixels": 1324,
+    "coadd": 80.63885558462773
+   }
+  },
+  "iag_nir_7396": {
+   "telluric": {
+    "pixels": 3715,
+    "coadd": 3.388760752297489
+   },
+   "deep": {
+    "pixels": 2338,
+    "coadd": 4.071777083291893
+   }
+  },
+  "iag_nir_7426": {
+   "telluric": {
+    "pixels": 7817,
+    "coadd": 3.6952379629478935
+   },
+   "deep": {
+    "pixels": 4552,
+    "coadd": 4.764260472084261
+   }
+  },
+  "iag_nir_7456": {
+   "telluric": {
+    "pixels": 8632,
+    "coadd": 1.32187918365018
+   },
+   "deep": {
+    "pixels": 2933,
+    "coadd": 1.9179603472955842
+   }
+  },
+  "iag_nir_7486": {
+   "telluric": {
+    "pixels": 9496,
+    "coadd": 2.04519219962298
+   },
+   "deep": {
+    "pixels": 4260,
+    "coadd": 2.961652852229099
+   }
+  },
+  "iag_nir_7516": {
+   "telluric": {
+    "pixels": 10150,
+    "coadd": 1.1872209057855947
+   },
+   "deep": {
+    "pixels": 3110,
+    "coadd": 2.0041529468486075
+   }
+  },
+  "iag_nir_7546": {
+   "telluric": {
+    "pixels": 10030,
+    "coadd": 1.125908125952863
+   },
+   "deep": {
+    "pixels": 2633,
+    "coadd": 1.9803638371409829
+   }
+  },
+  "iag_nir_7576": {
+   "telluric": {
+    "pixels": 7340,
+    "coadd": 1.449768358834492
+   },
+   "deep": {
+    "pixels": 2059,
+    "coadd": 2.5149327092294564
+   }
+  },
+  "iag_nir_7606": {
+   "telluric": {
+    "pixels": 9003,
+    "coadd": 1.062753212589035
+   },
+   "deep": {
+    "pixels": 1935,
+    "coadd": 2.0727001332206787
+   }
+  },
+  "iag_nir_7636": {
+   "telluric": {
+    "pixels": 6405,
+    "coadd": 1.0382511982970477
+   },
+   "deep": {
+    "pixels": 990,
+    "coadd": 2.297481365583872
+   }
+  },
+  "iag_nir_7666": {
+   "telluric": {
+    "pixels": 5402,
+    "coadd": 1.1814504328343587
+   },
+   "deep": {
+    "pixels": 1219,
+    "coadd": 2.339476090832658
+   }
+  },
+  "iag_nir_7696": {
+   "telluric": {
+    "pixels": 3660,
+    "coadd": 0.6811859402474885
+   },
+   "deep": {
+    "pixels": 450,
+    "coadd": 1.519451678817284
+   }
+  },
+  "iag_nir_7726": {
+   "telluric": {
+    "pixels": 2034,
+    "coadd": 0.45771417858473973
+   },
+   "deep": {
+    "pixels": 154,
+    "coadd": 0.9518439622210921
+   }
+  },
+  "iag_nir_7756": {
+   "telluric": {
+    "pixels": 883,
+    "coadd": 0.5000921423599725
+   },
+   "deep": {
+    "pixels": 42,
+    "coadd": 0.4385104101577107
+   }
+  },
+  "iag_nir_7846": {
+   "telluric": {
+    "pixels": 8278,
+    "coadd": 1.1283759363126884
+   },
+   "deep": {
+    "pixels": 750,
+    "coadd": 1.786535884166505
+   }
+  },
+  "iag_nir_7876": {
+   "telluric": {
+    "pixels": 4792,
+    "coadd": 1.3527279992572023
+   },
+   "deep": {
+    "pixels": 1202,
+    "coadd": 2.053355587907352
+   }
+  },
+  "iag_nir_7906": {
+   "telluric": {
+    "pixels": 6935,
+    "coadd": 0.9686367777557147
+   },
+   "deep": {
+    "pixels": 685,
+    "coadd": 1.1135906533812756
+   }
+  },
+  "iag_nir_7936": {
+   "telluric": {
+    "pixels": 2484,
+    "coadd": 1.1989395258561333
+   },
+   "deep": {
+    "pixels": 194,
+    "coadd": 3.0117966590469143
+   }
+  },
+  "iag_nir_7966": {
+   "telluric": {
+    "pixels": 544,
+    "coadd": 0.6698924996315802
+   },
+   "deep": {
+    "pixels": 107,
+    "coadd": 1.0688585557362502
+   }
+  },
+  "iag_nir_7996": {
+   "telluric": {
+    "pixels": 192,
+    "coadd": 0.23021305744847764
+   },
+   "deep": {
+    "pixels": 11,
+    "coadd": 0.18591677783022198
+   }
+  },
+  "iag_nir_8026": {
+   "telluric": {
+    "pixels": 123,
+    "coadd": 1.665110084523965
+   }
+  },
+  "iag_nir_8056": {
+   "telluric": {
+    "pixels": 471,
+    "coadd": 1.3387486176650143
+   }
+  },
+  "iag_nir_8086": {
+   "telluric": {
+    "pixels": 963,
+    "coadd": 1.2755630781627756
+   },
+   "deep": {
+    "pixels": 43,
+    "coadd": 4.225081483506447
+   }
+  },
+  "iag_nir_8116": {
+   "telluric": {
+    "pixels": 1581,
+    "coadd": 1.2022484832572324
+   },
+   "deep": {
+    "pixels": 75,
+    "coadd": 4.069253874179699
+   }
+  },
+  "iag_nir_8146": {
+   "telluric": {
+    "pixels": 3545,
+    "coadd": 1.2808283573012866
+   },
+   "deep": {
+    "pixels": 356,
+    "coadd": 3.0762173349272843
+   }
+  },
+  "iag_nir_8176": {
+   "telluric": {
+    "pixels": 4336,
+    "coadd": 1.8974902297875524
+   },
+   "deep": {
+    "pixels": 532,
+    "coadd": 4.556778612779346
+   }
+  },
+  "iag_nir_8206": {
+   "telluric": {
+    "pixels": 5122,
+    "coadd": 1.7083819675016174
+   },
+   "deep": {
+    "pixels": 679,
+    "coadd": 4.3557874517997215
+   }
+  },
+  "iag_nir_8236": {
+   "telluric": {
+    "pixels": 4800,
+    "coadd": 0.9902895575452333
+   },
+   "deep": {
+    "pixels": 676,
+    "coadd": 2.2143262434233635
+   }
+  },
+  "iag_nir_8266": {
+   "telluric": {
+    "pixels": 4875,
+    "coadd": 1.706077953718172
+   },
+   "deep": {
+    "pixels": 890,
+    "coadd": 3.7617586941958847
+   }
+  },
+  "iag_nir_8296": {
+   "telluric": {
+    "pixels": 4807,
+    "coadd": 1.5559299050257323
+   },
+   "deep": {
+    "pixels": 1064,
+    "coadd": 3.2211372323214906
+   }
+  },
+  "iag_nir_8326": {
+   "telluric": {
+    "pixels": 2233,
+    "coadd": 1.3173313841033796
+   },
+   "deep": {
+    "pixels": 288,
+    "coadd": 3.2404575681854793
+   }
+  },
+  "iag_nir_8356": {
+   "telluric": {
+    "pixels": 6827,
+    "coadd": 1.2695486494603743
+   },
+   "deep": {
+    "pixels": 1106,
+    "coadd": 2.920627394695571
+   }
+  },
+  "iag_nir_8386": {
+   "telluric": {
+    "pixels": 5454,
+    "coadd": 1.2071188774921227
+   },
+   "deep": {
+    "pixels": 938,
+    "coadd": 2.6222195765812284
+   }
+  },
+  "iag_nir_8416": {
+   "telluric": {
+    "pixels": 7362,
+    "coadd": 1.437963972243387
+   },
+   "deep": {
+    "pixels": 1463,
+    "coadd": 2.4487686159309643
+   }
+  },
+  "iag_nir_8446": {
+   "telluric": {
+    "pixels": 6013,
+    "coadd": 1.9788201668176506
+   },
+   "deep": {
+    "pixels": 1066,
+    "coadd": 4.286132683259092
+   }
+  },
+  "iag_nir_8476": {
+   "telluric": {
+    "pixels": 4718,
+    "coadd": 1.3503620061886086
+   },
+   "deep": {
+    "pixels": 1112,
+    "coadd": 2.6097427139306855
+   }
+  },
+  "iag_nir_8506": {
+   "telluric": {
+    "pixels": 7727,
+    "coadd": 1.7152064755992829
+   },
+   "deep": {
+    "pixels": 1998,
+    "coadd": 3.1458609035867036
+   }
+  },
+  "iag_nir_8536": {
+   "telluric": {
+    "pixels": 7678,
+    "coadd": 1.3378527780784917
+   },
+   "deep": {
+    "pixels": 1162,
+    "coadd": 2.571924018457622
+   }
+  },
+  "iag_nir_8566": {
+   "telluric": {
+    "pixels": 8215,
+    "coadd": 2.440895898110629
+   },
+   "deep": {
+    "pixels": 2088,
+    "coadd": 3.8955650907138315
+   }
+  },
+  "iag_nir_8596": {
+   "telluric": {
+    "pixels": 6975,
+    "coadd": 3.069753088726532
+   },
+   "deep": {
+    "pixels": 1904,
+    "coadd": 5.518911034960476
+   }
+  },
+  "iag_nir_8626": {
+   "telluric": {
+    "pixels": 9659,
+    "coadd": 2.0497017689188017
+   },
+   "deep": {
+    "pixels": 3657,
+    "coadd": 3.167958297976814
+   }
+  },
+  "iag_nir_8656": {
+   "telluric": {
+    "pixels": 9422,
+    "coadd": 2.8395819173620644
+   },
+   "deep": {
+    "pixels": 4123,
+    "coadd": 3.9376490502318036
+   }
+  },
+  "iag_nir_8686": {
+   "telluric": {
+    "pixels": 7674,
+    "coadd": 2.3703293661374563
+   },
+   "deep": {
+    "pixels": 3215,
+    "coadd": 3.2779298940041697
+   }
+  },
+  "iag_nir_8716": {
+   "telluric": {
+    "pixels": 7286,
+    "coadd": 3.3494792856653217
+   },
+   "deep": {
+    "pixels": 6282,
+    "coadd": 3.5177067115603666
+   }
+  },
+  "iag_nir_8746": {
+   "telluric": {
+    "pixels": 6923,
+    "coadd": 2.3280740945497023
+   },
+   "deep": {
+    "pixels": 2740,
+    "coadd": 3.011196042547452
+   }
+  },
+  "iag_nir_8776": {
+   "telluric": {
+    "pixels": 8417,
+    "coadd": 1.785990260045861
+   },
+   "deep": {
+    "pixels": 3965,
+    "coadd": 2.4983185706200026
+   }
+  },
+  "iag_nir_8806": {
+   "telluric": {
+    "pixels": 5534,
+    "coadd": 2.546050550817134
+   },
+   "deep": {
+    "pixels": 3820,
+    "coadd": 2.929335047177437
+   }
+  },
+  "iag_nir_8836": {
+   "telluric": {
+    "pixels": 6739,
+    "coadd": 2.5024909178346757
+   },
+   "deep": {
+    "pixels": 4985,
+    "coadd": 2.882011898256448
+   }
+  },
+  "iag_nir_8896": {
+   "telluric": {
+    "pixels": 5509,
+    "coadd": 3.2669052687661084
+   },
+   "deep": {
+    "pixels": 2826,
+    "coadd": 4.332972998860624
+   }
+  },
+  "iag_nir_8926": {
+   "telluric": {
+    "pixels": 6168,
+    "coadd": 1.537503401355342
+   },
+   "deep": {
+    "pixels": 3687,
+    "coadd": 1.915890269985314
+   }
+  },
+  "iag_nir_8956": {
+   "telluric": {
+    "pixels": 6819,
+    "coadd": 2.095585239990502
+   },
+   "deep": {
+    "pixels": 3219,
+    "coadd": 2.8041978412027704
+   }
+  },
+  "iag_nir_8986": {
+   "telluric": {
+    "pixels": 8452,
+    "coadd": 1.938085167235723
+   },
+   "deep": {
+    "pixels": 1859,
+    "coadd": 3.5364868007600867
+   }
+  },
+  "iag_nir_9016": {
+   "telluric": {
+    "pixels": 8701,
+    "coadd": 1.5471774671183012
+   },
+   "deep": {
+    "pixels": 2635,
+    "coadd": 2.4586223808907737
+   }
+  },
+  "iag_nir_9046": {
+   "telluric": {
+    "pixels": 5880,
+    "coadd": 1.0644424311287446
+   },
+   "deep": {
+    "pixels": 867,
+    "coadd": 1.9065874278152328
+   }
+  },
+  "iag_nir_9076": {
+   "telluric": {
+    "pixels": 4761,
+    "coadd": 1.0021001274521486
+   },
+   "deep": {
+    "pixels": 899,
+    "coadd": 1.9740787996110891
+   }
+  },
+  "iag_nir_9106": {
+   "telluric": {
+    "pixels": 781,
+    "coadd": 1.7747033366740967
+   },
+   "deep": {
+    "pixels": 254,
+    "coadd": 1.2057630253518452
+   }
+  },
+  "iag_nir_9136": {
+   "telluric": {
+    "pixels": 127,
+    "coadd": 0.34506570187768204
+   }
+  },
+  "iag_nir_9166": {
+   "telluric": {
+    "pixels": 2329,
+    "coadd": 0.808464327015513
+   },
+   "deep": {
+    "pixels": 428,
+    "coadd": 1.6364219582299535
+   }
+  },
+  "iag_nir_9196": {
+   "telluric": {
+    "pixels": 2355,
+    "coadd": 0.941253593678721
+   },
+   "deep": {
+    "pixels": 357,
+    "coadd": 2.026907493926929
+   }
+  },
+  "iag_nir_9226": {
+   "telluric": {
+    "pixels": 731,
+    "coadd": 0.5545044354337682
+   }
+  },
+  "iag_nir_9256": {
+   "telluric": {
+    "pixels": 1837,
+    "coadd": 0.7289191251011983
+   },
+   "deep": {
+    "pixels": 207,
+    "coadd": 1.4706516385206667
+   }
+  },
+  "iag_nir_9286": {
+   "telluric": {
+    "pixels": 384,
+    "coadd": 0.49710013209620324
+   },
+   "deep": {
+    "pixels": 47,
+    "coadd": 0.5281788276455293
+   }
+  },
+  "iag_nir_9316": {
+   "telluric": {
+    "pixels": 634,
+    "coadd": 0.2998057600801588
+   }
+  },
+  "iag_nir_9346": {
+   "telluric": {
+    "pixels": 357,
+    "coadd": 0.7661706900518516
+   }
+  },
+  "iag_nir_9376": {
+   "telluric": {
+    "pixels": 95,
+    "coadd": 0.3145407580564775
+   }
+  },
+  "iag_nir_9406": {
+   "telluric": {
+    "pixels": 59,
+    "coadd": 0.4437857382625267
+   }
+  },
+  "iag_nir_9676": {
+   "telluric": {
+    "pixels": 67,
+    "coadd": 0.610507751499442
+   }
+  },
+  "iag_nir_9706": {
+   "telluric": {
+    "pixels": 390,
+    "coadd": 0.730533587260315
+   }
+  },
+  "iag_nir_9736": {
+   "telluric": {
+    "pixels": 352,
+    "coadd": 0.47490767604039574
+   }
+  },
+  "iag_nir_9766": {
+   "telluric": {
+    "pixels": 515,
+    "coadd": 0.2677953373450209
+   }
+  },
+  "iag_nir_9796": {
+   "telluric": {
+    "pixels": 640,
+    "coadd": 0.2818951932965749
+   }
+  },
+  "iag_nir_9826": {
+   "telluric": {
+    "pixels": 356,
+    "coadd": 0.42410314540625943
+   }
+  },
+  "iag_nir_9856": {
+   "telluric": {
+    "pixels": 471,
+    "coadd": 0.22443182476864051
+   }
+  },
+  "iag_nir_9886": {
+   "telluric": {
+    "pixels": 881,
+    "coadd": 0.3697476244862773
+   }
+  },
+  "iag_nir_9916": {
+   "telluric": {
+    "pixels": 242,
+    "coadd": 0.21252077250167398
+   }
+  },
+  "iag_nir_9946": {
+   "telluric": {
+    "pixels": 161,
+    "coadd": 0.24698762819787423
+   }
+  },
+  "iag_nir_9976": {
+   "telluric": {
+    "pixels": 729,
+    "coadd": 0.45876092946678354
+   }
+  }
+ }
+}

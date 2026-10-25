@@ -18,6 +18,13 @@ ERA5 profile at 11 UTC (transit is at ~11:20 UTC on these dates):
           --time ${d:0:4}-${d:4:2}-${d:6:2}T11:00 --output data/profiles/iag2014/goettingen_${d}T1100.csv
     done
     uv run python scripts/make_iag_coadd.py --output data/profiles/iag2014/coadd_vis.json
+
+The NIR setting (``--setting nir``) is the same construction on its own six days,
+1130 scans, with a package of 10 taking ~17 min (the longer scan of its 0.0044 cm-1
+resolution); the two settings were never observed on the same day:
+
+    for d in 20140224 20140314 20140320 20140327 20140606 20140607; do ...; done
+    uv run python scripts/make_iag_coadd.py --setting nir --output data/profiles/iag2014/coadd_nir.json
 """
 from __future__ import annotations
 
@@ -31,13 +38,17 @@ import numpy as np
 VIS_SCANS = {"2014-03-07": 220, "2014-03-10": 170, "2014-04-16": 50, "2014-04-17": 280,
              "2014-04-20": 190, "2014-07-11": 100, "2014-07-17": 60, "2014-07-22": 50,
              "2014-07-23": 70}
+# The NIR setting's (Table 2, and Sect. 3 for the 17 min a package).
+NIR_SCANS = {"2014-02-24": 150, "2014-03-14": 150, "2014-03-20": 190, "2014-03-27": 210,
+             "2014-06-06": 300, "2014-06-07": 130}
+SETTINGS = {"vis": (VIS_SCANS, 15.0), "nir": (NIR_SCANS, 17.0)}
 SCANS_PER_PACKAGE = 10
-MINUTES_PER_PACKAGE = 15.0
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--setting", choices=sorted(SETTINGS), default="vis")
     parser.add_argument("--profiles", default="data/profiles/iag2014")
     parser.add_argument("--node-hours", type=float, default=1.0)
     parser.add_argument("--centre-offset-hours", type=float, default=0.0,
@@ -63,14 +74,15 @@ def main() -> None:
         altitude = get_sun(time).transform_to(AltAz(obstime=time, location=site)).alt.deg
         return float(np.dot(r, v) / np.linalg.norm(r)), float(90.0 - altitude)
 
+    days, minutes_per_package = SETTINGS[args.setting]
     components = []
-    for day, scans in VIS_SCANS.items():
+    for day, scans in days.items():
         hours = np.arange(0.0, 24.0, 1.0 / 60.0)
         midnight = Time(f"{day}T00:00:00", scale="utc")
         altitude = get_sun(midnight + hours * u.hour).transform_to(
             AltAz(obstime=midnight + hours * u.hour, location=site)).alt.deg
         transit = float(hours[int(np.argmax(altitude))])
-        duration = scans / SCANS_PER_PACKAGE * MINUTES_PER_PACKAGE / 60.0
+        duration = scans / SCANS_PER_PACKAGE * minutes_per_package / 60.0
         count = max(1, int(round(duration / args.node_hours)))
         nodes = []
         for k in range(count):
@@ -87,10 +99,12 @@ def main() -> None:
               f"X {nodes[0]['airmass']:.2f}-{nodes[-1]['airmass']:.2f}, telluric v "
               + ", ".join(f"{n['velocity_kms']:+.2f}" for n in nodes))
 
+    paragraphs = [__doc__.split("\n\n")[k].replace("\n", " ") for k in (1, 2, 4)]
+    about = " ".join(paragraphs[:2]) if args.setting == "vis" else " ".join(paragraphs[1:])
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps({
-        "about": __doc__.split("\n\n")[1].replace("\n", " ") + " " + __doc__.split("\n\n")[2].replace("\n", " "),
-        "source": "Reiners et al. 2016, A&A 587, A65, Table 2 (VIS)", "components": components},
+        "about": about,
+        "source": f"Reiners et al. 2016, A&A 587, A65, Table 2 ({args.setting.upper()})", "components": components},
         indent=1) + "\n", encoding="utf-8")
     print(f"wrote {args.output}")
 

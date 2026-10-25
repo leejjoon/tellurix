@@ -62,6 +62,17 @@ the grid at 2.2 samples per 0.0145 cm-1, as fine as Payne Zero's sampling allows
         --scan-profile data/profiles/kitt_peak_19830626_file3.csv --scan-fwhm-cm1 0.04167 --o2-cia \\
         --telluric-from-clean-pixels --line-strength-table data/line_strength/step3_iter1.npz
 
+``--iag nir`` is the NIR setting (``spnir``, 1000-2300 nm), a co-add of six other days
+at a 0.00295 cm-1 sinc. It fits from 4366 cm-1 on file 5's tiling, whose species scans
+it reuses, to the atlas's 10000, on solar bands of its own (``data/stellar/iag_nir``):
+
+    UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py --iag nir --vsini-kms 1.9 \\
+        --coadd data/profiles/iag2014/coadd_nir.json --scan-column-ratio \\
+        --profile data/profiles/iag2014/goettingen_20140606T1100.csv \\
+        --scan-profile data/profiles/kitt_peak_19901218_era5_afgl.csv --scan-fwhm-cm1 0.01753 \\
+        --o2-cia --line-coupling --telluric-from-clean-pixels \\
+        --line-strength-table data/line_strength/step3_iter1.npz
+
     UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
         --spectrum .../nso/photatl --airmass 2.0
 """
@@ -83,7 +94,7 @@ from tellurix import (  # noqa: E402
     load_atmosphere_csv, species_above,
 )
 from tellurix_fts import read_solar_spectrum  # noqa: E402
-from tellurix_fts.flux_atlas import IAG_VIS, WALLACE2011_REGIONS, read_flux_atlas  # noqa: E402
+from tellurix_fts.flux_atlas import IAG_NIR, IAG_VIS, WALLACE2011_REGIONS, read_flux_atlas  # noqa: E402
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_atlas_page, window_continuum_snr  # noqa: E402
 
 from tellurix.download import DataPaths  # noqa: E402
@@ -397,7 +408,7 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         layer_chunk_size=args.layer_chunk_size, coadd=args.coadd,
     )
     report, arrays = fit_window(settings, DataPaths.bootstrapped(root),
-                                stellar_directory=root / "data/stellar", base=root,
+                                stellar_directory=root / args.stellar_directory, base=root,
                                 spectrum=spectrum)
 
     mask = arrays["mask"]
@@ -538,8 +549,12 @@ def main() -> None:
                         default=None,
                         help="fit this region of the Wallace 2011 flux atlas instead of --spectrum; "
                              "its air mass and sinc FWHM are the defaults")
-    parser.add_argument("--iag", action="store_true",
-                        help="fit the IAG flux atlas's VIS setting instead of --spectrum")
+    parser.add_argument("--iag", nargs="?", const="vis", choices=("vis", "nir"), default=None,
+                        help="fit the IAG flux atlas instead of --spectrum: its VIS setting, or "
+                             "with 'nir' its NIR one")
+    parser.add_argument("--stellar-directory", type=Path, default=None,
+                        help="where the solar_payne_zero_* bands are, relative to the checkout; "
+                             "default data/stellar, and data/stellar/iag_nir for --iag nir")
     parser.add_argument("--vsini-kms", type=float, default=0.0,
                         help="rotational broadening of the solar source: 0 for disc centre, "
                              "1.9 for a flux atlas")
@@ -684,13 +699,26 @@ def main() -> None:
     elif args.iag:
         if args.spectrum is not None:
             raise SystemExit("pass --spectrum or --iag, not both")
-        region = IAG_VIS
+        region = IAG_NIR if args.iag == "nir" else IAG_VIS
         args.spectrum = IAG / region["file"]
-        args.window_stem = "iag_vis"
+        args.window_stem = f"iag_{args.iag}"
         if args.airmass is None and args.zenith_angle_deg is None:
             args.airmass = region["airmass"]
         if args.fwhm_cm1 == MEASURED_FWHM_CM1:
             args.fwhm_cm1 = region["fwhm_cm1"]
+    if args.iag == "nir":
+        # The grid's floor of 2 samples per 0.00295 cm-1 sinc, 0.0015 cm-1, is
+        # finer than any band in data/stellar holds, so this setting has its own
+        # (generate_payne_zero_solar.py --fwhm-cm1 0.00295 --samples-per-resolution
+        # 1.4, within resample_stellar_source's 1.5x). The windows are file 5's
+        # tiling, 1876 + 30k, so its species scans are reused below 9091 cm-1.
+        if args.stellar_directory is None:
+            args.stellar_directory = Path("data/stellar/iag_nir")
+        if args.samples_per_resolution == 4.0:
+            args.samples_per_resolution = 2.0
+        args.v1 = 4366.0 if args.v1 is None else args.v1
+        args.v2 = 10000.0 if args.v2 is None else args.v2
+    elif args.iag:
         # Payne Zero's visible band is sampled at 0.146 km/s, and the source may be at
         # most 1.5x coarser than the grid (`resample_stellar_source`): 2.2 per 0.0145
         # cm-1 is 0.099 km/s at 20000 cm-1. The sinc needs a step under 0.012 cm-1
@@ -701,6 +729,8 @@ def main() -> None:
         args.v2 = 20000.0 if args.v2 is None else args.v2
     elif args.spectrum is None:
         raise SystemExit("pass --spectrum, --wallace2011-region or --iag")
+    if args.stellar_directory is None:
+        args.stellar_directory = Path("data/stellar")
 
     stem = args.window_stem or args.spectrum.stem
     args.summary = args.summary or args.output_dir / f"{stem}_summary.json"
