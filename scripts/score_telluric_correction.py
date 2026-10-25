@@ -48,49 +48,9 @@ from pathlib import Path
 
 import numpy as np
 
+from tellurix_fts.flatness import BINS, EDGE_PIXELS, MIN_TRANSMISSION, corrected, photatl_solar, scatter
+
 ATLASES = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso")
-BINS = {"telluric": 0.97, "deep": 0.7}
-EDGE_PIXELS = 50
-MIN_TRANSMISSION = 0.15
-MEAN_PIXELS = 51
-
-
-def corrected(path: Path):
-    """Wavenumber (ascending), corrected/continuum, solar model/continuum, T, mask."""
-
-    with np.load(path) as data:
-        nu = np.asarray(data["wavenumber_cm1"])
-        order = np.argsort(nu)
-        take = lambda key: np.asarray(data[key])[order]
-        flat = take("flux") / (take("model_flux") / take("stellar_only_pixels")) / take("continuum")
-        return (nu[order], flat, take("stellar_only_pixels") / take("continuum"),
-                take("transmission_pixels"), take("mask").astype(bool))
-
-
-def scatter(nu, values, reference, scored) -> float:
-    # A normalized running mean, so a reference set shorter than the kernel or
-    # a page end does not pull the baseline toward zero.
-    kernel = np.ones(min(MEAN_PIXELS, int(reference.sum())))
-    smooth = (np.convolve(values[reference], kernel, mode="same")
-              / np.convolve(np.ones(int(reference.sum())), kernel, mode="same"))
-    base = np.interp(nu, nu[reference], smooth)
-    return float(100.0 * np.sqrt(np.mean((values[scored] - base[scored]) ** 2)))
-
-
-def photatl_solar(pages, nu):
-    """photatl's solar column on ``nu``, and where photatl interpolated it."""
-
-    solar = np.full(nu.size, np.nan)
-    filled = np.zeros(nu.size, bool)
-    for page in pages:
-        w = page.wavenumber_vacuum_cm1
-        inside = (nu >= w.min()) & (nu <= w.max())
-        if inside.any():
-            order = np.argsort(w)
-            solar[inside] = np.interp(nu[inside], w[order], page.solar[order])
-            filled[inside] |= np.interp(nu[inside], w[order],
-                                        (page.atmospheric < page.dg)[order].astype(float)) > 0
-    return solar, filled
 
 
 def main() -> None:
