@@ -2044,6 +2044,50 @@ photatl are outside the table's range and unchanged.
   IAG beyond its O2 windows (VIS setting re-downloaded 2026-10-05 into the gitignored
   `data/databases/iag/`, from CDS J/A+A/587/A65; `fit_atlas_o2.py` reads it). `telluric_mid_ir` is not a target (§"What the atlases' own
   documentation says" in `solar_atlases.md`).
+- **A telluric error model for joint stellar + telluric fits (future work, 2026-10-25).**
+  The sibling project wants solar log gf values from fits that model the star and the
+  atmosphere together. A telluric error under a stellar line passes straight into its log gf,
+  with an error bar that is too small. For a weak stellar line, δlog gf ≈ 0.43·δτ/τ★. With
+  the errors of §4s (IAG against Baker), a line 10% deep loses about 0.1 dex where it sits on
+  a feature core (2.6% rms), about 0.05 dex in weak-line pixels (1.3%), and nothing where T >
+  0.99. That is larger than log gf targets. The reverse also happens: stellar-model error
+  leaks into the telluric parameters, which is why the columns are fitted from solar-clean
+  pixels; a joint fit should keep that separation. What we know about the error (§4s,
+  `docs/iag_residual_attribution.{json,png}`):
+  - it scales with telluric optical depth;
+  - it is correlated across each line profile, so it is not pixel-independent;
+  - half of it is fixed in the telluric frame and the same in every spectrum fitted with
+    this model: core strengths (a third of that half), wings and widths, weak lines;
+  - the other half belongs to the epoch or the comparison.
+
+  The plan, in order:
+  1. **Calibrate the error term** from the existing outputs: its amplitude against τ_tell
+     per pixel class, and its correlation length. Write it up as a recipe for the sibling
+     project. Cheap; do first.
+  2. **Remove the repeatable half.** One route is an empirical template: the median
+     residual of our fits of Baker's single spectra, scaled by τ and aligned to the frame,
+     which takes the IAG median window from 1.04% to 0.62%. The other is physical: per-line
+     widths and weak-line strengths beyond the strength table. Binning the wing residual
+     by E'' would show whether widths are the cause.
+  3. **Marginalise what remains in the joint fit.** Add τ_tell(ν)·g(ν), with g a Gaussian
+     process of a few percent amplitude and correlation length about one telluric line width.
+     It is linear, so it can be marginalised analytically in JAX. It down-weights blended
+     pixels and widens blended lines' log gf errors without touching clean lines. The
+     alternative is per-feature strength factors as nuisance parameters, with priors of
+     about 3% for features the table corrected and 6-8% for those it left at AER (§4s).
+  4. **Prefer many epochs to the co-add.** In one spectrum a fully blended stellar-telluric
+     pair cannot be separated, and the answer is just the prior. Leverage comes from spectra
+     in which the two lines move relative to each other and the telluric depth changes with
+     air mass, such as Baker's 2015-16 spectra. The IAG co-add keeps only its nine days'
+     0.6 km/s spread.
+  5. **Validate on log gf itself.** Fit the stellar lines in telluric regions in our
+     corrected IAG atlas and in Baker's telluric-free Sun, which carries no telluric-model
+     error. With the error model in place, Δlog gf divided by its error should have a spread
+     of about 1 and should not grow with the fraction of a line's information that comes
+     from telluric pixels.
+
+  Open inputs from the sibling project: the log gf precision they need, and whether they
+  fit the co-add or individual spectra.
 - **The sibling project's handoff note**, `differentiable_stellar_spectroscopy/
   docs/solar_telluric_handoff.md`, carries the 2026-10-18 numbers and was committed there
   that day (`ae48ad2`, not pushed).
