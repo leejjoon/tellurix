@@ -1,0 +1,3099 @@
+{
+ "about": "Files 4 and 5 refitted with the niratl recipe at widths x1.00 (telluric parameters from solar-clean pixels, solar broadening, HITRAN H2O shifts, line coupling kept, per-line strength factors; CO pinned in 4156-4306 at the 4.6 um windows' median), 2026-10-25, against the runs it superseded ('canon', now in data/corrected/superseded_pre_clean1990/solar) and photatl's own correction ('authors'; of file 5's data, so a yardstick for file 5 only). Written by scripts/score_telluric_correction.py --authors photatl --relative-transmission canon=<old run> refit=<new run>, the refit then promoted to data/corrected/solar.",
+ "files": {
+  "ftsspec_901218_4": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "ftsspec_901218_4",
+    "authors": "photatl",
+    "relative_transmission": true
+   },
+   "runs": {
+    "canon": "data/corrected/solar",
+    "refit": "data/corrected/solar/refit_clean_1990"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 106,
+     "median_percent": {
+      "canon": 1.2752228461398383,
+      "refit": 1.2401680115093492,
+      "authors": 0.8020455558082724
+     },
+     "pages_flatter_than_canon": {
+      "refit": 79,
+      "authors": 86
+     },
+     "pages_at_or_below_authors": {
+      "canon": 20,
+      "refit": 24
+     },
+     "pages_worse_than_authors_by_0p2": {
+      "canon": 72,
+      "refit": 63
+     }
+    },
+    "deep": {
+     "pages": 100,
+     "median_percent": {
+      "canon": 2.5670476331841225,
+      "refit": 2.4117571611915394,
+      "authors": 1.0622119033286201
+     },
+     "pages_flatter_than_canon": {
+      "refit": 72,
+      "authors": 91
+     },
+     "pages_at_or_below_authors": {
+      "canon": 9,
+      "refit": 11
+     },
+     "pages_worse_than_authors_by_0p2": {
+      "canon": 85,
+      "refit": 86
+     }
+    }
+   },
+   "pages": {
+    "ftsspec_901218_4_1966": {
+     "telluric": {
+      "pixels": 1312,
+      "canon": 2.25171347548555,
+      "refit": 2.223639340584947,
+      "authors": 2.421393941975063
+     },
+     "deep": {
+      "pixels": 378,
+      "canon": 3.49513307722313,
+      "refit": 3.4357974016075925,
+      "authors": 3.54665466648063
+     }
+    },
+    "ftsspec_901218_4_2386": {
+     "telluric": {
+      "pixels": 1323,
+      "canon": 3.5565040594578776,
+      "refit": 3.558658506905131,
+      "authors": 2.0151002817466557
+     },
+     "deep": {
+      "pixels": 762,
+      "canon": 3.876033213928899,
+      "refit": 3.881625556573345,
+      "authors": 2.485767586498391
+     }
+    },
+    "ftsspec_901218_4_2416": {
+     "telluric": {
+      "pixels": 1131,
+      "canon": 1.8225919005886568,
+      "refit": 1.8196291335090673,
+      "authors": 1.4438443848527103
+     },
+     "deep": {
+      "pixels": 66,
+      "canon": 3.5302867290126176,
+      "refit": 3.5013431338457113,
+      "authors": 2.598003812467274
+     }
+    },
+    "ftsspec_901218_4_2446": {
+     "telluric": {
+      "pixels": 1284,
+      "canon": 1.204756916304111,
+      "refit": 1.1886344524080015,
+      "authors": 1.0479673109530865
+     },
+     "deep": {
+      "pixels": 45,
+      "canon": 2.0029088389358893,
+      "refit": 1.9520417824564387,
+      "authors": 1.0872344673090468
+     }
+    },
+    "ftsspec_901218_4_2476": {
+     "telluric": {
+      "pixels": 1033,
+      "canon": 1.0419477238584154,
+      "refit": 1.044623876327575,
+      "authors": 0.8964561746623739
+     },
+     "deep": {
+      "pixels": 55,
+      "canon": 1.3311390125756253,
+      "refit": 1.213814413586865,
+      "authors": 0.9584155637881974
+     }
+    },
+    "ftsspec_901218_4_2506": {
+     "telluric": {
+      "pixels": 899,
+      "canon": 1.1676217213424986,
+      "refit": 1.170670164680904,
+      "authors": 0.9726903636545344
+     },
+     "deep": {
+      "pixels": 82,
+      "canon": 1.6056108518614671,
+      "refit": 1.6313290805011311,
+      "authors": 1.4570448520041552
+     }
+    },
+    "ftsspec_901218_4_2596": {
+     "telluric": {
+      "pixels": 1611,
+      "canon": 0.8175181590187872,
+      "refit": 0.8164408189911515,
+      "authors": 0.7630223214333272
+     },
+     "deep": {
+      "pixels": 74,
+      "canon": 1.84580679542785,
+      "refit": 1.830078369583128,
+      "authors": 1.0622265484739677
+     }
+    },
+    "ftsspec_901218_4_2626": {
+     "telluric": {
+      "pixels": 1323,
+      "canon": 0.9593819624255125,
+      "refit": 0.9598887851251832,
+      "authors": 0.5443211527606235
+     },
+     "deep": {
+      "pixels": 110,
+      "canon": 2.129399072773001,
+      "refit": 2.1389161165283292,
+      "authors": 1.2993085729605107
+     }
+    },
+    "ftsspec_901218_4_2656": {
+     "telluric": {
+      "pixels": 887,
+      "canon": 1.0890465540328054,
+      "refit": 1.0818999263233227,
+      "authors": 0.5609816480009202
+     },
+     "deep": {
+      "pixels": 104,
+      "canon": 2.2440591572814075,
+      "refit": 2.25716882689597,
+      "authors": 0.9942211238809996
+     }
+    },
+    "ftsspec_901218_4_2686": {
+     "telluric": {
+      "pixels": 1052,
+      "canon": 1.061172950067957,
+      "refit": 1.0851704354434781,
+      "authors": 0.8385482017081827
+     },
+     "deep": {
+      "pixels": 88,
+      "canon": 2.5651500253697566,
+      "refit": 2.661138753911879,
+      "authors": 1.279756150006365
+     }
+    },
+    "ftsspec_901218_4_2716": {
+     "telluric": {
+      "pixels": 1327,
+      "canon": 1.2728569590994478,
+      "refit": 1.2754469285842522,
+      "authors": 1.1395704780744467
+     },
+     "deep": {
+      "pixels": 160,
+      "canon": 2.4507433992255745,
+      "refit": 2.394563114145215,
+      "authors": 2.013364024272252
+     }
+    },
+    "ftsspec_901218_4_2746": {
+     "telluric": {
+      "pixels": 1789,
+      "canon": 1.074998504663598,
+      "refit": 1.0771812695749383,
+      "authors": 0.5934017160014021
+     },
+     "deep": {
+      "pixels": 170,
+      "canon": 2.3288987073069083,
+      "refit": 2.362487817778266,
+      "authors": 1.10890854594323
+     }
+    },
+    "ftsspec_901218_4_2776": {
+     "telluric": {
+      "pixels": 2213,
+      "canon": 1.5587222231572324,
+      "refit": 1.5604398165593516,
+      "authors": 0.875627738173796
+     },
+     "deep": {
+      "pixels": 415,
+      "canon": 2.607152331113481,
+      "refit": 2.612015898444823,
+      "authors": 1.260922757936286
+     }
+    },
+    "ftsspec_901218_4_2806": {
+     "telluric": {
+      "pixels": 1931,
+      "canon": 2.6595505049029433,
+      "refit": 2.662125790100133,
+      "authors": 0.798298923815206
+     },
+     "deep": {
+      "pixels": 330,
+      "canon": 5.116508519759916,
+      "refit": 5.128002543647633,
+      "authors": 0.8242974354745531
+     }
+    },
+    "ftsspec_901218_4_2836": {
+     "telluric": {
+      "pixels": 1590,
+      "canon": 2.5781865523081935,
+      "refit": 2.5775068905332783,
+      "authors": 0.7584265339738939
+     },
+     "deep": {
+      "pixels": 160,
+      "canon": 6.430746716992005,
+      "refit": 6.458732149682294,
+      "authors": 0.8956606539409672
+     }
+    },
+    "ftsspec_901218_4_2866": {
+     "telluric": {
+      "pixels": 1944,
+      "canon": 2.275242539675295,
+      "refit": 2.2803300274964697,
+      "authors": 0.5804016808021223
+     },
+     "deep": {
+      "pixels": 288,
+      "canon": 4.803509929235388,
+      "refit": 4.804933871461305,
+      "authors": 0.8120839590047381
+     }
+    },
+    "ftsspec_901218_4_2896": {
+     "telluric": {
+      "pixels": 1771,
+      "canon": 1.7827954944266557,
+      "refit": 1.7809742782617366,
+      "authors": 1.123320668952629
+     },
+     "deep": {
+      "pixels": 254,
+      "canon": 3.5414421066317794,
+      "refit": 3.5388860711329655,
+      "authors": 1.0661332560420191
+     }
+    },
+    "ftsspec_901218_4_3136": {
+     "telluric": {
+      "pixels": 2008,
+      "canon": 3.510363913308519,
+      "refit": 3.4849383388784223,
+      "authors": 1.872401387819648
+     },
+     "deep": {
+      "pixels": 352,
+      "canon": 7.775029303648702,
+      "refit": 7.697590579233918,
+      "authors": 2.203227417854631
+     }
+    },
+    "ftsspec_901218_4_3166": {
+     "telluric": {
+      "pixels": 1836,
+      "canon": 2.1455740670389507,
+      "refit": 2.157450068585158,
+      "authors": 2.1945468836910176
+     },
+     "deep": {
+      "pixels": 557,
+      "canon": 3.65337487092964,
+      "refit": 3.6810174602150947,
+      "authors": 2.7279252441488038
+     }
+    },
+    "ftsspec_901218_4_3226": {
+     "telluric": {
+      "pixels": 1537,
+      "canon": 1.4935775086485736,
+      "refit": 1.4922295191030432,
+      "authors": 1.7909088180826378
+     },
+     "deep": {
+      "pixels": 879,
+      "canon": 1.89538513333533,
+      "refit": 1.8921648354696796,
+      "authors": 2.189253363497283
+     }
+    },
+    "ftsspec_901218_4_3256": {
+     "telluric": {
+      "pixels": 1142,
+      "canon": 1.4320019535364386,
+      "refit": 1.4500472122358292,
+      "authors": 0.8732528937430105
+     },
+     "deep": {
+      "pixels": 623,
+      "canon": 1.828889254956273,
+      "refit": 1.8495981184026444,
+      "authors": 1.1080703585013976
+     }
+    },
+    "ftsspec_901218_4_4036": {
+     "telluric": {
+      "pixels": 1679,
+      "canon": 1.2178947641606697,
+      "refit": 1.0585305084155667,
+      "authors": 0.47552250312496885
+     },
+     "deep": {
+      "pixels": 246,
+      "canon": 2.2380239223479115,
+      "refit": 1.7403118830732744,
+      "authors": 0.9693630575435821
+     }
+    },
+    "ftsspec_901218_4_4096": {
+     "telluric": {
+      "pixels": 1352,
+      "canon": 1.3955252525867339,
+      "refit": 1.3847219339515826,
+      "authors": 0.4963165029660703
+     },
+     "deep": {
+      "pixels": 213,
+      "canon": 2.3933104050488168,
+      "refit": 2.3716604940657153,
+      "authors": 0.9449409745387901
+     }
+    },
+    "ftsspec_901218_4_4126": {
+     "telluric": {
+      "pixels": 1375,
+      "canon": 1.607175997657732,
+      "refit": 1.5015735010203712,
+      "authors": 0.551710171514317
+     },
+     "deep": {
+      "pixels": 253,
+      "canon": 2.6870124188904527,
+      "refit": 2.468008463129497,
+      "authors": 1.0861781674167097
+     }
+    },
+    "ftsspec_901218_4_4156": {
+     "telluric": {
+      "pixels": 1481,
+      "canon": 1.3961128572654387,
+      "refit": 1.3489581977735678,
+      "authors": 0.5788749942535343
+     },
+     "deep": {
+      "pixels": 246,
+      "canon": 2.0986252037765123,
+      "refit": 1.9415423984546925,
+      "authors": 0.9086554628736878
+     }
+    },
+    "ftsspec_901218_4_4186": {
+     "telluric": {
+      "pixels": 1357,
+      "canon": 0.8902552598000049,
+      "refit": 0.8961405213503798,
+      "authors": 0.7023063463909742
+     },
+     "deep": {
+      "pixels": 216,
+      "canon": 1.3733871291993365,
+      "refit": 1.3817396740094583,
+      "authors": 1.0011793377142557
+     }
+    },
+    "ftsspec_901218_4_4216": {
+     "telluric": {
+      "pixels": 1272,
+      "canon": 1.0435525337740554,
+      "refit": 1.0155616179710816,
+      "authors": 0.3587220835751391
+     },
+     "deep": {
+      "pixels": 218,
+      "canon": 1.846445040629978,
+      "refit": 1.7620439906833363,
+      "authors": 0.5754856340477019
+     }
+    },
+    "ftsspec_901218_4_4246": {
+     "telluric": {
+      "pixels": 1645,
+      "canon": 1.2504288671640313,
+      "refit": 1.2342487722212552,
+      "authors": 0.444234094946808
+     },
+     "deep": {
+      "pixels": 442,
+      "canon": 1.8301197673780796,
+      "refit": 1.8246682888544146,
+      "authors": 0.5827002136476028
+     }
+    },
+    "ftsspec_901218_4_4276": {
+     "telluric": {
+      "pixels": 1373,
+      "canon": 0.6828649756441252,
+      "refit": 0.6704394179706813,
+      "authors": 0.4411624057379185
+     },
+     "deep": {
+      "pixels": 190,
+      "canon": 1.0893074821924602,
+      "refit": 1.0577762642107467,
+      "authors": 0.6400523022718237
+     }
+    },
+    "ftsspec_901218_4_4306": {
+     "telluric": {
+      "pixels": 1319,
+      "canon": 0.7616547228781713,
+      "refit": 0.753910687088174,
+      "authors": 0.46824872362185627
+     },
+     "deep": {
+      "pixels": 309,
+      "canon": 1.1571384674324017,
+      "refit": 1.1401198291790902,
+      "authors": 0.5189218191521998
+     }
+    },
+    "ftsspec_901218_4_4366": {
+     "telluric": {
+      "pixels": 1586,
+      "canon": 1.903109143351147,
+      "refit": 1.9101190227930838,
+      "authors": 0.407538940789536
+     },
+     "deep": {
+      "pixels": 198,
+      "canon": 3.341458109240229,
+      "refit": 3.3702897622411148,
+      "authors": 0.5332962678546908
+     }
+    },
+    "ftsspec_901218_4_4396": {
+     "telluric": {
+      "pixels": 1769,
+      "canon": 1.3617507448636725,
+      "refit": 1.3615157109615819,
+      "authors": 0.3830377291506467
+     },
+     "deep": {
+      "pixels": 227,
+      "canon": 2.627241760444509,
+      "refit": 2.6246370684973757,
+      "authors": 0.5964226948795126
+     }
+    },
+    "ftsspec_901218_4_4426": {
+     "telluric": {
+      "pixels": 1948,
+      "canon": 1.2033517942960548,
+      "refit": 1.1942477555733237,
+      "authors": 0.5626872319309828
+     },
+     "deep": {
+      "pixels": 197,
+      "canon": 2.5828899734737156,
+      "refit": 2.5591975432453284,
+      "authors": 0.6309612111664047
+     }
+    },
+    "ftsspec_901218_4_4456": {
+     "telluric": {
+      "pixels": 1520,
+      "canon": 1.2648088617009523,
+      "refit": 1.2460872507974432,
+      "authors": 0.3366000776280327
+     },
+     "deep": {
+      "pixels": 127,
+      "canon": 2.1714296706885023,
+      "refit": 2.1574820132287527,
+      "authors": 0.49854697192721126
+     }
+    },
+    "ftsspec_901218_4_4486": {
+     "telluric": {
+      "pixels": 991,
+      "canon": 0.8929788451052341,
+      "refit": 0.878720448301013,
+      "authors": 0.2669442999904422
+     },
+     "deep": {
+      "pixels": 45,
+      "canon": 2.237430026632387,
+      "refit": 2.0150087792006897,
+      "authors": 0.5652496303704113
+     }
+    },
+    "ftsspec_901218_4_4516": {
+     "telluric": {
+      "pixels": 1116,
+      "canon": 1.2772009590027862,
+      "refit": 1.2733850557108115,
+      "authors": 0.5696322079810188
+     },
+     "deep": {
+      "pixels": 159,
+      "canon": 2.3970391724397957,
+      "refit": 2.3966492858543784,
+      "authors": 0.7302011686944084
+     }
+    },
+    "ftsspec_901218_4_4546": {
+     "telluric": {
+      "pixels": 700,
+      "canon": 0.9413872020941109,
+      "refit": 0.922095408912921,
+      "authors": 0.3489643980371159
+     },
+     "deep": {
+      "pixels": 60,
+      "canon": 2.08566711053172,
+      "refit": 2.0786687829900585,
+      "authors": 0.5311680087226984
+     }
+    },
+    "ftsspec_901218_4_4576": {
+     "telluric": {
+      "pixels": 360,
+      "canon": 1.3893803840629417,
+      "refit": 1.3673100404266736,
+      "authors": 0.5631445759366245
+     },
+     "deep": {
+      "pixels": 50,
+      "canon": 3.21472032661307,
+      "refit": 3.191949757024886,
+      "authors": 0.9889535935040118
+     }
+    },
+    "ftsspec_901218_4_4636": {
+     "telluric": {
+      "pixels": 704,
+      "canon": 0.7434668393896244,
+      "refit": 0.7068131877638998,
+      "authors": 0.7603918238982615
+     },
+     "deep": {
+      "pixels": 9,
+      "canon": 2.798428907415398,
+      "refit": 2.1415014182657353,
+      "authors": 1.4255106347306656
+     }
+    },
+    "ftsspec_901218_4_4666": {
+     "telluric": {
+      "pixels": 43,
+      "canon": 0.5493971937657165,
+      "refit": 0.4177025375211873,
+      "authors": 0.16879618382342815
+     }
+    },
+    "ftsspec_901218_4_4696": {
+     "telluric": {
+      "pixels": 492,
+      "canon": 0.9642115685471041,
+      "refit": 0.8368247858506475,
+      "authors": 0.5610726478342375
+     },
+     "deep": {
+      "pixels": 23,
+      "canon": 1.8261847266105862,
+      "refit": 1.538748346465279,
+      "authors": 0.3126814798007228
+     }
+    },
+    "ftsspec_901218_4_4726": {
+     "telluric": {
+      "pixels": 665,
+      "canon": 0.5794945624634418,
+      "refit": 0.5224271142244719,
+      "authors": 0.3266990692504248
+     },
+     "deep": {
+      "pixels": 21,
+      "canon": 0.906126744842884,
+      "refit": 0.7715804853212471,
+      "authors": 0.48741397577232204
+     }
+    },
+    "ftsspec_901218_4_4756": {
+     "telluric": {
+      "pixels": 1394,
+      "canon": 0.560085816517486,
+      "refit": 0.5596975690596372,
+      "authors": 0.49024074605226947
+     },
+     "deep": {
+      "pixels": 128,
+      "canon": 1.2938511881983554,
+      "refit": 1.2846635919758587,
+      "authors": 0.7584050887988547
+     }
+    },
+    "ftsspec_901218_4_4786": {
+     "telluric": {
+      "pixels": 2034,
+      "canon": 1.4963723051363558,
+      "refit": 1.50881584681127,
+      "authors": 1.3366456507956954
+     },
+     "deep": {
+      "pixels": 336,
+      "canon": 1.4128660255860497,
+      "refit": 1.4635954360295733,
+      "authors": 0.6954582451993324
+     }
+    },
+    "ftsspec_901218_4_4876": {
+     "telluric": {
+      "pixels": 1816,
+      "canon": 0.9057294077814008,
+      "refit": 0.8953300560645006,
+      "authors": 0.5162413005896181
+     },
+     "deep": {
+      "pixels": 385,
+      "canon": 1.7186997075904347,
+      "refit": 1.6984647146262442,
+      "authors": 0.8258689214753506
+     }
+    },
+    "ftsspec_901218_4_4906": {
+     "telluric": {
+      "pixels": 1964,
+      "canon": 0.722946508699483,
+      "refit": 0.7226358005153986,
+      "authors": 0.5281880890433099
+     },
+     "deep": {
+      "pixels": 434,
+      "canon": 1.2012125173768686,
+      "refit": 1.1867849119700438,
+      "authors": 0.7708107303154111
+     }
+    },
+    "ftsspec_901218_4_4996": {
+     "telluric": {
+      "pixels": 1150,
+      "canon": 1.2180052748946015,
+      "refit": 1.2176519615437746,
+      "authors": 0.5630649676278818
+     },
+     "deep": {
+      "pixels": 438,
+      "canon": 1.5449999729574444,
+      "refit": 1.5253554824203635,
+      "authors": 0.6480399950051422
+     }
+    },
+    "ftsspec_901218_4_5026": {
+     "telluric": {
+      "pixels": 1330,
+      "canon": 1.335021418956017,
+      "refit": 1.3168100313834326,
+      "authors": 0.5638197842872127
+     },
+     "deep": {
+      "pixels": 145,
+      "canon": 2.133811291437573,
+      "refit": 2.091000234443142,
+      "authors": 1.1144632855207575
+     }
+    },
+    "ftsspec_901218_4_5566": {
+     "telluric": {
+      "pixels": 1222,
+      "canon": 3.48870548195453,
+      "refit": 3.5790890869236094,
+      "authors": 2.3486358497379887
+     },
+     "deep": {
+      "pixels": 318,
+      "canon": 5.440933977993571,
+      "refit": 5.619130443664606,
+      "authors": 1.666639475240082
+     }
+    },
+    "ftsspec_901218_4_5596": {
+     "telluric": {
+      "pixels": 876,
+      "canon": 1.867778588228066,
+      "refit": 1.7653345041801698,
+      "authors": 1.0170532646989714
+     },
+     "deep": {
+      "pixels": 220,
+      "canon": 3.296574527378296,
+      "refit": 3.086310022631226,
+      "authors": 1.1902265347040801
+     }
+    },
+    "ftsspec_901218_4_5626": {
+     "telluric": {
+      "pixels": 656,
+      "canon": 1.7718431992863135,
+      "refit": 1.4729058400215005,
+      "authors": 0.787957052090873
+     },
+     "deep": {
+      "pixels": 95,
+      "canon": 3.5273274609334258,
+      "refit": 2.65390227504073,
+      "authors": 1.0621972581832726
+     }
+    },
+    "ftsspec_901218_4_5656": {
+     "telluric": {
+      "pixels": 660,
+      "canon": 1.9622448609584984,
+      "refit": 1.8695661058321933,
+      "authors": 1.760804072518335
+     },
+     "deep": {
+      "pixels": 47,
+      "canon": 0.8197717597238564,
+      "refit": 0.6309354821958659,
+      "authors": 0.7516856252638903
+     }
+    },
+    "ftsspec_901218_4_5686": {
+     "telluric": {
+      "pixels": 432,
+      "canon": 1.6259817976637294,
+      "refit": 1.4636002021766756,
+      "authors": 1.4963685080436098
+     },
+     "deep": {
+      "pixels": 27,
+      "canon": 2.4471588598957243,
+      "refit": 0.8499649158029254,
+      "authors": 1.2686183662117272
+     }
+    },
+    "ftsspec_901218_4_5776": {
+     "telluric": {
+      "pixels": 299,
+      "canon": 0.8506066861658491,
+      "refit": 0.7979727899275244,
+      "authors": 0.3219485073336316
+     },
+     "deep": {
+      "pixels": 30,
+      "canon": 2.2569948203541927,
+      "refit": 2.0465280999496884,
+      "authors": 0.60068867041929
+     }
+    },
+    "ftsspec_901218_4_5806": {
+     "telluric": {
+      "pixels": 472,
+      "canon": 0.8705122007959423,
+      "refit": 0.8075323830150791,
+      "authors": 0.4983892848344974
+     },
+     "deep": {
+      "pixels": 50,
+      "canon": 1.9292546043993306,
+      "refit": 1.6037103469862788,
+      "authors": 0.5157903873122321
+     }
+    },
+    "ftsspec_901218_4_5836": {
+     "telluric": {
+      "pixels": 775,
+      "canon": 1.0097342930086937,
+      "refit": 1.0015498759749148,
+      "authors": 0.6522524268753539
+     },
+     "deep": {
+      "pixels": 30,
+      "canon": 2.568945240998489,
+      "refit": 2.4268650365287003,
+      "authors": 0.9777982630537394
+     }
+    },
+    "ftsspec_901218_4_5866": {
+     "telluric": {
+      "pixels": 518,
+      "canon": 1.1355201172785447,
+      "refit": 1.095506346729401,
+      "authors": 0.8057921878013389
+     },
+     "deep": {
+      "pixels": 16,
+      "canon": 2.404955480038493,
+      "refit": 2.580950543647979,
+      "authors": 0.26714370046213665
+     }
+    },
+    "ftsspec_901218_4_5896": {
+     "telluric": {
+      "pixels": 279,
+      "canon": 1.227199929623806,
+      "refit": 1.1789219242993227,
+      "authors": 0.37471935302258114
+     },
+     "deep": {
+      "pixels": 31,
+      "canon": 3.0766535434246225,
+      "refit": 2.9298565620173385,
+      "authors": 0.3702894337096547
+     }
+    },
+    "ftsspec_901218_4_5986": {
+     "telluric": {
+      "pixels": 253,
+      "canon": 1.1208793923348763,
+      "refit": 0.9636457077208643,
+      "authors": 0.5797664055079538
+     },
+     "deep": {
+      "pixels": 19,
+      "canon": 2.313087783344541,
+      "refit": 1.6365650014305233,
+      "authors": 0.5947627681797004
+     }
+    },
+    "ftsspec_901218_4_6016": {
+     "telluric": {
+      "pixels": 142,
+      "canon": 1.091716728241147,
+      "refit": 0.5798424582832035,
+      "authors": 0.4429138143122098
+     }
+    },
+    "ftsspec_901218_4_6046": {
+     "telluric": {
+      "pixels": 166,
+      "canon": 0.7031359408183583,
+      "refit": 0.6530415559031256,
+      "authors": 0.30908017144834027
+     },
+     "deep": {
+      "pixels": 10,
+      "canon": 1.3542962697094798,
+      "refit": 0.9966667524771199,
+      "authors": 0.4646741677954021
+     }
+    },
+    "ftsspec_901218_4_6106": {
+     "telluric": {
+      "pixels": 61,
+      "canon": 1.9501056206758989,
+      "refit": 1.6988338031481773,
+      "authors": 1.4938111329833492
+     }
+    },
+    "ftsspec_901218_4_6136": {
+     "telluric": {
+      "pixels": 137,
+      "canon": 1.8056534040427594,
+      "refit": 1.1219202608460699,
+      "authors": 1.242846209576678
+     }
+    },
+    "ftsspec_901218_4_7426": {
+     "telluric": {
+      "pixels": 1602,
+      "canon": 2.5754711299565725,
+      "refit": 2.259969419418399,
+      "authors": 1.4762297477828976
+     },
+     "deep": {
+      "pixels": 514,
+      "canon": 4.265314405602817,
+      "refit": 3.702274913004226,
+      "authors": 2.057306868165161
+     }
+    },
+    "ftsspec_901218_4_7456": {
+     "telluric": {
+      "pixels": 1384,
+      "canon": 0.8105670880376177,
+      "refit": 0.8834526064867546,
+      "authors": 1.09199070658229
+     },
+     "deep": {
+      "pixels": 183,
+      "canon": 1.5979856273928932,
+      "refit": 1.898795991085542,
+      "authors": 1.6453853111459686
+     }
+    },
+    "ftsspec_901218_4_7486": {
+     "telluric": {
+      "pixels": 1578,
+      "canon": 1.222525353134937,
+      "refit": 1.2229827572487477,
+      "authors": 1.2109279996369464
+     },
+     "deep": {
+      "pixels": 375,
+      "canon": 2.1817930042996183,
+      "refit": 2.1751137265554017,
+      "authors": 1.4171953482000545
+     }
+    },
+    "ftsspec_901218_4_7516": {
+     "telluric": {
+      "pixels": 1557,
+      "canon": 1.1262103054798334,
+      "refit": 1.0639601885445131,
+      "authors": 0.9871560962544432
+     },
+     "deep": {
+      "pixels": 234,
+      "canon": 2.545710116055849,
+      "refit": 2.3863591767897936,
+      "authors": 1.2836434977251154
+     }
+    },
+    "ftsspec_901218_4_7546": {
+     "telluric": {
+      "pixels": 1362,
+      "canon": 1.1952050867270778,
+      "refit": 1.2198641368970335,
+      "authors": 0.8792306038728399
+     },
+     "deep": {
+      "pixels": 183,
+      "canon": 2.9252346229819306,
+      "refit": 2.986938363448967,
+      "authors": 1.2031960941454851
+     }
+    },
+    "ftsspec_901218_4_7576": {
+     "telluric": {
+      "pixels": 998,
+      "canon": 1.1632785043773428,
+      "refit": 1.1511987372524137,
+      "authors": 1.3883630433615781
+     },
+     "deep": {
+      "pixels": 145,
+      "canon": 2.208006180662705,
+      "refit": 2.2196950137428537,
+      "authors": 1.703474202246486
+     }
+    },
+    "ftsspec_901218_4_7606": {
+     "telluric": {
+      "pixels": 1158,
+      "canon": 1.032681502405497,
+      "refit": 0.9781464485188404,
+      "authors": 0.8811972603863358
+     },
+     "deep": {
+      "pixels": 113,
+      "canon": 2.7004345039264344,
+      "refit": 2.5913249447639255,
+      "authors": 1.0306893819677823
+     }
+    },
+    "ftsspec_901218_4_7636": {
+     "telluric": {
+      "pixels": 698,
+      "canon": 0.7949468739444486,
+      "refit": 0.692865453925337,
+      "authors": 0.49951798140243
+     },
+     "deep": {
+      "pixels": 47,
+      "canon": 1.8512997612948896,
+      "refit": 1.6040778719783673,
+      "authors": 0.7734856988453679
+     }
+    },
+    "ftsspec_901218_4_7666": {
+     "telluric": {
+      "pixels": 530,
+      "canon": 1.3491005033009091,
+      "refit": 1.1060225540069877,
+      "authors": 0.5266918567770356
+     },
+     "deep": {
+      "pixels": 85,
+      "canon": 2.9807737071259113,
+      "refit": 2.4812594047956043,
+      "authors": 0.7677021928675216
+     }
+    },
+    "ftsspec_901218_4_7696": {
+     "telluric": {
+      "pixels": 444,
+      "canon": 1.0378660565745343,
+      "refit": 0.7898428922850109,
+      "authors": 0.5069554710990047
+     },
+     "deep": {
+      "pixels": 31,
+      "canon": 2.0610016231587083,
+      "refit": 1.814538629320183,
+      "authors": 0.3285326026136908
+     }
+    },
+    "ftsspec_901218_4_7726": {
+     "telluric": {
+      "pixels": 280,
+      "canon": 1.2732447332768904,
+      "refit": 0.7648513928381886,
+      "authors": 0.5112552447309169
+     },
+     "deep": {
+      "pixels": 11,
+      "canon": 4.191236223854837,
+      "refit": 3.284744760820215,
+      "authors": 0.5101181926816724
+     }
+    },
+    "ftsspec_901218_4_7756": {
+     "telluric": {
+      "pixels": 85,
+      "canon": 0.8542005226182238,
+      "refit": 0.6586305561222545,
+      "authors": 0.25567721527562964
+     }
+    },
+    "ftsspec_901218_4_7846": {
+     "telluric": {
+      "pixels": 1883,
+      "canon": 0.9876632947719292,
+      "refit": 0.9852399162833767,
+      "authors": 1.303996494947969
+     },
+     "deep": {
+      "pixels": 118,
+      "canon": 1.3459526609614714,
+      "refit": 1.3167699085468176,
+      "authors": 1.4344745947385935
+     }
+    },
+    "ftsspec_901218_4_7876": {
+     "telluric": {
+      "pixels": 862,
+      "canon": 1.048497254614007,
+      "refit": 1.0500306023035642,
+      "authors": 2.203316706945892
+     },
+     "deep": {
+      "pixels": 159,
+      "canon": 1.5857426544636974,
+      "refit": 1.5663494277578294,
+      "authors": 2.4924950471877527
+     }
+    },
+    "ftsspec_901218_4_7906": {
+     "telluric": {
+      "pixels": 1535,
+      "canon": 1.0901589180674727,
+      "refit": 1.0909214606435809,
+      "authors": 1.1702006858355622
+     },
+     "deep": {
+      "pixels": 97,
+      "canon": 0.8065276138449923,
+      "refit": 0.8376471487793,
+      "authors": 0.6647142006395763
+     }
+    },
+    "ftsspec_901218_4_7936": {
+     "telluric": {
+      "pixels": 839,
+      "canon": 0.7629789124160418,
+      "refit": 0.756459086353065,
+      "authors": 1.3110660733591069
+     },
+     "deep": {
+      "pixels": 26,
+      "canon": 2.694094192589769,
+      "refit": 2.676240780926197,
+      "authors": 2.2498765690368594
+     }
+    },
+    "ftsspec_901218_4_7966": {
+     "telluric": {
+      "pixels": 144,
+      "canon": 0.5584154217966311,
+      "refit": 0.562794138842307,
+      "authors": 1.090464686536117
+     },
+     "deep": {
+      "pixels": 12,
+      "canon": 1.4172467093975838,
+      "refit": 1.2567358741983483,
+      "authors": 1.3388501288540016
+     }
+    },
+    "ftsspec_901218_4_7996": {
+     "telluric": {
+      "pixels": 43,
+      "canon": 0.8205772070018605,
+      "refit": 0.8132740938757183,
+      "authors": 1.0767919136812414
+     },
+     "deep": {
+      "pixels": 6,
+      "canon": 1.1455219916041186,
+      "refit": 1.2117675416094151,
+      "authors": 1.1374139963155707
+     }
+    },
+    "ftsspec_901218_4_8086": {
+     "telluric": {
+      "pixels": 99,
+      "canon": 1.5097151706294956,
+      "refit": 1.4212978534588507,
+      "authors": 0.6057708735457185
+     }
+    },
+    "ftsspec_901218_4_8116": {
+     "telluric": {
+      "pixels": 192,
+      "canon": 1.5301103582388802,
+      "refit": 1.529807607003612,
+      "authors": 0.5946745379007568
+     },
+     "deep": {
+      "pixels": 8,
+      "canon": 4.456431275165283,
+      "refit": 4.595416289984167,
+      "authors": 0.8583379176914936
+     }
+    },
+    "ftsspec_901218_4_8146": {
+     "telluric": {
+      "pixels": 485,
+      "canon": 1.1886178321233194,
+      "refit": 1.1324367315899055,
+      "authors": 0.6641438393181825
+     },
+     "deep": {
+      "pixels": 21,
+      "canon": 2.2301308247986777,
+      "refit": 1.9208417956045536,
+      "authors": 0.8951157553069242
+     }
+    },
+    "ftsspec_901218_4_8176": {
+     "telluric": {
+      "pixels": 634,
+      "canon": 1.7009114358994752,
+      "refit": 1.7050667824182704,
+      "authors": 0.713274587456133
+     },
+     "deep": {
+      "pixels": 71,
+      "canon": 3.7786378910581426,
+      "refit": 3.7493853627023865,
+      "authors": 0.7180434626429157
+     }
+    },
+    "ftsspec_901218_4_8206": {
+     "telluric": {
+      "pixels": 637,
+      "canon": 1.843783943592123,
+      "refit": 1.8035562572386095,
+      "authors": 0.4652370138364088
+     },
+     "deep": {
+      "pixels": 58,
+      "canon": 4.622135785814355,
+      "refit": 4.3961888399890094,
+      "authors": 0.6680972758742931
+     }
+    },
+    "ftsspec_901218_4_8236": {
+     "telluric": {
+      "pixels": 581,
+      "canon": 1.519857720920901,
+      "refit": 1.4650009690476133,
+      "authors": 1.1305746540810446
+     },
+     "deep": {
+      "pixels": 52,
+      "canon": 3.7452408810409734,
+      "refit": 3.4216605804078,
+      "authors": 1.5625443540048383
+     }
+    },
+    "ftsspec_901218_4_8266": {
+     "telluric": {
+      "pixels": 646,
+      "canon": 1.2398649493178402,
+      "refit": 1.3580942357849397,
+      "authors": 0.8427592861365354
+     },
+     "deep": {
+      "pixels": 77,
+      "canon": 2.6036676531545075,
+      "refit": 2.753099307459202,
+      "authors": 1.2423293607519708
+     }
+    },
+    "ftsspec_901218_4_8296": {
+     "telluric": {
+      "pixels": 643,
+      "canon": 1.6953315942124105,
+      "refit": 1.6131952592206158,
+      "authors": 1.4917464401857221
+     },
+     "deep": {
+      "pixels": 99,
+      "canon": 3.483424886848226,
+      "refit": 3.268648995193524,
+      "authors": 1.5674571368105683
+     }
+    },
+    "ftsspec_901218_4_8326": {
+     "telluric": {
+      "pixels": 255,
+      "canon": 1.615480134044805,
+      "refit": 1.466210242463556,
+      "authors": 0.602030491000836
+     },
+     "deep": {
+      "pixels": 22,
+      "canon": 4.798431160530593,
+      "refit": 3.814234681956023,
+      "authors": 0.5728732954233804
+     }
+    },
+    "ftsspec_901218_4_8356": {
+     "telluric": {
+      "pixels": 896,
+      "canon": 1.5752773846363592,
+      "refit": 1.4953008028657673,
+      "authors": 0.5708017994159124
+     },
+     "deep": {
+      "pixels": 77,
+      "canon": 3.8209755712814215,
+      "refit": 3.6797657150312877,
+      "authors": 0.6541376483802794
+     }
+    },
+    "ftsspec_901218_4_8386": {
+     "telluric": {
+      "pixels": 688,
+      "canon": 1.4759385201456858,
+      "refit": 1.359810315848065,
+      "authors": 0.9572634082372125
+     },
+     "deep": {
+      "pixels": 57,
+      "canon": 3.8646905965056066,
+      "refit": 3.4746623294583903,
+      "authors": 1.3323042744693476
+     }
+    },
+    "ftsspec_901218_4_8416": {
+     "telluric": {
+      "pixels": 1034,
+      "canon": 1.7667727483307503,
+      "refit": 1.7388010291618394,
+      "authors": 1.5706099231069681
+     },
+     "deep": {
+      "pixels": 101,
+      "canon": 4.041896725677424,
+      "refit": 3.9642701522225696,
+      "authors": 1.2398411463638035
+     }
+    },
+    "ftsspec_901218_4_8446": {
+     "telluric": {
+      "pixels": 781,
+      "canon": 2.134062392442129,
+      "refit": 2.154496287685809,
+      "authors": 1.1055848106437116
+     },
+     "deep": {
+      "pixels": 64,
+      "canon": 5.205016779029726,
+      "refit": 5.297424346957273,
+      "authors": 1.256452651829735
+     }
+    },
+    "ftsspec_901218_4_8476": {
+     "telluric": {
+      "pixels": 652,
+      "canon": 1.3700380468620963,
+      "refit": 0.9629407562636418,
+      "authors": 1.0632792842773422
+     },
+     "deep": {
+      "pixels": 61,
+      "canon": 2.6246738232664,
+      "refit": 2.155986112638199,
+      "authors": 1.0194118757137764
+     }
+    },
+    "ftsspec_901218_4_8506": {
+     "telluric": {
+      "pixels": 1017,
+      "canon": 2.4405325238901967,
+      "refit": 1.8764130139096682,
+      "authors": 1.4778970812386456
+     },
+     "deep": {
+      "pixels": 121,
+      "canon": 5.933346377181918,
+      "refit": 4.378429464510915,
+      "authors": 1.4199817392996275
+     }
+    },
+    "ftsspec_901218_4_8536": {
+     "telluric": {
+      "pixels": 1017,
+      "canon": 1.987318203357657,
+      "refit": 1.477746078394495,
+      "authors": 1.5915315905616365
+     },
+     "deep": {
+      "pixels": 86,
+      "canon": 5.297415443575172,
+      "refit": 3.579164765857925,
+      "authors": 1.7452112429706763
+     }
+    },
+    "ftsspec_901218_4_8566": {
+     "telluric": {
+      "pixels": 1209,
+      "canon": 2.604313731720603,
+      "refit": 2.2673603802228475,
+      "authors": 2.23654595338437
+     },
+     "deep": {
+      "pixels": 152,
+      "canon": 5.1239062285717605,
+      "refit": 4.055836995683617,
+      "authors": 1.9810923773752809
+     }
+    },
+    "ftsspec_901218_4_8596": {
+     "telluric": {
+      "pixels": 1166,
+      "canon": 1.8332034247430982,
+      "refit": 1.8148480811146939,
+      "authors": 3.5632501880460126
+     },
+     "deep": {
+      "pixels": 116,
+      "canon": 4.226723302141704,
+      "refit": 4.1392901521024426,
+      "authors": 3.407766737758896
+     }
+    },
+    "ftsspec_901218_4_8626": {
+     "telluric": {
+      "pixels": 1621,
+      "canon": 1.541129290398364,
+      "refit": 1.3968991971481244,
+      "authors": 2.3000224094789625
+     },
+     "deep": {
+      "pixels": 223,
+      "canon": 3.380538320658512,
+      "refit": 2.955014313470619,
+      "authors": 2.198270609540679
+     }
+    },
+    "ftsspec_901218_4_8656": {
+     "telluric": {
+      "pixels": 1597,
+      "canon": 2.0869135776782124,
+      "refit": 1.9133311139174671,
+      "authors": 2.327749924524569
+     },
+     "deep": {
+      "pixels": 278,
+      "canon": 3.5098289109638006,
+      "refit": 2.9925115915371925,
+      "authors": 2.076754168441353
+     }
+    },
+    "ftsspec_901218_4_8686": {
+     "telluric": {
+      "pixels": 1371,
+      "canon": 1.8299329564298548,
+      "refit": 1.8092675966785394,
+      "authors": 3.479423828954807
+     },
+     "deep": {
+      "pixels": 223,
+      "canon": 3.050769296601428,
+      "refit": 2.978617780567528,
+      "authors": 3.16548884763211
+     }
+    },
+    "ftsspec_901218_4_8776": {
+     "telluric": {
+      "pixels": 1565,
+      "canon": 1.591641086251006,
+      "refit": 1.5683045570918936,
+      "authors": 4.079871837966033
+     },
+     "deep": {
+      "pixels": 252,
+      "canon": 2.7002654454095705,
+      "refit": 2.7213443596014053,
+      "authors": 3.547332197658046
+     }
+    },
+    "ftsspec_901218_4_8836": {
+     "telluric": {
+      "pixels": 1226,
+      "canon": 2.2391057675858903,
+      "refit": 2.1586738175443045,
+      "authors": 7.591616575590216
+     },
+     "deep": {
+      "pixels": 440,
+      "canon": 2.8504093864765787,
+      "refit": 2.692073279629134,
+      "authors": 9.293951275282552
+     }
+    },
+    "ftsspec_901218_4_8956": {
+     "telluric": {
+      "pixels": 1203,
+      "canon": 2.751186523321064,
+      "refit": 2.853441735599722,
+      "authors": 5.175009557252082
+     },
+     "deep": {
+      "pixels": 229,
+      "canon": 4.011487517496535,
+      "refit": 4.35674923756894,
+      "authors": 6.427720527112895
+     }
+    },
+    "ftsspec_901218_4_8986": {
+     "telluric": {
+      "pixels": 613,
+      "canon": 2.659173602728052,
+      "refit": 2.690060600993122,
+      "authors": 3.6263099990538326
+     },
+     "deep": {
+      "pixels": 61,
+      "canon": 4.658595634472734,
+      "refit": 4.783236421223129,
+      "authors": 4.533859167890773
+     }
+    }
+   }
+  },
+  "ftsspec_901218_5": {
+   "method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+   "settings": {
+    "stem": "ftsspec_901218_5",
+    "authors": "photatl",
+    "relative_transmission": true
+   },
+   "runs": {
+    "canon": "data/corrected/solar",
+    "refit": "data/corrected/solar/refit_clean_1990"
+   },
+   "summary": {
+    "telluric": {
+     "pages": 125,
+     "median_percent": {
+      "canon": 0.8527502769413424,
+      "refit": 0.7377167685853866,
+      "authors": 0.7911519523378547
+     },
+     "pages_flatter_than_canon": {
+      "refit": 91,
+      "authors": 63
+     },
+     "pages_at_or_below_authors": {
+      "canon": 62,
+      "refit": 73
+     },
+     "pages_worse_than_authors_by_0p2": {
+      "canon": 39,
+      "refit": 25
+     }
+    },
+    "deep": {
+     "pages": 89,
+     "median_percent": {
+      "canon": 1.4854578779940364,
+      "refit": 1.3194170431987946,
+      "authors": 1.2699310480672055
+     },
+     "pages_flatter_than_canon": {
+      "refit": 60,
+      "authors": 49
+     },
+     "pages_at_or_below_authors": {
+      "canon": 40,
+      "refit": 48
+     },
+     "pages_worse_than_authors_by_0p2": {
+      "canon": 39,
+      "refit": 31
+     }
+    }
+   },
+   "pages": {
+    "ftsspec_901218_5_1906": {
+     "telluric": {
+      "pixels": 599,
+      "canon": 1.4881296852801844,
+      "refit": 1.4983459217952166,
+      "authors": 2.0344191256316493
+     },
+     "deep": {
+      "pixels": 249,
+      "canon": 1.8146231219550009,
+      "refit": 1.8272627522115221,
+      "authors": 2.8848510913495904
+     }
+    },
+    "ftsspec_901218_5_1966": {
+     "telluric": {
+      "pixels": 1102,
+      "canon": 1.1059808605412667,
+      "refit": 1.0976775405955093,
+      "authors": 2.5457668293463316
+     },
+     "deep": {
+      "pixels": 200,
+      "canon": 2.142403637409475,
+      "refit": 2.1337905222339275,
+      "authors": 3.997625569848377
+     }
+    },
+    "ftsspec_901218_5_1996": {
+     "telluric": {
+      "pixels": 1153,
+      "canon": 0.9532355820980897,
+      "refit": 0.9477251775217403,
+      "authors": 2.19599232733548
+     },
+     "deep": {
+      "pixels": 124,
+      "canon": 1.4793767276841026,
+      "refit": 1.4927666203268373,
+      "authors": 2.643795151432177
+     }
+    },
+    "ftsspec_901218_5_2416": {
+     "telluric": {
+      "pixels": 601,
+      "canon": 1.0724663284009004,
+      "refit": 1.0570295493598174,
+      "authors": 1.3804591928427226
+     },
+     "deep": {
+      "pixels": 6,
+      "canon": 2.583275594471812,
+      "refit": 2.526308790434178,
+      "authors": 4.358946750540657
+     }
+    },
+    "ftsspec_901218_5_2446": {
+     "telluric": {
+      "pixels": 646,
+      "canon": 0.5802558680518034,
+      "refit": 0.5748028863313631,
+      "authors": 0.8845407987507288
+     }
+    },
+    "ftsspec_901218_5_2476": {
+     "telluric": {
+      "pixels": 487,
+      "canon": 0.6986454543225301,
+      "refit": 0.6936277297184109,
+      "authors": 0.7620401152167395
+     }
+    },
+    "ftsspec_901218_5_2506": {
+     "telluric": {
+      "pixels": 460,
+      "canon": 0.8263686269945971,
+      "refit": 0.840642118910233,
+      "authors": 0.8689750364654643
+     }
+    },
+    "ftsspec_901218_5_2536": {
+     "telluric": {
+      "pixels": 985,
+      "canon": 0.6467619376592625,
+      "refit": 0.6416767816553511,
+      "authors": 0.878682079686102
+     }
+    },
+    "ftsspec_901218_5_2566": {
+     "telluric": {
+      "pixels": 860,
+      "canon": 0.5824332871231833,
+      "refit": 0.5724008185780906,
+      "authors": 0.9536534595280344
+     }
+    },
+    "ftsspec_901218_5_2596": {
+     "telluric": {
+      "pixels": 1097,
+      "canon": 0.48792678623858715,
+      "refit": 0.48890000733879346,
+      "authors": 0.8052397042267444
+     }
+    },
+    "ftsspec_901218_5_2626": {
+     "telluric": {
+      "pixels": 811,
+      "canon": 0.45647954172546057,
+      "refit": 0.4567681530019125,
+      "authors": 0.6947953014661344
+     },
+     "deep": {
+      "pixels": 12,
+      "canon": 0.8128633541501216,
+      "refit": 0.8120399227022755,
+      "authors": 1.3820872175445575
+     }
+    },
+    "ftsspec_901218_5_2656": {
+     "telluric": {
+      "pixels": 572,
+      "canon": 0.5698489382255845,
+      "refit": 0.567313305945053,
+      "authors": 0.671910015797311
+     },
+     "deep": {
+      "pixels": 10,
+      "canon": 0.4812473300515012,
+      "refit": 0.5322996844441946,
+      "authors": 1.064205563690222
+     }
+    },
+    "ftsspec_901218_5_2686": {
+     "telluric": {
+      "pixels": 598,
+      "canon": 0.6663333357565931,
+      "refit": 0.6869773613871746,
+      "authors": 0.7674751962854393
+     },
+     "deep": {
+      "pixels": 5,
+      "canon": 1.0994048609735134,
+      "refit": 1.23263932569487,
+      "authors": 0.9963896839045906
+     }
+    },
+    "ftsspec_901218_5_2716": {
+     "telluric": {
+      "pixels": 924,
+      "canon": 0.6645263702431484,
+      "refit": 0.6836452138882035,
+      "authors": 1.4475345118011471
+     },
+     "deep": {
+      "pixels": 20,
+      "canon": 0.864698527187392,
+      "refit": 0.7232150788615467,
+      "authors": 2.8967537959200635
+     }
+    },
+    "ftsspec_901218_5_2746": {
+     "telluric": {
+      "pixels": 1149,
+      "canon": 0.5918618042600189,
+      "refit": 0.5843176067126596,
+      "authors": 0.6681664472058814
+     },
+     "deep": {
+      "pixels": 10,
+      "canon": 0.45134015170643454,
+      "refit": 0.48816560311992124,
+      "authors": 1.3733673688127845
+     }
+    },
+    "ftsspec_901218_5_2776": {
+     "telluric": {
+      "pixels": 1815,
+      "canon": 0.810069779509251,
+      "refit": 0.8088939322413805,
+      "authors": 0.925396394051112
+     },
+     "deep": {
+      "pixels": 18,
+      "canon": 1.2328814397027859,
+      "refit": 1.2188494766027937,
+      "authors": 1.5675499533768196
+     }
+    },
+    "ftsspec_901218_5_2806": {
+     "telluric": {
+      "pixels": 1484,
+      "canon": 1.5889602851865081,
+      "refit": 1.5930650221115468,
+      "authors": 0.7833860385471872
+     },
+     "deep": {
+      "pixels": 8,
+      "canon": 0.9570599051729165,
+      "refit": 0.9343512021300013,
+      "authors": 0.6144441295470772
+     }
+    },
+    "ftsspec_901218_5_2836": {
+     "telluric": {
+      "pixels": 1033,
+      "canon": 1.5366506643958946,
+      "refit": 1.5392147813023949,
+      "authors": 0.635526652294103
+     },
+     "deep": {
+      "pixels": 5,
+      "canon": 2.847627083801828,
+      "refit": 2.7141044213594885,
+      "authors": 1.5959918414749856
+     }
+    },
+    "ftsspec_901218_5_2866": {
+     "telluric": {
+      "pixels": 1493,
+      "canon": 1.2349337639877238,
+      "refit": 1.2407362836398952,
+      "authors": 0.48474608235672445
+     },
+     "deep": {
+      "pixels": 18,
+      "canon": 3.7603310237880274,
+      "refit": 3.770492437787545,
+      "authors": 1.0314454445073677
+     }
+    },
+    "ftsspec_901218_5_2896": {
+     "telluric": {
+      "pixels": 1205,
+      "canon": 1.0093966362624411,
+      "refit": 0.9995425016065231,
+      "authors": 0.6025034520588591
+     },
+     "deep": {
+      "pixels": 10,
+      "canon": 1.3900052421549374,
+      "refit": 1.350960338475182,
+      "authors": 0.9281749802350725
+     }
+    },
+    "ftsspec_901218_5_2926": {
+     "telluric": {
+      "pixels": 1233,
+      "canon": 0.9144365818183448,
+      "refit": 0.913345257819149,
+      "authors": 2.1616420519739274
+     },
+     "deep": {
+      "pixels": 30,
+      "canon": 2.2081129810541276,
+      "refit": 2.268710054321919,
+      "authors": 1.5939055915265288
+     }
+    },
+    "ftsspec_901218_5_2986": {
+     "telluric": {
+      "pixels": 930,
+      "canon": 0.9627159115327448,
+      "refit": 0.9685550627852818,
+      "authors": 0.6786220190463049
+     },
+     "deep": {
+      "pixels": 101,
+      "canon": 1.4854578779940364,
+      "refit": 1.4857809539694,
+      "authors": 1.1057877212532816
+     }
+    },
+    "ftsspec_901218_5_3016": {
+     "telluric": {
+      "pixels": 839,
+      "canon": 1.1391977251828593,
+      "refit": 1.1381729072532247,
+      "authors": 1.1177471499863063
+     },
+     "deep": {
+      "pixels": 179,
+      "canon": 1.497905170442491,
+      "refit": 1.5289654927140257,
+      "authors": 1.3096765746206296
+     }
+    },
+    "ftsspec_901218_5_3076": {
+     "telluric": {
+      "pixels": 710,
+      "canon": 1.0044459859645931,
+      "refit": 1.010205128593697,
+      "authors": 2.798923015445369
+     },
+     "deep": {
+      "pixels": 115,
+      "canon": 1.3375495181890014,
+      "refit": 1.3323025738243108,
+      "authors": 3.523560723464694
+     }
+    },
+    "ftsspec_901218_5_3106": {
+     "telluric": {
+      "pixels": 741,
+      "canon": 1.0205159793653833,
+      "refit": 1.027910587968089,
+      "authors": 0.7958569404915578
+     },
+     "deep": {
+      "pixels": 223,
+      "canon": 0.965224328419949,
+      "refit": 0.9725232484095706,
+      "authors": 0.9088570568133916
+     }
+    },
+    "ftsspec_901218_5_3136": {
+     "telluric": {
+      "pixels": 1724,
+      "canon": 1.788355908446956,
+      "refit": 1.7783819330148862,
+      "authors": 1.976745751240636
+     },
+     "deep": {
+      "pixels": 105,
+      "canon": 5.5401050888615835,
+      "refit": 5.498210803008476,
+      "authors": 2.2458710008021594
+     }
+    },
+    "ftsspec_901218_5_3166": {
+     "telluric": {
+      "pixels": 1662,
+      "canon": 1.114448384243954,
+      "refit": 1.1224732349459854,
+      "authors": 2.1590962183813076
+     },
+     "deep": {
+      "pixels": 216,
+      "canon": 1.3901390259385946,
+      "refit": 1.426687209077709,
+      "authors": 3.067033534597256
+     }
+    },
+    "ftsspec_901218_5_3196": {
+     "telluric": {
+      "pixels": 1361,
+      "canon": 0.862283924889421,
+      "refit": 0.8561781410200814,
+      "authors": 0.8466262370641995
+     },
+     "deep": {
+      "pixels": 330,
+      "canon": 1.233134386117946,
+      "refit": 1.2164444604981999,
+      "authors": 0.9251169558310762
+     }
+    },
+    "ftsspec_901218_5_3226": {
+     "telluric": {
+      "pixels": 1435,
+      "canon": 0.7533209590162188,
+      "refit": 0.7562504064182909,
+      "authors": 1.8346831165732953
+     },
+     "deep": {
+      "pixels": 449,
+      "canon": 1.0962498182234837,
+      "refit": 1.0992272467317348,
+      "authors": 2.2973816855215166
+     }
+    },
+    "ftsspec_901218_5_3256": {
+     "telluric": {
+      "pixels": 1118,
+      "canon": 0.5969181300833043,
+      "refit": 0.6097769359596941,
+      "authors": 0.8499099376209102
+     },
+     "deep": {
+      "pixels": 348,
+      "canon": 0.7714972826642351,
+      "refit": 0.7876801321108663,
+      "authors": 1.2699310480672055
+     }
+    },
+    "ftsspec_901218_5_3286": {
+     "telluric": {
+      "pixels": 736,
+      "canon": 0.3657634566319343,
+      "refit": 0.3630413162990817,
+      "authors": 1.2317696140079726
+     },
+     "deep": {
+      "pixels": 130,
+      "canon": 0.6260765228366904,
+      "refit": 0.5966471590392595,
+      "authors": 2.1039435498340473
+     }
+    },
+    "ftsspec_901218_5_3406": {
+     "telluric": {
+      "pixels": 1495,
+      "canon": 0.5755686721574083,
+      "refit": 0.5723789758858235,
+      "authors": 1.0996238826677056
+     },
+     "deep": {
+      "pixels": 334,
+      "canon": 0.8551058569540486,
+      "refit": 0.8341117480300275,
+      "authors": 1.4601729814475783
+     }
+    },
+    "ftsspec_901218_5_3976": {
+     "telluric": {
+      "pixels": 336,
+      "canon": 0.9626019529969263,
+      "refit": 0.8062810816492918,
+      "authors": 0.7739940396677786
+     },
+     "deep": {
+      "pixels": 19,
+      "canon": 2.209191122027961,
+      "refit": 1.6297672179692184,
+      "authors": 1.7642239918734794
+     }
+    },
+    "ftsspec_901218_5_4036": {
+     "telluric": {
+      "pixels": 1555,
+      "canon": 0.6798926888791704,
+      "refit": 0.5986654219518461,
+      "authors": 0.47529379021920465
+     },
+     "deep": {
+      "pixels": 84,
+      "canon": 1.5608992810339155,
+      "refit": 1.3107816775013852,
+      "authors": 1.2118773159138234
+     }
+    },
+    "ftsspec_901218_5_4066": {
+     "telluric": {
+      "pixels": 974,
+      "canon": 0.6514138497320844,
+      "refit": 0.5955532865704236,
+      "authors": 0.536438682802524
+     },
+     "deep": {
+      "pixels": 114,
+      "canon": 0.9644993744780892,
+      "refit": 0.7213222272427405,
+      "authors": 1.0270401185484002
+     }
+    },
+    "ftsspec_901218_5_4096": {
+     "telluric": {
+      "pixels": 1039,
+      "canon": 0.7451066115886368,
+      "refit": 0.7393495314227229,
+      "authors": 0.5391398332844303
+     },
+     "deep": {
+      "pixels": 62,
+      "canon": 1.0713650779693311,
+      "refit": 1.0251914295003268,
+      "authors": 1.3275508933063889
+     }
+    },
+    "ftsspec_901218_5_4126": {
+     "telluric": {
+      "pixels": 1102,
+      "canon": 0.9271603505871923,
+      "refit": 0.8551924631798068,
+      "authors": 0.6075856407215033
+     },
+     "deep": {
+      "pixels": 98,
+      "canon": 1.660194964320082,
+      "refit": 1.5503533162030227,
+      "authors": 1.3450630699098383
+     }
+    },
+    "ftsspec_901218_5_4156": {
+     "telluric": {
+      "pixels": 1093,
+      "canon": 0.8769020916521254,
+      "refit": 0.8517060487068037,
+      "authors": 0.5945043385521358
+     },
+     "deep": {
+      "pixels": 55,
+      "canon": 1.4871174070352127,
+      "refit": 1.3134556143633347,
+      "authors": 1.0814733127802412
+     }
+    },
+    "ftsspec_901218_5_4186": {
+     "telluric": {
+      "pixels": 1110,
+      "canon": 0.48742846556806246,
+      "refit": 0.491361059716063,
+      "authors": 0.7164480386877686
+     },
+     "deep": {
+      "pixels": 12,
+      "canon": 0.62870545232204,
+      "refit": 0.6867933118764881,
+      "authors": 2.24729089737587
+     }
+    },
+    "ftsspec_901218_5_4216": {
+     "telluric": {
+      "pixels": 888,
+      "canon": 0.5778248437235312,
+      "refit": 0.5710699400524014,
+      "authors": 0.3856116336535155
+     },
+     "deep": {
+      "pixels": 20,
+      "canon": 0.8561376123631044,
+      "refit": 0.8101265890438678,
+      "authors": 0.938379312980115
+     }
+    },
+    "ftsspec_901218_5_4246": {
+     "telluric": {
+      "pixels": 1400,
+      "canon": 0.6486930687258025,
+      "refit": 0.6404870912892434,
+      "authors": 0.45402182453333706
+     },
+     "deep": {
+      "pixels": 18,
+      "canon": 0.794542620723482,
+      "refit": 0.864508082507464,
+      "authors": 0.9800823221128401
+     }
+    },
+    "ftsspec_901218_5_4276": {
+     "telluric": {
+      "pixels": 932,
+      "canon": 0.46069767267514883,
+      "refit": 0.4568550845208255,
+      "authors": 0.47674530478718113
+     },
+     "deep": {
+      "pixels": 6,
+      "canon": 0.8643422006991496,
+      "refit": 1.013423401421352,
+      "authors": 1.188026976404901
+     }
+    },
+    "ftsspec_901218_5_4306": {
+     "telluric": {
+      "pixels": 1012,
+      "canon": 0.5267130087791262,
+      "refit": 0.5470939481729221,
+      "authors": 0.6258006325454009
+     },
+     "deep": {
+      "pixels": 5,
+      "canon": 0.5028927138476071,
+      "refit": 0.5090181824335862,
+      "authors": 0.9771711616324461
+     }
+    },
+    "ftsspec_901218_5_4336": {
+     "telluric": {
+      "pixels": 1156,
+      "canon": 0.9629603886210323,
+      "refit": 0.9570086016993965,
+      "authors": 0.5483217997689067
+     }
+    },
+    "ftsspec_901218_5_4366": {
+     "telluric": {
+      "pixels": 1075,
+      "canon": 1.0296781245629225,
+      "refit": 1.0355911742344481,
+      "authors": 0.3948352552945246
+     },
+     "deep": {
+      "pixels": 6,
+      "canon": 2.7074259405197223,
+      "refit": 2.8962907027499907,
+      "authors": 0.7160184280045593
+     }
+    },
+    "ftsspec_901218_5_4396": {
+     "telluric": {
+      "pixels": 1294,
+      "canon": 0.7142779632037309,
+      "refit": 0.7153111954474202,
+      "authors": 0.4010243608051044
+     },
+     "deep": {
+      "pixels": 10,
+      "canon": 1.9745749658849292,
+      "refit": 1.9979294210968415,
+      "authors": 0.639345945663994
+     }
+    },
+    "ftsspec_901218_5_4426": {
+     "telluric": {
+      "pixels": 1256,
+      "canon": 0.6771537904255087,
+      "refit": 0.6672982048289806,
+      "authors": 0.4330587348286953
+     },
+     "deep": {
+      "pixels": 7,
+      "canon": 1.4877226966419999,
+      "refit": 1.4696079667930988,
+      "authors": 0.4548182889192927
+     }
+    },
+    "ftsspec_901218_5_4456": {
+     "telluric": {
+      "pixels": 901,
+      "canon": 0.7242512020963978,
+      "refit": 0.7068626453547585,
+      "authors": 0.4706937766899736
+     }
+    },
+    "ftsspec_901218_5_4486": {
+     "telluric": {
+      "pixels": 466,
+      "canon": 0.5182564186001093,
+      "refit": 0.5033948836476727,
+      "authors": 0.29226010503396654
+     }
+    },
+    "ftsspec_901218_5_4516": {
+     "telluric": {
+      "pixels": 826,
+      "canon": 0.7275013933356432,
+      "refit": 0.7279848153877911,
+      "authors": 0.6905882725349649
+     },
+     "deep": {
+      "pixels": 7,
+      "canon": 1.5903314662654975,
+      "refit": 1.588385367169984,
+      "authors": 1.0491306745177504
+     }
+    },
+    "ftsspec_901218_5_4546": {
+     "telluric": {
+      "pixels": 485,
+      "canon": 0.4227063198622244,
+      "refit": 0.3923555780042694,
+      "authors": 0.3698595391137198
+     }
+    },
+    "ftsspec_901218_5_4576": {
+     "telluric": {
+      "pixels": 258,
+      "canon": 0.5491366325072758,
+      "refit": 0.5220002680496278,
+      "authors": 0.5801003575739695
+     }
+    },
+    "ftsspec_901218_5_4636": {
+     "telluric": {
+      "pixels": 370,
+      "canon": 1.1435443877019926,
+      "refit": 0.4937237565927137,
+      "authors": 0.6863524263986603
+     }
+    },
+    "ftsspec_901218_5_4696": {
+     "telluric": {
+      "pixels": 270,
+      "canon": 0.6021108539610294,
+      "refit": 0.4396352648718008,
+      "authors": 0.4225657887028767
+     },
+     "deep": {
+      "pixels": 5,
+      "canon": 0.6378016860463298,
+      "refit": 0.47998710514208126,
+      "authors": 0.847619084312874
+     }
+    },
+    "ftsspec_901218_5_4726": {
+     "telluric": {
+      "pixels": 291,
+      "canon": 0.48754450211099226,
+      "refit": 0.35224609353836833,
+      "authors": 0.3549050337380093
+     }
+    },
+    "ftsspec_901218_5_4756": {
+     "telluric": {
+      "pixels": 817,
+      "canon": 0.2730178460587794,
+      "refit": 0.2695894653717355,
+      "authors": 0.3094125312366056
+     },
+     "deep": {
+      "pixels": 7,
+      "canon": 0.6795974798913788,
+      "refit": 0.6473329924682534,
+      "authors": 1.2244437828598556
+     }
+    },
+    "ftsspec_901218_5_4786": {
+     "telluric": {
+      "pixels": 1432,
+      "canon": 0.8622183756937215,
+      "refit": 0.8650408698002565,
+      "authors": 0.8482887836021047
+     },
+     "deep": {
+      "pixels": 60,
+      "canon": 0.8393070658315747,
+      "refit": 0.9069077501521681,
+      "authors": 1.0849262231575059
+     }
+    },
+    "ftsspec_901218_5_4816": {
+     "telluric": {
+      "pixels": 1557,
+      "canon": 0.4144540834409468,
+      "refit": 0.3697485632212507,
+      "authors": 0.37225750377303396
+     },
+     "deep": {
+      "pixels": 147,
+      "canon": 0.7021317312249431,
+      "refit": 0.5178509996023609,
+      "authors": 0.5179257268876246
+     }
+    },
+    "ftsspec_901218_5_4876": {
+     "telluric": {
+      "pixels": 1492,
+      "canon": 0.5147392117774559,
+      "refit": 0.5117122567759694,
+      "authors": 0.5581206321711022
+     },
+     "deep": {
+      "pixels": 98,
+      "canon": 1.2550942587731422,
+      "refit": 1.2382709601544735,
+      "authors": 0.9977350416625308
+     }
+    },
+    "ftsspec_901218_5_4906": {
+     "telluric": {
+      "pixels": 1595,
+      "canon": 0.47793641716727,
+      "refit": 0.46463224055472974,
+      "authors": 0.5678998716340431
+     },
+     "deep": {
+      "pixels": 92,
+      "canon": 1.0575769762426894,
+      "refit": 0.9865916961507454,
+      "authors": 1.0496596223493087
+     }
+    },
+    "ftsspec_901218_5_4936": {
+     "telluric": {
+      "pixels": 1051,
+      "canon": 0.4725916748875022,
+      "refit": 0.47308334399609514,
+      "authors": 1.1928936422578558
+     },
+     "deep": {
+      "pixels": 299,
+      "canon": 0.5496501556400445,
+      "refit": 0.5499532989902877,
+      "authors": 1.7313908015788928
+     }
+    },
+    "ftsspec_901218_5_4996": {
+     "telluric": {
+      "pixels": 960,
+      "canon": 0.7198082279934243,
+      "refit": 0.7223852197784479,
+      "authors": 0.5851658559880882
+     },
+     "deep": {
+      "pixels": 182,
+      "canon": 0.7244492240800146,
+      "refit": 0.7183721686731597,
+      "authors": 0.6355941532608403
+     }
+    },
+    "ftsspec_901218_5_5026": {
+     "telluric": {
+      "pixels": 929,
+      "canon": 0.8494030373796652,
+      "refit": 0.842326455515253,
+      "authors": 0.5665528164917204
+     },
+     "deep": {
+      "pixels": 48,
+      "canon": 1.3105424220348483,
+      "refit": 1.302380992416588,
+      "authors": 1.259567772574971
+     }
+    },
+    "ftsspec_901218_5_5056": {
+     "telluric": {
+      "pixels": 1415,
+      "canon": 0.6343544809377446,
+      "refit": 0.627673913887412,
+      "authors": 0.5674627759196501
+     },
+     "deep": {
+      "pixels": 233,
+      "canon": 0.8364057333581272,
+      "refit": 0.7993657931404574,
+      "authors": 0.6972748264317228
+     }
+    },
+    "ftsspec_901218_5_5566": {
+     "telluric": {
+      "pixels": 1090,
+      "canon": 2.2926211335548214,
+      "refit": 2.362633788709767,
+      "authors": 2.0852096262135253
+     },
+     "deep": {
+      "pixels": 97,
+      "canon": 3.191458168104094,
+      "refit": 3.4394585643586146,
+      "authors": 1.8743027570407633
+     }
+    },
+    "ftsspec_901218_5_5596": {
+     "telluric": {
+      "pixels": 715,
+      "canon": 1.1733530406040154,
+      "refit": 1.0694301857437676,
+      "authors": 1.1377144207535292
+     },
+     "deep": {
+      "pixels": 82,
+      "canon": 1.9642949684380424,
+      "refit": 1.6313085632825124,
+      "authors": 1.4607440022395297
+     }
+    },
+    "ftsspec_901218_5_5626": {
+     "telluric": {
+      "pixels": 465,
+      "canon": 1.1646269698978573,
+      "refit": 0.759177177023699,
+      "authors": 0.675717615527359
+     },
+     "deep": {
+      "pixels": 12,
+      "canon": 2.8772919572872286,
+      "refit": 1.5765915955292278,
+      "authors": 0.9512976281928025
+     }
+    },
+    "ftsspec_901218_5_5656": {
+     "telluric": {
+      "pixels": 396,
+      "canon": 1.8978323015884417,
+      "refit": 1.7521280036384916,
+      "authors": 1.7785896835830792
+     },
+     "deep": {
+      "pixels": 12,
+      "canon": 1.0895374851782946,
+      "refit": 1.3027216061025577,
+      "authors": 0.7226737750134324
+     }
+    },
+    "ftsspec_901218_5_5686": {
+     "telluric": {
+      "pixels": 218,
+      "canon": 1.3212715853309247,
+      "refit": 1.21368978940497,
+      "authors": 1.2855885439788968
+     },
+     "deep": {
+      "pixels": 6,
+      "canon": 1.6540579854983206,
+      "refit": 0.3116553385583741,
+      "authors": 1.4010893700685665
+     }
+    },
+    "ftsspec_901218_5_5716": {
+     "telluric": {
+      "pixels": 69,
+      "canon": 0.9539398551358335,
+      "refit": 0.4003743685932636,
+      "authors": 0.8949301683413879
+     }
+    },
+    "ftsspec_901218_5_5776": {
+     "telluric": {
+      "pixels": 159,
+      "canon": 0.6701397902466493,
+      "refit": 0.4229997759880476,
+      "authors": 0.3754361627864527
+     }
+    },
+    "ftsspec_901218_5_5806": {
+     "telluric": {
+      "pixels": 265,
+      "canon": 0.8497618827840127,
+      "refit": 0.4503567224405727,
+      "authors": 0.5147774722228082
+     },
+     "deep": {
+      "pixels": 5,
+      "canon": 1.4437773477116131,
+      "refit": 0.5231489323361193,
+      "authors": 0.7661294013796195
+     }
+    },
+    "ftsspec_901218_5_5836": {
+     "telluric": {
+      "pixels": 422,
+      "canon": 0.8188018414767955,
+      "refit": 0.6720546224901681,
+      "authors": 1.002112266454311
+     }
+    },
+    "ftsspec_901218_5_5866": {
+     "telluric": {
+      "pixels": 211,
+      "canon": 1.6980869299843468,
+      "refit": 0.7247627147552582,
+      "authors": 0.5654939410054489
+     }
+    },
+    "ftsspec_901218_5_5896": {
+     "telluric": {
+      "pixels": 151,
+      "canon": 1.2513054450569014,
+      "refit": 0.7593608582560039,
+      "authors": 0.34985758739507894
+     }
+    },
+    "ftsspec_901218_5_5986": {
+     "telluric": {
+      "pixels": 154,
+      "canon": 0.7022083088774458,
+      "refit": 0.6388467482820676,
+      "authors": 0.4793890076331407
+     }
+    },
+    "ftsspec_901218_5_6016": {
+     "telluric": {
+      "pixels": 56,
+      "canon": 0.9326788037356537,
+      "refit": 0.5068442797784867,
+      "authors": 0.49034706009464557
+     }
+    },
+    "ftsspec_901218_5_6046": {
+     "telluric": {
+      "pixels": 80,
+      "canon": 0.8527502769413424,
+      "refit": 0.6408148750234205,
+      "authors": 0.41897152230987733
+     }
+    },
+    "ftsspec_901218_5_6106": {
+     "telluric": {
+      "pixels": 33,
+      "canon": 2.0099108772644856,
+      "refit": 1.1563520860617533,
+      "authors": 0.977406806271425
+     }
+    },
+    "ftsspec_901218_5_6136": {
+     "telluric": {
+      "pixels": 35,
+      "canon": 0.9605279560756877,
+      "refit": 0.8362009249313317,
+      "authors": 0.6331110432164402
+     }
+    },
+    "ftsspec_901218_5_6856": {
+     "telluric": {
+      "pixels": 949,
+      "canon": 1.1009216574305853,
+      "refit": 1.0370531728513173,
+      "authors": 13.468204192017657
+     },
+     "deep": {
+      "pixels": 122,
+      "canon": 1.583438145420528,
+      "refit": 1.4535305166472872,
+      "authors": 15.427474257879911
+     }
+    },
+    "ftsspec_901218_5_7426": {
+     "telluric": {
+      "pixels": 1496,
+      "canon": 1.2485574566248623,
+      "refit": 1.0635297545173312,
+      "authors": 1.363808753462801
+     },
+     "deep": {
+      "pixels": 241,
+      "canon": 2.3227785160372716,
+      "refit": 1.926692913378356,
+      "authors": 2.1236888977496795
+     }
+    },
+    "ftsspec_901218_5_7456": {
+     "telluric": {
+      "pixels": 1060,
+      "canon": 0.42960286605719444,
+      "refit": 0.4312890994301026,
+      "authors": 1.1212429027088058
+     },
+     "deep": {
+      "pixels": 29,
+      "canon": 0.554043218817311,
+      "refit": 0.670696876701114,
+      "authors": 1.640469895556294
+     }
+    },
+    "ftsspec_901218_5_7486": {
+     "telluric": {
+      "pixels": 1333,
+      "canon": 0.5342735205141106,
+      "refit": 0.538626318548221,
+      "authors": 1.1400305463249754
+     },
+     "deep": {
+      "pixels": 49,
+      "canon": 1.0227415524840842,
+      "refit": 1.1013003197971538,
+      "authors": 1.4840151045895542
+     }
+    },
+    "ftsspec_901218_5_7516": {
+     "telluric": {
+      "pixels": 1107,
+      "canon": 0.5694298573280652,
+      "refit": 0.49035254748008633,
+      "authors": 0.7041021236319606
+     },
+     "deep": {
+      "pixels": 42,
+      "canon": 1.4183447467204884,
+      "refit": 1.1559515015072508,
+      "authors": 1.009351336117593
+     }
+    },
+    "ftsspec_901218_5_7546": {
+     "telluric": {
+      "pixels": 1017,
+      "canon": 0.5181022127867702,
+      "refit": 0.522044486546559,
+      "authors": 1.068451662175038
+     },
+     "deep": {
+      "pixels": 25,
+      "canon": 1.3503127442293352,
+      "refit": 1.3999962248460323,
+      "authors": 1.5093740156537723
+     }
+    },
+    "ftsspec_901218_5_7576": {
+     "telluric": {
+      "pixels": 688,
+      "canon": 0.7809213759882208,
+      "refit": 0.7687689144174829,
+      "authors": 1.558503038031799
+     },
+     "deep": {
+      "pixels": 23,
+      "canon": 1.1628168601731979,
+      "refit": 1.1142024536520239,
+      "authors": 1.5632758012648382
+     }
+    },
+    "ftsspec_901218_5_7606": {
+     "telluric": {
+      "pixels": 730,
+      "canon": 0.5748674697234938,
+      "refit": 0.5174354457858967,
+      "authors": 0.8242525005088277
+     },
+     "deep": {
+      "pixels": 14,
+      "canon": 1.229917440006631,
+      "refit": 1.0900396265565064,
+      "authors": 0.9156781508236213
+     }
+    },
+    "ftsspec_901218_5_7636": {
+     "telluric": {
+      "pixels": 416,
+      "canon": 0.5570744894705015,
+      "refit": 0.4831358754771477,
+      "authors": 0.5169154748588776
+     },
+     "deep": {
+      "pixels": 5,
+      "canon": 1.3848246884814697,
+      "refit": 0.6546410128702258,
+      "authors": 0.6346220441779228
+     }
+    },
+    "ftsspec_901218_5_7666": {
+     "telluric": {
+      "pixels": 344,
+      "canon": 0.7759740641127479,
+      "refit": 0.5829585614571997,
+      "authors": 0.5056959352581489
+     },
+     "deep": {
+      "pixels": 12,
+      "canon": 1.421539920010551,
+      "refit": 0.7289042357252793,
+      "authors": 0.8745265383604296
+     }
+    },
+    "ftsspec_901218_5_7696": {
+     "telluric": {
+      "pixels": 275,
+      "canon": 0.6012980789482202,
+      "refit": 0.42733094201132976,
+      "authors": 0.43448394545106234
+     }
+    },
+    "ftsspec_901218_5_7726": {
+     "telluric": {
+      "pixels": 132,
+      "canon": 1.5318810455302252,
+      "refit": 0.3197624944602698,
+      "authors": 0.3010841834009373
+     }
+    },
+    "ftsspec_901218_5_7756": {
+     "telluric": {
+      "pixels": 58,
+      "canon": 0.44866241043344846,
+      "refit": 0.2518001014263824,
+      "authors": 0.23483488673626862
+     }
+    },
+    "ftsspec_901218_5_7846": {
+     "telluric": {
+      "pixels": 890,
+      "canon": 1.32985916037879,
+      "refit": 1.3326750697147625,
+      "authors": 1.4177480950391705
+     }
+    },
+    "ftsspec_901218_5_7876": {
+     "telluric": {
+      "pixels": 595,
+      "canon": 1.1035037730908814,
+      "refit": 1.1044259146661561,
+      "authors": 2.3273557142603827
+     }
+    },
+    "ftsspec_901218_5_7906": {
+     "telluric": {
+      "pixels": 700,
+      "canon": 0.5426930778746953,
+      "refit": 0.5213099594831506,
+      "authors": 0.7010009182669583
+     }
+    },
+    "ftsspec_901218_5_7936": {
+     "telluric": {
+      "pixels": 180,
+      "canon": 1.300768172735891,
+      "refit": 1.294601765602634,
+      "authors": 1.3970183168325534
+     }
+    },
+    "ftsspec_901218_5_7966": {
+     "telluric": {
+      "pixels": 65,
+      "canon": 0.8980105345313041,
+      "refit": 0.8681262722545177,
+      "authors": 1.3410085048309823
+     }
+    },
+    "ftsspec_901218_5_8086": {
+     "telluric": {
+      "pixels": 56,
+      "canon": 1.990050475880284,
+      "refit": 0.6954472484268637,
+      "authors": 0.4144410677963192
+     }
+    },
+    "ftsspec_901218_5_8116": {
+     "telluric": {
+      "pixels": 93,
+      "canon": 1.2429045706412136,
+      "refit": 1.0611518814917393,
+      "authors": 0.7114721025747883
+     }
+    },
+    "ftsspec_901218_5_8146": {
+     "telluric": {
+      "pixels": 280,
+      "canon": 0.6790188329179386,
+      "refit": 0.6805458751269039,
+      "authors": 0.665022416895697
+     }
+    },
+    "ftsspec_901218_5_8176": {
+     "telluric": {
+      "pixels": 421,
+      "canon": 1.0197800815218638,
+      "refit": 0.9949700161642584,
+      "authors": 0.652525987008883
+     }
+    },
+    "ftsspec_901218_5_8206": {
+     "telluric": {
+      "pixels": 422,
+      "canon": 0.9533238877830084,
+      "refit": 0.9061458712983997,
+      "authors": 0.4552356421036765
+     },
+     "deep": {
+      "pixels": 10,
+      "canon": 2.101645831631613,
+      "refit": 1.7568583603575654,
+      "authors": 0.9404662260349422
+     }
+    },
+    "ftsspec_901218_5_8236": {
+     "telluric": {
+      "pixels": 343,
+      "canon": 0.8120481763676765,
+      "refit": 0.7486076002041571,
+      "authors": 1.0988652701104518
+     },
+     "deep": {
+      "pixels": 5,
+      "canon": 1.787341604271308,
+      "refit": 1.6144196305963119,
+      "authors": 1.0564586379358876
+     }
+    },
+    "ftsspec_901218_5_8266": {
+     "telluric": {
+      "pixels": 402,
+      "canon": 0.7524065251948897,
+      "refit": 0.8328257864944764,
+      "authors": 0.7911519523378547
+     },
+     "deep": {
+      "pixels": 12,
+      "canon": 1.8597295799260771,
+      "refit": 1.535670917997782,
+      "authors": 0.8665525948175998
+     }
+    },
+    "ftsspec_901218_5_8296": {
+     "telluric": {
+      "pixels": 460,
+      "canon": 0.8223327484645602,
+      "refit": 0.7377167685853866,
+      "authors": 0.9272276147541397
+     },
+     "deep": {
+      "pixels": 19,
+      "canon": 1.6468233743261846,
+      "refit": 1.4170898725900225,
+      "authors": 0.9622902719114352
+     }
+    },
+    "ftsspec_901218_5_8326": {
+     "telluric": {
+      "pixels": 162,
+      "canon": 0.7588932453987451,
+      "refit": 0.7158113247425723,
+      "authors": 0.4766993825007836
+     }
+    },
+    "ftsspec_901218_5_8356": {
+     "telluric": {
+      "pixels": 556,
+      "canon": 1.0612206941483173,
+      "refit": 1.0074358951836946,
+      "authors": 0.8904708477436132
+     },
+     "deep": {
+      "pixels": 10,
+      "canon": 1.8995077251440058,
+      "refit": 1.947692119064577,
+      "authors": 1.071662961424278
+     }
+    },
+    "ftsspec_901218_5_8386": {
+     "telluric": {
+      "pixels": 449,
+      "canon": 0.741044220569364,
+      "refit": 0.6568439779382336,
+      "authors": 0.9854575066552842
+     },
+     "deep": {
+      "pixels": 9,
+      "canon": 2.031922463233512,
+      "refit": 1.8414337019139617,
+      "authors": 1.6971685481751504
+     }
+    },
+    "ftsspec_901218_5_8416": {
+     "telluric": {
+      "pixels": 689,
+      "canon": 1.0343744933618313,
+      "refit": 1.0049967718238877,
+      "authors": 1.0730952291225113
+     },
+     "deep": {
+      "pixels": 11,
+      "canon": 1.554956494113899,
+      "refit": 1.4914555944989263,
+      "authors": 1.1960690874294708
+     }
+    },
+    "ftsspec_901218_5_8446": {
+     "telluric": {
+      "pixels": 545,
+      "canon": 1.2317058966681111,
+      "refit": 1.2620043006113413,
+      "authors": 1.1212635960116413
+     },
+     "deep": {
+      "pixels": 14,
+      "canon": 2.2400984782463196,
+      "refit": 2.451310899050981,
+      "authors": 1.361256016639876
+     }
+    },
+    "ftsspec_901218_5_8476": {
+     "telluric": {
+      "pixels": 457,
+      "canon": 1.0197543571534151,
+      "refit": 0.6737441065142586,
+      "authors": 0.9994419737615426
+     },
+     "deep": {
+      "pixels": 11,
+      "canon": 1.7420374129936356,
+      "refit": 1.3136499530750494,
+      "authors": 0.9361342099979229
+     }
+    },
+    "ftsspec_901218_5_8506": {
+     "telluric": {
+      "pixels": 760,
+      "canon": 1.334148304937046,
+      "refit": 0.9994102888514463,
+      "authors": 0.925993377921441
+     },
+     "deep": {
+      "pixels": 22,
+      "canon": 3.7035243892515175,
+      "refit": 2.1578986063798093,
+      "authors": 1.120062473363265
+     }
+    },
+    "ftsspec_901218_5_8536": {
+     "telluric": {
+      "pixels": 621,
+      "canon": 1.2168204827881823,
+      "refit": 0.837929879248287,
+      "authors": 0.8954531819138913
+     },
+     "deep": {
+      "pixels": 9,
+      "canon": 3.3515815731115137,
+      "refit": 1.074441834008989,
+      "authors": 0.86835430356346
+     }
+    },
+    "ftsspec_901218_5_8566": {
+     "telluric": {
+      "pixels": 755,
+      "canon": 1.3080395102947355,
+      "refit": 1.0637025772283737,
+      "authors": 1.5073869833290083
+     },
+     "deep": {
+      "pixels": 21,
+      "canon": 3.501059150850599,
+      "refit": 2.8494208650469455,
+      "authors": 1.5575974045937553
+     }
+    },
+    "ftsspec_901218_5_8596": {
+     "telluric": {
+      "pixels": 847,
+      "canon": 1.3602573624436811,
+      "refit": 1.3752247700703322,
+      "authors": 3.9655069925183972
+     },
+     "deep": {
+      "pixels": 14,
+      "canon": 2.149327892419148,
+      "refit": 2.7538063596663176,
+      "authors": 4.05755102546292
+     }
+    },
+    "ftsspec_901218_5_8626": {
+     "telluric": {
+      "pixels": 1314,
+      "canon": 0.8540680518486474,
+      "refit": 0.6957123058853517,
+      "authors": 2.144519115494684
+     },
+     "deep": {
+      "pixels": 38,
+      "canon": 2.0937567348575823,
+      "refit": 1.3194170431987946,
+      "authors": 1.9303684733221904
+     }
+    },
+    "ftsspec_901218_5_8656": {
+     "telluric": {
+      "pixels": 1339,
+      "canon": 1.4260431973790102,
+      "refit": 1.3309773544655414,
+      "authors": 2.696325876298371
+     },
+     "deep": {
+      "pixels": 45,
+      "canon": 1.8061055767940395,
+      "refit": 1.592148683562463,
+      "authors": 3.252792930767845
+     }
+    },
+    "ftsspec_901218_5_8686": {
+     "telluric": {
+      "pixels": 1081,
+      "canon": 1.4028730005010208,
+      "refit": 1.3700719960939265,
+      "authors": 3.4399808525251894
+     },
+     "deep": {
+      "pixels": 52,
+      "canon": 1.9886158704050658,
+      "refit": 1.7811321793759116,
+      "authors": 2.9823913628068746
+     }
+    },
+    "ftsspec_901218_5_8746": {
+     "telluric": {
+      "pixels": 1088,
+      "canon": 1.9701565538820303,
+      "refit": 1.9653578566303829,
+      "authors": 3.4839071753616495
+     },
+     "deep": {
+      "pixels": 40,
+      "canon": 2.0537265565294405,
+      "refit": 2.0297126449020357,
+      "authors": 4.4960861193251285
+     }
+    },
+    "ftsspec_901218_5_8776": {
+     "telluric": {
+      "pixels": 1425,
+      "canon": 1.0770194499615537,
+      "refit": 1.027094416135649,
+      "authors": 4.038711162713985
+     },
+     "deep": {
+      "pixels": 29,
+      "canon": 2.2796748669544353,
+      "refit": 1.7444376988715993,
+      "authors": 3.8779945334940717
+     }
+    },
+    "ftsspec_901218_5_8836": {
+     "telluric": {
+      "pixels": 1177,
+      "canon": 1.4452430955021378,
+      "refit": 1.3895497552764158,
+      "authors": 7.629889100574838
+     },
+     "deep": {
+      "pixels": 124,
+      "canon": 1.7319387505803103,
+      "refit": 1.5753229893529297,
+      "authors": 9.566749859538913
+     }
+    },
+    "ftsspec_901218_5_8926": {
+     "telluric": {
+      "pixels": 1148,
+      "canon": 1.4781153504918456,
+      "refit": 1.4545146995044596,
+      "authors": 9.034419612637722
+     },
+     "deep": {
+      "pixels": 53,
+      "canon": 1.9917967668380265,
+      "refit": 1.908188499211461,
+      "authors": 10.831970748562556
+     }
+    },
+    "ftsspec_901218_5_8956": {
+     "telluric": {
+      "pixels": 1107,
+      "canon": 1.6461681951727167,
+      "refit": 1.6047609212038734,
+      "authors": 5.556525280114824
+     },
+     "deep": {
+      "pixels": 42,
+      "canon": 2.228782196166057,
+      "refit": 2.1948191797937686,
+      "authors": 7.9081323609569525
+     }
+    },
+    "ftsspec_901218_5_8986": {
+     "telluric": {
+      "pixels": 407,
+      "canon": 1.700794642696159,
+      "refit": 1.7307698496410955,
+      "authors": 3.6185236546247155
+     },
+     "deep": {
+      "pixels": 14,
+      "canon": 2.5829522500907705,
+      "refit": 1.757229526975416,
+      "authors": 4.714327648541832
+     }
+    }
+   }
+  }
+ }
+}
