@@ -1,0 +1,206 @@
+{
+ "about": "One row per data set. Every range is read from the data, never typed in: the observed spectrum from its own file, ours from the promoted run summaries (a fitted window, a window with no telluric line above the cut, or one that failed), and the others' from their corrected columns, with the pixels they interpolated or drew by hand left out (photatl's ``atmospheric < dg``, niratl's -1.0 fill, Kurucz's straight stretches, Wallace 2011's blanks below T = 0.8). ACE-FTS is observed from orbit, so it is telluric-free over its whole range rather than corrected. Coverage is decided on 1 cm-1 bins: a bin counts when more than half of its pixels are valid.",
+ "rows": {
+  "Kitt Peak FTS 1990-12-18 #5": {
+   "detail": "disc centre, X 1.99",
+   "observed_um": [
+    1.051,
+    6.135
+   ],
+   "tellurix": {
+    "fitted_windows": 224,
+    "fitted_um": [
+     1.102,
+     5.33
+    ],
+    "not_fitted_um": []
+   },
+   "others": {
+    "photatl (Livingston & Wallace 1991)": {
+     "kind": "author",
+     "um": [
+      1.111,
+      5.402
+     ]
+    }
+   }
+  },
+  "Kitt Peak FTS 1990-12-18 #4": {
+   "detail": "disc centre, X 4.7",
+   "observed_um": [
+    1.051,
+    6.135
+   ],
+   "tellurix": {
+    "fitted_windows": 223,
+    "fitted_um": [
+     1.102,
+     5.33
+    ],
+    "not_fitted_um": []
+   },
+   "others": {}
+  },
+  "Kitt Peak FTS 1983-06-26 #2, #3": {
+   "detail": "disc centre, X 5.0 and 3.0",
+   "observed_um": [
+    0.482,
+    1.174
+   ],
+   "tellurix": {
+    "fitted_windows": 594,
+    "fitted_um": [
+     0.501,
+     1.172
+    ],
+    "not_fitted_um": []
+   },
+   "others": {}
+  },
+  "niratl": {
+   "detail": "disc centre, 1983 June, X ≈ 1",
+   "observed_um": [
+    0.735,
+    1.124
+   ],
+   "tellurix": {
+    "fitted_windows": 164,
+    "fitted_um": [
+     0.735,
+     1.124
+    ],
+    "not_fitted_um": []
+   },
+   "others": {
+    "solar column (Wallace et al. 1993)": {
+     "kind": "author",
+     "um": [
+      0.735,
+      1.124
+     ]
+    }
+   }
+  },
+  "ACE-FTS solar atlas (SCISAT)": {
+   "detail": "near disc centre, from orbit",
+   "observed_um": [
+    2.252,
+    14.286
+   ],
+   "tellurix": {
+    "fitted_windows": 0,
+    "fitted_um": null,
+    "not_fitted_um": []
+   },
+   "others": {
+    "Hase et al. 2010": {
+     "kind": "space",
+     "um": [
+      2.257,
+      14.286
+     ]
+    },
+    "Bhusal et al. 2026": {
+     "kind": "space",
+     "um": [
+      2.252,
+      5.467
+     ]
+    }
+   }
+  },
+  "fluxatl (Kurucz et al. 1984)": {
+   "detail": "flux, 8 scans 1980-81",
+   "observed_um": [
+    0.296,
+    1.3
+   ],
+   "tellurix": {
+    "fitted_windows": 285,
+    "fitted_um": [
+     0.503,
+     1.3
+    ],
+    "not_fitted_um": []
+   },
+   "others": {
+    "Kurucz 2005 re-reduction (irradrelwl)": {
+     "kind": "author",
+     "um": [
+      0.299,
+      1.001
+     ]
+    }
+   }
+  },
+  "Wallace et al. 2011 flux atlas": {
+   "detail": "flux, regions 1-6, 1989",
+   "observed_um": [
+    0.29,
+    1.0
+   ],
+   "tellurix": {
+    "fitted_windows": 216,
+    "fitted_um": [
+     0.503,
+     1.0
+    ],
+    "not_fitted_um": []
+   },
+   "others": {
+    "authors' corrected flux (T > 0.8 only)": {
+     "kind": "author",
+     "um": [
+      0.499,
+      1.0
+     ]
+    }
+   }
+  },
+  "IAG VIS (Reiners et al. 2016)": {
+   "detail": "flux, 9-day co-add, 2014",
+   "observed_um": [
+    0.405,
+    1.065
+   ],
+   "tellurix": {
+    "fitted_windows": 273,
+    "fitted_um": [
+     0.501,
+     1.064
+    ],
+    "not_fitted_um": [
+     [
+      0.5003,
+      0.501
+     ]
+    ]
+   },
+   "others": {
+    "Baker, Blake & Reiners 2020 telluric-free Sun": {
+     "kind": "other",
+     "um": [
+      0.5,
+      1.109
+     ]
+    }
+   }
+  },
+  "IAG NIR (Reiners et al. 2016)": {
+   "detail": "flux, 6-day co-add, 2014",
+   "observed_um": [
+    1.0,
+    2.3
+   ],
+   "tellurix": {
+    "fitted_windows": 187,
+    "fitted_um": [
+     0.999,
+     2.29
+    ],
+    "not_fitted_um": []
+   },
+   "others": {}
+  }
+ }
+}

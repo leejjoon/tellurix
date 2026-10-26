@@ -271,6 +271,10 @@ the scans before the division and still hold every telluric line. `score_telluri
 --authors kurucz2005` aligns it per page (about -0.1 km/s); it was released smoothed at three
 times each scan's dispersion, so compare with `--smooth-fwhm-cm1` too. At one resolution ours
 and his are level at telluric pixels (`docs/fluxatl_kurucz_score.json`).
+**Which ranges have a correction, ours or anyone's**, is `docs/solar_coverage.png` (`scripts/plot_solar_coverage.py`,
+every range read from the data and the promoted summaries, with `docs/solar_coverage.json`); rerun it after promoting a
+solar run. ACE-FTS (Hase et al. 2010, 700-4430 cm-1; Bhusal et al. 2026, 1829-4440 cm-1; the sibling project's
+`references/aux/`) is the only telluric-free reference beside our 2.25-5.3 um correction.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error
