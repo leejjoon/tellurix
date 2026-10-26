@@ -19,6 +19,13 @@ against about 1e-3 of pixel noise. Nothing is decimated -- these spectra are
 sampled at 1.85 points per resolution element, so dropping points would alias.
 
     UV_CACHE_DIR=.uv-cache uv run python scripts/export_solar_review.py --limit 5
+
+fluxatl's authors' columns are Kurucz's 2005 residual irradiance (``--kurucz-irradiance``),
+aligned by the per-page velocity of `docs/fluxatl_kurucz_score.json`:
+
+    uv run python scripts/export_solar_review.py --npz-dir data/corrected/solar/fluxatl \\
+        --summary data/corrected/solar/fluxatl/fluxatl_{109,111,113,115}_summary.json \\
+        --kurucz-irradiance <kurucz2005/irradrelwl.dat> --output data/review_fluxatl
 """
 
 from __future__ import annotations
@@ -33,7 +40,7 @@ import numpy as np
 
 from tellurix import TelluricParameters, read_scan, recorded_line_strength_table  # noqa: E402
 from tellurix_fts import read_niratl_page, read_photatl_page, read_solar_spectrum  # noqa: E402
-from tellurix_fts.flux_atlas import read_wallace2011_correction  # noqa: E402
+from tellurix_fts.flux_atlas import read_kurucz_irradiance, read_wallace2011_correction  # noqa: E402
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_niratl_page, is_photatl_page  # noqa: E402
 
 from tellurix.download import DataPaths  # noqa: E402
@@ -197,6 +204,21 @@ def baker_columns(nu: np.ndarray, observed: np.ndarray, corrected: np.ndarray,
             "authors_solar": theirs * matched(corrected)}
 
 
+def kurucz_columns(nu, observed, corrected, transmission, mask, kurucz, velocity_kms) -> dict:
+    """Kurucz's 2005 residual irradiance as the authors' columns of a fluxatl window.
+
+    The same drawing as Baker's (`baker_columns`), with his hand-drawn straight
+    stretches as the samples not to match on, and blanked: a straight line across a
+    saturated core is not a correction. ``velocity_kms`` is the score's, which moves
+    his spectrum by ``nu * (1 + v / c)``; `baker_columns` divides instead, hence the sign.
+    """
+    k_nu, k_flux, straight = kurucz
+    columns = baker_columns(nu, observed, corrected, transmission, mask,
+                            {"v": k_nu, "s": k_flux, "flags": straight.astype(int)}, -velocity_kms)
+    drawn = np.interp(nu * (1.0 + velocity_kms / 299792.458), k_nu, straight.astype(float)) > 0.0
+    return {name: np.where(drawn, np.nan, values) for name, values in columns.items()}
+
+
 def file_row0(path: Path, nu: np.ndarray, cache: dict) -> int | None:
     """Row of ``nu[0]`` in a Wallace 2011 region file, if the pixels are consecutive rows there."""
     if not path.name.startswith("sptr.reg"):
@@ -298,6 +320,10 @@ def main() -> None:
                              "authors' columns of an IAG run")
     parser.add_argument("--baker-score", type=Path, default=root / "docs/iag_baker_score.json",
                         help="the score whose per-window velocities align it")
+    parser.add_argument("--kurucz-irradiance", type=Path, default=None,
+                        help="Kurucz's irradrelwl.dat, drawn as the authors' columns of a fluxatl run")
+    parser.add_argument("--kurucz-score", type=Path, default=root / "docs/fluxatl_kurucz_score.json",
+                        help="the score whose per-page velocities align it")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--shard", default=None, metavar="I/N")
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"))
@@ -324,8 +350,10 @@ def main() -> None:
                  else Path(blob["spectrum"]).stem.rsplit("_", 1)[-1])
         for row in blob["results"]:
             if row.get("npz"):
-                # An atlas run has one file per page; a raw spectrum, one file.
-                jobs.append((label, Path(row.get("file") or blob["spectrum"]), blob, row))
+                # An atlas run has one file per page; a raw spectrum, one file. fluxatl is
+                # one directory holding four scans fitted apart: each scan is a file here.
+                here = row["npz"].rsplit("_", 1)[0] if name == "fluxatl" else label
+                jobs.append((here, Path(row.get("file") or blob["spectrum"]), blob, row))
     jobs.sort(key=lambda j: (j[3]["v1"], j[0]))
     if args.shard:
         index, _, count = args.shard.partition("/")
@@ -339,6 +367,15 @@ def main() -> None:
     if baker is not None and args.baker_score.exists():
         baker_velocity = {int(round(w["v1"])): next(iter(w["runs"].values()))["velocity_kms"]
                           for w in json.loads(args.baker_score.read_text())["windows"].values()}
+    kurucz = read_kurucz_irradiance(args.kurucz_irradiance) if args.kurucz_irradiance else None
+    kurucz_velocity = {}
+    if kurucz is not None:
+        for scan in json.loads(args.kurucz_score.read_text())["scans"].values():
+            pages = scan["native"]["pages"]
+            # A page the score could not judge takes its scan's median.
+            median = float(np.median([p["authors_velocity_kms"] for p in pages.values()]))
+            kurucz_velocity[scan["native"]["settings"]["stem"]] = median
+            kurucz_velocity.update({k: p["authors_velocity_kms"] for k, p in pages.items()})
     views_cache: dict[str, list] = {}
     spectra: dict[str, object] = {}
     profiles: dict[Path, object] = {}
@@ -447,6 +484,13 @@ def main() -> None:
                     arrays["observed"] / np.maximum(arrays["model"], 1e-6) * arrays["stellar"],
                     arrays["transmission"], mask, baker,
                     baker_velocity.get(int(round(row["v1"])), 0.0)))
+            elif kurucz is not None:
+                stem = Path(row["npz"]).stem
+                arrays.update(kurucz_columns(
+                    nu, arrays["observed"],
+                    arrays["observed"] / np.maximum(arrays["model"], 1e-6) * arrays["stellar"],
+                    arrays["transmission"], mask, kurucz,
+                    kurucz_velocity.get(stem, kurucz_velocity.get(stem.rsplit("_", 1)[0], 0.0))))
             else:
                 arrays.update(authors_columns(spectrum_path, nu))
 
