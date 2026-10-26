@@ -275,6 +275,10 @@ and his are level at telluric pixels (`docs/fluxatl_kurucz_score.json`).
 every range read from the data and the promoted summaries, with `docs/solar_coverage.json`); rerun it after promoting a
 solar run. ACE-FTS (Hase et al. 2010, 700-4430 cm-1; Bhusal et al. 2026, 1829-4440 cm-1; the sibling project's
 `references/aux/`) is the only telluric-free reference beside our 2.25-5.3 um correction.
+**The released solar products** are one `*_corrected.h5` (`export_atlas_corrected.py`) and one
+`*_transmission.h5` (`export_transmission_hdf5.py`) per promoted run in `data/corrected/`, plus
+`photatl_corrected.h5`; re-export both after promoting a run, and keep the user guide's "The
+solar spectra" table (`docs/using_the_corrected_spectra.md`) in step with them.
 Ozone's Chappuis band and NO2 are cross-section absorbers AER does not carry: the
 corrected visible spectra keep their broadband dimming. **A column at its
 upper bound makes a window unusable** -- the fit is absorbing the solar model's error

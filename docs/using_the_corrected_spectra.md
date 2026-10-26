@@ -7,7 +7,9 @@ through every component with plots, then repeats it across all 598. `docs/arctur
 versions: they are development records, organised by how the work unfolded, and
 you should not have to read either to get a spectrum out.
 
-Two datasets exist.
+Two stellar datasets are described first; the Sun, fourteen corrected spectra
+from Kitt Peak and Göttingen, has [its own section](#the-solar-spectra), which you can
+read on its own once you know [which array is the correction](#read-this-first-which-array-is-the-correction).
 
 | | Arcturus atlas | IGRINS A0V standards |
 |---|---|---|
@@ -312,9 +314,9 @@ files carry `column_at_upper_bound` (one boolean per row) and
 else, usually the solar model's error, and the transmission holds absorption the sky
 does not -- 5-13% in the cases measured. The corrected-spectrum files already set
 `reliable` False on those pages. A column at the *lower* bound is harmless and not
-flagged. Nine windows across the solar runs, none in file 5, photatl or niratl
-(`docs/solar_fit_plan.md` §4m). The flag cannot see a column that is far too high but
-short of the bound.
+flagged. No window of the current solar runs is flagged (nine were, in runs before
+the clean-pixel refits; `docs/solar_fit_plan.md` §4m), but read the flag anyway: it
+cannot see a column that is far too high but short of the bound.
 
 **The formal errors are not uncertainties.** `record.sigma` and
 `FitResult.covariance` invert the objective's real Hessian, but they assume
@@ -425,6 +427,138 @@ for comparison, not validation.
 at 115 and 33 sigma out of 516 — and are unexplained. Cut on
 `residual_rms_over_noise` if you pool statistics.
 
+## The solar spectra
+
+Every solar spectrum here was fitted window by window -- 30 cm-1 windows on one tiling
+shared by every run, so a window can be compared across products; niratl by its own
+atlas pages -- and comes as three files: a corrected spectrum, a transmission, and the record.
+
+| spectrum | where | um | air mass | windows fitted |
+|---|---|---|---|---|
+| Kitt Peak 1990-12-18 file 5, disc centre | `ftsspec_901218_5_*`, `photatl_corrected.h5` | 1.10-5.33 | 1.985 | 222 of 224 |
+| Kitt Peak 1990-12-18 file 4, disc centre | `ftsspec_901218_4_*` | 1.10-5.33 | 4.73 | 215 of 223 |
+| Kitt Peak 1983-06-26 file 2, disc centre | `ftsspec_830626_2_*` | 0.48-1.17 | 5.37 | 307 of 407 |
+| Kitt Peak 1983-06-26 file 3, disc centre | `ftsspec_830626_3_*` | 0.48-1.17 | 3.085 | 287 of 406 |
+| niratl (Wallace et al. 1993), disc centre | `niratl_*` | 0.735-1.124 | 1.10 | 164 of 188 pages |
+| Wallace et al. 2011 flux, regions 1-3 | `wallace2011_reg{1,2,3}_*` | 0.44-1.00 | 1.5, 1.4, 1.23 | 100, 91, 25 |
+| fluxatl (Kurucz et al. 1984) flux, scans 109-115 | `fluxatl_{109,111,113,115}_*` | 0.50-1.30 | each a co-add | 31, 86, 98, 70 |
+| IAG flux (Reiners et al. 2016), VIS | `iag_vis_*` | 0.50-1.06 | nine-day co-add | 273 of 353 |
+| IAG flux, NIR | `iag_nir_*` | 1.00-2.29 | six-day co-add | 170 of 187 |
+
+`*` is `_corrected.h5` and `_transmission.h5`, both in `data/corrected/`; the records
+are under `data/corrected/solar/`. A window not counted as fitted had no species above
+the run's optical-depth cut (it is **not corrected**, not clean: lines up to ~1% deep may
+remain), or was opaque, or was withheld. `docs/solar_coverage.png` draws all of it
+against the corrections the atlases' authors and others made.
+
+**The corrected files** (`export_atlas_corrected.py`, one row per window or atlas page)
+hold `observed`, `corrected`, `effective_transmission`, `transmission_unconvolved`
+(diagnostic only), `reliable`, and a per-pixel `status`:
+
+```python
+import h5py
+with h5py.File("data/corrected/iag_vis_corrected.h5") as f:
+    for i, (v1, v2) in enumerate(zip(f["v1"], f["v2"])):
+        good = f["reliable"][i] & (f["status"][i] == 0)
+        nu, spectrum = f["wavenumber_cm1"][i][good], f["corrected"][i][good]
+```
+
+`status` 0 is fitted; 1 not corrected (above); 2 not fitted; 3 a column at its upper
+bound; 4 withheld because the atlas's saturated cores sit more than 5% of the continuum
+above the model -- IAG NIR's 7216 and 7336 cm-1, a zero-level pedestal that the division
+would turn into emission. The file's own dataset descriptions say the same. `reliable`
+is the 0.15 transmission floor; recut it for line work as above.
+
+**Which file for file 5.** `photatl_corrected.h5` is photatl's own 258 pages (the
+atlas *is* file 5, rescaled per page as `gain * file 5 + offset`), corrected by the
+file-5 fit, so it keeps the authors' zero level; the four 1.9 um band pages there come
+from a fit of photatl itself. `ftsspec_901218_5_corrected.h5` is the raw file, window by
+window. Use photatl's if you want the atlas's layout and zero level, the raw file if you
+want the observation.
+
+**The transmission files** are as [above](#if-you-want-the-atmosphere-not-our-spectrum),
+with one difference for a co-add (IAG, fluxatl): `zenith_angle_deg` is NaN and `/coadd`
+holds the days or scan intervals and their nodes; the transmission is the node-weighted
+mean of the slant transmissions, which is what the atlas saw.
+
+### How each was fitted
+
+All of them share the physics: AER v3.9 lines with HITRAN's H2O pressure shifts, the per-line
+strength table `data/line_strength/step3_iter1.npz` (8800-17600 cm-1), MT_CKD with O2
+collision-induced absorption, and telluric columns fitted only from **solar-clean
+pixels** -- where the Payne Zero solar model is under 1% deep -- so the solar model's
+error does not leak into them. They differ where the data asked them to:
+
+| | line width scale (H2O, O2) | CO2 line coupling | also |
+|---|---|---|---|
+| files 4, 5 | 1.00 | on | CO pinned at the 4.6 um median in the six 2.3 um windows (4156-4306), where telluric CO sits under solar CO |
+| 1983 pair | 1.06 | off | file 3's air mass 3.085 is ours, its header reads `?.??` |
+| niratl | 1.11 | off | air mass 1.10 from the O2 A band |
+| Wallace 2011 | 1.00 | off | region 3: water, velocity and line spread pinned from the 571 nm band |
+| fluxatl | 1.00 | on | scan 109: the same pins, from the same band |
+| IAG VIS, NIR | 1.00 | off, on | |
+
+The widths are measured: the 1983 campaign's spectra want lines 6-11% wider than AER
+gives, the others do not (`docs/solar_fit_plan.md` §4r). Each record states every one of
+these settings in `/physics`, with the SHA-256 of the strength table.
+
+### How good they are
+
+Scored by **flatness**: the corrected spectrum's scatter about a smooth curve at pixels
+with telluric absorption but no solar line, as a percentage of the continuum, median over
+windows (`scripts/score_telluric_correction.py`). "Telluric" pixels have T < 0.97, "deep"
+T < 0.7. Where the atlas's authors (or someone else) corrected the same spectrum, theirs is
+scored on the same pixels:
+
+| | telluric, ours | theirs | deep, ours | theirs |
+|---|---|---|---|---|
+| file 5 vs photatl (Livingston & Wallace 1991) | 0.738% | 0.791% | 1.319% | 1.270% |
+| file 4 | 1.240% | | 2.412% | |
+| 1983 file 2 / file 3 | 0.943% / 0.833% | | 2.19% / 2.03% | |
+| niratl vs the authors' solar column | 0.501% | 0.628% | | |
+| Wallace 2011 reg 1 / reg 2, authors' pixels | 0.576% / 0.548% | 0.705% / 0.706% | | |
+| Wallace 2011 reg 3, T < 0.99 | 0.42% | 0.52% | | |
+| fluxatl 111 / 113 vs Kurucz 2005 | 0.534% / 0.766% | 0.500% / 0.741% | 0.942% / 1.353% | 1.123% / 1.123% |
+| IAG VIS | 0.89% | | 1.97% | |
+| IAG VIS against Baker et al. 2020's telluric-free Sun | 1.10% | | 2.84% | |
+| IAG NIR | 1.19% | | 2.32% | |
+
+Sources: `docs/kitt_peak_clean_1990_score.json`, `docs/niratl_correction_score.json`,
+`docs/fluxatl_kurucz_score.json`, `docs/iag_correction_score.json`,
+`docs/iag_baker_score.json`, `docs/iag_nir_correction_score.json`; the 1983 pair and
+Wallace in `docs/solar_fit_plan.md`, "Done 2026-10-24". Read them as:
+
+- **On telluric pixels ours is about as flat as the authors' or flatter**, everywhere
+  they made one. On deep pixels it is mixed: photatl and Kurucz's scan 113 are flatter,
+  Kurucz's scan 111 is not. Their corrections were tuned by hand and left out what they
+  could not fix (photatl's interpolated pixels, Kurucz's straight stretches), which the
+  score leaves out for both.
+- **Kurucz smoothed his spectrum** by three times each scan's dispersion; ours is not.
+  Smoothed the same way ours is 0.489% / 0.732% (telluric) and 0.638% / 1.300% (deep).
+- **Baker's 1.10% is the honest number for the visible**: an independent telluric-free
+  Sun, not a flatness. About half of it is line-list error every fit with this model
+  shares (`docs/iag_residual_attribution.json`); a 10%-deep solar line on a telluric
+  feature core can carry ~0.1 dex of it into a log gf.
+- **IAG NIR is the worst score and the best correction per unit absorption**: Göttingen
+  puts four times Kitt Peak's water on the same pixels, and the error scales with depth
+  (`docs/iag_nir_file5_comparison.json`).
+- **Do not quote the 1983 pair's B-band O2 columns**: about 5% high against its A band,
+  a property of that pair and nothing else (§4n).
+
+### What to take for what
+
+- **Disc centre, 1.1-5.3 um**: file 5 (`photatl_corrected.h5`). File 4 is the same day
+  at 2.4 times the air mass: a check, not a better spectrum.
+- **Disc centre, 0.74-1.12 um**: niratl, the flattest; it combines spectra of the same
+  1983 June campaign as the pair, which reaches down to 482 nm.
+- **Flux, 0.50-1.06 um**: IAG VIS (resolution and S/N); Wallace 2011 and fluxatl are
+  independent checks with different skies and different wavelength scales -- fluxatl's
+  sits 0.5-0.7 km/s off in 501-1000 nm.
+- **Flux, 1.0-2.3 um**: IAG NIR; avoid 7216 and 7336 cm-1.
+- **Telluric-free, from orbit**: ACE-FTS (Hase et al. 2010; Bhusal et al. 2026) over
+  2.25-5.47 um, near disc centre, not corrected here; it is the yardstick for 2.6-2.85
+  and 4.2-4.5 um, where nothing on the ground sees the Sun.
+
 ## Regenerating from scratch
 
 Needs the AER line files and the MT_CKD file from `scripts/bootstrap_lblrtm.sh`,
@@ -508,10 +642,10 @@ uv run --with aiohttp python scripts/era5_site_profile.py \
 
 ## What this does not do
 
-**There is no solar equivalent of these products yet.** The NSO solar atlases
-ship a telluric column at atlas resolution, which can only mask -- the same trap
-the transmission export exists to avoid. `docs/solar_atlases.md` surveys what
-the data is and what it would take.
+**It does not correct the sunspot atlas** (`spot1atl`, Wallace & Livingston 1992): the
+umbra has its own water and other molecular lines, so there are no solar-clean pixels to
+fit the sky from. Nor the mid-IR "telluric" spectra, which are ratios of two air masses,
+not solar spectra (`docs/solar_atlases.md`).
 
 **Cite the atlas if you publish.** The Arcturus data is Hinkle, Wallace &
 Livingston 1995, *Infrared Atlas of the Arcturus Spectrum, 0.9-5.3 um*, ASP
@@ -520,6 +654,24 @@ doi [10.1086/133660](https://doi.org/10.1086/133660). The README shipped with
 the data asks for that citation explicitly. The README and the full provenance,
 including where to find the atlas now that the FTP URL in every paper is dead,
 are in `README.md` and `docs/arcturus_fit.md`.
+
+For the Sun, cite the data you used as well as this work:
+
+- photatl: Livingston & Wallace 1991, NSO Technical Report 91-001; with niratl, the
+  refereed summary is Wallace, Livingston, Hinkle & Bernath 1996, ApJS 106, 165.
+- niratl: Wallace, Hinkle & Livingston 1993, NSO Technical Report 93-001.
+- The raw Kitt Peak files 1990-12-18 and 1983-06-26: the NSO/Kitt Peak FTS archive,
+  McMath-Pierce telescope.
+- Wallace 2011: Wallace, Hinkle, Livingston & Davis 2011, ApJS 195, 6,
+  doi [10.1088/0067-0049/195/1/6](https://doi.org/10.1088/0067-0049/195/1/6).
+- fluxatl: Kurucz, Furenlid, Brault & Testerman 1984, *Solar Flux Atlas from 296 to
+  1300 nm*, NSO Atlas No. 1; Kurucz's 2005 re-reduction, which the score compares against,
+  is Kurucz 2006, astro-ph/0605029.
+- IAG: Reiners, Mrotzek, Lemke, Hinrichs & Reinsch 2016, A&A 587, A65; Baker et al.'s
+  telluric-free Sun is Baker, Blake & Reiners 2020, ApJS 247, 24.
+
+Where each was downloaded from, with checksums, is in the sibling project's
+`data/atlases/*/PROVENANCE.md`.
 
 **It does not correct science targets.** Every fit here is of a telluric
 standard or of Arcturus. Taking a fitted atmosphere to a target observed at a

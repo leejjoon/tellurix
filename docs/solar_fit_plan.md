@@ -2189,6 +2189,18 @@ from its row's `free_species`, and `--check` finds the solar arrays through the 
 VIS, 2e-9 for IAG NIR. Regenerated and promoted: the 1983 pair and niratl (the old files in
 `data/corrected/superseded_pre_species_fix/`), files 4 and 5 with their refit.
 
+### Done 2026-10-26: every solar run exported for release
+
+Every promoted solar run now has a corrected file and a transmission file in
+`data/corrected/`: added are `wallace2011_reg{1,2,3}_{corrected,transmission}.h5` and
+`ftsspec_{830626_2,830626_3,901218_4,901218_5}_corrected.h5` (`export_atlas_corrected.py`,
+a row per window, each fit's own corrected spectrum to 3.5e-16). Region 3 was not refitted:
+its only absorber, water, is pinned from clean-pixel fits of the 571 nm band, which is what
+the clean-pixel recipe would give, and the strength table does not reach it. The user guide,
+`docs/using_the_corrected_spectra.md`, "The solar spectra", lists the files, the recipes,
+the scores against the authors' corrections, and what to cite. No window of the current
+runs has a column at its upper bound.
+
 ### Also open
 
 - **The O2 excess: closed 2026-10-05, cause inside the 1983 pair not identified** (§4n):
