@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """Fit and correct many Arcturus atlas pages, resumably.
 
+Superseded on 2026-10-29: the atlas is now fitted by ``fit_fts_batch.py --arcturus``
+(docs/arcturus_fit.md, "The solar-era refit"). This driver's defaults write into
+``data/corrected/superseded_pre_solar_era/``, so it cannot overwrite the promoted run.
+
 Differences from the single-page driver, all forced by running across the whole
 atlas rather than one hand-picked window:
 
@@ -482,12 +486,12 @@ def main() -> None:
     parser.add_argument("--min-optical-depth", type=float, default=0.02,
                         help="free a species only if its peak vertical optical depth reaches this")
     parser.add_argument("--min-transmission", type=float, default=0.15)
-    parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/atlas")
+    parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/superseded_pre_solar_era/atlas")
     # Not under docs/: the full summary carries per-page timings and a per-stage
     # optimizer log, 1.6 MB at atlas scale. scripts/trim_atlas_summary.py cuts it
     # down to the record that belongs in git.
     parser.add_argument("--summary", type=Path,
-                        default=root / "data/corrected/atlas/summary.json")
+                        default=root / "data/corrected/superseded_pre_solar_era/atlas/summary.json")
     parser.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--precompute-opacity", action=argparse.BooleanOptionalAction, default=True,
                         help="evaluate the line-by-line kernel once per page instead of per iteration")
@@ -505,7 +509,7 @@ def main() -> None:
     # A string, not a Path: Path("") is Path("."), which is truthy and would
     # scatter cache entries through the repository root.
     parser.add_argument("--record", type=Path,
-                        default=root / "data/corrected/atlas/arcturus_atlas.h5",
+                        default=root / "data/corrected/superseded_pre_solar_era/atlas/arcturus_atlas.h5",
                         help="the run's parameter record; the arrays are a cache of this")
     parser.add_argument("--compilation-cache", default=str(root / ".jax-cache"),
                         help="directory for persisted XLA executables; empty string disables it")

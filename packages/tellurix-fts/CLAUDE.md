@@ -9,7 +9,41 @@ in the root `CLAUDE.md`.
 
 ## The Arcturus atlas pipeline
 
-The Arcturus telluric-fitting pipeline (see `docs/arcturus_fit.md`). Needs the AER
+**The promoted atlas run is `fit_fts_batch.py --arcturus`** (2026-10-29; the command,
+scores and limits are in `docs/arcturus_fit.md`, "The solar-era refit"): the solar
+window fit (`fit_window`) on whole pages, one job per page and epoch, with the solar
+settings -- clean-pixel telluric fit, coupling both ways, O2 CIA, HITRAN shifts, the
+`step3_iter1` strength table, width x1.00 -- plus one AFGL 1994 profile per epoch
+(`--epoch-profile`), a sinc at R = 115,700, zenith 0 and each epoch's stellar velocity
+bounded within 5 km/s of its readme value. Its record and `.npz` are in
+`data/corrected/atlas/`. What it taught:
+
+- **Summer has no data below 2014 cm-1**: those 22 pages ship zeros, and a job whose
+  epoch is all NaN is skipped, not failed. 598 rows, not 620.
+- **Shard by page** (`--shard` does in Arcturus mode): both epochs share a window, so
+  sharding jobs runs every species scan twice. `merge_fts_shards.py` keys rows on
+  (v1, epoch) and resume on `job_key`.
+- **The `.npz` is not in page units**: `flux` and the model arrays are over the window's
+  99th percentile, `observed_raw` is raw, and all run in ascending wavelength.
+  `arrays_in_page_units` is the one conversion; the spectra export and the review
+  exporter use it.
+- **`--minimum-snr` reaches the fit** through `WindowSettings.minimum_continuum_snr`;
+  ab2119_ (26 sigma) needs 20. Rows that failed stay in the summary and `--resume`
+  skips them: drop them from the summary to refit.
+- **Below 2200 cm-1 Payne Zero's CO lines are ~25% too weak**: every page refuses the
+  clean-pixel fit (over 60% stellar line), the continuum settles 1-5% low, and telluric
+  CO or O3 rails on a few pages. The winter stellar velocity sits near -30.5 km/s at both
+  ends of the atlas against -26.1 elsewhere (the superseded run found it too), so the
+  5 km/s bound is touched on 5 pages. Left as is on 2026-10-29, by the user's choice.
+- **The transmission export** groups a page's two rows by line coupling too (the epochs
+  can choose differently) and writes `/profile_<epoch>`.
+
+Everything below in this section is the **superseded** `fit_arcturus_batch` pipeline,
+kept because the walkthrough notebook, `rebuild_arcturus_page.py --check` and the paper
+figure `fig_arcturus_pages.py` follow it. Its record and arrays are in
+`data/corrected/superseded_pre_solar_era/atlas/` (out of the results archive from
+results-2026-10-29; results-2026-10-26 has them), and every tool listed defaults there,
+so none can overwrite the promoted run. It needs the AER
 line files and the MT_CKD file from `bootstrap_lblrtm.sh`, but not the LBLRTM binary:
 
 ```bash
@@ -48,7 +82,7 @@ the committed record's 3.61 sigma to 3.62. Notebook tooling is deliberately not
 a project dependency -- `--with` keeps it out of the lock, the same way
 `era5_site_profile.py` takes `--with aiohttp`.
 
-The batch driver writes its full summary to `data/corrected/atlas/summary.json`
+The batch driver writes its full summary to `data/corrected/superseded_pre_solar_era/atlas/summary.json`
 (gitignored — 1.6 MB at atlas scale, mostly per-page timings and a per-stage
 optimizer log). `trim_atlas_summary.py` reduces it to the 0.39 MB record under
 `docs/`, keeping the window, the fitted parameters and the quality numbers, and
@@ -296,7 +330,7 @@ here.
 
 Their status document cites our export under a stale name
 (`arcturus_transmission_full.h5`); the file is `arcturus_transmission.h5` and
-comes from the promoted full-coverage record.
+comes from the promoted record.
 
 ## Rerunning a whole solar run
 
@@ -344,11 +378,13 @@ URL every paper cites is dead; start from
 https://noirlab.edu/science/data-services/other. README.md and
 `docs/arcturus_fit.md` carry the full provenance.
 
-The committed Arcturus record is the **full-coverage** run: `page_windows`
+The promoted record (`data/corrected/atlas/arcturus_atlas.h5`) is the solar-era
+refit above; it fits whole pages too. The superseded `fit_arcturus_batch` record was
+the **full-coverage** run: `page_windows`
 no longer trims the ~5 cm-1 the atlas pages overlap by, so every pixel the atlas
 ships is fitted (822,928 against 636,444) and adjacent pages overlap in every
 product. `--trim-overlap-cm1 2.5` restores the old tiling and reproduces the
-superseded record (`data/corrected/atlas/arcturus_atlas_trimmed.h5`, in the results archive).
+trimmed record (`arcturus_atlas_trimmed.h5`, now beside it in the superseded directory).
 The residual median moves 4.22 -> 4.48 sigma, which is the page edges being
 harder, and the at-bound rate improves 21.6% -> 19.4%. **Nothing in the products
 tiles now**, so concatenating adjacent pages double-counts. The duplication is

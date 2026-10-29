@@ -86,7 +86,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--coupled", type=Path, default=root / "data/corrected/atlas_coupling_test/cpl/summary.json")
     parser.add_argument("--control", type=Path, default=root / "data/corrected/atlas_coupling_test/nocpl/summary.json")
-    parser.add_argument("--record", type=Path, default=root / "data/corrected/atlas/arcturus_atlas.h5")
+    parser.add_argument("--record", type=Path, default=root / "data/corrected/superseded_pre_solar_era/atlas/arcturus_atlas.h5")
     parser.add_argument("--negatives", action="store_true",
                         help="rebuild each failed window's opacity to measure how negative it goes")
     parser.add_argument("--output", type=Path, default=root / "docs/arcturus_line_coupling.json")

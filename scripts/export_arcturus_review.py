@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 """Bundle the Arcturus atlas fit for the review page, page-epoch by page-epoch.
 
-Reads the committed full-coverage record (`data/corrected/atlas/arcturus_atlas.h5`,
-822,928 pixels on 598 page-epochs) and the per-page `.npz` cache beside it --
-never `docs/arcturus_atlas_summary.json`, which is the superseded trimmed run.
+Reads the promoted record (`data/corrected/atlas/arcturus_atlas.h5`, written by
+`fit_fts_batch.py --arcturus`: 592 page-epochs with telluric lines) and the per-page
+`.npz` cache beside it. That cache saves each species' transmission, so the pieces
+are read from it and nothing is rebuilt.
 
-The cache holds the total transmission and nothing per species, so each page
+A `fit_arcturus_batch` record (the run superseded on 2026-10-29, in
+`data/corrected/superseded_pre_solar_era/atlas/`; never
+`docs/arcturus_atlas_summary.json`, the trimmed run before it) caches the total
+transmission and nothing per species, so for it each page
 *window* is rebuilt from the record alone -- its grid, line selection, opacity
 backend and continuum, exactly as `export_transmission_hdf5.py` does, whose
 `--check` reproduces the cached transmission to 3e-16 -- and the transmission is

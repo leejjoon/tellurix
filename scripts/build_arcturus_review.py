@@ -72,7 +72,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     root = Path(__file__).resolve().parents[1]
     parser.add_argument("--summary", type=Path, default=root / "docs/arcturus_atlas_summary.json")
-    parser.add_argument("--npz-dir", type=Path, default=root / "data/corrected/atlas")
+    parser.add_argument("--npz-dir", type=Path, default=root / "data/corrected/superseded_pre_solar_era/atlas")
     parser.add_argument("--out-dir", type=Path, default=root / "data/corrected/review")
     args = parser.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)

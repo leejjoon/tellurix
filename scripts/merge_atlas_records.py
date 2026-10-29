@@ -5,7 +5,7 @@
 so a run split over four GPUs leaves four partial records. This joins them.
 
     uv run python scripts/merge_atlas_records.py \\
-        --output data/corrected/atlas/arcturus_atlas.h5 \\
+        --output data/corrected/superseded_pre_solar_era/atlas/arcturus_atlas.h5 \\
         data/corrected/atlas_full/record_shard*.h5
 
 It works on the HDF5 datasets directly rather than rebuilding rows through

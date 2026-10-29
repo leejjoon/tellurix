@@ -42,10 +42,10 @@ def round_floats(value):
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--full", type=Path, default=root / "data/corrected/atlas/summary.json")
+    parser.add_argument("--full", type=Path, default=root / "data/corrected/superseded_pre_solar_era/atlas/summary.json")
     parser.add_argument("--output", type=Path, default=root / "docs/arcturus_atlas_summary.json")
     parser.add_argument("--record", type=Path,
-                        default=root / "data/corrected/atlas/arcturus_atlas.h5",
+                        default=root / "data/corrected/superseded_pre_solar_era/atlas/arcturus_atlas.h5",
                         help="the run's authoritative record; named here so the "
                              "readable view points at what it is a view of")
     args = parser.parse_args()

@@ -12,6 +12,10 @@ independent reconstruction that lands on the same numbers is what shows the
 record is sufficient, which is the whole claim being tested. If the two ever
 drift apart, ``--check`` says so.
 
+This is the ``fit_arcturus_batch`` record, superseded on 2026-10-29 by
+``fit_fts_batch.py --arcturus`` (docs/arcturus_fit.md, "The solar-era refit") and kept
+in ``data/corrected/superseded_pre_solar_era/``; the promoted record has another schema.
+
     uv run python scripts/rebuild_arcturus_page.py --page ab5000_ --epoch summer --check
 """
 
@@ -30,7 +34,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--record", type=Path,
-                        default=root / "data/corrected/atlas/arcturus_atlas.h5")
+                        default=root / "data/corrected/superseded_pre_solar_era/atlas/arcturus_atlas.h5")
     parser.add_argument("--page", required=True)
     parser.add_argument("--epoch", choices=("summer", "winter"), default="summer")
     parser.add_argument("--atlas-root", type=Path, default=None,

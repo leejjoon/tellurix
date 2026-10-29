@@ -3,7 +3,8 @@
 This is the short version, for someone who wants to *use* the output rather than
 reproduce it. If you want to know **how** the correction works rather than how to
 consume it, read `docs/arcturus_walkthrough.ipynb` instead: it takes one page
-through every component with plots, then repeats it across all 598. `docs/arcturus_fit.md` and `docs/igrins_a0v.md` are the long
+through every component with plots, then repeats it across all 598 -- of the
+`fit_arcturus_batch` run superseded on 2026-10-29, whose method it still explains. `docs/arcturus_fit.md` and `docs/igrins_a0v.md` are the long
 versions: they are development records, organised by how the work unfolded, and
 you should not have to read either to get a spectrum out.
 
@@ -13,29 +14,36 @@ read on its own once you know [which array is the correction](#read-this-first-w
 
 | | Arcturus atlas | IGRINS A0V standards |
 |---|---|---|
-| what was fitted | Hinkle, Wallace & Livingston 1995, 598 page-epochs | 43 standards over 4 nights, 3 telescopes |
+| what was fitted | Hinkle, Wallace & Livingston 1995, 598 page-epochs (592 with telluric lines) | 43 standards over 4 nights, 3 telescopes |
 | keyed on | `(page, epoch)` | `(frame, order)` |
 | record | `data/corrected/atlas/arcturus_atlas.h5` | `data/corrected/igrins/*/record.h5` |
 | arrays | `data/corrected/atlas/*.npz` | `data/corrected/igrins/*/*.npz` |
 
-The committed Arcturus record is the **full-coverage** run: every pixel the
-atlas ships is fitted and adjacent pages overlap, as the atlas itself does. It
-replaced a run that trimmed the overlap so the pages tiled, and the difference
-is worth knowing if you are comparing against an older number:
+The Arcturus record is the **solar-era refit** of 2026-10-29 (`fit_fts_batch.py
+--arcturus`): the solar atlases' window fit, with telluric columns from
+stellar-clean pixels, line coupling, O2 CIA, the line-strength table, one AFGL
+1994 profile per epoch and a sinc at R = 115,700 (`docs/arcturus_fit.md`, "The
+solar-era refit"). Every pixel the atlas ships is fitted and adjacent pages
+overlap, as the atlas itself does. Against the `fit_arcturus_batch` record it
+replaced, scored by flatness at telluric pixels as the solar spectra are below
+(`docs/arcturus_solar_era_score.json`):
 
-| | trimmed (superseded) | full coverage (current) |
-|---|---|---|
-| pixels fitted | 636,444 | **822,928** |
-| reliable pixels | 590,763 | 760,325 |
-| residual, median | 4.22 sigma | 4.48 sigma |
-| any parameter at a bound | 21.6% | 19.4% |
-| `stellar_continuum` | absent | present |
+| | superseded | current | the atlas authors |
+|---|---:|---:|---:|
+| flatness, telluric pixels (340 page-epochs) | 2.33% | **2.08%** | 3.33% |
+| flatness, T < 0.7 (269) | 4.26% | **4.00%** | 9.04% |
+| residual, median | 4.22 sigma | 4.34 sigma | |
 
-The extra 0.26 sigma is the page edges, which are genuinely harder; it is not a
-regression. The superseded record is kept in the results archive as
-`data/corrected/atlas/arcturus_atlas_trimmed.h5`, and its run can be
-reproduced with `--trim-overlap-cm1 2.5`. IGRINS residuals are 1.30-1.86 sigma
-median.
+The residual rises because the telluric columns are now fitted on stellar-clean
+pixels only. **Below 2200 cm-1 (4.5-5.4 um) the stellar model is the limit**: Payne
+Zero's CO lines are about 25% too weak, the fitted continuum sits 1-5% below the
+star's, and telluric CO or O3 is at its bound on a few pages there (`at_bound` in
+the record) -- treat those pages' columns, and their correction, with care.
+
+The superseded record (and the trimmed run before it, `arcturus_atlas_trimmed.h5`)
+is in `data/corrected/superseded_pre_solar_era/atlas/`, out of the results archive
+from results-2026-10-29 on; release results-2026-10-26 still carries both. IGRINS
+residuals are 1.30-1.86 sigma median.
 
 Three things can be handed to someone else, and which one you want depends
 entirely on what you are going to do with it:
@@ -98,17 +106,23 @@ wavelength and, for IGRINS, descending detector column.
 | `mask` | True where a pixel was fitted |
 | `reliable` | `mask` and transmission above 0.15 — **use this to select pixels** |
 
-Arcturus adds `corrected_normalized` (corrected divided by the fitted
-continuum) and the atlas's own `atlas_telluric` and `atlas_ratioed` columns for
-comparison. **`corrected_normalized` is not a stellar normalization** -- see the
-caveat below before using it as one. IGRINS adds `uncertainty` (the PLP's per-pixel sigma, a real
+**The Arcturus `.npz` is laid out differently**: it is `fit_window`'s cache, in
+ascending *wavelength*, with `flux` and the model arrays normalized by the window's
+99th percentile and `observed_raw` in the page's own units (`corrected` is
+`observed_raw` over the effective transmission, so it is in page units too).
+`tellurix_fts.window.arrays_in_page_units(np.load(path))` returns the table above's
+arrays in ascending wavenumber and page units; the spectra export below is already
+in that form. The superseded run's `.npz` carried the table's names directly, plus
+`corrected_normalized` and the atlas's `atlas_telluric` and `atlas_ratioed`
+columns. IGRINS adds `uncertainty` (the PLP's per-pixel sigma, a real
 measurement), `plp_telluric` and `plp_continuum` (the pipeline's own, for
 comparison only — see the caveat below), and `response_pattern` (the instrument
 response that was divided out).
 
 ```python
 import numpy as np
-a = np.load("data/corrected/atlas/ab5000__summer.npz")
+from tellurix_fts.window import arrays_in_page_units
+a = arrays_in_page_units(np.load("data/corrected/atlas/ab5000__summer.npz"))
 good = a["reliable"]
 wavenumber = a["wavenumber_cm1"][good]
 spectrum   = a["corrected"][good]
@@ -126,8 +140,8 @@ uv run python scripts/export_spectra_hdf5.py \
     --output data/corrected/arcturus_spectra.h5
 ```
 
-One HDF5, **16.1 MB for all 598 Arcturus page-epochs** against 57.8 MB of
-`.npz`, readable with nothing but `h5py`. Rows are padded to the longest
+One HDF5, **15.8 MB for the 592 Arcturus page-epochs with telluric lines** against
+127 MB of `.npz`, readable with nothing but `h5py`. Rows are padded to the longest
 spectrum with NaN, so every array is a plain 2-D `(row, pixel)` block. It
 carries the arrays below, the fitted parameters, the formal sigmas and
 correlations, and the whole `/config`, `/physics` and `/inputs` provenance
@@ -177,11 +191,11 @@ uv run python scripts/export_transmission_hdf5.py \
     --output data/corrected/dct2016_h_transmission.h5 --check
 ```
 
-That writes T on the forward model's own grid -- 4.00 samples per resolution
-element at R = 100,000 (a 0.7494 km/s step), no interpolation anywhere in the
-path. **9.4 MB for all 598 Arcturus page-epochs, about 50 minutes on one GPU.**
-Grids are shared, because both epochs of a page sit on one window, so the file
-holds 310 grids for 598 rows:
+That writes T on the forward model's own grid -- 4 samples per resolution
+element at the Arcturus run's R = 115,700 (a 0.648 km/s step), no interpolation
+anywhere in the path. **10.9 MB for the 592 Arcturus page-epochs, about an hour on
+one GPU.** Grids are shared where both epochs of a page sit on one window with the
+same line-coupling choice, so the file holds 359 grids for 592 rows:
 
 ```python
 import h5py
@@ -200,14 +214,22 @@ script runs on an IGRINS record, where the angle is the frame's own -- 18.7 to
 67.3 degrees on one night -- and T is then the slant transmission along that
 line of sight. `/profile` carries the layered atmosphere the scales multiply
 (pressure, temperature, altitude, air column, every VMR), so T can be
-regenerated on any other grid from this file plus a line list.
+regenerated on any other grid from this file plus a line list. The Arcturus file
+has one per epoch instead, `/profile_summer` and `/profile_winter`, and a row uses
+its epoch's.
+
+**Thirteen Arcturus rows have a column at its upper bound** (`column_at_upper_bound`;
+`species_at_upper_bound` names it): eight below 2200 cm-1, where the column is
+absorbing the stellar model's too-weak CO lines, four at 4000-4075 cm-1 and
+ab6150_ winter. As for the solar windows below, treat those rows' transmission as
+holding absorption the sky did not.
 
 `--check` interpolates the fine grid back down to the pixels and compares
 against the cached `transmission`:
 
 | record | agreement | why |
 |---|---|---|
-| Arcturus atlas | 2.2e-16 | same code path, machine precision |
+| Arcturus atlas | 1.9e-7 | rebuilt from the record; T is stored as float32 (the superseded run's file agreed to 2.2e-16) |
 | IGRINS night | 3.1e-6 | the driver saves T from the refrozen linearized backend, this script evaluates the exact kernel; 1600x below the noise |
 
 ### Stitching: nothing tiles, and that is deliberate
@@ -220,7 +242,8 @@ off each end so the fitted windows tiled, which cost **22.7% of the atlas's
 pixels**. That trade is no longer made: `page_windows(..., trim_cm1=0.0)` is the
 default and every pixel the atlas ships is fitted.
 `fit_arcturus_batch.py --trim-overlap-cm1 2.5` restores the old behaviour and is
-only there for reproducing the old record.
+only there for reproducing the old record. The current run fits whole pages too.
+The numbers below, and the `ab6250_` case, were measured on the superseded run.
 
 So a page now shares about 250 pixels with each neighbour, and those pixels were
 fitted twice, independently. Across the full run:
@@ -279,8 +302,8 @@ them.
 ## What is in the record, and why it is the real product
 
 The `.npz` arrays are a **regenerable cache**. The record — one HDF5 per run,
-530 KB for the whole atlas against 47 MB of arrays — is what is kept in git and
-what you should archive or ship.
+0.42 MB for the whole atlas against 127 MB of arrays — is what goes into the
+results archive and what you should archive or ship.
 
 ```python
 from tellurix import read_record, parameters_from_row
@@ -296,7 +319,7 @@ carry the run's settings, read from the code rather than retyped, so a record
 cannot describe a run that did not happen. IGRINS rows add the airmass, zenith
 angle, MJD, telescope, object and normalised surface conditions.
 
-To rebuild the arrays from a record:
+To rebuild the arrays from a record of the superseded run:
 
 ```bash
 uv run python scripts/rebuild_arcturus_page.py --page ab5000_ --epoch summer --check
@@ -304,7 +327,10 @@ uv run python scripts/rebuild_arcturus_page.py --page ab5000_ --epoch summer --c
 
 That script shares no code with the fitting driver on purpose. It agrees with
 the cached arrays to 2.8e-7, which is the evidence that the record is
-sufficient.
+sufficient. It reads only `fit_arcturus_batch` records; for the current one the
+independent reconstruction is `export_transmission_hdf5.py --check`, which
+rebuilds every window's model from the record and lands on the cached
+transmission to 1.9e-7.
 
 ## Caveats that will bite you
 
@@ -326,8 +352,12 @@ scatter — three to nine times too small. Use `record.correlation` for
 degeneracies, which survives a wrong noise model, and an empirical study for an
 error bar.
 
-**The corrected spectrum is not normalised, and `corrected_normalized` does not
-normalise it to the stellar continuum.** Values above 1 are expected: the
+**The corrected spectrum is not normalised, and dividing by `continuum` does not
+normalise it to the stellar continuum.** (This paragraph was measured on the
+superseded Arcturus run, which normalised the source by its median. The current
+one feeds Payne Zero's continuum-normalised flux, so the 1.3% zero-point offset
+below is gone; what remains is below 2200 cm-1, where the continuum sits 1-5%
+low because the stellar model's lines are too weak.) Values above 1 are expected: the
 correction divides out the atmosphere, not the fitted continuum. Dividing by
 `continuum` gets you close, and that is what `corrected_normalized` is, but the
 zero point is the *median* of the stellar source over the page, not its true
@@ -354,7 +384,9 @@ good = f["reliable"][i] & (f["effective_transmission"][i] > 0.8)
 
 The floor the run used is on the dataset as `transmission_floor`.
 
-**Do not compare fitted column scales between pages.** The atlas was fitted
+**Do not compare fitted column scales between pages.** (The numbers in this caveat
+are the superseded run's; the current one is also fitted at the zenith, so the
+caveat holds as written.) The atlas was fitted
 with `zenith_angle_deg = 0`, so the model divides optical depth by
 cos(0) = 1 and **every bit of air mass ends up inside the fitted column scale**.
 A page observed at air mass 1.8 returns a scale 1.8x larger than the same sky at
@@ -401,7 +433,8 @@ the residual 1.1% worse.
 **The Arcturus residual is dominated by the stellar model, not the atmosphere.**
 It is flat against transmission — 0.97 in deep absorption, 1.52 at the continuum
 — which means the 4.22 sigma of the trimmed run, and the 4.48 of the full one,
-are a K1.5 III line-list limit. Do not read either as telluric accuracy.
+are a K1.5 III line-list limit. Do not read either, or the current run's 4.34, as
+telluric accuracy.
 
 **In the published IGRINS records a frame's column scale carries its own
 airmass error, up to +-6%.** A PLP spectrum combines 4-10 exposures, up to 37
@@ -565,8 +598,14 @@ Needs the AER line files and the MT_CKD file from `scripts/bootstrap_lblrtm.sh`,
 but not the LBLRTM binary.
 
 ```bash
-# Arcturus, the whole atlas, on one GPU
-uv run python scripts/fit_arcturus_batch.py
+# Arcturus, the whole atlas (sharded below)
+uv run python scripts/fit_fts_batch.py --arcturus \
+    --epoch-profile summer=data/profiles/kitt_peak_1994_spring_afgl.csv \
+    --epoch-profile winter=data/profiles/kitt_peak_1994_winter_afgl.csv \
+    --profile data/profiles/kitt_peak_1994_spring_afgl.csv \
+    --scan-profile data/profiles/kitt_peak_1994_spring_afgl.csv \
+    --o2-cia --line-coupling --telluric-from-clean-pixels \
+    --line-strength-table data/line_strength/step3_iter1.npz --minimum-snr 20
 
 # IGRINS: fetch a night, build its atmosphere, fit it
 uv run python scripts/download_rrisa_standard.py --night 20181220 --min-snr 200
@@ -582,55 +621,34 @@ loops orders outside and frames inside, which shares the grid, the opacity and
 the XLA compilations and is worth about two thirds of the runtime. It also needs
 five frames to measure the instrument response.
 
-Sharded across four GPUs, each process writes a record holding only the pages
-it fitted, and they are joined afterwards:
+Sharded, each process takes every Nth page (both epochs of a page stay together,
+so a window's species scan runs once) and writes its own summary; the shards are
+joined, and the same command without `--shard` writes one record from the saved
+fits without refitting:
 
 ```bash
-for i in 0 1 2 3; do
-  CUDA_VISIBLE_DEVICES=$i uv run python scripts/fit_arcturus_batch.py \
-      --pages "$(cat shard$i.txt)" --output-dir data/corrected/atlas \
-      --summary data/corrected/atlas/summary$i.json \
-      --record  data/corrected/atlas/record_shard$i.h5 &
+ARGS="--arcturus ..."          # the arguments above
+for i in 0 1 2 3 4 5; do
+  CUDA_VISIBLE_DEVICES=$((i % 2)) XLA_PYTHON_CLIENT_PREALLOCATE=false \
+    uv run python scripts/fit_fts_batch.py $ARGS --shard $i/6 \
+      --summary data/corrected/atlas/shard${i}_summary.json \
+      --record  data/corrected/atlas/shard$i.h5 &
 done; wait
-
-uv run python scripts/merge_atlas_records.py \
-    data/corrected/atlas/record_shard*.h5 \
-    --output data/corrected/atlas/arcturus_atlas.h5 --check
+uv run python scripts/merge_fts_shards.py data/corrected/atlas arcturus \
+    --shards shard{0,1,2,3,4,5}_summary.json
+uv run python scripts/fit_fts_batch.py $ARGS      # --resume: writes arcturus_atlas.h5
 ```
 
-The merge works on the HDF5 datasets rather than rebuilding rows through
-`write_record`, because the row dtype packs the column scales into
-`log_column_*` fields and unpacking them is where a merge would silently put a
-value in the wrong column. It refuses shards that disagree on the parameter
-names, the species, the key fields, the row dtype or any of `/config`,
-`/physics`, `/inputs`, and refuses duplicate keys. Splitting the committed
-598-row record three ways and merging it back reproduces it byte for byte.
+Six shards on two GPUs took about 2 h for the 598 page-epochs.
 
-It does warn about one thing. `ils_velocity_kms` is **not** a per-run constant:
-`ils_fingerprint` sizes its grid from each page's own sinc first zero, which
-tracks that page's MOPD, and `write_record` keeps only the last page's. Shards
-disagreed by up to 0.76% of the span. A single-process run has the same flaw --
-every row's `ils_profile` is on its own page's grid while one grid is stored --
-so the merge keeps the first and says so rather than refusing.
-
-**For a new Arcturus run, fix the sinc globally.** The committed record measures
-the FTS path difference per page, and that measurement scatters +-12% about the
-constant-resolving-power law the atlas actually follows. The per-page Gaussian
-then absorbs the scatter and rails: `lsf_sigma_kms` is at a bound on 13.4% of
-converged pages, 76 of them pinned at the 0.05 km/s minimum, and it is the
-single largest contributor to the 22.2% overall at-bound rate.
-`fit_arcturus_page.py --sinc-resolving-power 115700` replaces the per-page
-measurement with one atlas-wide value. Measured on 16 pages spanning
-1868-10951 cm-1: the median residual moves by 0.2% (5.223 to 5.266 sigma, worst
-page 1.8%) and `lsf_sigma_kms` at bound falls from 7/16 to 4/16. The committed
-record predates this and still uses the per-page measurement.
-
-Do not read the per-page MOPD spread as a defect, and do not take the sinc alone
-as the resolution. `mopd_cm` runs 8.8 to 25.3 cm p16-p84 because the atlas holds
-a constant resolving power over a 5.84x range in wavenumber, so the path
-difference has to track 1/nu -- corr(mopd, nu) = -0.93. And R from the sinc alone
-is 115,700, but the fitted Gaussian carries the rest: in quadrature the two give
-**100,504, which is the R = 100,000 the atlas documents**.
+The sinc is fixed atlas-wide at R = 115,700, the constant-resolving-power law the
+atlas follows. The superseded run measured the path difference per page instead;
+that measurement scattered +-12% about the law and the per-page Gaussian absorbed
+it and railed (`lsf_sigma_kms` at a bound on 13.4% of pages). With the sinc alone
+at 115,700 the fitted Gaussian carries the rest: in quadrature the two gave
+**100,504, the R = 100,000 the atlas documents**. `fit_arcturus_batch.py` with
+`merge_atlas_records.py` still reproduces the superseded run, into
+`data/corrected/superseded_pre_solar_era/`.
 
 For a night whose headers carry no weather — every Gemini South frame from 2020
 — use ERA5 instead, which needs only a position and a time:

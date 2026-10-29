@@ -22,8 +22,9 @@ with its own `pyproject.toml`, source and tests:
   It knows no instrument.
 - `tellurix-fts` (`packages/tellurix-fts/`, import `tellurix_fts`) -- FTS
   atlases: `atlas.py` (Arcturus), `nso.py` (NSO Kitt Peak solar atlases),
-  `ils.py` (MOPD measured from the spectrum), `window.py` (the solar window fit:
-  `WindowSettings`, `prepare_window`, `fit_window`).
+  `ils.py` (MOPD measured from the spectrum), `window.py` (the window fit of the
+  solar atlases and, since 2026-10-29, the Arcturus atlas: `WindowSettings`,
+  `prepare_window`, `fit_window`).
 - `tellurix-igrins` (`packages/tellurix-igrins/`, import `tellurix_igrins`) --
   `igrins.py` (RRISA reader), `night.py` (night calibration), `flat.py`
   (lamp-flat blaze), `standard.py` (the per-order fit: `StandardFitSettings`,
@@ -416,15 +417,15 @@ dense branch every call, so the self-pressure bound is not checked.
   `.npz` arrays, which are a cache. `docs/using_the_corrected_spectra.md` is the
   user-facing guide -- point a consumer there, not at the development records in
   `arcturus_fit.md` or `igrins_a0v.md`. `scripts/export_spectra_hdf5.py` packs a
-  run into one self-contained file readable with h5py alone (12.4 MB for the whole
-  atlas against 45.6 MB of npz); it is gitignored and produced on demand, and it
+  run into one self-contained file readable with h5py alone (15.8 MB for the whole
+  atlas against 127 MB of npz); it is gitignored and produced on demand, and it
   names the correction operator `effective_transmission` so the unconvolved-
   transmission trap is hard to fall into from the file. `write_record` takes `key_fields` naming the
   columns that identify a row -- `("page", "epoch")` for the atlas, `("frame",
   "order")` for an IGRINS night -- and `extra_columns` for what the shared
   schema has no place for. A file written before that was configurable reads
-  back as `("page", "epoch")`, so the committed `arcturus_atlas.h5` still
-  works. Two traps when adding a pipeline: an order's parameter vector is not
+  back as `("page", "epoch")`, so the superseded `fit_arcturus_batch` records
+  still work. Two traps when adding a pipeline: an order's parameter vector is not
   the run's when the species present depend on the window, so remap each row's
   sigma and correlation into the union rather than assuming one length; and
   `ils_fingerprint(None, ...)` is the built-in Gaussian branch, for a model with
@@ -432,8 +433,9 @@ dense branch every call, so the self-pressure bound is not checked.
   them, and runs made in a git worktree recorded that worktree's absolute path,
   which no longer exists: find an input by name and hold it to the recorded
   `*_sha256` (`analyze_igrins_dry_systematic.py` does this for the profile).
-  `scripts/rebuild_arcturus_page.py --check` reconstructs a page from the record
-  alone and agrees to 1e-13. It shares no code with the fitting driver on
+  `scripts/rebuild_arcturus_page.py --check` reconstructs a page from a
+  `fit_arcturus_batch` record (the run superseded on 2026-10-29) alone and agrees
+  to 1e-13. It shares no code with the fitting driver on
   purpose — an independent reconstruction is the evidence; calling one function
   twice is not. Keep it that way.
 - Commit subjects are short imperative lines with no body (`Add native JAX

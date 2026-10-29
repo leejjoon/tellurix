@@ -2,6 +2,8 @@
 
 Work in progress. This records the configuration, the synthetic validation, the
 telluric-only baseline, and the fit with a fixed Payne Zero stellar source.
+The atlas-wide products come from the solar-era refit of 2026-10-29; see "The
+solar-era refit" below for that run, its scores and where it is still limited.
 
 Machine-readable companions: `docs/arcturus_ils.json` (instrument profile),
 `docs/arcturus_validation.json` (synthetic checks L0–L2),
@@ -283,7 +285,102 @@ same forward model with the atmosphere removed, and
 `scripts/export_corrected_spectrum.py` uses the model ratio by default, keeping
 the naive division alongside as `corrected_naive` for comparison.
 
+## The solar-era refit (promoted 2026-10-29)
+
+The atlas is now fitted by the solar atlases' engine, `fit_fts_batch.py --arcturus`
+(`tellurix_fts.window.fit_window`), not by `fit_arcturus_batch.py`. The run, its
+`.npz` cache and the record `arcturus_atlas.h5` are in `data/corrected/atlas/`; the
+`fit_arcturus_batch` run it replaces -- everything the sections below describe,
+from the saved arrays to `rebuild_arcturus_page.py --check` and the walkthrough
+notebook -- is in `data/corrected/superseded_pre_solar_era/`, and the tools that
+read it default there.
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py --arcturus \
+    --epoch-profile summer=data/profiles/kitt_peak_1994_spring_afgl.csv \
+    --epoch-profile winter=data/profiles/kitt_peak_1994_winter_afgl.csv \
+    --profile data/profiles/kitt_peak_1994_spring_afgl.csv \
+    --scan-profile data/profiles/kitt_peak_1994_spring_afgl.csv \
+    --o2-cia --line-coupling --telluric-from-clean-pixels \
+    --line-strength-table data/line_strength/step3_iter1.npz --minimum-snr 20
+```
+
+What changed, all of it the solar runs' settings:
+
+- **Telluric parameters from clean pixels**, then everything else with them
+  pinned; line coupling fitted both ways and the better kept; O2 CIA; HITRAN H2O
+  shifts; the `step3_iter1` line-strength table; species chosen per window by
+  the scan (`data/scans/`).
+- **One AFGL 1994 profile per epoch**, LBLRTM-weighted layers:
+  `kitt_peak_1994_spring_afgl.csv` (midlatitude summer, 288 K, 6 mm) for the
+  summer epoch and `kitt_peak_1994_winter_afgl.csv` (midlatitude winter, 276 K,
+  3 mm) for the winter one. The fit is still at the zenith, so air mass stays
+  inside the column scales.
+- **A sinc at constant resolving power**, R = 115,700, so FWHM = centre / R
+  per window.
+- **Payne Zero** `arcturus_payne_zero_full.npz`, vsini 2.0 and macroturbulence
+  2.15 km/s; each epoch's stellar velocity starts at its readme value (+14.33,
+  -26.11 km/s) and is bounded within 5 km/s of it.
+- **ab2119_** has a continuum only ~26 sigma above zero, under the solar
+  30-sigma cut (`WindowSettings.minimum_continuum_snr`), and is fitted at 20.
+
+A 16-page trial chose the settings (`docs/arcturus_solar_era_trial.json`):
+the clean-pixel fit at pressure-width scale 1.00 was flattest, 1.78% against
+2.10% for the old record at telluric pixels. Widening the lines (x1.06, x1.11),
+which niratl wanted, made it worse, as for the 1990 Kitt Peak files. The
+strength table changed nothing on these pages.
+
+**The whole atlas** (`docs/arcturus_solar_era_score.json`): 598 page-epochs, all
+fitted, 6 of them with negligible telluric absorption, which the record leaves
+out. The flatness of the corrected spectrum at telluric pixels, scored as for
+the solar atlases, with the authors' ratioed column scored the same way:
+
+| | telluric pixels (340) | deep, T < 0.7 (269) |
+|---|---:|---:|
+| superseded record | 2.33% | 4.26% |
+| this run | **2.08%** | **4.00%** |
+| the atlas authors | 3.33% | 9.04% |
+
+It is flatter than the superseded record on 218 of 340 page-epochs and at or
+below the authors on 265. The median residual rises from 4.22 to 4.34 sigma
+(better on 239 of 592), which is what fitting the telluric parameters on clean
+pixels costs everywhere else. The clean-pixel fit is used on 481 rows; it is
+refused where more than 60% of a window is stellar line.
+
+**Where it is still limited**:
+
+- **1867-2182 cm-1 (64 page-epochs).** Payne Zero's lines are too weak there:
+  on ab2021_ winter they hold 0.97 cm-1 of equivalent width against 1.23 in our
+  corrected spectrum and 1.22 in the authors'. The least-squares continuum
+  settles 1-5% below the star's (1-18% in the superseded run), so
+  `corrected / continuum` sits above 1; the corrected spectrum itself, observed
+  over effective transmission, does not depend on it and agrees with the
+  authors'. Every one of these pages refuses the clean-pixel fit, and telluric
+  CO or O3 runs to its bound on several (ab2014_ winter, ab2021_ summer,
+  ab2140-2168): the column is absorbing the stellar model's error. Pinning CO
+  and O3 there, a free stellar line-strength factor, or a two-epoch fit with an
+  empirical star are the remedies, none tried.
+- **The winter stellar velocity** comes out near -30.5 km/s at both ends of the
+  atlas (1800-2200 and 9000-11000 cm-1) against -26.1 elsewhere, and summer at
+  11.6 against 14.5 at the short end. The superseded run found the same, so it
+  is the data; the 5 km/s bound is touched on 5 pages.
+- 23 page-epochs are more than 20% less flat than before, mostly at 6200-6350
+  and 9200-9250 cm-1; on several of them the new correction is still about as
+  flat as the authors'.
+
+The products are re-exported from this record: `data/corrected/arcturus_spectra.h5`
+(592 spectra) and `data/corrected/arcturus_transmission.h5` (one /profile_<epoch>
+per epoch; `--check` agrees with the cached transmission to 1.9e-7, float32
+storage; 13 rows flagged `column_at_upper_bound`, eight of them below 2200 cm-1). The review page is the same URL, from `export_arcturus_review.py`, which
+reads each species' transmission from the `.npz` rather than rebuilding it.
+
 ## What the atlas run saves, and which transmission to use
+
+*This and the next section describe the `fit_arcturus_batch` run, superseded on
+2026-10-29; its files are now under `data/corrected/superseded_pre_solar_era/atlas/`.
+The promoted run's `.npz` holds `fit_window`'s arrays, whose `flux` is normalized
+by the window's 99th percentile; `tellurix_fts.window.arrays_in_page_units` puts
+them back in the page's units.*
 
 `scripts/fit_arcturus_batch.py` writes one `.npz` per page-epoch under
 `data/corrected/atlas/`, and its own summary beside them in

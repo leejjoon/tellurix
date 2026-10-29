@@ -3,7 +3,10 @@
 
 The notebook is generated rather than hand-edited so it stays reproducible: the
 prose and the code live here, in one reviewable file, and the executed notebook
-with its figures is the build product.
+with its figures is the build product. It follows the ``fit_arcturus_batch`` record,
+superseded on 2026-10-29 by ``fit_fts_batch.py --arcturus`` (docs/arcturus_fit.md,
+"The solar-era refit") and kept in ``data/corrected/superseded_pre_solar_era/``; the
+promoted record has another schema.
 
     uv run --with nbformat python scripts/build_arcturus_notebook.py
     JAX_PLATFORMS=cuda uv run --with nbformat --with nbconvert --with ipykernel \\
@@ -96,7 +99,7 @@ plt.rcParams.update({
 })
 
 ROOT = Path.cwd() if Path("pyproject.toml").exists() else Path.cwd().parent
-RECORD = ROOT / "data/corrected/atlas/arcturus_atlas.h5"
+RECORD = ROOT / "data/corrected/superseded_pre_solar_era/atlas/arcturus_atlas.h5"
 record = read_record(RECORD)
 pages = record.pages
 ARRAYS_DIR = RECORD.parent
@@ -1372,7 +1375,7 @@ compare against instead.
 code(r"""
 import h5py
 
-spectra = ROOT / "data/corrected/arcturus_spectra.h5"
+spectra = ROOT / "data/corrected/superseded_pre_solar_era/arcturus_spectra.h5"
 if spectra.exists():
     with h5py.File(spectra) as f:
         print(f"{spectra.name}: {f['key'].size} rows, {spectra.stat().st_size/1e6:.1f} MB")

@@ -1,8 +1,9 @@
 """Publication figures: telluric correction of the Arcturus atlas, page by page.
 
-Reads only saved products -- the per-page arrays in ``data/corrected/atlas/*.npz``
-and the fitted parameters in ``data/corrected/arcturus_spectra.h5`` -- so it needs
-no GPU, no line list and no refit.
+Reads only saved products -- the per-page arrays and the spectra export of the
+``fit_arcturus_batch`` run, superseded on 2026-10-29 and kept in
+``data/corrected/superseded_pre_solar_era/`` -- so it needs no GPU, no line list and
+no refit. The promoted run's arrays have another layout (docs/arcturus_fit.md).
 
 Pages are chosen by rule, not by eye:
 
@@ -37,8 +38,8 @@ import numpy as np  # noqa: E402
 from matplotlib.ticker import MaxNLocator  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-SPECTRA = ROOT / "data/corrected/arcturus_spectra.h5"
-ARRAYS = ROOT / "data/corrected/atlas"
+SPECTRA = ROOT / "data/corrected/superseded_pre_solar_era/arcturus_spectra.h5"
+ARRAYS = ROOT / "data/corrected/superseded_pre_solar_era/atlas"
 OUT = Path(__file__).resolve().parent / "output"
 
 # Okabe & Ito; observed data is always black.

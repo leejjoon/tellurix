@@ -19,7 +19,7 @@ capability. The URLs are in the user's memory, not here.
 | `baker2020_sdv.html` -- the same spectra refitted with H2O's speed-dependent Voigt (r = 0.13, `data/corrected/baker2020_sdv13`), each spectrum's Voigt fit beside it (v; its residual and median dashed in the strip), the stack switchable SDV/Voigt (d), per-window median rms change in the list (filters: SDV worse, most improved); marks in `reviews/baker2020_sdv13` | `export_baker_review.py --fits data/corrected/baker2020_sdv13 --compare data/corrected/baker2020` (102 MB, two publishes) | `data/review_baker2020_sdv13/` |
 | `igrins.html` -- A0V standards, DCT 2018-12-20 | `export_igrins_review.py --shard I/N`, then `--merge` | `data/review_igrins/` |
 | `igrins_targets.html` -- science corrections, same night | `export_igrins_target_review.py` (numpy only, 30 s) | `data/review_igrins_targets/` |
-| `arcturus.html` -- Arcturus atlas, full-coverage record, 598 page-epochs | `export_arcturus_review.py --shard I/N`, then `--merge` (`--no-species`: total only, numpy) | `data/review_arcturus/` |
+| `arcturus.html` -- Arcturus atlas, the solar-era record of 2026-10-29, 592 page-epochs | `export_arcturus_review.py` (seconds: species from the `.npz`); a superseded `fit_arcturus_batch` record takes `--shard I/N`, then `--merge` | `data/review_arcturus/` |
 
 Publish with the Artifact tool, mapping `manifest.json` and every chunk in the
 bundle through `files` (`contentType: application/wasm` -- binary chunks are
@@ -35,8 +35,10 @@ Kitt Peak is `data/review` (the files 4/5 refit of 2026-10-25, four GPU shards i
 `data/review_{niratl_clean,1983}_pub`. `niratl.html` shows the run superseded on
 2026-10-18 (its bundle is in `data/corrected/superseded_pre_widthscale/review/`);
 `niratl_clean.html` shows the promoted one. A bundle stays under the 64 MB a publish may
-carry: 36 MB for the A0V page, 33 MB for the targets page, 26.6 MB (20
-chunks) for Arcturus, whose export takes ~22 min as four CPU shards.
+carry: 36 MB for the A0V page, 33 MB for the targets page, 23 MB (15
+chunks) for Arcturus (26.6 MB and 20 chunks for the superseded run, whose bundle is in
+`data/corrected/superseded_pre_solar_era/review_arcturus/`). The live page had 20
+chunks, so the first republish of the solar-era bundle passed `null` for 015-019.
 
 What the exporters check, and the traps that shaped them:
 
@@ -45,9 +47,12 @@ What the exporters check, and the traps that shaped them:
   and refuses an order-frame whose species do not multiply back to the total
   (6e-16) or whose total misses the cached `transmission` (2e-16) -- the second is
   what proves the summary's parameters made the cached arrays.
-- `export_arcturus_review.py` reads the full-coverage record
-  (`data/corrected/atlas/arcturus_atlas.h5`), never the trimmed
-  `docs/arcturus_atlas_summary.json`. It rebuilds each page *window* from the
+- `export_arcturus_review.py` reads the promoted record
+  (`data/corrected/atlas/arcturus_atlas.h5`, `fit_fts_batch --arcturus`), whose
+  `.npz` saves every species' transmission, so nothing is rebuilt; it puts the
+  arrays back in page units with `arrays_in_page_units`. For a superseded
+  `fit_arcturus_batch` record -- never the trimmed
+  `docs/arcturus_atlas_summary.json` -- it rebuilds each page *window* from the
   record (one compile serves both epochs) and refuses a row whose species miss the
   total (3e-16) or whose total misses the cached `transmission` (tolerance 2e-6;
   measured 1e-8 to 3e-8 on CPU, all of it on masked saturated pixels). It ships

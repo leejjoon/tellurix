@@ -16,18 +16,19 @@ never touches their data.
 The transmission in the `.npz` cache and in the spectra export is interpolated
 to the atlas pixels, which sample about 2.3 points per resolution element --
 enough to plot, not enough to convolve, because the lines are undersampled
-before the interpolation ever runs. This writes T on the model grid itself:
-4 samples per resolution element at R = 100,000, the grid the opacity was
-evaluated on, with no interpolation anywhere in the path.
+before the interpolation ever runs. This writes T on the model grid itself,
+the grid the opacity was evaluated on (4 samples per resolution element at the
+Arcturus run's R = 115,700), with no interpolation anywhere in the path.
 
     uv run python scripts/export_transmission_hdf5.py \\
         --record data/corrected/atlas/arcturus_atlas.h5 \\
         --output data/corrected/arcturus_transmission.h5
 
 Grids are shared: a page window is one (v1, v2) and both epochs sit on it, so
-the file stores 310 grids for 598 rows and `grid_index` says which row uses
-which. The atmosphere the columns scale is embedded in /profile, so T can be
-regenerated on any other grid from this file plus a line list.
+the file stores one grid per window and `grid_index` says which row uses
+which. The atmosphere the columns scale is embedded in /profile, or one
+/profile_<epoch> per epoch when the run gave each its own (the Arcturus run), so T
+can be regenerated on any other grid from this file plus a line list.
 
 Rebuilding is per *window*, not per row -- the grid, the line selection, the
 opacity backend and the XLA compilation all belong to the window, and only the
