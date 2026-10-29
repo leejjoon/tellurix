@@ -53,8 +53,10 @@ from tellurix import (
 from tellurix.download import DataPaths
 from tellurix.hitran import pressure_shift_provenance
 
+from .atlas import epoch_velocity_kms, read_arcturus_page
 from .nso import (
-    MEASURED_FWHM_CM1, fts_spectral_order, read_solar_spectrum, zenith_angle_deg_for_airmass,
+    MEASURED_FWHM_CM1, arcturus_as_fts_spectrum, fts_spectral_order, read_solar_spectrum,
+    zenith_angle_deg_for_airmass,
 )
 
 # Every molecule AER ships, from the package rather than a local copy: keeping
@@ -158,6 +160,9 @@ class WindowSettings:
     clean_max_masked: float = 0.6
     clean_envelope: str = "max"
     negative_tolerance: float = 1.0e-3
+    # A window whose continuum is fewer sigma above zero is refused as opaque.
+    # Arcturus ab2119_ (~26 sigma, in the CO fundamental) is real data under the solar 30.
+    minimum_continuum_snr: float = 30.0
     vectorize_layers: bool = True
     mixed_precision: bool = True
     precompute_opacity: bool = True
@@ -174,6 +179,27 @@ class WindowSettings:
     # since the nodes carry the geometry, and ``profile`` serves only the
     # source-alone model.
     coadd: Path | None = None
+    # An Arcturus atlas page's epoch, 'summer' or 'winter': ``spectrum`` is then an
+    # ``abNNNN_`` page, read through arcturus_as_fts_spectrum. None for the Sun.
+    epoch: str | None = None
+    # Where the source's velocity starts and what its +-5 km/s bound is centred
+    # on. None: 0 for the Sun, the epoch's readme.dat value for Arcturus, whose
+    # epochs sit at +14 and -26 km/s.
+    stellar_velocity_kms: float | None = None
+
+    @property
+    def stellar_velocity_centre_kms(self) -> float:
+        if self.stellar_velocity_kms is not None:
+            return float(self.stellar_velocity_kms)
+        return 0.0 if self.epoch is None else epoch_velocity_kms(self.epoch)
+
+
+def read_window_spectrum(settings: WindowSettings):
+    """The spectrum a window is cut from: an NSO file or page, or an Arcturus page's epoch."""
+
+    if settings.epoch is not None:
+        return arcturus_as_fts_spectrum(read_arcturus_page(settings.spectrum, settings.epoch))
+    return read_solar_spectrum(settings.spectrum)
 
 
 def solar_source_for(v1_cm1: float, v2_cm1: float, directory: Path) -> Path:
@@ -214,7 +240,7 @@ def load_coadd(path: Path, base: Path = Path(".")):
 
 
 def build_bounds(species, continuum_degree, free, initial, include_stellar, pinned=(),
-                 stellar_broadening=False):
+                 stellar_broadening=False, stellar_velocity_centre_kms=0.0):
     """Bounds that pin everything except the named free parameters."""
 
     def window(name, lower, upper, pinned_at):
@@ -242,10 +268,10 @@ def build_bounds(species, continuum_degree, free, initial, include_stellar, pinn
     if include_stellar:
         # The Sun's own offset is a few hundred m/s -- gravitational redshift
         # +636, convective blueshift about -400 and depth dependent, plus
-        # Earth's orbital component -- not the tens of km/s a stellar target
-        # needs.
+        # Earth's orbital component. A star's tens of km/s are its centre's.
+        centre = float(stellar_velocity_centre_kms)
         bounds["stellar_velocity_kms"] = window(
-            "stellar_velocity_kms", -5.0, 5.0, float(initial.stellar_velocity_kms))
+            "stellar_velocity_kms", centre - 5.0, centre + 5.0, float(initial.stellar_velocity_kms))
         if stellar_broadening:
             # The same ceiling as lsf_sigma_kms: the model's kernel is sized
             # for max_lsf_sigma_kms, and a sigma past it would be truncated.
@@ -270,7 +296,7 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
     # Re-reading the file per window costs 1.3 s to take a 3,166-pixel slice out
     # of 831,488 lines. A caller that walks many windows of one file passes the
     # spectrum in; it is immutable, so sharing it is safe.
-    spectrum = read_solar_spectrum(settings.spectrum) if spectrum is None else spectrum
+    spectrum = read_window_spectrum(settings) if spectrum is None else spectrum
     window = spectrum.select(settings.v1, settings.v2)
     profile = load_atmosphere_csv(Path(base) / settings.profile)
 
@@ -405,7 +431,8 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
             raise ValueError(f"{Path(settings.spectrum).name} has no air mass; "
                              "give zenith_angle_deg")
         zenith = zenith_angle_deg_for_airmass(spectrum.airmass_mean)
-    order = fts_spectral_order(window, zenith_angle_deg=zenith, source_flux_model_grid=source)
+    order = fts_spectral_order(window, zenith_angle_deg=zenith, source_flux_model_grid=source,
+                               minimum_continuum_snr=settings.minimum_continuum_snr)
 
     fit_model = (model.precompute_opacity(self_broadening=settings.self_broadening,
                                           negative_tolerance=settings.negative_tolerance)
@@ -420,7 +447,7 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
             [[float(np.log(np.median(np.asarray(order.flux)[np.asarray(order.mask)])))],
              np.zeros(settings.continuum_degree)]),
         log_jitter=float(np.log(np.median(order.uncertainty))),
-        stellar_velocity_kms=0.0,
+        stellar_velocity_kms=settings.stellar_velocity_centre_kms,
         # Away from zero, where a Gaussian's width has no gradient.
         stellar_broadening_kms=0.5 if settings.stellar_broadening and source is not None else 0.0,
     )
@@ -513,7 +540,7 @@ def _fit_from_clean_pixels(settings: WindowSettings, paths: DataPaths, *, stella
         return _fit_with_coupling(chosen, paths, stellar_directory=stellar_directory,
                                   base=base, spectrum=data)
 
-    spectrum = read_solar_spectrum(settings.spectrum) if spectrum is None else spectrum
+    spectrum = read_window_spectrum(settings) if spectrum is None else spectrum
     plain = replace(settings, telluric_from_clean_pixels=False)
     report, arrays = run(plain, spectrum)
     solar_lines = solar_line_mask(arrays, settings.clean_solar_depth, envelope=settings.clean_envelope)
@@ -656,7 +683,8 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
             raise ValueError(f"unknown stage {stage}; choose from {', '.join(STAGES)}")
         bounds = build_bounds(model.species, settings.continuum_degree, STAGES[stage], parameters,
                               include_stellar=order.source_flux_model_grid is not None,
-                              pinned=pinned, stellar_broadening=broadening)
+                              pinned=pinned, stellar_broadening=broadening,
+                              stellar_velocity_centre_kms=settings.stellar_velocity_centre_kms)
         stage_started = time.time()
         result = fit_order(fit_model, order, parameters, bounds, objective=shared,
                            covariance=settings.covariance)
@@ -676,7 +704,8 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
     final_bounds = build_bounds(
         model.species, settings.continuum_degree, STAGES[settings.stages.split(",")[-1].strip()],
         parameters, include_stellar=order.source_flux_model_grid is not None, pinned=pinned,
-        stellar_broadening=broadening)
+        stellar_broadening=broadening,
+        stellar_velocity_centre_kms=settings.stellar_velocity_centre_kms)
     packed = {
         **{name: float(v) for name, v in result.parameters.log_column_scales.items()},
         "velocity_kms": float(result.parameters.velocity_kms),
@@ -753,7 +782,7 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
     report = {
         "spectrum": {
             "path": str(settings.spectrum), "name": spectrum_path.name, "sha256": spectrum.sha256,
-            "source_name": spectrum.source_name,
+            "source_name": spectrum.source_name, "epoch": settings.epoch,
             "observed_utc": (None if spectrum.observed_utc_mid is None
                              else spectrum.observed_utc_mid.isoformat()),
             "airmass_start": spectrum.airmass_start, "airmass_stop": spectrum.airmass_stop,
@@ -816,9 +845,9 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
             "vsini_kms": settings.vsini_kms, "macroturbulence_kms": settings.macroturbulence_kms,
             "normalized": settings.normalize_source or settings.source_continuum,
             "carries_stellar_continuum": settings.source_continuum,
-            "emergent_quantity_note": (
+            **({} if settings.epoch is not None else {"emergent_quantity_note": (
                 "Payne Zero returns Eddington flux and has no mu option; this is a disc-centre "
-                "observation, so the source mode is mismatched. See docs/solar_fit_plan.md."),
+                "observation, so the source mode is mismatched. See docs/solar_fit_plan.md.")}),
         },
         "pinned": pinned,
         "stages": stage_reports,
@@ -885,3 +914,39 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
            for name, values in species_transmission.items()},
     )
     return report, arrays
+
+
+def arrays_in_page_units(arrays) -> dict:
+    """:func:`fit_window`'s pixel arrays, ascending in wavenumber and in the page's own units.
+
+    The fit sees the window over its 99th percentile (``flux``) and saves the page
+    as it came (``observed_raw``), ascending in wavelength. A consumer that wants the
+    page's units -- the Arcturus spectra file and review page, whose columns were
+    always the atlas's -- gets the model, star, continuum, residual and uncertainty
+    multiplied back by that level, so ``corrected`` is ``observed / effective
+    transmission`` in either. Transmissions are dimensionless and only reordered.
+    """
+
+    order = np.argsort(np.asarray(arrays["wavenumber_cm1"]))
+    take = lambda name: np.asarray(arrays[name])[order]
+    mask = take("mask").astype(bool)
+    raw = take("observed_raw")
+    level = float(np.median(raw[mask] / take("flux")[mask]))
+    out = {
+        "level": level,
+        "wavenumber_cm1": take("wavenumber_cm1"),
+        "mask": mask,
+        "observed": np.where(mask, raw, np.nan),
+        "model_flux": take("model_flux") * level,
+        "stellar_only": take("stellar_only_pixels") * level,
+        "continuum": take("continuum") * level,
+        "residual": take("residual") * level,
+        "uncertainty": take("uncertainty") * level,
+        "transmission": take("transmission_pixels"),
+    }
+    out["corrected"] = raw / np.maximum(out["model_flux"], 1e-6) * out["stellar_only"]
+    for name in arrays:
+        if name.startswith("species_transmission_") or name in ("stellar_continuum", "reliable"):
+            out[name] = take(name)
+    return out
+

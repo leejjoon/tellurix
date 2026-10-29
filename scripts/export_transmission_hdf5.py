@@ -144,7 +144,10 @@ def main() -> None:
     # species in the model and pin the ones not free at their profile column, so
     # there the union is right. Building the union for a solar window adds the
     # absorbers its scan left out at full column: up to 1.6e-3 in the IAG windows.
-    windowed = tuple(record.key_fields) == ("file", "window")
+    # An Arcturus run of fit_fts_batch.py (keyed by page and epoch) scans its species
+    # per window too, and says so in its physics.
+    windowed = (tuple(record.key_fields) == ("file", "window")
+                or physics.get("species") == "computed per window by the scan")
 
     def verified(key: str, path: Path) -> Path:
         stored = inputs.get(f"{key}_sha256")
@@ -153,6 +156,20 @@ def main() -> None:
         return path
 
     profile = load_atmosphere_csv(verified("profile", Path(inputs["profile"])))
+    # An Arcturus run may give each epoch its own atmosphere ("summer=PATH,winter=PATH").
+    epoch_profiles = {}
+    for item in filter(None, str(physics.get("epoch_profiles", "")).split(",")):
+        epoch, _, _ = item.partition("=")
+        epoch_profiles[epoch] = load_atmosphere_csv(
+            verified(f"profile_{epoch}", Path(inputs[f"profile_{epoch}"])))
+    epoch_field = "epoch" if "epoch" in record.key_fields else None
+
+    def profile_key(index: int) -> str:
+        if epoch_profiles and epoch_field:
+            epoch = str(text(pages[epoch_field][index]))
+            if epoch in epoch_profiles:
+                return epoch
+        return ""
     # A co-add's own profiles, one per day, held to the hashes the run recorded.
     coadd = None
     if physics.get("coadd"):
@@ -169,7 +186,7 @@ def main() -> None:
                 raise SystemExit(f"the record holds no hash for the co-add profile {item['profile']}")
             verified(key, root / item["profile"])
     # The opacity's validity bounds cover every profile it serves, as the fit's did.
-    bounding = [profile, *(component for component, _, _ in coadd or ())]
+    bounding = [profile, *epoch_profiles.values(), *(component for component, _, _ in coadd or ())]
     line_root = Path(inputs.get("aer_line_root")
                      or root / "data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
     # A record without the key predates HITRAN's H2O shifts and used AER's.
@@ -214,9 +231,13 @@ def main() -> None:
 
     # Group the rows by window. Rounding to 1e-6 cm-1 is far below the 5 cm-1
     # grid margin and only exists so a float repr cannot split a shared window.
-    windows: dict[tuple[float, float], list[int]] = {}
+    windows: dict[tuple[float, float, bool], list[int]] = {}
     for index in range(len(pages)):
-        key = (round(float(pages["v1"][index]), 6), round(float(pages["v2"][index]), 6))
+        # Coupling is per row: two epochs of one Arcturus page are two fits and may
+        # choose differently, and then they need two opacities on one grid.
+        key = (round(float(pages["v1"][index]), 6), round(float(pages["v2"][index]), 6),
+               bool(pages["line_coupling"][index]) if "line_coupling" in pages.dtype.names
+               else bool(physics.get("line_coupling", False)))
         windows.setdefault(key, []).append(index)
     ordered = sorted(windows)
     if args.limit:
@@ -237,12 +258,13 @@ def main() -> None:
     if args.check and summary_path.exists():
         for entry in json.loads(summary_path.read_text())["results"]:
             if entry.get("npz"):
-                arrays_by_window[(round(float(entry["v1"]), 6), round(float(entry["v2"]), 6))] = (
+                arrays_by_window[(round(float(entry["v1"]), 6), round(float(entry["v2"]), 6),
+                                  entry.get("epoch") or "")] = (
                     args.record.parent / Path(entry["npz"]).name)
 
     started = time.time()
     for position, key in enumerate(ordered):
-        v1, v2 = key
+        v1, v2, coupled = key
         grid = trim_wavenumber_grid(
             constant_velocity_grid(1.0e7 / v2, 1.0e7 / v1,
                                    resolving_power=resolving_power_for(v1, v2),
@@ -250,16 +272,9 @@ def main() -> None:
                                    margin_cm1=float(config["margin_cm1"])),
             v1, v2, float(config["grid_margin_cm1"]))
 
-        # Per row when the record says so: a coupled solar run refits a window
-        # without coupling where its coupled opacity goes too negative.
-        if "line_coupling" in pages.dtype.names:
-            flags = {bool(pages["line_coupling"][i]) for i in windows[key]}
-            if len(flags) != 1:
-                raise SystemExit(f"rows of window {v1}-{v2} disagree on line coupling")
-            coupled = flags.pop()
-        else:
-            # A record without the column used the run's setting everywhere.
-            coupled = bool(physics.get("line_coupling", False))
+        # Per row when the record says so (a coupled run refits a window without
+        # coupling where its coupled opacity goes too negative, or where the
+        # uncoupled fit is better); a record without the column used the run's setting.
         if windowed:
             chosen = {str(text(pages["free_species"][i])) for i in windows[key]}
             if len(chosen) != 1:
@@ -323,8 +338,13 @@ def main() -> None:
                                  max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
                                  pixel_integration=physics["pixel_integration"])
 
-        model = (single(profile) if coadd is None else CoaddedTelluricModel(
-            [(single(component), nodes) for component, nodes, _ in coadd]))
+        # One model per atmosphere the window's rows were fitted through: the
+        # run's profile, or each epoch's own.
+        models = {name: (single(epoch_profiles.get(name, profile)) if coadd is None
+                         else CoaddedTelluricModel(
+                             [(single(component), nodes) for component, nodes, _ in coadd]))
+                  for name in sorted({profile_key(i) for i in windows[key]})}
+        model = next(iter(models.values()))
 
         # One compile per window, one evaluation per epoch on it. Calling
         # `transmission` eagerly instead costs 35.9 s on the first call of a
@@ -340,12 +360,16 @@ def main() -> None:
         # The zenith angle is an operand, not a captured constant: IGRINS rows
         # in one window come from frames at different airmasses and would
         # otherwise recompile per frame.
-        @jax.jit
-        def transmission_at(scales, angle, _model=model, _template=template):
-            return _model.transmission(_template._replace(log_column_scales=scales), angle)
+        def compiled(chosen):
+            @jax.jit
+            def transmission_at(scales, angle, _model=chosen, _template=template):
+                return _model.transmission(_template._replace(log_column_scales=scales), angle)
+            return transmission_at
 
+        evaluators = {name: compiled(chosen) for name, chosen in models.items()}
         for index in windows[key]:
             row = pages[index]
+            transmission_at = evaluators[profile_key(index)]
             parameters = parameters_from_row(row, present)
             values = np.asarray(transmission_at(
                 {name: float(value)
@@ -355,7 +379,8 @@ def main() -> None:
             grid_index[index] = position
 
             if args.check:
-                cached = arrays_by_window.get(key) or (
+                cached = arrays_by_window.get(
+                    (v1, v2, str(text(pages[epoch_field][index])) if epoch_field else "")) or (
                     args.record.parent / ("_".join(record.key(index)) + ".npz"))
                 if cached.exists():
                     with np.load(cached) as stored:
@@ -382,7 +407,9 @@ def main() -> None:
     with h5py.File(args.output, "w") as handle:
         handle.attrs["about"] = (
             "Unconvolved telluric transmission from tellurix, on the forward model's own "
-            "grid: 4 samples per resolution element at R = 100,000, no interpolation. This is "
+            f"grid: {float(config['samples_per_resolution']):g} samples per resolution element"
+            + (f" at R = {float(config['resolving_power']):,.0f}" if "resolving_power" in config else "")
+            + ", no interpolation. This is "
             "a multiplicand, not a divisor -- put it inside your own instrument convolution, "
             "Conv[continuum x source x T], and fit that against the raw observed spectrum. "
             "Row i uses grid grid_index[i], valid over its first grid_points entry. The "
@@ -391,7 +418,8 @@ def main() -> None:
             "already absorbed any slant path, and the frame's own angle for an IGRINS night, "
             "so that is the slant transmission along the line of sight. A co-add (the IAG "
             "atlases) has no angle of its own: its rows are the weighted mean over the "
-            "atmospheres and nodes described in /coadd, which replaces /profile.")
+            "atmospheres and nodes described in /coadd, which replaces /profile. A run that "
+            "gave each epoch its own atmosphere has /profile_<epoch> in place of /profile.")
         handle.attrs["format"] = "tellurix transmission 1"
         handle.attrs["record"] = str(args.record)
         if "resolving_power" in config:
@@ -438,10 +466,14 @@ def main() -> None:
 
         if coadd is not None:
             write_coadd(handle, coadd, physics)
-        # The atmosphere the scales multiply, so T can be regenerated elsewhere.
-        group = handle.create_group("profile") if coadd is None else None
+        # The atmosphere the scales multiply, so T can be regenerated elsewhere;
+        # with one per epoch, /profile_<epoch> beside it.
+        group = handle.create_group("profile") if coadd is None and not epoch_profiles else None
         if group is not None:
             write_profile(group, profile, str(inputs["profile"]))
+        for epoch, atmosphere in sorted(epoch_profiles.items()):
+            write_profile(handle.create_group(f"profile_{epoch}"), atmosphere,
+                          str(inputs[f"profile_{epoch}"]))
 
         write_upper_bound_flags(handle, pages[keep], species_all)
 

@@ -87,6 +87,25 @@ pinned at its 571 nm band's values (docs/solar_fit_plan.md section 4u):
 
     UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py \\
         --spectrum .../nso/photatl --airmass 2.0
+
+``--arcturus`` fits the Hinkle, Wallace & Livingston 1995 Arcturus IR atlas through the same
+window fit: a window per page, both epochs, the observed column masked where the authors'
+telluric column is (`arcturus_as_fts_spectrum`). The atlas is a compilation at constant
+resolving power, so each window's sinc is ``--sinc-resolving-power`` (115,700, the atlas-wide
+law of the measured MOPD) at its own centre, and it is fitted at zenith 0 with the air mass in
+the column scales. The source is one Payne Zero spectrum for every page, broadened by
+Arcturus's vsini and macroturbulence, and each epoch's stellar velocity starts at its
+readme.dat value. ``--epoch-profile`` gives each epoch its own atmosphere. The
+promoted run (docs/arcturus_fit.md, "The solar-era refit"), into data/corrected/atlas
+by default, with ab2119_'s 26-sigma continuum let through:
+
+    UV_CACHE_DIR=.uv-cache uv run python scripts/fit_fts_batch.py --arcturus \\
+        --epoch-profile summer=data/profiles/kitt_peak_1994_spring_afgl.csv \\
+        --epoch-profile winter=data/profiles/kitt_peak_1994_winter_afgl.csv \\
+        --profile data/profiles/kitt_peak_1994_spring_afgl.csv \\
+        --scan-profile data/profiles/kitt_peak_1994_spring_afgl.csv \\
+        --o2-cia --line-coupling --telluric-from-clean-pixels \\
+        --line-strength-table data/line_strength/step3_iter1.npz --minimum-snr 20
 """
 
 from __future__ import annotations
@@ -105,7 +124,7 @@ from tellurix import (  # noqa: E402
     AER_MOLECULE_IDS, ScanIdentity, cached_scan, file_sha256, line_strength_provenance,
     load_atmosphere_csv, species_above,
 )
-from tellurix_fts import read_solar_spectrum  # noqa: E402
+from tellurix_fts import arcturus_as_fts_spectrum, read_arcturus_page, read_solar_spectrum  # noqa: E402
 from tellurix_fts.flux_atlas import (  # noqa: E402
     FLUXATL_SCANS, IAG_NIR, IAG_VIS, WALLACE2011_REGIONS, read_flux_atlas,
 )
@@ -117,6 +136,15 @@ from tellurix_fts.window import WindowSettings, fit_window  # noqa: E402
 WALLACE2011 = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso/wallace2011_flux")
 IAG = Path("data/databases/iag")
 FLUXATL = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso/fluxatl")
+ARCTURUS = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/arcturus/ir")
+# What the Arcturus atlas fits take that the Sun does not: the source, its broadening
+# (docs/arcturus_fit.md), and the resolving power of the measured sincs' atlas-wide law.
+ARCTURUS_FIT = {
+    "stellar": "data/stellar/arcturus_payne_zero_full.npz",
+    "vsini_kms": 2.0,
+    "macroturbulence_kms": 2.15,
+    "sinc_resolving_power": 115_700.0,
+}
 LINE_ROOT = Path("data/lblrtm/AER_Line_File/aer_v_3.9/line_files_By_Molecule")
 
 # Everything about the fit that is the same for every window. Named here and
@@ -199,6 +227,49 @@ def atlas_pages(directory: Path, v1: float | None, v2: float | None,
     return jobs, spectra
 
 
+def arcturus_pages(directory: Path, epochs, v1: float | None, v2: float | None,
+                   minimum_snr: float, names=None) -> tuple[list[dict], dict]:
+    """One window per page and epoch, spanning the whole page, as `atlas_pages`.
+
+    Both epochs of a page share its window, so a job is keyed by window and epoch,
+    and the spectra by path and epoch.
+    """
+
+    paths = sorted((p for p in directory.iterdir()
+                    if p.name.startswith("ab") and p.name.endswith("_") and p.name[2:-1].isdigit()),
+                   key=lambda p: int(p.name[2:-1]))
+    if names:
+        missing = set(names) - {p.name for p in paths}
+        if missing:
+            raise SystemExit(f"no such pages: {', '.join(sorted(missing))}")
+        paths = [p for p in paths if p.name in set(names)]
+    jobs, spectra = [], {}
+    for path in paths:
+        for epoch in epochs:
+            spectrum = arcturus_as_fts_spectrum(read_arcturus_page(path, epoch))
+            nu = spectrum.wavenumber_vacuum_cm1
+            lo, hi = float(nu[0]), float(nu[-1])
+            if (v1 is not None and hi <= v1) or (v2 is not None and lo >= v2):
+                continue
+            # The summer epoch has no data below 2014 cm-1: those pages ship zeros.
+            if not np.isfinite(spectrum.flux).any():
+                continue
+            snr = window_continuum_snr(spectrum.flux)
+            if snr < minimum_snr:
+                continue
+            key = f"{path}#{epoch}"
+            spectra[key] = spectrum
+            jobs.append({"v1": lo, "v2": hi, "continuum_snr": round(snr, 1), "file": str(path),
+                         "epoch": epoch, "spectrum_key": key, "spectrum_sha256": spectrum.sha256})
+    return jobs, spectra
+
+
+def job_key(row) -> tuple:
+    """What a resumed run recognises a finished job by: its window, and its epoch if any."""
+
+    return (round(row["v1"], 3), row.get("epoch"))
+
+
 def run_identity(spectra: dict) -> SimpleNamespace:
     """One sha256 for a run over many files: of their names and their hashes."""
 
@@ -226,6 +297,13 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
         "aer_line_root": str(line_root), "aer_version": "3.9",
         "scan_cache": str(args.scan_cache),
     }
+    # Each epoch's own atmosphere, when the epochs have one each.
+    for epoch, path in sorted((getattr(args, "epoch_profiles", None) or {}).items()):
+        entries[f"profile_{epoch}"] = str(root / path)
+        entries[f"profile_{epoch}_sha256"] = file_sha256(root / path)
+    if getattr(args, "arcturus", False):
+        entries["stellar"] = str(root / args.stellar)
+        entries["stellar_sha256"] = file_sha256(root / args.stellar)
     if getattr(args, "coadd", None):
         entries["coadd"] = str(root / args.coadd)
         entries["coadd_sha256"] = file_sha256(root / args.coadd)
@@ -263,7 +341,7 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    telluric_from_clean_pixels: bool = False,
                    clean_solar_depth: float = 0.01, clean_max_masked: float = 0.6,
                    clean_envelope: str = "max", vsini_kms: float = 0.0, pin=(),
-                   coadd: Path | None = None) -> dict:
+                   coadd: Path | None = None, arcturus: dict | None = None) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -284,6 +362,9 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         # runs at 0.01859, and a record that named 0.01753 would rebuild every
         # window on the wrong grid (export_transmission_hdf5 reads this).
         "fwhm_cm1": float(fwhm_cm1),
+        # The Arcturus atlas holds R, not the FWHM, fixed: each window's sinc is
+        # sinc_resolving_power at its centre, so no one FWHM describes the run.
+        **(arcturus or {}),
         # Disc centre is fitted at 0; a flux atlas carries the Sun's rotation.
         "vsini_kms": float(vsini_kms),
         "accuracy_mode": accuracy_mode,
@@ -330,7 +411,26 @@ def physics_of(root: Path, args) -> dict:
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
         clean_envelope=args.clean_envelope, vsini_kms=args.vsini_kms, pin=args.pin,
-        coadd=args.coadd)
+        coadd=args.coadd, arcturus=arcturus_physics(args))
+
+
+def arcturus_physics(args) -> dict | None:
+    """The Arcturus fit's own physics, for the record; None for the Sun."""
+
+    if not args.arcturus:
+        return None
+    return {
+        "fwhm_cm1": 0.0,
+        "sinc_resolving_power": float(args.sinc_resolving_power),
+        "stellar": str(args.stellar), "vsini_kms": float(args.vsini_kms),
+        "macroturbulence_kms": float(args.macroturbulence_kms),
+        "normalize_stellar_source": False,
+        "zenith_angle_deg": 0.0,
+        "epochs": ",".join(args.epochs),
+        # One string: a record's physics are HDF5 attributes, which hold no dict.
+        **({"epoch_profiles": ",".join(f"{k}={v}" for k, v in sorted(args.epoch_profiles.items()))}
+           if args.epoch_profiles else {}),
+    }
 
 
 def scan_column_ratios(root: Path, args, scan_profile) -> dict:
@@ -373,7 +473,7 @@ def scan_species(entry, args, root, profile, airmass: float) -> dict:
     identity = ScanIdentity.for_profile(
         root / (args.scan_profile or args.profile), (entry["v1"], entry["v2"]),
         threshold=args.scan_threshold, line_budget=args.scan_line_budget,
-        margin_cm1=args.margin_cm1, fwhm_cm1=args.scan_fwhm_cm1,
+        margin_cm1=args.margin_cm1, fwhm_cm1=entry.get("fwhm_cm1", args.scan_fwhm_cm1),
         samples_per_resolution=args.scan_samples_per_resolution)
     cached = cached_scan(
         args.scan_cache, identity, profile, root / LINE_ROOT,
@@ -399,13 +499,16 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         return {**entry, **scan, "negligible_telluric": True,
                 "seconds": round(time.time() - started, 1)}
 
+    epoch = entry.get("epoch")
     settings = WindowSettings(
         spectrum=Path(entry["file"]), v1=entry["v1"], v2=entry["v2"],
         margin_cm1=args.margin_cm1, grid_margin_cm1=args.grid_margin_cm1,
-        samples_per_resolution=args.samples_per_resolution, fwhm_cm1=args.fwhm_cm1,
-        profile=args.profile, species=",".join(scan["species"]),
-        stellar="auto", vsini_kms=args.vsini_kms,
-        macroturbulence_kms=PHYSICS["macroturbulence_kms"],
+        samples_per_resolution=args.samples_per_resolution,
+        fwhm_cm1=entry.get("fwhm_cm1", args.fwhm_cm1),
+        profile=(args.epoch_profiles or {}).get(epoch, args.profile),
+        species=",".join(scan["species"]),
+        stellar=str(args.stellar) if args.arcturus else "auto", vsini_kms=args.vsini_kms,
+        macroturbulence_kms=args.macroturbulence_kms, epoch=epoch,
         source_continuum=False, normalize_source=False,
         continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=tuple(args.pin),
         # A co-add's nodes carry the geometry; --airmass then sets only the species cut.
@@ -418,7 +521,8 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         line_strength_table=args.line_strength_table,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
-        clean_envelope=args.clean_envelope, vectorize_layers=True, mixed_precision=True,
+        clean_envelope=args.clean_envelope, minimum_continuum_snr=args.minimum_snr,
+        vectorize_layers=True, mixed_precision=True,
         precompute_opacity=args.precompute_opacity, self_broadening=args.self_broadening,
         layer_chunk_size=args.layer_chunk_size, coadd=args.coadd,
     )
@@ -451,7 +555,8 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
     level = float(np.median(corrected[clean] / star[clean])) if clean.sum() >= 20 else float("nan")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    npz = args.output_dir / f"{args.window_stem or Path(entry['file']).stem}_{entry['v1']:.0f}.npz"
+    npz = args.output_dir / (f"{Path(entry['file']).name}_{epoch}.npz" if epoch else
+                             f"{args.window_stem or Path(entry['file']).stem}_{entry['v1']:.0f}.npz")
     np.savez_compressed(
         npz, corrected=corrected,
         corrected_normalized=corrected / np.maximum(continuum, 1e-12),
@@ -514,9 +619,11 @@ def record_row(row, npz_dir: Path, spectrum_sha: str) -> dict:
                                 "stellar_broadening_kms",
                                 "wavelength_stretch", "log_jitter")
                    and not n.startswith("continuum_")]
+        # An Arcturus row is a page and an epoch, keyed as the atlas record always was.
+        key = ({"page": Path(row["file"]).name, "epoch": row["epoch"]} if row.get("epoch") else
+               {"file": Path(row["file"]).name, "window": f"{row['v1']:.0f}-{row['v2']:.0f}"})
         return {
-            "file": Path(row["file"]).name,
-            "window": f"{row['v1']:.0f}-{row['v2']:.0f}",
+            **key,
             "page_sha256": row.get("spectrum_sha256", spectrum_sha),
             "log_column_scales": {s: float(parameters[s]) for s in species},
             "continuum_coeffs": np.asarray(parameters["continuum_coeffs"], dtype=float),
@@ -571,10 +678,25 @@ def main() -> None:
                         help="fit this scan's stretch of the Kurucz et al. 1984 flux atlas instead "
                              "of --spectrum; its sinc FWHM is the default, and its air mass is "
                              "only the species cut's (fit it with --coadd)")
+    parser.add_argument("--arcturus", action="store_true",
+                        help="fit the Arcturus IR atlas instead of --spectrum: a window per page "
+                             "and epoch, at zenith 0, with ARCTURUS_FIT's source and sinc")
+    parser.add_argument("--epochs", default="summer,winter", help="--arcturus: which epochs")
+    parser.add_argument("--epoch-profile", action="append", default=[], metavar="EPOCH=PATH",
+                        help="--arcturus: this epoch's atmosphere, relative to the checkout; "
+                             "an epoch without one takes --profile. Repeatable.")
+    parser.add_argument("--sinc-resolving-power", type=float, default=None,
+                        help="--arcturus: each window's sinc is this R at its centre "
+                             "(default ARCTURUS_FIT's)")
+    parser.add_argument("--stellar", type=Path, default=None,
+                        help="--arcturus: the Payne Zero source (default ARCTURUS_FIT's)")
+    parser.add_argument("--macroturbulence-kms", type=float, default=None,
+                        help="the source's macroturbulence: default 1.5 for the Sun, "
+                             "ARCTURUS_FIT's for Arcturus")
     parser.add_argument("--stellar-directory", type=Path, default=None,
                         help="where the solar_payne_zero_* bands are, relative to the checkout; "
                              "default data/stellar, and data/stellar/iag_nir for --iag nir")
-    parser.add_argument("--vsini-kms", type=float, default=0.0,
+    parser.add_argument("--vsini-kms", type=float, default=None,
                         help="rotational broadening of the solar source: 0 for disc centre, "
                              "1.9 for a flux atlas")
     parser.add_argument("--v1", type=float, default=None,
@@ -690,7 +812,8 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=0, help="stop after this many windows")
     parser.add_argument("--pages", default=None, metavar="wnNNNN,...",
                         help="atlas pages only (photatl, niratl): fit just these pages")
-    parser.add_argument("--output-dir", type=Path, default=root / "data/corrected/solar")
+    parser.add_argument("--output-dir", type=Path, default=None,
+                        help="default: data/corrected/solar, or data/corrected/atlas with --arcturus")
     parser.add_argument("--summary", type=Path, default=None,
                         help="default: <output-dir>/<spectrum stem>_summary.json")
     parser.add_argument("--record", type=Path, default=None,
@@ -704,6 +827,32 @@ def main() -> None:
 
     region = None
     args.window_stem = None
+    args.epochs = [e.strip() for e in args.epochs.split(",") if e.strip()]
+    args.epoch_profiles = {}
+    for item in args.epoch_profile:
+        epoch, _, path = item.partition("=")
+        if epoch.strip() not in ("summer", "winter") or not path:
+            raise SystemExit(f"--epoch-profile expects summer=PATH or winter=PATH, got {item!r}")
+        args.epoch_profiles[epoch.strip()] = Path(path)
+    if args.arcturus:
+        if args.spectrum is not None:
+            raise SystemExit("pass --spectrum or --arcturus, not both")
+        args.spectrum = ARCTURUS
+        args.window_stem = "arcturus"
+        args.stellar = Path(args.stellar or ARCTURUS_FIT["stellar"])
+        args.sinc_resolving_power = args.sinc_resolving_power or ARCTURUS_FIT["sinc_resolving_power"]
+        args.vsini_kms = ARCTURUS_FIT["vsini_kms"] if args.vsini_kms is None else args.vsini_kms
+        if args.macroturbulence_kms is None:
+            args.macroturbulence_kms = ARCTURUS_FIT["macroturbulence_kms"]
+        # The atlas is a compilation over many nights: the air mass goes into the scales.
+        if args.airmass is not None or args.zenith_angle_deg not in (None, 0.0):
+            raise SystemExit("--arcturus fits at zenith 0")
+        args.zenith_angle_deg = 0.0
+    elif args.epoch_profiles or args.sinc_resolving_power or args.stellar:
+        raise SystemExit("--epoch-profile, --sinc-resolving-power and --stellar are --arcturus options")
+    args.vsini_kms = 0.0 if args.vsini_kms is None else args.vsini_kms
+    if args.macroturbulence_kms is None:
+        args.macroturbulence_kms = PHYSICS["macroturbulence_kms"]
     if args.wallace2011_region is not None:
         if args.spectrum is not None:
             raise SystemExit("pass --spectrum or --wallace2011-region, not both")
@@ -762,13 +911,17 @@ def main() -> None:
         args.v1 = 9400.0 if args.v1 is None else args.v1
         args.v2 = 20000.0 if args.v2 is None else args.v2
     elif args.spectrum is None:
-        raise SystemExit("pass --spectrum, --wallace2011-region, --iag or --fluxatl")
+        raise SystemExit("pass --spectrum, --wallace2011-region, --iag, --fluxatl or --arcturus")
     if args.stellar_directory is None:
         args.stellar_directory = Path("data/stellar")
 
     stem = args.window_stem or args.spectrum.stem
+    args.output_dir = args.output_dir or root / ("data/corrected/atlas" if args.arcturus
+                                                 else "data/corrected/solar")
     args.summary = args.summary or args.output_dir / f"{stem}_summary.json"
-    args.record = args.record or args.output_dir / f"{stem}.h5"
+    # The Arcturus record keeps the name every reader of the atlas defaults to.
+    args.record = args.record or args.output_dir / (
+        "arcturus_atlas.h5" if args.arcturus else f"{stem}.h5")
     if args.compilation_cache:
         from tellurix.compiled import enable_compilation_cache
 
@@ -788,7 +941,13 @@ def main() -> None:
     if args.scan_column_ratios:
         print("species cut scaled by column ratio: " + ", ".join(
             f"{k} {v:.2f}" for k, v in sorted(args.scan_column_ratios.items())))
-    if args.spectrum.is_dir() and region is None:
+    if args.arcturus:
+        jobs, spectra = arcturus_pages(args.spectrum, args.epochs, args.v1, args.v2, args.minimum_snr,
+                                       names=args.pages.split(",") if args.pages else None)
+        for entry in jobs:
+            entry["fwhm_cm1"] = 0.5 * (entry["v1"] + entry["v2"]) / args.sinc_resolving_power
+        spectrum = run_identity(spectra)
+    elif args.spectrum.is_dir() and region is None:
         jobs, spectra = atlas_pages(args.spectrum, args.v1, args.v2, args.minimum_snr,
                                       names=args.pages.split(",") if args.pages else None)
         spectrum = run_identity(spectra)
@@ -826,19 +985,25 @@ def main() -> None:
     jobs = jobs[:: args.stride]
     if args.shard:
         index, _, count = args.shard.partition("/")
-        jobs = jobs[int(index):: int(count)]
+        if args.arcturus:
+            # By page, so a page's epochs share one worker and its one scan.
+            pages = sorted({entry["file"] for entry in jobs}, key=lambda f: int(Path(f).name[2:-1]))
+            mine = set(pages[int(index):: int(count)])
+            jobs = [entry for entry in jobs if entry["file"] in mine]
+        else:
+            jobs = jobs[int(index):: int(count)]
     if args.limit:
         jobs = jobs[: args.limit]
 
     done = {}
     if args.resume and args.summary.exists():
         for row in json.loads(args.summary.read_text())["results"]:
-            done[round(row["v1"], 3)] = row
+            done[job_key(row)] = row
 
     results = list(done.values())
     started = time.time()
     for index, entry in enumerate(jobs, 1):
-        key = round(entry["v1"], 3)
+        key = job_key(entry)
         if key in done:
             continue
         entry = {"file": str(args.spectrum), "spectrum_sha256": spectrum.sha256, **entry}
@@ -847,7 +1012,8 @@ def main() -> None:
             status = "scan: " + (", ".join(row["species"]) or "nothing above threshold")
         else:
             try:
-                row = run_one(entry, args, root, profile, airmass, spectra[entry["file"]])
+                row = run_one(entry, args, root, profile, airmass,
+                              spectra[entry.get("spectrum_key", entry["file"])])
                 status = ("negligible telluric" if row["negligible_telluric"] else
                           f"rms/noise {row['residual_rms_over_noise']:5.2f}  "
                           f"{'+'.join(row['species'])}")
@@ -867,7 +1033,8 @@ def main() -> None:
         import jax
 
         jax.clear_caches()
-        print(f"[{index}/{len(jobs)}] {entry['v1']:7.1f}-{entry['v2']:7.1f}  {status}   "
+        print(f"[{index}/{len(jobs)}] {entry['v1']:7.1f}-{entry['v2']:7.1f} {entry.get('epoch') or ''} "
+              f" {status}   "
               f"({(time.time() - started)/60:.1f} min elapsed)", flush=True)
         args.summary.parent.mkdir(parents=True, exist_ok=True)
         args.summary.write_text(json.dumps(
@@ -930,12 +1097,14 @@ def main() -> None:
                     "scan_threshold": args.scan_threshold, "scan_fwhm_cm1": args.scan_fwhm_cm1,
                     "scan_profile": str(args.scan_profile or args.profile),
                     "species_threshold": args.species_threshold,
-                    "scan_line_budget": args.scan_line_budget, "airmass": airmass},
+                    "scan_line_budget": args.scan_line_budget, "airmass": airmass,
+                    # The grid's R, which an Arcturus window's FWHM was derived from.
+                    **({"resolving_power": args.sinc_resolving_power} if args.arcturus else {})},
             physics=physics_of(root, args),
             inputs=input_hashes(root, args, spectrum, species),
             parameter_names=codec.names, species=species, pages=rows,
             continuum_degree=args.continuum_degree,
-            key_fields=("file", "window"),
+            key_fields=("page", "epoch") if args.arcturus else ("file", "window"),
             extra_columns=(("airmass", "f8"), ("zenith_angle_deg", "f8"), ("line_coupling", "i1"),
                            ("stellar_broadening_kms", "f8"), ("clean_pixels", "i1")),
         )

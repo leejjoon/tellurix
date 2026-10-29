@@ -24,8 +24,10 @@ def main():
     parser.add_argument("--shards", nargs="+", required=True, help="shard summaries, relative to output_dir")
     args = parser.parse_args()
     blobs = [json.loads((args.output_dir / name).read_text()) for name in args.shards]
-    rows = sorted((row for blob in blobs for row in blob["results"]), key=lambda r: r["v1"])
-    if len({round(r["v1"], 3) for r in rows}) != len(rows):
+    rows = sorted((row for blob in blobs for row in blob["results"]),
+                  key=lambda r: (r["v1"], r.get("epoch") or ""))
+    # An Arcturus window holds two epochs, one row each.
+    if len({(round(r["v1"], 3), r.get("epoch")) for r in rows}) != len(rows):
         raise SystemExit("a window appears in more than one shard")
     if len({json.dumps(blob["physics"], sort_keys=True) for blob in blobs}) != 1:
         raise SystemExit("the shards were not run with the same physics")

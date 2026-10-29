@@ -8,7 +8,12 @@ import pytest
 
 import numpy as np
 
-from tellurix_fts.window import STAGES, WindowSettings, build_bounds, solar_line_mask, solar_source_for
+from tellurix_fts import epoch_velocity_kms
+from tellurix_fts.window import (
+    STAGES, WindowSettings, build_bounds, read_window_spectrum, solar_line_mask, solar_source_for,
+)
+
+DATA = Path(__file__).resolve().parent / "data"
 
 
 def test_settings_are_frozen_and_default_like_the_command_line():
@@ -80,3 +85,27 @@ def test_the_closing_envelope_lets_a_broad_wing_through_and_keeps_narrow_lines()
     assert closing[np.argmin(np.abs(nu - 11695.0))]
     with pytest.raises(ValueError):
         solar_line_mask(arrays, envelope="hull")
+
+
+def test_an_arcturus_window_reads_its_epoch_and_starts_at_its_velocity():
+    settings = WindowSettings(spectrum=DATA / "arcturus_page_sample.txt", profile=Path("p.csv"),
+                              epoch="winter")
+
+    spectrum = read_window_spectrum(settings)
+    assert spectrum.flux[0] == pytest.approx(0.80, abs=0.02)
+    assert settings.stellar_velocity_centre_kms == pytest.approx(epoch_velocity_kms("winter"))
+    # The Sun's stays at zero, and an explicit value wins.
+    assert dataclasses.replace(settings, epoch=None).stellar_velocity_centre_kms == 0.0
+    assert dataclasses.replace(settings, stellar_velocity_kms=3.0).stellar_velocity_centre_kms == 3.0
+
+
+def test_the_stellar_velocity_bound_is_centred_on_the_star():
+    from tellurix import TelluricParameters
+
+    initial = TelluricParameters(log_column_scales={"H2O": 0.0}, velocity_kms=0.0,
+                                 wavelength_stretch=0.0, lsf_sigma_kms=0.5,
+                                 continuum_coeffs=np.zeros(2), log_jitter=-5.0,
+                                 stellar_velocity_kms=14.0)
+    bounds = build_bounds(["H2O"], 1, STAGES["stellar"], initial, include_stellar=True,
+                          stellar_velocity_centre_kms=14.3)
+    assert bounds["stellar_velocity_kms"] == pytest.approx((9.3, 19.3))

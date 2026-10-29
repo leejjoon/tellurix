@@ -118,3 +118,21 @@ def test_ratioed_column_is_refused():
     page = read_arcturus_page(FIXTURE, "summer")
     with pytest.raises(ValueError, match="ratioed"):
         arcturus_spectral_order(page, column="ratioed")
+
+
+def test_as_fts_spectrum_blanks_the_pixels_the_order_masks():
+    from tellurix_fts import arcturus_as_fts_spectrum
+
+    page = read_arcturus_page(FIXTURE, "summer")
+    spectrum = arcturus_as_fts_spectrum(page)
+    order = arcturus_spectral_order(page)
+
+    # The same telluric cuts as the order, which is reversed into ascending wavelength.
+    positive = page.observed > 0.0
+    np.testing.assert_array_equal((np.isfinite(spectrum.flux) & positive)[::-1], np.asarray(order.mask))
+    assert np.any(~np.isfinite(spectrum.flux))
+    np.testing.assert_array_equal(spectrum.flux[np.isfinite(spectrum.flux)],
+                                  page.observed[np.isfinite(spectrum.flux)])
+    # No air mass: the atlas is a compilation, fitted at zenith 0.
+    assert spectrum.airmass_mean is None
+    assert spectrum.sha256 == page.sha256

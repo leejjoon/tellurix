@@ -50,6 +50,14 @@ Table 1's "smoothed resolving power"), so the two are compared at one resolution
 
     uv run python scripts/score_telluric_correction.py --stem fluxatl_113 --authors kurucz2005 \\
         --relative-transmission --smooth-fwhm-cm1 0.042646923 fluxatl=data/corrected/solar/fluxatl
+
+The Arcturus atlas's authors' correction is each page's ``ratioed`` column for that epoch
+(``--authors arcturus``; window files ``abNNNN__<epoch>.npz``, ``--stem 'ab*'``): the observed
+spectrum over their telluric spectrum, "after smoothing and continuum adjustment", so its
+noise too is lower than ours by construction, and it is zero where they gave up on a line.
+
+    uv run python scripts/score_telluric_correction.py --stem 'ab*' --authors arcturus \\
+        --relative-transmission base=data/corrected/arcturus_trial/base
 """
 from __future__ import annotations
 
@@ -62,6 +70,7 @@ import numpy as np
 from tellurix_fts.flatness import BINS, EDGE_PIXELS, MIN_TRANSMISSION, corrected, photatl_solar, scatter
 
 ATLASES = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso")
+ARCTURUS = ATLASES.parent / "arcturus" / "ir"
 C_KMS = 299792.458
 VELOCITIES_KMS = np.arange(-1.0, 1.0001, 0.01)
 
@@ -102,7 +111,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("runs", nargs="+", metavar="NAME=DIRECTORY")
     parser.add_argument("--stem", default="ph*", help="window files are <stem>_<v1>.npz (default: niratl pages)")
-    parser.add_argument("--authors", choices=("niratl", "photatl", "wallace2011", "kurucz2005", "none"), default="niratl")
+    parser.add_argument("--authors", choices=("niratl", "photatl", "wallace2011", "kurucz2005", "arcturus", "none"),
+                        default="niratl")
+    parser.add_argument("--arcturus", type=Path, default=ARCTURUS)
     parser.add_argument("--wallace2011-region", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--wallace2011", type=Path, default=ATLASES / "wallace2011_flux")
     parser.add_argument("--kurucz2005", type=Path, default=ATLASES.parent / "kurucz2005" / "irradrelwl.dat")
@@ -122,6 +133,7 @@ def main() -> None:
     bins = {**BINS, "telluric": args.telluric_below}
 
     from tellurix_fts.flux_atlas import WALLACE2011_REGIONS, read_kurucz_irradiance, read_wallace2011_correction
+    from tellurix_fts import read_arcturus_page
     from tellurix_fts.nso import read_niratl_page, read_photatl_page
 
     runs = dict(entry.split("=", 1) for entry in args.runs)
@@ -163,6 +175,12 @@ def main() -> None:
             shifted = nu * (1.0 + velocity / C_KMS)
             authors = np.interp(shifted, kurucz[0], kurucz[1])
             authors[np.interp(shifted, kurucz[0], kurucz[2].astype(float)) > 0.0] = np.nan
+        elif args.authors == "arcturus":
+            name, _, epoch = page.rpartition("_")
+            atlas = read_arcturus_page(args.arcturus / name, epoch)
+            # Their gaps are zeros; no Arcturus line in this atlas is that deep.
+            authors = np.interp(nu, atlas.wavenumber_vacuum_cm1,
+                                np.where(atlas.ratioed > 0.02, atlas.ratioed, np.nan))
         if authors is not None:
             clean &= np.isfinite(authors)
         if args.relative_transmission and mask.any():

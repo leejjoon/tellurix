@@ -1,0 +1,121 @@
+{
+ "about": "Trial of the solar-era settings on 16 Arcturus atlas pages (31 page-epochs), 2026-10-28, before refitting the whole atlas with fit_fts_batch.py --arcturus. 'old' is the committed full-coverage record (data/corrected/atlas/arcturus_atlas.h5) on the same rows. Every trial run: HITRAN H2O shifts, O2 CIA, line coupling fitted both ways, species from a per-window scan, sinc at R 115,700, AFGL 1994 profiles per epoch (kitt_peak_1994_spring_afgl / _winter_afgl). 'strength' adds the step3_iter1 line-strength table; 'cleanNNN' add the clean-pixel telluric fit at pressure-width scale N/100.",
+ "pages": "ab1951_,ab2077_,ab2147_,ab2700_,ab3000_,ab3300_,ab4300_,ab4750_,ab4975_,ab5000_,ab5550_,ab6250_,ab7875_,ab8800_,ab9400_,ab10500_",
+ "flatness_method": "niratl ships the authors' own corrected solar spectrum (Wallace, Hinkle & Livingston 1993). Ours minus theirs mixes both corrections' errors, so instead each is scored on its own, the same way: at pixels where the model transmission is below 0.97 and the solar model is flat (above 0.995 of its continuum), the rms of the corrected spectrum about a running mean of nearby pixels with neither solar nor telluric absorption. A perfect correction leaves noise there. The first and last 50 pixels are not scored: an edge pixel is inside the neighbouring page too (pages overlap by 5 cm-1), and a fit that leaves edges out should not be judged on them. Nor are pixels below a transmission of 0.15, which the corrected products blank: dividing by a saturated core turns a percent of model error into a spike that can outweigh the rest of a window. Two bins: every telluric pixel (T < 0.97) and the deep ones (T < 0.7).",
+ "flatness_settings": {
+  "stem": "ab*",
+  "authors": "arcturus",
+  "relative_transmission": true
+ },
+ "flatness_summary": {
+  "telluric": {
+   "pages": 15,
+   "median_percent": {
+    "old": 2.0982655236599106,
+    "base": 1.9412372764478756,
+    "strength": 1.9412367066095508,
+    "clean100": 1.7788932103097854,
+    "clean106": 2.1771527977783336,
+    "clean111": 2.573502792781094,
+    "authors": 4.2699724007858615
+   },
+   "pages_flatter_than_old": {
+    "base": 8,
+    "strength": 9,
+    "clean100": 12,
+    "clean106": 7,
+    "clean111": 6,
+    "authors": 5
+   },
+   "pages_at_or_below_authors": {
+    "old": 10,
+    "base": 11,
+    "strength": 11,
+    "clean100": 13,
+    "clean106": 13,
+    "clean111": 13
+   },
+   "pages_worse_than_authors_by_0p2": {
+    "old": 3,
+    "base": 4,
+    "strength": 4,
+    "clean100": 1,
+    "clean106": 2,
+    "clean111": 2
+   }
+  },
+  "deep": {
+   "pages": 13,
+   "median_percent": {
+    "old": 3.380496652369859,
+    "base": 3.4661130041086077,
+    "strength": 3.4661124346144505,
+    "clean100": 2.7099712381804997,
+    "clean106": 3.3274202846738246,
+    "clean111": 4.283589625696431,
+    "authors": 9.305139996702211
+   },
+   "pages_flatter_than_old": {
+    "base": 6,
+    "strength": 7,
+    "clean100": 10,
+    "clean106": 5,
+    "clean111": 4,
+    "authors": 2
+   },
+   "pages_at_or_below_authors": {
+    "old": 11,
+    "base": 10,
+    "strength": 11,
+    "clean100": 13,
+    "clean106": 11,
+    "clean111": 11
+   },
+   "pages_worse_than_authors_by_0p2": {
+    "old": 1,
+    "base": 3,
+    "strength": 2,
+    "clean100": 0,
+    "clean106": 2,
+    "clean111": 2
+   }
+  }
+ },
+ "fits": {
+  "base": {
+   "page_epochs": 31,
+   "median_residual_rms_over_noise": 4.062,
+   "rows_with_a_parameter_at_bound": 10,
+   "clean_pixel_fit_used": 0
+  },
+  "strength": {
+   "page_epochs": 31,
+   "median_residual_rms_over_noise": 4.062,
+   "rows_with_a_parameter_at_bound": 10,
+   "clean_pixel_fit_used": 0
+  },
+  "clean100": {
+   "page_epochs": 31,
+   "median_residual_rms_over_noise": 4.07,
+   "rows_with_a_parameter_at_bound": 2,
+   "clean_pixel_fit_used": 26
+  },
+  "clean106": {
+   "page_epochs": 31,
+   "median_residual_rms_over_noise": 4.049,
+   "rows_with_a_parameter_at_bound": 3,
+   "clean_pixel_fit_used": 26
+  },
+  "clean111": {
+   "page_epochs": 31,
+   "median_residual_rms_over_noise": 4.05,
+   "rows_with_a_parameter_at_bound": 3,
+   "clean_pixel_fit_used": 26
+  },
+  "old": {
+   "page_epochs": 31,
+   "median_residual_rms_over_noise": 4.638
+  }
+ },
+ "chosen": "clean100"
+}

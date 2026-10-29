@@ -35,6 +35,15 @@ continuum-normalized stellar model from those, as the solar page does.
         --merge data/review_arcturus_? --output data/review_arcturus
 
 `--no-species` skips the rebuild (numpy only, a minute) and ships the total.
+
+A record of `fit_fts_batch.py --arcturus` (`physics["sinc_resolving_power"]`) needs no
+rebuild: `fit_window` saved each species' transmission on the pixels from the fitted
+model itself, and its arrays are put back in the page's units
+(`tellurix_fts.window.arrays_in_page_units`). The authors' telluric column, which that
+cache does not carry, is read from the page file. Point `--record` at it:
+
+    UV_CACHE_DIR=.uv-cache uv run python scripts/export_arcturus_review.py \\
+        --record data/corrected/arcturus/arcturus.h5 --output data/review_arcturus_solar_era
 """
 
 from __future__ import annotations
@@ -192,6 +201,7 @@ class WindowRebuilder:
 def export(args, root: Path) -> None:
     from tellurix import read_record
     from tellurix_fts import read_arcturus_page
+    from tellurix_fts.window import arrays_in_page_units
     from tellurix.model import BoxcarFTSInstrumentProfile
 
     record = read_record(args.record)
@@ -199,7 +209,9 @@ def export(args, root: Path) -> None:
     names, sigma_all = list(record.parameter_names), record.sigma
     config = record.config
     ceiling = float(config.get("telluric_ceiling", 1.05))
-    atlas_root = Path(record.inputs["atlas_root"])
+    # A fit_window record names the atlas directory as its spectrum.
+    fitted_windows = "sinc_resolving_power" in record.physics
+    atlas_root = Path(record.inputs.get("atlas_root") or record.inputs["spectrum"])
 
     windows: dict[tuple[float, float], list[int]] = {}
     for index in range(len(pages)):
@@ -213,7 +225,7 @@ def export(args, root: Path) -> None:
         ordered = ordered[: args.limit]
 
     rebuilder = None
-    if args.species:
+    if args.species and not fitted_windows:
         os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
         import jax
 
@@ -268,7 +280,8 @@ def export(args, root: Path) -> None:
             page, epoch = record.key(index)
             try:
                 with np.load(args.record.parent / f"{page}_{epoch}.npz") as stored:
-                    saved = {k: np.asarray(stored[k]) for k in stored.files}
+                    saved = (arrays_in_page_units(stored) if fitted_windows
+                             else {k: np.asarray(stored[k]) for k in stored.files})
                 nu = saved["wavenumber_cm1"]
                 mask = saved["mask"].astype(bool)
                 reliable = saved["reliable"].astype(bool)
@@ -293,6 +306,10 @@ def export(args, root: Path) -> None:
                         raise ValueError(f"rebuilt transmission misses the cached one by "
                                          f"{record_drift:.2e}: wrong parameters?")
                     pieces = {k: np.interp(nu, grid, v) for k, v in grid_pieces.items()}
+                elif fitted_windows and args.species:
+                    # The fit's own split, interpolated to the pixels by the fit.
+                    pieces = {k[len("species_transmission_"):]: v for k, v in saved.items()
+                              if k.startswith("species_transmission_")}
 
                 # The atlas row of every pixel, for the top axis. The full-coverage
                 # run fits every row, so this is 0..n-1 -- but it is matched by
@@ -308,6 +325,8 @@ def export(args, root: Path) -> None:
                         raise ValueError("cached pixels are not a run of the page's rows")
                     pixel_index, pixel_source = np.arange(start, stop), "atlas page"
                     page_rows = int(atlas.wavenumber_vacuum_cm1.size)
+                    if "atlas_telluric" not in saved:
+                        saved["atlas_telluric"] = atlas.telluric[start:stop]
                 else:
                     page_rows = None
 
@@ -315,7 +334,8 @@ def export(args, root: Path) -> None:
                 effective = np.where(np.abs(star) > 1e-12,
                                      saved["model_flux"] / np.where(np.abs(star) > 1e-12, star, 1.0),
                                      np.nan)
-                sigma = float(row["pixel_sigma"])
+                # A fit_window row's sigma is in the window's normalized units.
+                sigma = float(row["pixel_sigma"]) * float(saved.get("level", 1.0))
                 atlas_telluric = np.where(saved["atlas_telluric"] > ceiling, np.nan,
                                           saved["atlas_telluric"])
                 arrays = {
@@ -342,6 +362,9 @@ def export(args, root: Path) -> None:
                 for s in rebuilder.species_all if rebuilder else [
                         n[len("log_column_"):] for n in pages.dtype.names
                         if n.startswith("log_column_")]:
+                    # A fit_window row's model holds only its scanned species.
+                    if fitted_windows and s not in free_set:
+                        continue
                     if s not in free_set and f"species:{s}" not in arrays:
                         continue
                     j = names.index(s)
@@ -393,7 +416,8 @@ def export(args, root: Path) -> None:
                 entry["reliable_offset"] = put(np.packbits(reliable).tobytes())
                 manifest.append(entry)
                 status = (f"{len(pieces)} pieces, split {split_drift:.1e}, record {record_drift:.1e}"
-                          if built is not None else "total only")
+                          if built is not None else
+                          f"{len(pieces)} pieces from the fit" if pieces else "total only")
             except Exception as exc:  # one row must not stop the export
                 failures.append({"key": f"{page}:{epoch}", "error": str(exc),
                                  "traceback": traceback.format_exc()[-1200:]})

@@ -29,7 +29,7 @@ import re
 
 import numpy as np
 
-from .atlas import robust_noise
+from .atlas import ArcturusPage, robust_noise
 from .ils import running_median as _running_median
 from tellurix.types import SpectralOrder
 
@@ -587,6 +587,32 @@ def niratl_as_fts_spectrum(page: NiratlPage) -> FTSSpectrum:
         stated_resolution_cm1=None, transform_samples=0, point_of_center=0,
         wavenumber_vacuum_cm1=page.wavenumber_vacuum_cm1, flux=page.observed,
         grid_residual_cm1=page.grid_residual_cm1,
+    )
+
+
+def arcturus_as_fts_spectrum(page: ArcturusPage, *, saturation_floor: float = 0.02,
+                             telluric_ceiling: float = 1.05) -> FTSSpectrum:
+    """One epoch of an Arcturus atlas page in the shape the FTS fitting path reads.
+
+    The observed column, set to NaN where :func:`arcturus_spectral_order` masks
+    it: where the authors' own telluric column is below ``saturation_floor`` or
+    above ``telluric_ceiling``, the cut that column blows up past (2e5 on
+    ab5000_). The FTS path then adds its own saturation mask on the smoothed
+    flux. No air mass: the atlas is a compilation over many nights and
+    configurations, so the fit runs at zenith 0 and the column scales carry it.
+    """
+
+    telluric = page.telluric
+    usable = np.isfinite(telluric) & (telluric >= saturation_floor) & (telluric <= telluric_ceiling)
+    return FTSSpectrum(
+        path=page.path, sha256=page.sha256, source_name=f"Arcturus {page.path.name} {page.epoch}",
+        comment="Hinkle, Wallace & Livingston 1995: observed column",
+        date_mst="", julian_day=0, universal_time_start="", universal_time_stop="",
+        airmass_start=None, airmass_stop=None,
+        stated_resolution_cm1=None, transform_samples=0, point_of_center=0,
+        wavenumber_vacuum_cm1=page.wavenumber_vacuum_cm1,
+        flux=np.where(usable, page.observed, np.nan),
+        grid_residual_cm1=0.0,
     )
 
 

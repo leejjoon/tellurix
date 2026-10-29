@@ -76,6 +76,20 @@ ABOUT = (
 )
 
 
+def atlas_columns(values) -> dict:
+    """A run's arrays in this file's columns, ascending in wavenumber.
+
+    The Arcturus atlas driver saved them so; `fit_fts_batch.py --arcturus` saves
+    `fit_window`'s, which `arrays_in_page_units` puts in the page's units.
+    """
+
+    if "stellar_only_pixels" not in values:
+        return {name: np.asarray(values[name]) for name in values.files}
+    from tellurix_fts.window import arrays_in_page_units
+
+    return arrays_in_page_units(values)
+
+
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__,
@@ -112,7 +126,7 @@ def main() -> None:
     widths = []
     for path in paths:
         with np.load(path) as values:
-            widths.append(int(values["wavenumber_cm1"].size))
+            widths.append(int(np.asarray(values["wavenumber_cm1"]).size))
     rows, width = len(paths), max(widths)
     print(f"{rows} spectra, up to {width} pixels each")
 
@@ -139,7 +153,8 @@ def main() -> None:
 
     present = set()
     for index, path in enumerate(paths):
-        with np.load(path) as values:
+        with np.load(path) as stored:
+            values = atlas_columns(stored)
             n = int(values["wavenumber_cm1"].size)
             star = np.asarray(values["stellar_only"], dtype=float)
             effective = np.where(np.abs(star) > 1.0e-12,
