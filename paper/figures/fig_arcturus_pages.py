@@ -1,9 +1,10 @@
 """Publication figures: telluric correction of the Arcturus atlas, page by page.
 
-Reads only saved products -- the per-page arrays and the spectra export of the
-``fit_arcturus_batch`` run, superseded on 2026-10-29 and kept in
-``data/corrected/superseded_pre_solar_era/`` -- so it needs no GPU, no line list and
-no refit. The promoted run's arrays have another layout (docs/arcturus_fit.md).
+Reads only saved products -- the per-page arrays of the solar-era window fit
+promoted on 2026-10-29 (``data/corrected/atlas/``), its spectra export, and the
+atlas's own pages for their telluric column -- so it needs no GPU, no line list and
+no refit. The arrays are put in page units by ``arrays_in_page_units``; the fit's
+``pixel_sigma`` is in the units it fitted in, so it is scaled by the same level.
 
 Pages are chosen by rule, not by eye:
 
@@ -37,9 +38,13 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.ticker import MaxNLocator  # noqa: E402
 
+from tellurix_fts import read_arcturus_page  # noqa: E402
+from tellurix_fts.window import arrays_in_page_units  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
-SPECTRA = ROOT / "data/corrected/superseded_pre_solar_era/arcturus_spectra.h5"
-ARRAYS = ROOT / "data/corrected/superseded_pre_solar_era/atlas"
+SPECTRA = ROOT / "data/corrected/arcturus_spectra.h5"
+ARRAYS = ROOT / "data/corrected/atlas"
+PAGES = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/arcturus/ir")
 OUT = Path(__file__).resolve().parent / "output"
 
 # Okabe & Ito; observed data is always black.
@@ -73,11 +78,23 @@ def load_table():
     return P, frac
 
 
+def atlas_telluric(page, epoch, nu):
+    """The atlas's own telluric column on the fit's pixels (NaN where it has none)."""
+    p = read_arcturus_page(PAGES / page, epoch)
+    return np.interp(nu, p.wavenumber_vacuum_cm1, p.telluric, left=np.nan, right=np.nan)
+
+
+def load_arrays(page, epoch):
+    a = arrays_in_page_units(np.load(ARRAYS / f"{page}_{epoch}.npz"))
+    a["eff"] = a["model_flux"] / np.maximum(a["stellar_only"], 1e-12)
+    a["atlas_telluric"] = atlas_telluric(page, epoch, a["wavenumber_cm1"])
+    return a
+
+
 def load_page(row):
     page, epoch = row["page"].decode(), row["epoch"].decode()
-    a = dict(np.load(ARRAYS / f"{page}_{epoch}.npz"))
-    a["eff"] = a["model_flux"] / np.maximum(a["stellar_only"], 1e-12)
-    a["sigma"] = float(row["pixel_sigma"])
+    a = load_arrays(page, epoch)
+    a["sigma"] = float(row["pixel_sigma"]) * a["level"]
     a["name"] = f"{page.rstrip('_')} {epoch}"
     a["row"] = row
     return a
@@ -194,7 +211,7 @@ def page_stats(a):
         "v1_cm1": float(a["row"]["v1"]), "v2_cm1": float(a["row"]["v2"]),
         "residual_rms_over_noise": float(a["row"]["residual_rms_over_noise"]),
         "pixel_sigma": a["sigma"],
-        "residual_rms": float(a["row"]["residual_rms"]),
+        "residual_rms": float(a["row"]["residual_rms"]) * a["level"],
         "rms_over_noise_telluric_pixels": float(np.sqrt(np.mean(z[tel] ** 2))) if tel.sum() else None,
         "rms_over_noise_clean_pixels": float(np.sqrt(np.mean(z[clean] ** 2))) if clean.sum() else None,
         "telluric_pixels": int(tel.sum()), "clean_pixels": int(clean.sum()),
@@ -310,9 +327,10 @@ def figure_atlas_telluric(a, stem):
 
     rows = []
     for f in sorted(ARRAYS.glob("ab*_*.npz")):
-        b = np.load(f)
+        page, epoch = f.stem.rsplit("_", 1)
+        b = load_arrays(page, epoch)
         bat = b["atlas_telluric"]
-        beff = b["model_flux"] / np.maximum(b["stellar_only"], 1e-12)
+        beff = b["eff"]
         g = b["reliable"] & np.isfinite(bat) & (bat > 0.2) & (bat <= 1.0)
         if g.sum() < 50:
             continue
