@@ -1,5 +1,19 @@
 """Differentiable terrestrial telluric transmission."""
 
+import os as _os
+
+# XLA's CPU backend in JAX 0.11 routes fusions through YNNPACK, which does not
+# fuse the line kernel's wing sum into its reduction: the gradient's temporary
+# memory doubles (3.3 to 7.0 GB on a 5 cm-1 window) and an evaluation is
+# 1.3-2x slower. Without it 0.11 matches 0.6.2 to 1.6e-12 in flux, at 0.6.2's
+# speed and memory (docs/performance.md, "JAX 0.11"). XLA reads the flag when
+# the backend starts, so this must run before the first computation. An
+# unknown flag aborts the process: recheck it whenever JAX is upgraded.
+if "xla_cpu_experimental_ynn_fusion_type" not in _os.environ.get("XLA_FLAGS", ""):
+    _os.environ["XLA_FLAGS"] = (
+        _os.environ.get("XLA_FLAGS", "") + " --xla_cpu_experimental_ynn_fusion_type="
+    ).strip()
+
 from jax import config as _jax_config
 
 _jax_config.update("jax_enable_x64", True)

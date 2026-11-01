@@ -1,5 +1,58 @@
 # Performance benchmark
 
+## JAX 0.11 (2026-11-01)
+
+The environment moved from Python 3.10 / JAX 0.6.2 / NumPy 1.26 to Python 3.12 /
+JAX 0.11.2 / NumPy 2.5 (JAX 0.6.2 is the last release for Python 3.10; 0.11 needs
+3.12). ExoJAX stays at 2.5.0. Each measurement below ran both environments on the
+same machine, interleaved or side by side on identical GPUs, because the host's
+load from other users moves CPU timings by tens of percent.
+
+**GPU, where every fit driver runs by default, is unchanged or faster.**
+`benchmarks/benchmark.py`, medians, RTX 5000 Ada:
+
+| Kernel | Forward | Value and gradient | Compile, value and gradient |
+|---|---:|---:|---:|
+| Direct | 111 -> 110 ms | 185 -> 154 ms | 50.3 -> 16.6 s |
+| Sparse | 15.0 -> 14.6 ms | 18.1 -> 18.0 ms | 9.8 -> 6.9 s |
+| Sparse, mixed precision | 1.9 -> 3.1 ms | 4.2 -> 3.0 ms | 10.8 -> 8.3 s |
+
+Three real fits (one Arcturus page, one IGRINS order, the
+`rebuild_arcturus_page.py --check` reconstruction) take the same wall time on
+both and peak at 1.36 GB of GPU memory on both.
+
+**On CPU, XLA's new YNNPACK fusion was a regression, and `tellurix` turns it
+off.** JAX 0.11's CPU backend does not fuse the line kernel's wing sum into its
+reduction through YNNPACK, so it keeps an extra float32 (layer, line, grid) array
+in the backward pass. On a 5 cm-1 window of H2O and CO2, XLA's own memory
+analysis of value and gradient went from 3.33 to 6.96 GB of temporaries (14.3 to
+20.3 GB without mixed precision), and evaluation was 1.3-2x slower (sparse value
+and gradient 340 -> 465 ms, mixed precision 102 -> 182 ms, dense forward 1.19 ->
+2.3 s). `tellurix/__init__.py` sets `--xla_cpu_experimental_ynn_fusion_type=`
+unless `XLA_FLAGS` already names it, which restores 0.6.2 on every count: 3.34
+GB, sparse 66 / 337 ms, mixed precision 67 / 102 ms, dense 1.27 s; compilation
+stays 20% faster than on 0.6.2. The flag is experimental -- recheck it at the next
+JAX upgrade, since an unknown flag aborts the process.
+
+**Results agree to well below the noise.** The forward model and its gradient
+agree to 1.6e-12 and 7.9e-10. The ab5000_ summer fit (`fit_arcturus_page.py`)
+moves its columns by under 1e-5 relative and its model flux by at most 1.2e-6 on
+CPU and 1.8e-7 on GPU, against noise near 5e-3. On GPU its `lsf_sigma_kms` moved
+from 0.1167 to 0.1096 km/s, a direction flat enough that the model flux changes
+by under 2e-7. The reconstruction reproduces the record, made on GPU with 0.6.2,
+to 5.7e-10 in transmission. The IGRINS H110 order is ill-conditioned (its
+`continuum_1` sits on the -5 bound): 0.6.2 stopped at -4.99998 and 0.11 at -5, so
+the bound now excludes it from the covariance and the formal sigmas change by up
+to 100x. The fit itself is slightly better (objective -6751.52 against -6751.49)
+and the columns move by 0.001-0.004, inside their formal sigmas of 0.01-0.14.
+
+**`benchmark_fit.py` no longer runs on a 32 GB GPU, with either version.** Its
+two control runs fit through the live kernel, and the covariance at the end of
+each stage takes `jax.hessian` of it: 23.7 GB on 0.6.2, 31 GiB on 0.11, beyond
+the card in both cases (on CPU the 0.6.2 Hessian peaked at 38 GB on a 5 cm-1
+window). The fit results it reports below date from before the covariance used
+the true Hessian. A fit with `--no-precompute-opacity` hits the same wall.
+
 ## Per-page cost of a batch fit (2026-09-17)
 
 With the opacity out of the optimizer loop, what a page costs is no longer the

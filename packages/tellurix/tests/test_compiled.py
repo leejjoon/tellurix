@@ -29,3 +29,25 @@ def test_two_closures_lower_to_one_program_and_keep_their_own_values():
     for hoisted, direct in results:
         assert float(hoisted["sum"]) == pytest.approx(float(direct["sum"]), rel=1e-15)
         np.testing.assert_array_equal(hoisted["table"], direct["table"])
+
+
+@pytest.mark.parametrize("given, expected", [
+    ("", "--xla_cpu_experimental_ynn_fusion_type="),
+    ("--xla_force_host_platform_device_count=2",
+     "--xla_force_host_platform_device_count=2 --xla_cpu_experimental_ynn_fusion_type="),
+    ("--xla_dump_to=/dev/null --xla_cpu_experimental_ynn_fusion_type=",
+     "--xla_dump_to=/dev/null --xla_cpu_experimental_ynn_fusion_type="),
+])
+def test_import_turns_off_ynn_fusion_unless_the_caller_chose(given, expected):
+    # In a fresh interpreter: XLA reads the flag only when the backend starts,
+    # and the flag must be one this jaxlib knows, or the computation aborts.
+    import os
+    import subprocess
+    import sys
+
+    code = ("import os, tellurix, jax.numpy as jnp; float(jnp.ones(3).sum()); "
+            "print(os.environ['XLA_FLAGS'])")
+    env = {**os.environ, "XLA_FLAGS": given, "JAX_PLATFORMS": "cpu"}
+    output = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True,
+                            check=True).stdout
+    assert output.strip() == expected

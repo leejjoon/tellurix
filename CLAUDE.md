@@ -63,7 +63,7 @@ dependency goes in the `pyproject.toml` of the package whose code imports it.
 ## Commands
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv sync --dev --extra gpu   # environment (.venv, Python 3.10)
+UV_CACHE_DIR=.uv-cache uv sync --dev --extra gpu   # environment (.venv, Python 3.12, JAX 0.11)
 # Plain `uv sync --dev` REMOVES the CUDA wheels and leaves jax CPU-only; the extra is
 # what keeps the GPU working, and every fit driver defaults to --platform gpu.
 UV_CACHE_DIR=.uv-cache uv run pytest          # full suite, ~3 min on CPU, no external data needed
@@ -370,7 +370,10 @@ dense branch every call, so the self-pressure bound is not checked.
 - `tellurix/__init__.py` enables `jax_enable_x64` at import. Import
   `tellurix` **before** ExoJAX so calculators are built in float64. The
   instrument packages import `tellurix` first in their own `__init__` for the
-  same reason.
+  same reason. It also turns off XLA's CPU YNNPACK fusion through `XLA_FLAGS`
+  (JAX 0.11: 2x the gradient's memory and 1.3-2x slower without it,
+  `docs/performance.md`), which only takes effect if `tellurix` is imported
+  before the first computation.
 - Public data classes are frozen dataclasses/NamedTuples that validate and
   normalize in `__post_init__` (species names uppercased, arrays coerced,
   physical ordering checked) and raise `ValueError` with a short message.
