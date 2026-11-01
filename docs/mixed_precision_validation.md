@@ -5,7 +5,11 @@ from physical differences between ExoJAX and LBLRTM. The machine-readable
 report is [mixed_precision_validation.json](mixed_precision_validation.json).
 Only a report with `passed: true` represents a completed successful run.
 
-## Results (RTX 5000 Ada, JAX 0.6.2)
+## Results (RTX 5000 Ada, JAX 0.11.2)
+
+Rerun on 2026-11-01 after the move from JAX 0.6.2; every worst-case error
+below is unchanged to the printed digits except seed 17's fit shift, 2.40e-5
+under 0.6.2.
 
 The opacity, spectrum, and paired-fit checks all passed after hardening
 `fit_order` against premature L-BFGS-B convergence.
@@ -32,7 +36,7 @@ full-size covariance matrix in physical units.
 
 | Noise seed | Largest parameter shift / local uncertainty | Result |
 |---|---:|---|
-| 17 | 2.40e-5 | Pass |
+| 17 | 3.38e-5 | Pass |
 | 42 | 5.75e-5 | Pass |
 | 123 | 1.09e-4 | Pass |
 
