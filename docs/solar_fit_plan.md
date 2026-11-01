@@ -223,8 +223,8 @@ must be masked rather than clipped.
 ## Phase 1 -- the Payne Zero solar source
 
 `scripts/generate_payne_zero_solar.py`, on the `generate_payne_zero_arcturus.py`
-pattern, run in Payne Zero's own environment (it needs Python >= 3.11; this
-package is pinned to 3.10 by `exojax==2.5.0`).
+pattern, run in Payne Zero's own environment (until 2026-11 this package was
+pinned to Python 3.10, which Payne Zero does not support).
 
 Labels, all inside Payne Zero's stated support: Teff 5772 K, log g 4.438,
 [M/H] 0.0, [alpha/M] 0.0, microturbulence 1.0 km/s.

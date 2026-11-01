@@ -9,12 +9,12 @@ description = "Readers for Fourier-transform spectrometer atlases (Arcturus, NSO
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.12,<3.13"
 dependencies = [
   "tellurix>=0.2,<0.3",
-  "astropy>=6,<7",
-  "jax>=0.5,<0.7",
-  "numpy>=1.26,<2",
+  "astropy>=7,<8",
+  "jax>=0.11,<0.12",
+  "numpy>=2.0,<3",
 ]
 
 [tool.uv.sources]

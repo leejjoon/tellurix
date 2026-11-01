@@ -5,7 +5,7 @@
 [project]
 name = "tellurix-workspace"
 version = "0.2.0"
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.12,<3.13"
 dependencies = [
   # era5: the profile scripts fetch ERA5 columns.
   "tellurix[era5]",

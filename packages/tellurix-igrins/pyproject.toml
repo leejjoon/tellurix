@@ -9,14 +9,14 @@ description = "IGRINS reduced-spectrum reader, night calibration and lamp-flat b
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.12,<3.13"
 dependencies = [
   "tellurix>=0.2,<0.3",
   # Already in the lock via exojax; declared because igrins.py reads FITS directly.
-  "astropy>=6,<7",
+  "astropy>=7,<8",
   "h5py>=3.10,<4",
-  "jax>=0.5,<0.7",
-  "numpy>=1.26,<2",
+  "jax>=0.11,<0.12",
+  "numpy>=2.0,<3",
   "scipy>=1.13,<2",
 ]
 

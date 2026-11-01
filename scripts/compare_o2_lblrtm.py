@@ -53,7 +53,7 @@ for band, starts in WINDOWS.items():
         def ew_tx(scale):
             p = TelluricParameters(log_column_scales={"O2": float(np.log(scale))}, velocity_kms=0.0, wavelength_stretch=0.0,
                                    lsf_sigma_kms=0.5, continuum_coeffs=np.zeros(1), log_jitter=0.0)
-            t = np.asarray(model.transmission(p, ZEN)); return float(np.trapz(1 - t[inside], nu[inside]))
+            t = np.asarray(model.transmission(p, ZEN)); return float(np.trapezoid(1 - t[inside], nu[inside]))
         scales = np.linspace(0.85, 1.20, 36); ews = np.array([ew_tx(s) for s in scales])
         row = {"band": band, "v1": v1, "ew_tellurix_1": ew_tx(1.0)}
         for name, (tape, cont) in VARIANTS.items():
@@ -61,7 +61,7 @@ for band, starts in WINDOWS.items():
                 LBLRTMRunConfig(v1 - 2.0, v2 + 2.0, ZEN, cont, f"O2 {band} {v1:.0f} {name}"),
                 REF / "LBLRTM/lblrtm_v12.17_linux_gnu_sgl", REF / tape / "TAPE3", REF / "LBLRTM/data/absco-ref_wv-mt-ckd.nc")
             w = lbl.wavenumber_cm1; m = (w >= v1) & (w <= v2)
-            ew = float(np.trapz(1 - lbl.transmission[m], w[m]))
+            ew = float(np.trapezoid(1 - lbl.transmission[m], w[m]))
             row[f"ew_{name}"] = ew
             row[f"scale_{name}"] = float(np.interp(ew, ews, scales)) if ews[0] <= ew <= ews[-1] else float("nan")
         out.append(row)

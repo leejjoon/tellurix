@@ -493,8 +493,8 @@ continuum-source degeneracy is separately ruled out by `--continuum-anchor 0.98`
 (median H2O shift +0.4%, residual 1.1% worse).
 
 `scripts/generate_payne_zero_arcturus.py` makes the stellar source and does **not**
-run in this environment: Payne Zero needs Python >= 3.11 while this package is pinned
-to 3.10 by `exojax==2.5.0`. It runs in Payne Zero's own venv and writes an npz that
+run in this environment: it needs Payne Zero's 7 GB runtime tree. It runs in Payne
+Zero's own venv and writes an npz that
 `StellarSpectrum.from_npz` reads back; the script's docstring has the invocation.
 
 **`--line-coupling`** on `fit_fts_window.py` and `fit_fts_batch.py`

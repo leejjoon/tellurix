@@ -57,7 +57,7 @@ def main() -> None:
         nu, lbl, mine = nu[alive], lbl[alive], mine[alive]
         peak = float(np.max(lbl))
         entry = {"pixels_compared": int(alive.sum()), "lblrtm_peak_tau": peak, "tellurix_peak_tau": float(np.max(mine)),
-                 "integrated_ratio": float(np.trapz(mine, nu) / np.trapz(lbl, nu)),
+                 "integrated_ratio": float(np.trapezoid(mine, nu) / np.trapezoid(lbl, nu)),
                  "max_abs_difference_over_peak": float(np.max(np.abs(mine - lbl)) / peak)}
         report["windows"][label] = entry
         print(f"{label:16} LBLRTM peak tau {peak:.3e}  tellurix {entry['tellurix_peak_tau']:.3e}  "

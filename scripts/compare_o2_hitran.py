@@ -150,7 +150,7 @@ def main():
                 p = TelluricParameters(log_column_scales={"O2": float(np.log(scale))}, velocity_kms=0.0,
                                        wavelength_stretch=0.0, lsf_sigma_kms=0.5, continuum_coeffs=np.zeros(1), log_jitter=0.0)
                 t = np.asarray(model.transmission(p, zenith_angle_deg_for_airmass(airmass)))
-                return float(np.trapz(1 - t[inside], nu[inside]))
+                return float(np.trapezoid(1 - t[inside], nu[inside]))
             scales = np.linspace(0.85, 1.25, 41)
             for airmass in AIRMASSES:
                 curve = np.array([ew(models["aer"], s, airmass) for s in scales])

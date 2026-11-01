@@ -9,19 +9,18 @@ description = "Differentiable terrestrial telluric transmission for high-resolut
 readme = "README.md"
 license = "MIT AND LicenseRef-AER-MT-CKD"
 license-files = ["LICENSE"]
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.12,<3.13"
 dependencies = [
   "exojax==2.5.0",
   # Already in the lock via exojax; declared because record.py uses it directly.
   "h5py>=3.10,<4",
-  "jax>=0.5,<0.7",
-  # RADIS currently pulls a vaex wheel built against NumPy 1.x.
-  "numpy>=1.26,<2",
+  "jax>=0.11,<0.12",
+  "numpy>=2.0,<3",
   "scipy>=1.13,<2",
 ]
 
 [project.optional-dependencies]
-gpu = ["jax[cuda12]>=0.5,<0.7"]
+gpu = ["jax[cuda12]>=0.11,<0.12"]
 # Fetching ERA5 columns from ARCO-ERA5 (tellurix.era5.fetch_column).
 era5 = ["aiohttp>=3.9,<4", "fsspec>=2024.2", "requests>=2.31,<3", "zarr>=2.18,<3"]
 
