@@ -2249,6 +2249,16 @@ in four windows of each file). `lsf_sigma_kms` still rests on its lower bound in
 half the band windows, so a sharper-than-allowed line remains (examined in the next section:
 harmless).
 
+![Old and new fit of 6766-6796 cm-1 in files 4 and 5](kitt_peak_lowcol_example.png)
+
+One window, 6766-6796 cm-1 at the 1.4 um band's red edge, among the most improved in both
+files (`scripts/plot_lowcol_example.py`). The old fit's water lines were too shallow: in the
+zoom on seven lines at 6770.6-6773.45 cm-1 its residual dips 2.5-4.5% at the cores in file 4
+(air mass 4.73), about half that in file 5 (1.99). With the lowest kilometre's water scaled on
+its own the fit can deepen the cores -- formed mostly higher up -- without over-filling the
+pressure-broadened wings the boundary layer makes: zoom rms 1.16 -> 0.61% (file 4) and
+0.72 -> 0.63% (file 5), window rms 0.94 -> 0.73% and 0.83 -> 0.80%.
+
 **On the way**, the run was 7x slower than the last one: `OpaDirect.__init__` built ExoJAX's
 dense (line, grid) offset matrix only for `SparseCoreDirect` to discard it, 26 s a species
 on a host whose swap was full. It is no longer built (`SparseCoreDirect.apply_params`), and
