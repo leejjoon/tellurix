@@ -408,6 +408,17 @@ class ReferenceWaterContinuum:
         )
 
 
+def lower_layer_mask(profile: AtmosphereProfile, depth_km: float) -> np.ndarray:
+    """The layers a lower column of ``depth_km`` covers: the lowest, and those above it.
+
+    Measured from the lowest layer's centre, the only height the profile states
+    near the ground; only which layer boundary it falls between matters.
+    """
+
+    altitude = np.asarray(profile.altitude_km)
+    return altitude <= altitude[-1] + float(depth_km)
+
+
 class TelluricModel:
     """Prepared high-resolution atmosphere and instrument forward model."""
 
@@ -475,10 +486,7 @@ class TelluricModel:
                 raise ValueError(f"the atmosphere has no VMR profile for lower-column species {name}")
             if not float(depth_km) > 0.0:
                 raise ValueError("a lower column's depth must be positive")
-            altitude = np.asarray(profile.altitude_km)
-            # Measured from the lowest layer's centre, the only height the profile
-            # states near the ground; it is the boundary between layers that counts.
-            lower_layers[name] = altitude <= altitude[-1] + float(depth_km)
+            lower_layers[name] = lower_layer_mask(profile, float(depth_km))
         self.lower_layers = lower_layers
         self.column_parameters = (*self.species, *(f"{name}_LOW" for name in lower_layers))
         bind_continuum = getattr(continuum, "bind", None)

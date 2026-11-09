@@ -73,6 +73,7 @@ from .model import (
     ReferenceWaterContinuum,
     TelluricModel,
     constant_velocity_grid,
+    lower_layer_mask,
     trim_wavenumber_grid,
 )
 from .coadd import CoaddNode, CoaddedTelluricModel, fourier_shift
@@ -112,6 +113,7 @@ __all__ = [
     "SpectralOrder",
     "StellarSpectrum",
     "TelluricModel",
+    "lower_layer_mask",
     "TelluricParameters",
     "ValidationMetrics",
     "broaden_stellar_source",

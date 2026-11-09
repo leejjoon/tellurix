@@ -38,7 +38,7 @@ import traceback
 
 import numpy as np
 
-from tellurix import TelluricParameters, read_scan, recorded_line_strength_table  # noqa: E402
+from tellurix import TelluricParameters, lower_layer_mask, read_scan, recorded_line_strength_table  # noqa: E402
 from tellurix_fts import read_niratl_page, read_photatl_page, read_solar_spectrum  # noqa: E402
 from tellurix_fts.flux_atlas import read_kurucz_irradiance, read_wallace2011_correction  # noqa: E402
 from tellurix_fts.nso import MEASURED_FWHM_CM1, is_niratl_page, is_photatl_page  # noqa: E402
@@ -114,6 +114,9 @@ def settings_for(row, spectrum_path: Path, args, blob) -> WindowSettings:
         # And one without these used AER's widths.
         pressure_width_scale=float(blob.get("physics", {}).get("pressure_width_scale", 1.0)),
         pressure_width_species=blob.get("physics", {}).get("pressure_width_species", "H2O,O2"),
+        # And one without these fitted one scale per species over the whole column.
+        lower_column_species=blob.get("physics", {}).get("lower_column_species", ""),
+        lower_column_depth_km=float(blob.get("physics", {}).get("lower_column_depth_km", 1.0)),
         # And one without this used AER's strengths.
         line_strength_table=recorded_line_strength_table(
             blob.get("physics", {}), Path(__file__).resolve().parents[1] / "data/line_strength"),
@@ -266,7 +269,7 @@ def scan_rows(scan_name: str, root: Path, airmass: float, fitted,
 
 
 def continuum_losses(views, v1: float, v2: float, log_scales: dict,
-                     paths: DataPaths, o2_cia: bool) -> dict:
+                     paths: DataPaths, o2_cia: bool, lower_columns: dict | None = None) -> dict:
     """The flux each continuum takes between lines, in percent, median over the window.
 
     The species split ships the continua as one curve, and that curve is what
@@ -277,7 +280,9 @@ def continuum_losses(views, v1: float, v2: float, log_scales: dict,
 
     ``views`` is ``[(profile, weight, zenith_angle_deg)]``: one for a single
     spectrum, every node of every day for a co-add, whose loss is the weighted
-    mean of the nodes' transmissions, as its model's is.
+    mean of the nodes' transmissions, as its model's is. ``lower_columns`` maps a
+    species to its lower column's depth in km; its ``<SPECIES>_LOW`` scale is in
+    ``log_scales``, applied as the fitted model applies it.
     """
     grid = np.linspace(v1, v2, 61)
     water = MTCKDWaterContinuum.from_netcdf(paths.mt_ckd, grid)
@@ -285,7 +290,10 @@ def continuum_losses(views, v1: float, v2: float, log_scales: dict,
     total = sum(weight for _, weight, _ in views)
     kept: dict[str, float] = {}
     for profile, weight, zenith_angle_deg in views:
-        vmr = {name: np.asarray(values) * np.exp(log_scales.get(name, 0.0))
+        vmr = {name: np.asarray(values) * np.exp(
+                   log_scales.get(name, 0.0)
+                   + (lower_layer_mask(profile, lower_columns[name]) * log_scales.get(f"{name}_LOW", 0.0)
+                      if name in (lower_columns or {}) else 0.0))
                for name, values in profile.vmr.items()}
         slant = 1.0 / np.cos(np.radians(zenith_angle_deg))
         terms = {"H2O continuum": water}
@@ -430,7 +438,7 @@ def main() -> None:
                                           stellar_directory=root / "data/stellar", base=root,
                                           spectrum=spectra[key])
                 model, order = prepared.model, prepared.order
-                parameters = parameters_for(row, model.species)
+                parameters = parameters_for(row, model.column_parameters)
                 exact = model.precompute_opacity(
                     parameters, negative_tolerance=prepared_settings.negative_tolerance)
                 zenith = order.zenith_angle_deg
@@ -540,9 +548,12 @@ def main() -> None:
                 views = [(profiles[profile_path], 1.0, float(row["zenith_angle_deg"]))]
             entry["continua"] = continuum_losses(
                 views, row["v1"], row["v2"],
-                {name: float(row["parameters"][name]) for name in row["species"]},
+                {name: float(row["parameters"][name]) for name in row["species"]
+                 + [f"{s}_LOW" for s in row["species"] if f"{s}_LOW" in row["parameters"]]},
                 DataPaths.bootstrapped(root),
-                bool(blob.get("physics", {}).get("o2_cia", False)))
+                bool(blob.get("physics", {}).get("o2_cia", False)),
+                {s: float(blob.get("physics", {}).get("lower_column_depth_km", 1.0))
+                 for s in row["species"] if f"{s}_LOW" in row["parameters"]})
             for name, values in arrays.items():
                 keep = name in NAN_ARRAYS
                 payload, lo, hi = quantize(values, keep_nan=keep)

@@ -68,7 +68,9 @@ def write_profile(group, profile, source: str) -> None:
     group.attrs["source"] = source
     group.attrs["description"] = (
         "the layered atmosphere, top to bottom. A fitted log_column_X scales vmr/X "
-        "uniformly over every layer; tau_X = cross_section(T, P, p_X) * air_column_cm2 * vmr.")
+        "uniformly over every layer; tau_X = cross_section(T, P, p_X) * air_column_cm2 * vmr. "
+        "Where /parameters has log_lower_column_X, the layers whose altitude_km lies within "
+        "physics.lower_column_depth_km of the lowest layer's are scaled by it as well.")
     for name, values in (("pressure_layer_bar", profile.pressure_layer_bar),
                          ("pressure_edges_bar", profile.pressure_edges_bar),
                          ("temperature_k", profile.temperature_k),
@@ -202,6 +204,10 @@ def main() -> None:
     from tellurix import recorded_line_strength_table
     strength_table = recorded_line_strength_table(physics, root / "data/line_strength")
     widened = {s.strip().upper() for s in physics.get("pressure_width_species", "").split(",")}
+    # And one without these fitted one scale per species over the whole column.
+    lower_species = [s.strip().upper() for s in physics.get("lower_column_species", "").split(",")
+                     if s.strip()]
+    lower_depth_km = float(physics.get("lower_column_depth_km", 1.0))
 
     # The atlas fits everything at the zenith and carries one angle in the
     # config; an IGRINS night carries the frame's own angle per row, 18.7 to
@@ -333,11 +339,14 @@ def main() -> None:
                 grid_index[index] = position
             continue
 
+        lower_columns = {s: lower_depth_km for s in lower_species if s in databases}
+
         def single(atmosphere):
             return TelluricModel(atmosphere, grid, opacity, continuum=continuum,
                                  accuracy_mode=physics["accuracy_mode"],
                                  max_lsf_sigma_kms=float(physics["max_lsf_sigma_kms"]),
-                                 pixel_integration=physics["pixel_integration"])
+                                 pixel_integration=physics["pixel_integration"],
+                                 lower_columns=lower_columns)
 
         # One model per atmosphere the window's rows were fitted through: the
         # run's profile, or each epoch's own.
@@ -373,8 +382,9 @@ def main() -> None:
             transmission_at = evaluators[profile_key(index)]
             parameters = parameters_from_row(row, present)
             values = np.asarray(transmission_at(
-                {name: float(value)
-                 for name, value in parameters.log_column_scales.items()},
+                {**{name: float(value)
+                    for name, value in parameters.log_column_scales.items()},
+                 **{f"{s}_LOW": float(row[f"log_lower_column_{s}"]) for s in lower_columns}},
                 zenith_of(row)))
             transmission[index, :grid.size] = values
             grid_index[index] = position
@@ -483,7 +493,9 @@ def main() -> None:
         handle["parameters"].attrs["description"] = (
             "the fitted parameters and quality numbers, one row per spectrum, in the same "
             "order. log_column_X is the natural log of the scale applied to that species' "
-            "VMR profile. Formal sigmas are in /sigma and are NOT uncertainties.")
+            "VMR profile; log_lower_column_X, where present, multiplies on top of it in the "
+            "lowest layers only (see /profile). Formal sigmas are in /sigma and are NOT "
+            "uncertainties.")
         handle.create_dataset("parameter_names", data=[n.encode() for n in record.parameter_names])
         handle.create_dataset("sigma", data=record.sigma[keep], compression=args.compression)
         handle.create_dataset("correlation", data=record.correlation[keep],

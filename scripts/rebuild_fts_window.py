@@ -116,7 +116,10 @@ def main() -> None:
     model = TelluricModel(
         profile, grid, opacity, continuum=continuum, accuracy_mode=physics["accuracy_mode"],
         max_lsf_sigma_kms=4.0, pixel_integration=physics["pixel_integration"],
-        instrument=instrument)
+        instrument=instrument,
+        # A report without the key fitted one scale per species over the whole column.
+        lower_columns={name: spec["depth_km"]
+                       for name, spec in physics.get("lower_columns", {}).items()})
 
     if stellar_spec["source"] == "flat":
         source = prepare_stellar_source(StellarSpectrum.flat(grid), model)
@@ -130,7 +133,8 @@ def main() -> None:
                                source_flux_model_grid=source)
 
     parameters = TelluricParameters(
-        log_column_scales={name: fitted[name] for name in physics["species"]},
+        log_column_scales={name: fitted[name]
+                           for name in physics.get("column_parameters", physics["species"])},
         velocity_kms=fitted["velocity_kms"],
         wavelength_stretch=0.0,
         lsf_sigma_kms=fitted["lsf_sigma_kms"],
