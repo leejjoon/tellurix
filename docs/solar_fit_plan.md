@@ -2246,12 +2246,44 @@ Water-only line cores, every band from 5 to 1.1 um, on the same lines: mean resi
 0.60 (file 4) in ln, as it must with the lowest kilometre cut; residual rms median -0.04%
 and -1.8%; no column newly at an upper bound (`stellar_broadening_kms` newly at its bound
 in four windows of each file). `lsf_sigma_kms` still rests on its lower bound in about
-half the band windows, so a sharper-than-allowed line remains.
+half the band windows, so a sharper-than-allowed line remains (examined in the next section:
+harmless).
 
 **On the way**, the run was 7x slower than the last one: `OpaDirect.__init__` built ExoJAX's
 dense (line, grid) offset matrix only for `SparseCoreDirect` to discard it, 26 s a species
 on a host whose swap was full. It is no longer built (`SparseCoreDirect.apply_params`), and
 a window costs what it did.
+
+### Done 2026-11-09: the `lsf_sigma_kms` railing in files 4 and 5 is the line width, and harmless
+
+`docs/kitt_peak_1990_lsf_railing.json`. In the promoted runs the Gaussian on top of the
+sinc sits on its 0.05 km/s floor in 68 of 223 windows of file 4 and 84 of 224 of file 5,
+never at its ceiling. It is set by the clean-pixel fit, so by telluric lines alone, and
+pinned. Three things say it is not the instrument. The sinc is the interferogram's cut,
+measured to 1%. File 4 and file 5 -- one instrument, one night -- give values that follow
+the *window* (r = 0.84 over 131 windows where neither is railed), and file 4's are 9%
+wider, at 2.4 times the air mass. And it is about constant in wavenumber (sigma 0.003-0.005
+cm-1 in every band), so in km/s it falls as 1/nu and rails mostly at 6700-9200 cm-1.
+
+That looked like §4r's missing Lorentzian, but the 1990 pair wants the opposite. H2O and
+O2 widths scaled on 16 windows per file (1800-8700 cm-1, `H2O_LOW` pinned as promoted):
+
+| scale | file 4: window rms/noise, water-line rms, core | at floor | file 5: same | at floor |
+|---|---|---|---|---|
+| 0.95 | 5.61, 1.12%, +0.18% | 5/16 | 8.02, 1.06%, +0.09% | 7/16 |
+| **1.00** | **5.56, 1.00%, -0.41%** | 8/16 | **7.93, 1.06%, -0.57%** | 11/16 |
+| 1.05 | 5.84, 1.36%, -1.20% | 13/16 | 8.33, 1.56%, -1.56% | 14/16 |
+| 1.10 | 6.38, 1.95%, -1.99% | 15/16 | 9.49, 2.25%, -2.51% | 14/16 |
+
+Wider lines lose everywhere: x1.05 beats x1.00 in 2 of 32 windows, x1.10 in none. The
+Gaussian trades against the Lorentzian -- narrow the lines and it comes off the floor
+(median 0.10-0.15 km/s), widen them and it rails harder. At x1.00 the cores want lines
+~2-3% narrower (the core bias crosses zero near x0.975), which only a negative Gaussian
+could give; x0.95 fixes the cores but loses window rms in 12 of 16 windows per file. So
+the floor means *no extra width wanted*, the bound sigma >= 0 is physical, and the residual
+-0.4 to -0.6% is a small line-shape mismatch, not a reason to refit. The 5-11% excess of
+§4r (niratl, the 1983 pair, Wallace 2011) does not hold for the 1990 pair. Test outputs:
+`data/corrected/solar/width_test_1990/`.
 
 ### Also open
 
@@ -2272,8 +2304,9 @@ a window costs what it did.
   their A-band; their corrected spectra fit the data and are unaffected. niratl's air
   mass comes from the A-band, which behaves, so it is 1.10 to the ~2-3% the A-band line
   physics allow. Going further needs the raw interferograms or observing logs.
-- **`lsf_sigma_kms` at a bound** in 81 of 224 windows of file 5, 112 of 223 of file 4,
-  36 of 307 of `_2` (2026-10-05 records). Not examined; tracked as GitHub issue #3.
+- **`lsf_sigma_kms` at a bound** in 36 of 307 windows of `_2` (2026-10-05 record), not
+  examined; GitHub issue #3. Files 4 and 5 are explained above (2026-11-09): the floor
+  means no width beyond the sinc is wanted.
   Pinning it at the bound moved the 1983 A- and B-band O2 columns by under 0.4%. The sibling project's W4.1 result -- telluric lines
   constrain an ILS where stellar lines cannot -- is the lever not yet tried.
 - **The upper-bound flag (§4m) on the Arcturus export**: the rule should hold there and
