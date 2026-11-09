@@ -212,7 +212,7 @@ windows at or below theirs; the 505 nm band is worse than theirs, from solar-mod
 x1.00 and promoted 2026-10-25** (file 5 0.853 -> 0.738%, now flatter than photatl's own
 correction; file 4 1.275 -> 1.240%), with CO pinned in the six 2.3 um CO windows at the 4.6 um
 windows' median, because there telluric CO sits under solar CO and the clean-pixel fit drove
-it to its bound (rows carry `pin`; `docs/solar_fit_plan.md`, "Done 2026-10-25"). What stays behind is per-line
+it to its bound (rows carry `pin`; `docs/solar_fit_plan.md`, "Done 2026-10-25"). **They were refitted again and promoted 2026-11-09 with the water of the lowest 1 km scaled on its own** (`--lower-column-species H2O --pin H2O_LOW=`, file 4 -1.5703, file 5 -0.4659, and the four photatl band pages refitted with file 5's): one ERA5 profile serves both times of day and its boundary-layer water was what made the water cores too shallow (the sibling's Stage 0c failure); file 4 1.237 -> 1.047%, file 5 0.717 -> 0.707%, water-line core bias -1.6 -> -0.3% and -0.8 -> -0.4% (`docs/solar_fit_plan.md`, "Done 2026-11-09"; old run in `data/corrected/superseded_pre_lowcol/`). What stays behind is per-line
 line-list error, mostly in the 0.89 um band. It repeats from fit to fit (r 0.82-0.92 across
 Wallace 2011, the 1983 pair and niratl; `scripts/measure_line_depth_ratios.py` ->
 `docs/line_depth_ratios.json`), so a per-line strength table could remove half of it --

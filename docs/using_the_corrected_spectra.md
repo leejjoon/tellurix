@@ -524,7 +524,7 @@ error does not leak into them. They differ where the data asked them to:
 
 | | line width scale (H2O, O2) | CO2 line coupling | also |
 |---|---|---|---|
-| files 4, 5 | 1.00 | on | CO pinned at the 4.6 um median in the six 2.3 um windows (4156-4306), where telluric CO sits under solar CO |
+| files 4, 5 | 1.00 | on | the water in the lowest 1 km scaled on its own, pinned per file (`H2O_LOW` -1.57 file 4, -0.47 file 5), because one ERA5 profile serves both times of day; CO pinned at the 4.6 um median in the six 2.3 um windows (4156-4306), where telluric CO sits under solar CO |
 | 1983 pair | 1.06 | off | file 3's air mass 3.085 is ours, its header reads `?.??` |
 | niratl | 1.11 | off | air mass 1.10 from the O2 A band |
 | Wallace 2011 | 1.00 | off | region 3: water, velocity and line spread pinned from the 571 nm band |
@@ -545,8 +545,8 @@ scored on the same pixels:
 
 | | telluric, ours | theirs | deep, ours | theirs |
 |---|---|---|---|---|
-| file 5 vs photatl (Livingston & Wallace 1991) | 0.738% | 0.791% | 1.319% | 1.270% |
-| file 4 | 1.240% | | 2.412% | |
+| file 5 vs photatl (Livingston & Wallace 1991) | 0.707% | 0.781% | 1.287% | 1.262% |
+| file 4 | 1.047% | | 1.715% | |
 | 1983 file 2 / file 3 | 0.943% / 0.833% | | 2.19% / 2.03% | |
 | niratl vs the authors' solar column | 0.501% | 0.628% | | |
 | Wallace 2011 reg 1 / reg 2, authors' pixels | 0.576% / 0.548% | 0.705% / 0.706% | | |
@@ -556,7 +556,7 @@ scored on the same pixels:
 | IAG VIS against Baker et al. 2020's telluric-free Sun | 1.10% | | 2.84% | |
 | IAG NIR | 1.19% | | 2.32% | |
 
-Sources: `docs/kitt_peak_clean_1990_score.json`, `docs/niratl_correction_score.json`,
+Sources: `docs/kitt_peak_lowcol_1990_score.json`, `docs/niratl_correction_score.json`,
 `docs/fluxatl_kurucz_score.json`, `docs/iag_correction_score.json`,
 `docs/iag_baker_score.json`, `docs/iag_nir_correction_score.json`; the 1983 pair and
 Wallace in `docs/solar_fit_plan.md`, "Done 2026-10-24". Read them as:

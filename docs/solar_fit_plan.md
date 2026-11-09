@@ -2201,6 +2201,58 @@ the clean-pixel recipe would give, and the strength table does not reach it. The
 the scores against the authors' corrections, and what to cite. No window of the current
 runs has a column at its upper bound.
 
+### Done 2026-11-09: files 4 and 5 refitted with their own boundary-layer water
+
+**The fault.** The sibling project's Stage 0c found photatl's 1.4 and 1.9 um water lines
+corrected 2-7% short at the band edges. It was ours: the file-5 fit's water cores are too
+shallow (mean residual -0.8% of continuum at water-only lines), file 4's twice as much
+(-1.6%), and it repeats in Arcturus. Ruled out on the way (scratch refits): the line list
+(AER and HITRAN2024 positions and widths agree; HITRAN's strengths are absorbed by the
+column), the instrument profile (CO2, CH4 and N2O cores are not too shallow), and a width
+scale (file 4 wants x0.90, file 5 x1.00 -- same day, same lines). What differs is the
+atmosphere. Both files share one ERA5 profile, half of whose 3.11 mm of water is below
+680 hPa (the bottom 1 km), and scaling those layers alone beat every width: the two files
+want the same 1.46 mm above 680 hPa and differ only below it (0.29 against 0.72 mm). A
+single profile cannot serve both times of day in the boundary layer.
+
+**The change.** `TelluricModel(lower_columns={"H2O": 1.0})` adds `H2O_LOW`, a log scale on
+the layers within 1 km of the ground, on top of the whole-column scale; it reaches lines,
+self-broadening, the continua and the precompute (`--lower-column-species H2O
+--lower-column-depth-km 1.0`; a record states both, and its rows carry
+`log_lower_column_H2O`, which is not a species). Free per window it scatters widely (file 4
+p16-p84 -2.0 to -0.99, a third of windows at the -2 bound), so each file is pinned at the
+median of free fits in its 1.4 and 1.9 um band windows: **file 4 -1.5703, file 5 -0.4659**
+(`--pin H2O_LOW=`; a pin in a window without water is skipped).
+
+**The run.** Everything else is the 2026-10-25 recipe, CO pinned and spliced in 4156-4306
+the same way; the unspliced summaries, shards and the CO-pinned inputs are in
+`data/corrected/solar/refit_lowcol_1990/`, the old run in
+`data/corrected/superseded_pre_lowcol/`. All 223 and 224 windows fitted. photatl's four
+1.9 um band pages (`data/corrected/solar/photatl_band/`) were refitted with the same recipe
+and file 5's pin; they were still the 2026-09-30 fits, before O2 CIA, HITRAN shifts and the
+clean-pixel fit (rms/noise 25.8 -> 23.2 on wn5375, better on all four).
+
+**Result** (`docs/kitt_peak_lowcol_1990_score.json`; the page and pixel sets follow the runs
+compared, so the old run's medians differ slightly from the 2026-10-25 table):
+
+| file | telluric, old -> new | deep, old -> new | flatter | photatl (authors) |
+|---|---|---|---|---|
+| 5 | 0.717 -> 0.707% | 1.340 -> 1.287% | 73 of 123 | 0.781%, 1.262% |
+| 4 | 1.237 -> 1.047% | 2.397 -> 1.715% | 78 of 104 | (file 5's correction) |
+
+Water-only line cores, every band from 5 to 1.1 um, on the same lines: mean residual
+-1.63% -> -0.34% and line rms 1.87 -> 1.28% (file 4), -0.84% -> -0.41% and 1.26 -> 1.13%
+(file 5). `compare_fts_runs.py`: the whole-column water scale rises by 0.24 (file 5) and
+0.60 (file 4) in ln, as it must with the lowest kilometre cut; residual rms median -0.04%
+and -1.8%; no column newly at an upper bound (`stellar_broadening_kms` newly at its bound
+in four windows of each file). `lsf_sigma_kms` still rests on its lower bound in about
+half the band windows, so a sharper-than-allowed line remains.
+
+**On the way**, the run was 7x slower than the last one: `OpaDirect.__init__` built ExoJAX's
+dense (line, grid) offset matrix only for `SparseCoreDirect` to discard it, 26 s a species
+on a host whose swap was full. It is no longer built (`SparseCoreDirect.apply_params`), and
+a window costs what it did.
+
 ### Also open
 
 - **The O2 excess: closed 2026-10-05, cause inside the 1983 pair not identified** (§4n):
