@@ -97,6 +97,8 @@ class CoaddedTelluricModel(TelluricModel):
                 raise ValueError("every component must share one wavenumber grid")
             if model.species != first.species:
                 raise ValueError("every component must carry the same species")
+            if model.column_parameters != first.column_parameters:
+                raise ValueError("every component must carry the same column parameters")
             if model.instrument is not first.instrument or model.pixel_integration != first.pixel_integration:
                 raise ValueError("every component must share one instrument")
         total = sum(node.weight for _, nodes in components for node in nodes)

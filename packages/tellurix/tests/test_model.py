@@ -1161,3 +1161,65 @@ def test_precompute_refuses_or_clips_negative_optical_depth():
                                np.asarray(model.transmission(params())), rtol=1e-12, atol=1e-14)
     with pytest.raises(ValueError):
         model.precompute_opacity(negative_tolerance=-1.0)
+
+
+def lower_column_models():
+    """A model with an H2O lower column, and the profile it should equal at a given split."""
+
+    model, nu = make_model()
+    shape = (2, len(nu))
+    continuum = ReferenceWaterContinuum(
+        reference_vmr=model.profile.vmr["H2O"],
+        self_optical_depth=np.full(shape, 0.01),
+        foreign_optical_depth=np.full(shape, 0.02),
+    )
+    split = TelluricModel(model.profile, nu, model.opacity, continuum=continuum,
+                          lower_columns={"h2o": 1.0})
+    return model, split, continuum, nu
+
+
+def lower_params(whole, lower):
+    return params(whole)._replace(log_column_scales={"H2O": whole, "H2O_LOW": lower})
+
+
+def test_lower_column_scales_only_the_lowest_layers():
+    model, split, continuum, nu = lower_column_models()
+    assert split.column_parameters == ("H2O", "H2O_LOW")
+    np.testing.assert_array_equal(split.lower_layers["H2O"], [False, True])
+    vmr = np.asarray(model.profile.vmr["H2O"]) * np.exp(0.2) * np.array([1.0, np.exp(-0.7)])
+    by_hand = TelluricModel(
+        AtmosphereProfile(model.profile.pressure_edges_bar, model.profile.temperature_k,
+                          model.profile.altitude_km, {"H2O": vmr}),
+        nu, model.opacity, continuum=continuum)
+    np.testing.assert_allclose(
+        np.asarray(split.transmission(lower_params(0.2, -0.7), 30.0)),
+        np.asarray(by_hand.transmission(params(0.0), 30.0)), rtol=1e-13)
+    # Without the key, or with it at zero, nothing changes.
+    np.testing.assert_array_equal(np.asarray(split.transmission(params(0.2))),
+                                  np.asarray(split.transmission(lower_params(0.2, 0.0))))
+
+
+def test_lower_column_is_a_free_parameter_of_the_objective():
+    _, split, _, nu = lower_column_models()
+    wavelength = 1.0e7 / nu[::-1][50:-50]
+    truth = lower_params(0.1, -0.5)
+    blank = SpectralOrder(wavelength, np.ones(wavelength.size), np.full(wavelength.size, 1.0e-3))
+    flux = np.asarray(split.predict(blank, truth))
+    order = SpectralOrder(wavelength, flux, blank.uncertainty)
+    objective = OrderObjective(split, order, 3)
+    assert objective.codec.names[:2] == ("H2O", "H2O_LOW")
+    _, gradient = objective(objective.codec.pack(lower_params(0.1, 0.0)))
+    # Too much water low down: lowering H2O_LOW lowers the objective.
+    assert gradient[1] > 0.0
+    # The precomputed opacity carries the split too.
+    precomputed = split.precompute_opacity(truth)
+    np.testing.assert_allclose(np.asarray(precomputed.transmission(truth)),
+                               np.asarray(split.transmission(truth)), rtol=1e-12)
+
+
+def test_lower_column_needs_a_profile_species_and_a_positive_depth():
+    model, nu = make_model()
+    with pytest.raises(ValueError, match="no VMR profile"):
+        TelluricModel(model.profile, nu, model.opacity, lower_columns={"CO2": 1.0})
+    with pytest.raises(ValueError, match="positive"):
+        TelluricModel(model.profile, nu, model.opacity, lower_columns={"H2O": 0.0})

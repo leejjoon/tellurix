@@ -341,7 +341,8 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
                    telluric_from_clean_pixels: bool = False,
                    clean_solar_depth: float = 0.01, clean_max_masked: float = 0.6,
                    clean_envelope: str = "max", vsini_kms: float = 0.0, pin=(),
-                   coadd: Path | None = None, arcturus: dict | None = None) -> dict:
+                   coadd: Path | None = None, arcturus: dict | None = None,
+                   lower_column_species: str = "", lower_column_depth_km: float = 1.0) -> dict:
     """What produced these numbers: the fixed physics and the code that ran it.
 
     The hashes of this driver and of the module that fits, because this one
@@ -391,6 +392,9 @@ def physics_record(root: Path, fwhm_cm1: float, accuracy_mode: str = "mt_ckd",
         # A record without pin fitted every window's telluric parameters itself.
         # One string: a record's physics are HDF5 attributes, which hold no dict.
         **({"pin": ",".join(sorted(pin))} if pin else {}),
+        # A record without these fitted one scale per species over the whole column.
+        **({"lower_column_species": lower_column_species,
+            "lower_column_depth_km": float(lower_column_depth_km)} if lower_column_species else {}),
         # A record without coadd fitted one atmosphere at the stated zenith angle.
         **({"coadd": str(coadd), "coadd_sha256": file_sha256(root / coadd)} if coadd else {}),
         "driver": driver.name,
@@ -411,7 +415,9 @@ def physics_of(root: Path, args) -> dict:
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
         clean_envelope=args.clean_envelope, vsini_kms=args.vsini_kms, pin=args.pin,
-        coadd=args.coadd, arcturus=arcturus_physics(args))
+        coadd=args.coadd, arcturus=arcturus_physics(args),
+        lower_column_species=args.lower_column_species,
+        lower_column_depth_km=args.lower_column_depth_km)
 
 
 def arcturus_physics(args) -> dict | None:
@@ -518,6 +524,8 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         stellar_broadening=args.stellar_broadening, h2o_pressure_shift=args.h2o_pressure_shift,
         pressure_width_scale=args.pressure_width_scale,
         pressure_width_species=args.pressure_width_species,
+        lower_column_species=args.lower_column_species,
+        lower_column_depth_km=args.lower_column_depth_km,
         line_strength_table=args.line_strength_table,
         telluric_from_clean_pixels=args.telluric_from_clean_pixels,
         clean_solar_depth=args.clean_solar_depth, clean_max_masked=args.clean_max_masked,
@@ -618,7 +626,7 @@ def record_row(row, npz_dir: Path, spectrum_sha: str) -> dict:
                    if n not in ("velocity_kms", "stellar_velocity_kms", "lsf_sigma_kms",
                                 "stellar_broadening_kms",
                                 "wavelength_stretch", "log_jitter")
-                   and not n.startswith("continuum_")]
+                   and not n.startswith("continuum_") and not n.endswith("_LOW")]
         # An Arcturus row is a page and an epoch, keyed as the atlas record always was.
         key = ({"page": Path(row["file"]).name, "epoch": row["epoch"]} if row.get("epoch") else
                {"file": Path(row["file"]).name, "window": f"{row['v1']:.0f}-{row['v2']:.0f}"})
@@ -653,6 +661,10 @@ def record_row(row, npz_dir: Path, spectrum_sha: str) -> dict:
             "clean_pixels": int(bool((row.get("telluric_from_clean_pixels") or {}).get("used"))),
             "stellar_broadening_kms": float(parameters.get("stellar_broadening_kms", 0.0)),
             "free_species": "+".join(species),
+            # A lower column is not a species: readers rebuild molecules from
+            # `species` and `free_species`, so it has a column of its own.
+            **{f"log_lower_column_{n[:-4]}": float(parameters[n])
+               for n in row["parameter_names"] if n.endswith("_LOW")},
             "at_bound": "+".join(row["at_bound"]),
             "parameter_names": row["parameter_names"],
             "sigma": arrays["sigma"], "correlation": arrays["correlation"],
@@ -762,6 +774,14 @@ def main() -> None:
                              "Kitt Peak's lines are 5-11%% broader than AER's (1.11 for niratl; "
                              "docs/solar_fit_plan.md §4r). 1.0 reproduces earlier records.")
     parser.add_argument("--pressure-width-species", default="H2O,O2")
+    parser.add_argument("--lower-column-species", default="",
+                        help="species whose lowest layers get a second free column scale, "
+                             "<SPECIES>_LOW (e.g. H2O): one ERA5 profile shape fitted files 4 and "
+                             "5 of 1990-12-18 with too much boundary-layer water. Off by default.")
+    parser.add_argument("--lower-column-depth-km", type=float, default=1.0,
+                        help="layers whose centre lies within this of the lowest layer's centre "
+                             "take the lower column (1.0 km: the lowest three of the Kitt Peak "
+                             "ERA5 profiles, below 680 hPa)")
     parser.add_argument("--line-strength-table", type=Path, default=None,
                         help="per-line strength factors (scripts/build_line_strength_table.py), "
                              "relative to the checkout; without it AER's strengths")
@@ -1063,9 +1083,12 @@ def main() -> None:
         from tellurix.fit import _ParameterCodec
 
         species = sorted({s for r in usable for s in r["species"]})
+        # A lower column (--lower-column-species) is a column parameter too, after
+        # the species, present in the windows whose species carry one.
+        lower = sorted({n for r in usable for n in r["parameter_names"] if n.endswith("_LOW")})
         # The fit's own layout: with --stellar-broadening every window carries
         # stellar_broadening_kms, and a codec without it cannot place the row.
-        codec = _ParameterCodec(species, args.continuum_degree + 1,
+        codec = _ParameterCodec([*species, *lower], args.continuum_degree + 1,
                                 include_stellar_velocity=True,
                                 include_stellar_broadening=args.stellar_broadening)
         position = {name: index for index, name in enumerate(codec.names)}
@@ -1106,7 +1129,8 @@ def main() -> None:
             continuum_degree=args.continuum_degree,
             key_fields=("page", "epoch") if args.arcturus else ("file", "window"),
             extra_columns=(("airmass", "f8"), ("zenith_angle_deg", "f8"), ("line_coupling", "i1"),
-                           ("stellar_broadening_kms", "f8"), ("clean_pixels", "i1")),
+                           ("stellar_broadening_kms", "f8"), ("clean_pixels", "i1"),
+                           *((f"log_lower_column_{n[:-4]}", "f8") for n in lower)),
         )
         print(f"wrote {args.record} ({args.record.stat().st_size/1e6:.2f} MB)")
 

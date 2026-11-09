@@ -223,7 +223,7 @@ class OrderObjective:
         self.model = model
         self.order = order
         self.codec = _ParameterCodec(
-            model.species,
+            getattr(model, "column_parameters", model.species),
             int(continuum_size),
             include_stellar_velocity=order.source_flux_model_grid is not None,
             include_stellar_broadening=stellar_broadening,

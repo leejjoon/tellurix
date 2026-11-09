@@ -143,6 +143,13 @@ class WindowSettings:
     # AER's widths (docs/line_intensity_corrections.md); LBLRTM has none.
     speed_dependence: float = 0.0
     speed_dependence_species: str = "H2O"
+    # Comma-separated species whose lowest layers get a second free column scale,
+    # <SPECIES>_LOW, on top of the whole-column one: every layer whose centre lies
+    # within lower_column_depth_km of the lowest layer's. "" keeps one scale.
+    # Files 4 and 5 of 1990-12-18, fitted with one ERA5 profile, wanted the same
+    # water above 680 hPa and different amounts below it.
+    lower_column_species: str = ""
+    lower_column_depth_km: float = 1.0
     # A tellurix.LineStrengthTable (scripts/build_line_strength_table.py), relative to
     # base: per-line strength factors measured from observed spectra. None keeps
     # AER's strengths (docs/line_intensity_corrections.md).
@@ -386,6 +393,13 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
     mopd_cm = None if settings.gaussian_ils else 1.20671 / (2.0 * settings.fwhm_cm1)
     instrument = None if settings.gaussian_ils else BoxcarFTSInstrumentProfile(
         mopd_cm=mopd_cm, wavenumber_center_cm1=centre, max_residual_sigma_kms=4.0)
+    lower_columns = {name.strip().upper(): settings.lower_column_depth_km
+                     for name in settings.lower_column_species.split(",") if name.strip()}
+    if lower_columns and coadd is not None:
+        raise ValueError("a lower column is not supported for a co-add")
+    # A species without lines in this window has no column to split.
+    lower_columns = {name: depth for name, depth in lower_columns.items() if name in databases}
+
     def single(atmosphere):
         return TelluricModel(
             atmosphere, grid, opacity, continuum=continuum, correction=correction,
@@ -395,6 +409,7 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
             # grating spectrograph's detector does.
             pixel_integration="point",
             instrument=instrument,
+            lower_columns=lower_columns,
         )
 
     model = (single(profile) if coadd is None
@@ -439,7 +454,7 @@ def prepare_window(settings: WindowSettings, paths: DataPaths, *, stellar_direct
                  if settings.precompute_opacity else model)
 
     parameters = TelluricParameters(
-        log_column_scales={name: 0.0 for name in model.species},
+        log_column_scales={name: 0.0 for name in model.column_parameters},
         velocity_kms=0.0,
         wavelength_stretch=0.0,
         lsf_sigma_kms=0.5,
@@ -565,7 +580,8 @@ def _fit_from_clean_pixels(settings: WindowSettings, paths: DataPaths, *, stella
 
     already = {entry.partition("=")[0].strip() for entry in settings.pin}
     telluric = {name: clean["parameters"][name]
-                for name in (*clean["physics"]["species"], "velocity_kms", "lsf_sigma_kms")
+                for name in (*clean["physics"].get("column_parameters", clean["physics"]["species"]),
+                             "velocity_kms", "lsf_sigma_kms")
                 if name not in already}
     # The final fit uses the coupling the clean fit chose, so the pinned
     # columns describe the same opacity they are applied to.
@@ -659,7 +675,8 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
             pinned[name.strip()] = float(value)
         except ValueError:
             raise ValueError(f"pin expects NAME=VALUE, got {entry!r}")
-    allowed = set(model.species) | {
+    columns = model.column_parameters
+    allowed = set(columns) | {
         "velocity_kms", "stellar_velocity_kms", "lsf_sigma_kms", "log_jitter",
         *(("stellar_broadening_kms",) if broadening else ()),
         *(f"continuum_{i}" for i in range(settings.continuum_degree + 1))}
@@ -667,7 +684,7 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
         raise ValueError(f"cannot pin: {', '.join(sorted(set(pinned) - allowed))}")
     if pinned:
         scales = dict(parameters.log_column_scales)
-        scales.update({k: v for k, v in pinned.items() if k in model.species})
+        scales.update({k: v for k, v in pinned.items() if k in columns})
         parameters = parameters._replace(log_column_scales=scales, **{
             k: v for k, v in pinned.items()
             if k in ("velocity_kms", "stellar_velocity_kms", "lsf_sigma_kms", "log_jitter",
@@ -681,7 +698,7 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
         stage = stage.strip()
         if stage not in STAGES:
             raise ValueError(f"unknown stage {stage}; choose from {', '.join(STAGES)}")
-        bounds = build_bounds(model.species, settings.continuum_degree, STAGES[stage], parameters,
+        bounds = build_bounds(columns, settings.continuum_degree, STAGES[stage], parameters,
                               include_stellar=order.source_flux_model_grid is not None,
                               pinned=pinned, stellar_broadening=broadening,
                               stellar_velocity_centre_kms=settings.stellar_velocity_centre_kms)
@@ -702,7 +719,7 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
               f"iterations={result.iterations} ({stage_reports[-1]['seconds']} s)")
 
     final_bounds = build_bounds(
-        model.species, settings.continuum_degree, STAGES[settings.stages.split(",")[-1].strip()],
+        columns, settings.continuum_degree, STAGES[settings.stages.split(",")[-1].strip()],
         parameters, include_stellar=order.source_flux_model_grid is not None, pinned=pinned,
         stellar_broadening=broadening,
         stellar_velocity_centre_kms=settings.stellar_velocity_centre_kms)
@@ -834,6 +851,14 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
             "instrument_resolving_power": None if instrument is None else instrument.resolving_power,
             "profile": str(settings.profile),
             "species": list(model.species),
+            # Free column scales: the species, then any <SPECIES>_LOW.
+            "column_parameters": list(columns),
+            **({"lower_columns": {
+                name: {"depth_km": settings.lower_column_depth_km,
+                       "layers": int(mask.sum()),
+                       "boundary_pressure_bar": float(
+                           np.asarray(profile.pressure_edges_bar)[:-1][mask].min())}
+                for name, mask in model.lower_layers.items()}} if model.lower_layers else {}),
             "lines_per_species": lines_per_species,
             "species_without_lines": skipped,
             "zenith_angle_deg": order.zenith_angle_deg,

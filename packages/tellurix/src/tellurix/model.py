@@ -422,6 +422,7 @@ class TelluricModel:
         correction: CorrectionBackend | None = None,
         pixel_integration: str = "simpson",
         instrument: InstrumentProfile | None = None,
+        lower_columns: Mapping[str, float] | None = None,
     ) -> None:
         nu = np.asarray(wavenumber_cm1, dtype=float)
         if nu.ndim != 1 or len(nu) < 8 or np.any(np.diff(nu) <= 0.0):
@@ -461,6 +462,25 @@ class TelluricModel:
         self.opacity = opacity
         correction_species = correction.species if accuracy_mode == "lblrtm_corrected" else ()
         self.species = tuple(dict.fromkeys((*opacity.species, *correction_species)))
+        # A species' lowest layers may carry a second free scale, ``<SPECIES>_LOW``,
+        # multiplying on top of its whole-column one. One scale on an ERA5 profile
+        # cannot move water between the boundary layer and the free troposphere, and
+        # two Kitt Peak spectra of one day wanted the same water above 680 hPa and
+        # 2.5x different amounts below it: one profile shape served neither, and the
+        # misfit looked like line widths that differed with air mass.
+        lower_layers = {}
+        for name, depth_km in (lower_columns or {}).items():
+            name = name.upper()
+            if name not in profile.vmr:
+                raise ValueError(f"the atmosphere has no VMR profile for lower-column species {name}")
+            if not float(depth_km) > 0.0:
+                raise ValueError("a lower column's depth must be positive")
+            altitude = np.asarray(profile.altitude_km)
+            # Measured from the lowest layer's centre, the only height the profile
+            # states near the ground; it is the boundary between layers that counts.
+            lower_layers[name] = altitude <= altitude[-1] + float(depth_km)
+        self.lower_layers = lower_layers
+        self.column_parameters = (*self.species, *(f"{name}_LOW" for name in lower_layers))
         bind_continuum = getattr(continuum, "bind", None)
         self.continuum = bind_continuum(profile) if bind_continuum is not None else continuum
         self.accuracy_mode = accuracy_mode
@@ -517,11 +537,7 @@ class TelluricModel:
         if not negative_tolerance >= 0.0:
             raise ValueError("negative_tolerance must be nonnegative")
         pressure = jnp.asarray(self.profile.pressure_layer_bar)
-        scales = {} if parameters is None else parameters.log_column_scales
-        vmr_scaled = {
-            species: jnp.asarray(vmr) * jnp.exp(jnp.asarray(scales.get(species, 0.0)))
-            for species, vmr in self.profile.vmr.items()
-        }
+        vmr_scaled = self._scaled_vmr({} if parameters is None else parameters.log_column_scales)
         reference = {
             species: pressure * vmr_scaled[species] for species in self.opacity.species
         }
@@ -579,6 +595,19 @@ class TelluricModel:
         precomputed._cross_section_evaluator = None
         return precomputed
 
+    def _scaled_vmr(self, scales) -> dict:
+        """Every profile VMR times its column scale, and its lower column's below the boundary."""
+
+        vmr_scaled = {}
+        for species, vmr in self.profile.vmr.items():
+            log_scale = jnp.asarray(scales.get(species, 0.0))
+            mask = getattr(self, "lower_layers", {}).get(species)
+            if mask is not None:
+                log_scale = log_scale + jnp.where(
+                    jnp.asarray(mask), jnp.asarray(scales.get(f"{species}_LOW", 0.0)), 0.0)
+            vmr_scaled[species] = jnp.asarray(vmr) * jnp.exp(log_scale)
+        return vmr_scaled
+
     def transmission(self, parameters: TelluricParameters, zenith_angle_deg: float = 0.0) -> jnp.ndarray:
         mu = jnp.cos(jnp.deg2rad(zenith_angle_deg))
         return jnp.exp(-self.vertical_optical_depth(parameters) / mu)
@@ -587,11 +616,7 @@ class TelluricModel:
         """The whole column's optical depth at zenith, summed over layers."""
 
         pressure = jnp.asarray(self.profile.pressure_layer_bar)
-        vmr_scaled = {
-            species: jnp.asarray(vmr)
-            * jnp.exp(jnp.asarray(parameters.log_column_scales.get(species, 0.0)))
-            for species, vmr in self.profile.vmr.items()
-        }
+        vmr_scaled = self._scaled_vmr(parameters.log_column_scales)
         partial_pressure = {
             species: pressure * vmr_scaled[species] for species in self.opacity.species
         }
@@ -635,11 +660,7 @@ class TelluricModel:
         """Each absorber's, and the continuum's, zenith optical depth, summed over layers."""
 
         pressure = jnp.asarray(self.profile.pressure_layer_bar)
-        vmr_scaled = {
-            species: jnp.asarray(vmr)
-            * jnp.exp(jnp.asarray(parameters.log_column_scales.get(species, 0.0)))
-            for species, vmr in self.profile.vmr.items()
-        }
+        vmr_scaled = self._scaled_vmr(parameters.log_column_scales)
         partial_pressure = {
             species: pressure * vmr_scaled[species] for species in self.opacity.species
         }
