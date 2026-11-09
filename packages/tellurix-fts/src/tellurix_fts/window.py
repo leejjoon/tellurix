@@ -676,6 +676,10 @@ def _fit_window(settings: WindowSettings, paths: DataPaths, *, stellar_directory
         except ValueError:
             raise ValueError(f"pin expects NAME=VALUE, got {entry!r}")
     columns = model.column_parameters
+    # A run-wide pin of a lower column reaches windows where its species has no
+    # lines, and so no lower column to pin; it has nothing to act on there.
+    pinned = {name: value for name, value in pinned.items()
+              if not (name.endswith("_LOW") and name not in columns)}
     allowed = set(columns) | {
         "velocity_kms", "stellar_velocity_kms", "lsf_sigma_kms", "log_jitter",
         *(("stellar_broadening_kms",) if broadening else ()),
