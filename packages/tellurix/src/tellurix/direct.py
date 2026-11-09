@@ -336,6 +336,15 @@ class SparseCoreDirect(OpaDirect):
         # kernel; every use below rebuilds it from the two 1-D vectors instead.
         self.opainfo = None
 
+    def apply_params(self):
+        # OpaDirect.apply_params builds that dense matrix only for __init__
+        # above to discard it. Never building it matters on a loaded host: one
+        # window built it fifteen times, 26 s each while the machine swapped.
+        self.dbtype = self.mdb.dbtype
+        self.opainfo = None
+        self._init_xsmatrix_wrappers()
+        self.ready = True
+
     def xsvector(self, T, P, Pself=0.0):
         within_pressure_range = (
             (P >= 0.0) & (P <= self.maximum_pressure_bar)
