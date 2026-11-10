@@ -135,15 +135,29 @@ def summarize(values):
             "p16": float(np.percentile(values, 16)), "p84": float(np.percentile(values, 84))}
 
 
+def second_flux_pooled(usable, pooled):
+    # IAG's sky is heavier, so it has fewer clean line pixels: pooled over the windows where it has enough,
+    # beside the first flux spectrum over the same windows.
+    with_second = [w for w in usable if w["second_flux"]["floor_lines_net"] is not None]
+    return {"windows": len(with_second), "second_flux": pooled("second_flux", with_second),
+            "flux": pooled("flux", with_second)}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--disc-centre", default="niratl")
     parser.add_argument("--flux", default="wallace2011")
-    parser.add_argument("--second-flux", default="iag")
+    parser.add_argument("--second-flux", default="iag",
+                        help="a second flux spectrum, for whether the remainder is an instrument's; 'none' for the "
+                             "infrared pair, where only one flux atlas exists")
     parser.add_argument("--output", type=Path, default=ROOT / "docs/solar_floor_split.json")
     args = parser.parse_args()
 
-    names = {"disc_centre": args.disc_centre, "flux": args.flux, "second_flux": args.second_flux}
+    names = {"disc_centre": args.disc_centre, "flux": args.flux}
+    if args.second_flux != "none":
+        names["second_flux"] = args.second_flux
+    pairs = [("disc_centre", "flux")] + ([("flux", "second_flux"), ("disc_centre", "second_flux")]
+                                         if "second_flux" in names else [])
     runs = {role: load_run(name) for role, name in names.items()}
     common = sorted(set.intersection(*(set(k for k, r in rows.items() if "npz" in r) for _, rows in runs.values())))
     windows = []
@@ -162,9 +176,7 @@ def main():
         if dc is not None and fx is not None and dc > 0:
             entry["split_lines"] = {"flux_intensity": float(np.sqrt(max(dc**2 - fx**2, 0.0))), "remainder": fx,
                                     "flux_intensity_variance_fraction": float((dc**2 - fx**2) / dc**2)}
-        entry["pattern"] = {"disc_centre_vs_flux": shared_pattern(arrays["disc_centre"], arrays["flux"]),
-                            "flux_vs_second_flux": shared_pattern(arrays["flux"], arrays["second_flux"]),
-                            "disc_centre_vs_second_flux": shared_pattern(arrays["disc_centre"], arrays["second_flux"])}
+        entry["pattern"] = {f"{a}_vs_{b}": shared_pattern(arrays[a], arrays[b]) for a, b in pairs}
         windows.append(entry)
 
     usable = [w for w in windows if "split_lines" in w]
@@ -175,16 +187,12 @@ def main():
         return float(np.sqrt(num / sum(w[role]["pixels_lines"] for w in among)))
 
     pooled_dc, pooled_fx = pooled("disc_centre", usable), pooled("flux", usable)
-    # IAG's sky is heavier, so it has fewer clean line pixels: pooled over the windows where it has enough,
-    # beside Wallace over the same windows.
-    with_second = [w for w in usable if w["second_flux"]["floor_lines_net"] is not None]
-    pooled_fx2, pooled_fx_same = pooled("second_flux", with_second), pooled("flux", with_second)
     summary = {
-        "windows_fitted_in_all_three": len(windows),
+        "windows_fitted_in_all": len(windows),
         "windows_with_line_floor_in_both": len(usable),
         "pooled_line_floor_net": {"disc_centre": pooled_dc, "flux": pooled_fx},
-        "pooled_line_floor_net_where_second_flux_has_lines": {"windows": len(with_second), "second_flux": pooled_fx2,
-                                                              "flux": pooled_fx_same},
+        **({"pooled_line_floor_net_where_second_flux_has_lines": second_flux_pooled(usable, pooled)}
+           if "second_flux" in names else {}),
         "pooled_split_lines": {"flux_intensity": float(np.sqrt(max(pooled_dc**2 - pooled_fx**2, 0.0))),
                                "remainder": pooled_fx,
                                "flux_intensity_variance_fraction": float((pooled_dc**2 - pooled_fx**2) / pooled_dc**2)},
@@ -195,7 +203,7 @@ def main():
             "flux_intensity_variance_fraction": summarize(w["split_lines"]["flux_intensity_variance_fraction"]
                                                           for w in usable),
             **{f"{key}_{pair}": summarize(w["pattern"][pair].get(key) for w in windows)
-               for pair in ("disc_centre_vs_flux", "flux_vs_second_flux", "disc_centre_vs_second_flux")
+               for pair in (f"{a}_vs_{b}" for a, b in pairs)
                for key in ("correlation_lines", "scale_lines", "unshared_rms_lines")},
         },
     }

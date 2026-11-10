@@ -1494,9 +1494,41 @@ the larger part is the solar model in any mode, and a template or corrected line
 parameters address it where an intensity source does not.
 
 Caveats: one band (0.74-0.93 um), where niratl's noise is 1-2e-4 and the floor is 100x
-it; the IR, where the floor first appeared (6000 cm-1, §"What limits the solar FTS fit"),
-has no flux atlas on disk and is not measured. IAG is fitted at zenith 0 with an air-mass
-average, which matters only through which pixels count as clean.
+it. IAG is fitted at zenith 0 with an air-mass average, which matters only through which
+pixels count as clean.
+
+**The infrared, measured 2026-11-10: the mismatch is a smaller share there.**
+`docs/solar_floor_split_ir.json` (`fit_solar_floor.py {ftsspec_901218_5,iag_nir} --windows
+file5`, `solar_floor_report.py --second-flux none`). File 5 (disc centre, air mass 1.985)
+against the IAG NIR flux atlas over file 5's 157 windows in 4366-9200 cm-1, the same source
+band and settings for both. IAG's sinc is six times narrower than file 5's, and a line error
+shows larger at higher resolution, so its interferogram is first cut at file 5's 34.418 cm
+-- exact for a sinc, since its own cut is at 204.5 cm -- and resampled onto file 5's
+spacing. 156 windows fit in both (IAG's 5326 is under 30 sigma).
+
+| line pixels, pooled | file 5 (disc centre) | IAG NIR (flux, at file 5's sinc) |
+|---|---|---|
+| floor, net of noise | 4.06% | 3.70% |
+| whole window, median rms | 1.12% | 1.05% |
+| observed / model line depth | 0.92 | 0.93 |
+
+- **The flux/intensity mismatch is 17% of the line floor's variance** (pooled; per window
+  median 17%, p16-p84 8-33%), against 28% at 0.74-0.93 um. Only 12 windows have 100 clean
+  line pixels in both -- IAG's co-add, fitted as one atmosphere, leaves few pixels above
+  T 0.995 -- all in 5000-7000 cm-1. Loosening to T > 0.98 and 50 pixels gives 41 windows
+  (5 below 5000, 6 above 7000) and 15% pooled, 26% per-window median; every variant tried
+  lands in 12-26%.
+- **The same pattern, less amplified.** File 5's line residual correlates with IAG's at
+  0.982 (median over the 12; 0.980-0.984 in every variant) and is a 1.07x copy (1.07-1.09),
+  with 0.7% left over. niratl was 0.96 and 1.14x of Wallace at 0.74-0.93 um: limb darkening
+  weakens towards the infrared, so disc centre and flux differ less.
+- **Payne Zero's infrared lines are ~8% too deep in both quantities** (depth regression
+  0.92 and 0.93, p16-p84 0.81-1.00 and 0.84-0.99), where at 0.74-0.93 um there was no
+  uniform depth error. Since the flux atlas shows it too, it belongs to the source, not
+  the quantity.
+
+So the 3.7% remainder is the larger part in the infrared too, by more than in the visible:
+§4p's table orders the same way, and a disc-centre synthesis would buy even less here.
 
 **Wallace's resolving power, measured.** The interferograms give MOPD 26.6 cm
 (0.0227 cm-1, R 577,000 at 13050) for region 1 and 18.4 cm (0.0328 cm-1, R 441,000) for

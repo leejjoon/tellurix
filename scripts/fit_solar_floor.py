@@ -16,6 +16,18 @@ what differs is the quantity observed.
 - ``iag``: the IAG flux atlas (Göttingen 2014, nine days co-added, zenith 0):
   a different instrument, for whether what remains belongs to Kitt Peak.
 
+The infrared pair (``--windows file5``, 4366-9200 cm-1 by default; GitHub #2 measured
+0.74-0.93 um first, where the only flux atlases on disk were):
+
+- ``ftsspec_901218_5``: disc centre, the McMath FTS, air mass 1.985, file 5's windows.
+- ``iag_nir``: the IAG NIR flux atlas (``spnir``), **degraded to file 5's instrument**
+  first. Its sinc is six times narrower, and a line-parameter error shows larger at
+  higher resolution, so fitting it as observed would compare resolutions, not
+  quantities. Cutting its interferogram at file 5's path difference (34.418 cm) is
+  exact for a sinc -- IAG's own cut, 204.5 cm, lies beyond it -- leaving only IAG's
+  optics limit (R ~ 1e6), which the free Gaussian takes. The result is resampled onto
+  file 5's 0.0094771 cm-1 spacing.
+
 Windows are niratl's pages inside ``--v1/--v2`` and each takes the species
 niratl's scan found for it ("H2O" where it found none, so every window has the
 same freedom). Disc centre is fitted at vsini 0, flux at 1.9 km/s, as Phase 1
@@ -27,7 +39,7 @@ Writes data/corrected/solar/floor/<atlas>[_<tag>]/ (one npz per window, in the
 batch driver's array layout, and summary[_shard].json); scripts/solar_floor_report.py
 reads them.
 """
-import argparse, json, os, time
+import argparse, dataclasses, json, os, time
 from pathlib import Path
 
 import numpy as np
@@ -35,6 +47,11 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 NSO = Path("/home/jjlee/work/differentiable_stellar_spectroscopy/data/atlases/nso")
 NIRATL_SUMMARY = ROOT / "data/corrected/solar/niratl/niratl_summary.json"
+FILE5_SUMMARY = ROOT / "data/corrected/solar/ftsspec_901218_5_summary.json"
+# File 5's measured sinc and sample spacing (docs/solar_fit_plan.md, "What was measured").
+FILE5_FWHM_CM1 = 0.017532
+FILE5_MOPD_CM = 1.2067 / (2.0 * FILE5_FWHM_CM1)
+FILE5_SPACING_CM1 = 0.0094771
 ATLASES = {
     "niratl": {"profile": "data/profiles/kitt_peak_19830626_era5_afgl.csv", "fwhm_cm1": 0.01859,
                "airmass": 1.10, "vsini_kms": 0.0, "samples_per_resolution": 4.0},
@@ -43,6 +60,11 @@ ATLASES = {
     # Payne Zero's nir band is sampled for 0.01859 cm-1 at 4 per element, 3.2 at IAG's 0.0145.
     "iag": {"profile": "data/profiles/goettingen_20140417_era5.csv", "fwhm_cm1": None,
             "airmass": 0.0, "vsini_kms": 1.9, "samples_per_resolution": 3.0},
+    "ftsspec_901218_5": {"profile": "data/profiles/kitt_peak_19901218_era5_afgl.csv", "fwhm_cm1": FILE5_FWHM_CM1,
+                         "airmass": 1.985, "vsini_kms": 0.0, "samples_per_resolution": 4.0},
+    # Degraded to file 5's sinc, so the same grid and the same Payne Zero band as file 5.
+    "iag_nir": {"profile": "data/profiles/goettingen_20140417_era5.csv", "fwhm_cm1": FILE5_FWHM_CM1,
+                "airmass": 1.625, "vsini_kms": 1.9, "samples_per_resolution": 4.0},
 }
 
 
@@ -53,11 +75,39 @@ def niratl_pages(v1, v2):
             for r in rows if r["v1"] >= v1 and r["v2"] <= v2]
 
 
+def file5_windows(v1, v2):
+    rows = json.loads(FILE5_SUMMARY.read_text())["results"]
+    return [{"v1": r["v1"], "v2": r["v2"], "page": f"ftsspec_901218_5_{r['v1']:.0f}",
+             "species": r.get("species") or ["H2O"], "negligible_telluric": bool(r.get("negligible_telluric"))}
+            for r in rows if r["v1"] >= v1 and r["v2"] <= v2]
+
+
+def truncate_interferogram(nu, flux, mopd_cm, spacing_cm1):
+    """A finely sampled spectrum as an FTS cut at ``mopd_cm`` would record it, on a coarser uniform grid.
+
+    Zeroing the transform beyond ``mopd_cm`` convolves with that sinc exactly. The
+    spectrum is mirrored at both ends first, so the transform's wrap-around meets a
+    continuous signal rather than a step.
+    """
+    from scipy.interpolate import CubicSpline
+
+    step = float(np.median(np.diff(nu)))
+    extended = np.concatenate([flux[::-1], flux, flux[::-1]])
+    transform = np.fft.rfft(extended)
+    opd_cm = np.fft.rfftfreq(extended.size, d=step)
+    transform[opd_cm > mopd_cm] = 0.0
+    cut = np.fft.irfft(transform, n=extended.size)[flux.size:2 * flux.size]
+    coarse = np.arange(nu[0], nu[-1], spacing_cm1)
+    return coarse, CubicSpline(nu, cut)(coarse)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("atlas", choices=sorted(ATLASES))
-    parser.add_argument("--v1", type=float, default=10800.0)
-    parser.add_argument("--v2", type=float, default=13500.0)
+    parser.add_argument("--windows", choices=("niratl", "file5"), default="niratl",
+                        help="whose window tiling: niratl's pages, or file 5's 30 cm-1 windows")
+    parser.add_argument("--v1", type=float, default=None, help="default 10800 (niratl), 4366 (file5)")
+    parser.add_argument("--v2", type=float, default=None, help="default 13500 (niratl), 9200 (file5)")
     parser.add_argument("--pages", default=None, help="comma-separated niratl page names: only these")
     parser.add_argument("--macroturbulence-kms", type=float, default=1.5)
     parser.add_argument("--tag", default="", help="suffix for the output directory")
@@ -69,12 +119,19 @@ def main():
 
     from tellurix.download import DataPaths
     from tellurix_fts import read_solar_spectrum
-    from tellurix_fts.flux_atlas import IAG_FWHM_CM1, WALLACE2011_REGIONS, read_flux_atlas
+    from tellurix_fts.flux_atlas import IAG_FWHM_CM1, IAG_NIR, IAG_NIR_FWHM_CM1, WALLACE2011_REGIONS, read_flux_atlas
     from tellurix_fts.nso import zenith_angle_deg_for_airmass
     from tellurix_fts.window import WindowSettings, fit_window
 
     config = dict(ATLASES[args.atlas])
-    pages = niratl_pages(args.v1, args.v2)
+    if args.windows == "file5":
+        args.v1 = 4366.0 if args.v1 is None else args.v1
+        args.v2 = 9200.0 if args.v2 is None else args.v2
+        pages = file5_windows(args.v1, args.v2)
+    else:
+        args.v1 = 10800.0 if args.v1 is None else args.v1
+        args.v2 = 13500.0 if args.v2 is None else args.v2
+        pages = niratl_pages(args.v1, args.v2)
     if args.pages:
         wanted = set(args.pages.split(","))
         pages = [p for p in pages if p["page"] in wanted]
@@ -94,6 +151,18 @@ def main():
         path = ROOT / "data/databases/iag/spvis.dat.gz"
         shared = read_flux_atlas("iag", path, keep, cache_directory=ROOT / "data/databases/iag",
                                  fwhm_cm1=IAG_FWHM_CM1, source_name="IAG solar flux atlas, VIS")
+    elif args.atlas == "iag_nir":
+        path = ROOT / "data/databases/iag" / IAG_NIR["file"]
+        native = read_flux_atlas("iag", path, (0.0, 1.0e6), cache_directory=ROOT / "data/databases/iag",
+                                 fwhm_cm1=IAG_NIR_FWHM_CM1, source_name="IAG solar flux atlas, NIR")
+        nu, flux = native.wavenumber_vacuum_cm1, native.flux
+        inside = (nu > keep[0] - 20.0) & (nu < keep[1] + 20.0)
+        nu, flux = truncate_interferogram(nu[inside], flux[inside], FILE5_MOPD_CM, FILE5_SPACING_CM1)
+        shared = dataclasses.replace(native, wavenumber_vacuum_cm1=nu, flux=flux, stated_resolution_cm1=FILE5_FWHM_CM1,
+                                     source_name="IAG solar flux atlas, NIR, cut to file 5's 34.418 cm")
+    elif args.atlas == "ftsspec_901218_5":
+        path = NSO / "telluric_near_ir" / "ftsspec_901218_5.txt"
+        shared = read_solar_spectrum(path)
     zenith = 0.0 if not config["airmass"] else float(zenith_angle_deg_for_airmass(config["airmass"]))
 
     name = args.atlas + (f"_{args.tag}" if args.tag else "")
