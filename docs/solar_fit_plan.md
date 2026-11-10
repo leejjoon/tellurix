@@ -1530,6 +1530,64 @@ spacing. 156 windows fit in both (IAG's 5326 is under 30 sigma).
 So the 3.7% remainder is the larger part in the infrared too, by more than in the visible:
 §4p's table orders the same way, and a disc-centre synthesis would buy even less here.
 
+**ACE-FTS as the source below 4440 cm-1, piloted 2026-11-10: it beats Payne Zero.** An
+observed, telluric-free disc-centre Sun replaces the model outright where one exists. The
+ACE-FTS solar spectrum (Bhusal et al. 2026; Hase et al. 2010 for the method) is the right
+quantity: the suntracker looks at the centre of the disc with 1.25 mrad of the Sun's 9 mrad,
+so mu >= 0.99, from orbit. Its resolution needed checking. The interferogram is cut at
+25.2-25.6 cm, but the spectrum is **Norton-Beer strong apodized** (Hase et al. 2010; the
+READMEs quote only "0.02 cm-1 unapodized"): file 5 with its telluric lines divided out and
+degraded to match prefers Norton-Beer strong over a plain cut at every width, and as
+published ACE's lines are 2-3x wider than file 5's sinc. `scripts/make_ace_solar_source.py`
+divides the apodization out (it never falls below 0.09 before the cut) and keeps a 25.4 cm
+boxcar spectrum; what that loses, solar content beyond 25 cm, changes file 5's fitted solar
+model by 0.002% in its lines. Nothing in the source is fitted to Kitt Peak.
+
+The pilot (`docs/ace_source_pilot.json`; `fit_solar_floor.py --source`, the residual-floor
+settings, not the production recipe) fitted 14 windows of 1966-4276 cm-1 in both files with
+Payne Zero, de-apodized ACE and, on file 5, ACE as published:
+
+| median rms / noise | Payne Zero | ACE as published | ACE de-apodized |
+|---|---|---|---|
+| file 5 | 3.95 | 2.67 | 2.23 |
+| file 4 | 2.83 | -- | 1.93 |
+
+De-apodized ACE is better than Payne Zero in 14/14 file 5 windows and 13/14 file 4 (2866
+ties), and better than ACE as published in all 14. Where solar lines dominate the gain is
+2-4x (2506: 7.82 -> 1.89 file 5, 4.73 -> 1.95 file 4; 2566, 4066, 4276); where telluric
+lines dominate (2866, 3166, 3316) it is 0-10%, and what is left there is the telluric model.
+The solar velocity, which Payne Zero's fits scatter over -2.8 to +1.0 km/s, sits at -0.53 to
+-0.99 km/s in every ACE window. Columns that had been absorbing solar error move: H2O at 2506
+comes off the -2 bound in both files, CO at 4276 goes to -0.28 in both, file 4's N2O at 4066
+from +0.97 to -1.07. ACE covers only 1829-4440 cm-1, so above that Payne Zero stays.
+
+**The production refit, 2026-11-10: the fits get better, the telluric correction does
+not.** All 69 windows each file has in 1876-4426 cm-1 were refitted with the 2026-11-09
+recipe and ACE as the source (`fit_fts_batch.py --stellar data/stellar/solar_ace_fts_2026_deapod.npz
+--macroturbulence-kms 0`; `data/corrected/solar/refit_ace_1990/`, its `run.sh`). Free, CO
+ran off in the 2.3 um windows (4156 to the -2 bound in both files) and at 1996 and 2206, so
+those eight windows were refitted with CO pinned at the 4.6 um median as before (`copin/`).
+Against the promoted run (`docs/ace_source_refit_1990.json`):
+
+| | file 5 | file 4 |
+|---|---|---|
+| window residual rms, ACE / Payne Zero, median (p16-p84) | 0.91 (0.63-0.99) | 0.96 (0.80-1.00) |
+| windows >20% better / >3% worse | 22 / 3 | 13 / 3 |
+| telluric flatness, median %, Payne Zero -> ACE | 0.785 -> 0.796 | 1.698 -> 1.730 |
+| flatness per page, ACE / Payne Zero, median (p16-p84) | 1.005 (0.987-1.015) | 1.002 (0.997-1.009) |
+| solar velocity p16-p84, km/s, Payne Zero -> ACE | -0.57..+0.36 -> -0.73..-0.56 | -0.75..+0.19 -> -0.91..-0.66 |
+
+The residual gain is the solar model's, and it does not reach the transmission: the
+clean-pixel telluric fit already keeps solar error out of the columns, and what is left in
+the corrected spectrum's telluric pixels is the telluric model's. The few pages that do flatten
+(2446, 2566, 3256: 4-10%) are offset by as many slightly worse. The worse fits are at ACE's
+top end (4306, 4396: x1.06-1.36): de-apodizing multiplies ACE's noise by up to 11 at the
+largest path differences, and there it shows as ~1% ripple in the source. **So the run is not
+promoted**: the products' transmission would not improve. What ACE settles for #2 is that,
+below 4440 cm-1, Payne Zero's line errors are the residual floor and an observed Sun removes
+most of it; for the sibling's log gf work ACE is itself a telluric-free disc-centre
+spectrum at 1830-4440 cm-1, at a 25 cm path difference.
+
 **Wallace's resolving power, measured.** The interferograms give MOPD 26.6 cm
 (0.0227 cm-1, R 577,000 at 13050) for region 1 and 18.4 cm (0.0328 cm-1, R 441,000) for
 region 2, not the 676,000 and 698,000 of the paper's Table 1 (`flux_atlas.py`). §4n's

@@ -301,7 +301,7 @@ def input_hashes(root: Path, args, spectrum, species) -> dict:
     for epoch, path in sorted((getattr(args, "epoch_profiles", None) or {}).items()):
         entries[f"profile_{epoch}"] = str(root / path)
         entries[f"profile_{epoch}_sha256"] = file_sha256(root / path)
-    if getattr(args, "arcturus", False):
+    if getattr(args, "stellar", None) is not None:
         entries["stellar"] = str(root / args.stellar)
         entries["stellar_sha256"] = file_sha256(root / args.stellar)
     if getattr(args, "coadd", None):
@@ -513,7 +513,7 @@ def run_one(entry, args, root, scan_profile, airmass: float, spectrum) -> dict:
         fwhm_cm1=entry.get("fwhm_cm1", args.fwhm_cm1),
         profile=(args.epoch_profiles or {}).get(epoch, args.profile),
         species=",".join(scan["species"]),
-        stellar=str(args.stellar) if args.arcturus else "auto", vsini_kms=args.vsini_kms,
+        stellar=str(args.stellar) if args.stellar is not None else "auto", vsini_kms=args.vsini_kms,
         macroturbulence_kms=args.macroturbulence_kms, epoch=epoch,
         source_continuum=False, normalize_source=False,
         continuum_degree=args.continuum_degree, stages=PHYSICS["stages"], pin=tuple(args.pin),
@@ -701,7 +701,9 @@ def main() -> None:
                         help="--arcturus: each window's sinc is this R at its centre "
                              "(default ARCTURUS_FIT's)")
     parser.add_argument("--stellar", type=Path, default=None,
-                        help="--arcturus: the Payne Zero source (default ARCTURUS_FIT's)")
+                        help="the source npz: --arcturus's Payne Zero (default ARCTURUS_FIT's), or for the Sun an "
+                             "observed one in place of the Payne Zero bands, such as ACE-FTS (GitHub #2; "
+                             "pass --macroturbulence-kms 0, it is observed)")
     parser.add_argument("--macroturbulence-kms", type=float, default=None,
                         help="the source's macroturbulence: default 1.5 for the Sun, "
                              "ARCTURUS_FIT's for Arcturus")
@@ -868,8 +870,8 @@ def main() -> None:
         if args.airmass is not None or args.zenith_angle_deg not in (None, 0.0):
             raise SystemExit("--arcturus fits at zenith 0")
         args.zenith_angle_deg = 0.0
-    elif args.epoch_profiles or args.sinc_resolving_power or args.stellar:
-        raise SystemExit("--epoch-profile, --sinc-resolving-power and --stellar are --arcturus options")
+    elif args.epoch_profiles or args.sinc_resolving_power:
+        raise SystemExit("--epoch-profile and --sinc-resolving-power are --arcturus options")
     args.vsini_kms = 0.0 if args.vsini_kms is None else args.vsini_kms
     if args.macroturbulence_kms is None:
         args.macroturbulence_kms = PHYSICS["macroturbulence_kms"]
